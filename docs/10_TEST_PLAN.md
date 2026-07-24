@@ -69,6 +69,26 @@ WebGL을 다시 목표로 정할 때 별도 검증한다.
 - 실제 WindowsPlayer 결과 JSON과 렌더 스크린샷 확인
 - Edit Mode 모델 교체 계약 테스트
 
+### TECH-003 Windows 음성 텍스트
+
+- WindowsPlayer에서 마이크 장치 수 확인
+- `DictationRecognizer` 생성과 듣기 상태 확인
+- 인식 가설과 최종 텍스트 화면 표시
+- 오류 메시지와 HRESULT 화면 및 JSON 기록
+- 음성 실패 후 `Space` 대체 입력과 프로그램 응답 유지
+- `tech-003-result.json`의 자동 하네스 결과와 수동 발화 결과 분리
+
+현재 개발 PC 결과:
+
+- WindowsPlayer 빌드: 성공
+- 마이크 장치: 1개
+- 키보드 대체 입력과 오류 화면: 통과
+- 내장 recognizer 생성: 실패, `0x80004003`
+- 실제 발화 텍스트: `NOT RUN`, recognizer 생성 불가
+
+Windows 음성 언어 팩이 준비된 PC 또는 새 STT 후보에서 실제 한국어 문장이
+표시되기 전에는 TECH-003을 통과로 처리하지 않는다.
+
 ## 4. 경찰 모델과 애니메이션
 
 ### 임포트

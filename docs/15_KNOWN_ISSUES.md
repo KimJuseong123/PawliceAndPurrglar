@@ -139,3 +139,18 @@
 - 임시 해결: Windows 실행 파일을 첫 시연 대상으로 사용
 - 관련 작업: TECH-001, SUBMIT-001
 - 해결 기록: WebGL을 보조 플랫폼으로 채택할 때 재개
+
+### ISSUE-009 Unity 내장 Windows 받아쓰기가 현재 개발 PC에서 생성되지 않는다
+
+- 종류: 결정 필요
+- 상태: BLOCKED
+- 심각도: High
+- 발견 날짜: 2026-07-24
+- 발생 환경: Unity `6000.5.4f1`, WindowsPlayer, Windows 빌드 `26200`, 한국어 사용자 언어
+- 확인 절차: `PawsAndLootVoiceTech.exe` 실행 후 `DictationRecognizer` 생성
+- 예상: 마이크 입력을 받아 인식된 텍스트를 화면에 표시
+- 실제: 마이크 장치는 1개지만 생성 시 `0x80004003: Speech recognition is not supported on this machine.`
+- 영향: Unity 내장 API로는 TECH-003 실제 발화 완료 조건을 충족하지 못함
+- 임시 해결: 숫자키와 버튼 대체 입력을 유지하며 게임 명령 개발과 음성 검증을 분리
+- 관련 작업: TECH-003, VOICE-001~VOICE-007
+- 해결 기록: 오류와 키보드 대체 입력은 WindowsPlayer에서 검증했다. 관리자 권한이 없어 Windows Speech capability 설치 상태는 확정하지 못했으며, 음성 언어 팩 PC 재검증 또는 외부 STT 후보 선정이 필요하다.

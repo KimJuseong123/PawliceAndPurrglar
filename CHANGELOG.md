@@ -27,6 +27,7 @@
 - Windows TECH-001 전용 씬, Input System 이동 큐브와 실행 결과 기록
 - Blender 5.2 테스트 더미 생성기, 5본 Generic 리그, 단일 재질과 `Idle`·`Walk`
 - 이동·충돌과 모델을 분리한 `PlayerRoot/VisualRoot` 검증 프리팹과 TECH-002 Windows 빌드
+- Windows 마이크, 받아쓰기 상태, 오류 코드와 키보드 대체 입력을 표시하는 TECH-003 격리 빌드
 
 ### Changed
 
@@ -48,4 +49,5 @@
 
 - 기존 경찰 모델은 리그와 애니메이션이 없음
 - 네트워크 최종 방식과 실제 음성 기술은 미정
+- 현재 개발 PC에서 Unity 내장 Windows 받아쓰기가 `0x80004003`으로 생성되지 않음
 - 기본 씬 버튼의 직접 Play Mode 클릭 검증은 아직 수행하지 않음

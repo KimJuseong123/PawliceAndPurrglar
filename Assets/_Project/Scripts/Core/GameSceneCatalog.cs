@@ -27,6 +27,7 @@ namespace PawsAndLoot.Core
                 GameSceneId.Result => "Result",
                 GameSceneId.TechnicalTest => "TechnicalTest",
                 GameSceneId.BlenderTechnicalTest => "BlenderTechnicalTest",
+                GameSceneId.VoiceTechnicalTest => "VoiceTechnicalTest",
                 _ => throw new ArgumentOutOfRangeException(nameof(sceneId), sceneId, "Unknown game scene.")
             };
         }

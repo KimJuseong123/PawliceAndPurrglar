@@ -127,6 +127,17 @@ Assets/_Project/Art/TechnicalValidation/TechRig.fbx
 - `PlayerRoot`의 이동·Collider와 교체 가능한 `VisualRoot`를 분리한 검증 프리팹 생성
 - 실제 WindowsPlayer에서 5본, 재질 1개, 두 클립, 축·스케일, 루트 모션 비활성화 확인
 
+- Windows TECH-003 음성 검증 씬과 빌드:
+
+```text
+Assets/_Project/Scenes/VoiceTechnicalTest.unity
+Builds/TechnicalValidation/Windows/PawsAndLootVoiceTech.exe
+```
+
+- 실제 WindowsPlayer에서 마이크 1개와 키보드 대체 입력 응답 확인
+- Unity 내장 `DictationRecognizer` 생성은 `0x80004003`으로 실패
+- 실제 발화 텍스트 출력은 미검증이며 TECH-003은 `BLOCKED`
+
 - 기존 경찰 Blender 원본 존재:
 
 ```text
@@ -184,22 +195,25 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 ## 현재 작업
 
 - 작업 ID: 없음
-- 작업: TECH-002 Blender 모델 연동 검증 완료
+- 작업: TECH-003 기술 검증 결과 기록 완료
 - 상태: 다음 작업 시작 대기
-- 완료 범위: 별도 테스트 더미, 5본 Generic 리그, 단일 재질, `Idle`·`Walk`, 교체형 `VisualRoot`, Windows 빌드
+- 차단 결과: 현재 PC에서 Windows 내장 받아쓰기 미지원, 음성 팩 또는 외부 STT 재검증 필요
 
 ## 바로 다음 작업
 
-1. `TECH-003`: 음성 텍스트 변환 검증 필요성 결정
-2. `NET-001`: 네트워크 접속 기술 검증
-3. `NET-002`: 역할 배정 기술 검증
+1. `NET-001`: 네트워크 접속 기술 검증
+2. `NET-002`: 역할 배정 기술 검증
+3. `TECH-003`: Windows 음성 팩 또는 외부 STT 후보 결정 후 재개
 
 ## 차단 요소
 
 - 네트워크 패키지 최종 채택과 권한 구조 미정
+- 현재 개발 PC에서 Unity 내장 Windows 받아쓰기 생성 실패
 - 실제 음성 입력 기술 미정
 
-두 항목은 현재 단계 작업을 차단하지 않는다.
+네트워크 기술 스파이크는 계속할 수 있다. 본격적인 게임 기능 개발은 기술 관문 A의
+음성 항목을 통과하거나, 단축키 프로토타입과 음성 검증을 분리한다는 별도 결정을
+기록한 뒤 시작한다.
 
 ## 최근 검증
 
@@ -227,6 +241,10 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 | 2026-07-24 | TECH-002 WindowsPlayer 구조·렌더 검증 | 2.31m, `VisualRoot` 분리, 통과 |
 | 2026-07-24 | TECH-002 Edit Mode 테스트 | 7/7 통과 |
 | 2026-07-24 | TECH-002 Play Mode 테스트 | 1/1 통과 |
+| 2026-07-24 | TECH-003 Windows x86_64 개발 빌드 | 성공 |
+| 2026-07-24 | TECH-003 마이크와 실패 복구 | 장치 1개, 키보드 대체 입력 통과 |
+| 2026-07-24 | TECH-003 Unity 내장 받아쓰기 | `0x80004003`, 차단 |
+| 2026-07-24 | TECH-003 실제 발화 텍스트 | 미실행, recognizer 생성 불가 |
 | 2026-07-24 | Unity Play Mode | 실행하지 않음 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

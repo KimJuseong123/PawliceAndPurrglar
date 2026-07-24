@@ -408,3 +408,33 @@ Builds/TechnicalValidation/Windows/PawsAndLootBlenderTech.exe
 
 실행 결과는 같은 LocalLow 폴더의 `tech-002-result.json`과
 `tech-002-screenshot.png`에 기록됩니다.
+
+### Windows 음성 텍스트 검증
+
+TECH-003은 AI 대화나 동물 명령을 구현하지 않고 Windows 마이크 입력을 텍스트로
+받을 수 있는지만 확인하는 격리된 장면입니다.
+
+```text
+Assets/_Project/Scenes/VoiceTechnicalTest.unity
+Builds/TechnicalValidation/Windows/PawsAndLootVoiceTech.exe
+```
+
+Unity 메뉴 `Paws & Loot > Technical Validation > Build Windows TECH-003`으로
+빌드합니다. 실행 후 `Start listening`을 누르고 짧은 한국어 문장을 말합니다.
+음성을 사용할 수 없을 때는 `Space` 또는 `Continue with keyboard`로 계속할 수
+있어야 합니다.
+
+2026-07-24 현재 개발 PC의 실제 WindowsPlayer에서는 마이크 1개를 확인했지만
+Unity 내장 `DictationRecognizer` 생성이 다음 오류로 실패했습니다.
+
+```text
+0x80004003: Speech recognition is not supported on this machine.
+```
+
+따라서 내장 Windows 받아쓰기는 채택하지 않았고 TECH-003은 차단 상태입니다.
+Windows 음성 언어 팩이 준비된 PC에서 재검증하거나 외부 STT 후보를 별도
+선정해야 합니다. Unity 6의 이 API는 Windows 전용 Legacy API이며 운영체제의
+음성 개인정보 설정도 필요합니다.
+
+- 공식 API: https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Windows.Speech.DictationRecognizer.html
+- 로컬 결과: `tech-003-result.json`, `tech-003-screenshot.png`
