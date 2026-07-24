@@ -284,6 +284,33 @@ Assets/_Project/Scenes/Result.unity
 
 씬은 조립과 참조를 담당하고 게임 규칙을 직접 소유하지 않는다.
 
+### MAP-001 회색 상자 경계
+
+`GreyboxMapDefinition`은 `Game` 씬의 위치 앵커, 명시적 경로, 지붕, 사다리와
+쓰레기통 참조를 보유한다. 맵 크기나 경로가 경기 규칙을 직접 변경하지 않으며,
+이동 구현은 이후 이 정의를 조회만 한다.
+
+```text
+GreyboxMapDefinition
+├─ GreyboxLocationReference
+├─ GreyboxRouteReference
+├─ Rooftops / Ladders / TrashBins
+└─ GreyboxObstacle
+```
+
+에디터 생성기 `GreyboxMapSetup`은 56×44m 마을과 재질을 결정적으로 다시 만들고
+저장 직후 다음 계약을 검사한다.
+
+- 필수 장소 7개가 정확히 한 번씩 존재
+- 지정된 주요 장소 쌍마다 독립 경로 2개 이상
+- 모든 경로의 선언 폭이 2.4m 이상
+- 0.9m 지름, 2m 높이 캡슐이 경로상 `GreyboxObstacle`과 겹치지 않음
+- 지붕 3개, 사다리 3개, 쓰레기통 위치 4개 이상
+
+`GreyboxTraversalProbe`는 빌드에서 `PlayerConfig.MoveSpeed`로 실제
+`CharacterController`를 이동시켜 횡단 시간과 끼임을 JSON으로 기록한다.
+최종 플레이어 이동, 카메라, 상호작용을 대신하는 코드는 아니다.
+
 ## 10. 테스트
 
 어셈블리 경계:

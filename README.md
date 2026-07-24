@@ -128,7 +128,8 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 
 ## 현재 상태
 
-프로젝트는 기존 실험적 프로토타입에서 벗어나 처음부터 구조와 규칙을 다시 정리하는 단계입니다.
+프로젝트 기반과 고위험 기술 검증을 거쳐 56×44m 회색 상자 마을을 구성했습니다.
+현재는 경기 상태와 플레이어 규칙을 순서대로 연결하는 단계입니다.
 
 ### 고정 개발 환경
 
@@ -495,3 +496,29 @@ $clientProcess = Start-Process $exe -PassThru -ArgumentList @(
 다른 시작점과 색상을 사용하며 세 번째 접속은 거절됩니다. 2026-07-24 실제
 Windows 실행에서 양쪽 모두 경찰 1명·도둑 1명, 역할 중복 없음, 로컬 역할 인식과
 역할별 시작점 분리를 확인해 `passed: true`였습니다.
+
+### MAP-001 회색 상자 마을
+
+`Game` 씬은 56×44m 순환형 회색 상자 마을입니다. 경찰·도둑 시작점,
+슈퍼마켓, 서점, 보석상, 너구리 거래장터, 중앙 광장과 함께 골목, 지붕,
+사다리, 쓰레기통 위치를 기본 도형으로 표시합니다. 고정 암시장이나 상인이
+아니라 이후 출현 규칙을 검증할 수 있는 거래장터 앵커만 둡니다.
+
+Unity 메뉴에서 맵을 다시 만들거나 검증할 수 있습니다.
+
+```text
+Paws & Loot > Setup > Rebuild MAP-001 Greybox Village
+Paws & Loot > Setup > Validate MAP-001 Greybox Village
+Paws & Loot > Technical Validation > Build Windows MAP-001
+```
+
+Windows 개발 빌드:
+
+```text
+Builds/TechnicalValidation/Windows/PawsAndLootMapGreybox.exe
+```
+
+`-mapAutoQuit` 인자로 실행하면 캐릭터 크기의 캡슐이 경찰 시작점에서 도둑
+시작점까지 자동 이동하고 결과를 `map-001-result.json`과
+`map-001-screenshot.png`에 기록합니다. 2026-07-24 실제 빌드는 72m 경로를
+17.58초에 횡단했고 끼임 0회로 통과했습니다.

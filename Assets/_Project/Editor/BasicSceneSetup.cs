@@ -38,14 +38,7 @@ namespace PawsAndLoot.Editor
                     new ButtonSpec("START GAME", GameSceneId.Game, PoliceBlue)
                 });
 
-            CreateScene(
-                GameSceneId.Game,
-                "GAME",
-                "THE CHASE BEGINS HERE",
-                new[]
-                {
-                    new ButtonSpec("SHOW RESULT", GameSceneId.Result, ThiefRed)
-                });
+            GreyboxMapSetup.CreateGameScene();
 
             CreateScene(
                 GameSceneId.Result,
