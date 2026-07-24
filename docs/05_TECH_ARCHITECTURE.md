@@ -62,7 +62,7 @@ Blender 원본은 `ArtSource/Blender/`, Unity 반입 FBX는 `Assets/_Project/Art
 - 플레이어 이동과 대시
 - 상호작용
 - 보물 상태와 운반
-- 까마귀 상인 판매
+- 너구리 상인 판매
 - 체포
 - 투척과 상태 이상
 
@@ -72,7 +72,7 @@ Blender 원본은 `ArtSource/Blender/`, Unity 반입 FBX는 `Assets/_Project/Art
 - `PlayerInteraction`
 - `LootItem`
 - `LootCarrier`
-- `CrowMerchantSaleZone`
+- `RaccoonMerchantSaleZone`
 - `ArrestProgress`
 - `ThrowableItem`
 - `StatusEffectController`
@@ -156,7 +156,7 @@ UI는 이벤트를 구독해 표시하며 UI 텍스트가 게임 값을 소유�
 - `LootPickedUp`
 - `LootDropped`
 - `LootSold`
-- `CrowMerchantBecameAvailable`
+- `RaccoonMerchantBecameAvailable`
 - `ArrestStarted`
 - `ArrestCancelled`
 - `ArrestCompleted`
@@ -301,3 +301,22 @@ Assets/_Project/Scenes/Main.unity
 - 기존 검증 모델 유지
 - FBX 축, 스케일, Avatar 오류 기록
 - 프리팹 참조를 깨뜨리는 자동 교체 금지
+
+## 12. 고정 개발 환경
+
+| 항목 | 결정 |
+|---|---|
+| Unity | `6000.5.4f1` |
+| 렌더 파이프라인 | URP `17.5.0` |
+| 입력 | Input System `1.19.0`, Player Settings는 `Both` |
+| 테스트 | Unity Test Framework `1.7.0` |
+| 카메라 | Cinemachine `3.1.7` |
+| 내비게이션 | AI Navigation `2.0.13` 유지, 동물 경로 탐색에 사용 예정 |
+| 목표 플랫폼 | Windows x86_64 우선 |
+
+새 프로젝트 코드는 Input System을 사용한다.
+`Both` 설정은 기존 TopDown Engine의 Legacy Input 호환을 위한 임시 경계이며, 새 입력 코드를 Legacy Input으로 작성한다는 의미가 아니다.
+
+네트워크는 Netcode for GameObjects와 Unity Multiplayer Services 조합을 우선 후보로 둔다.
+이 단계에서는 설치하지 않으며, 기술 검증에서 Host, Client, 역할 배정, 위치 동기화, 연결 종료를 확인한 뒤 최종 채택한다.
+WebGL은 마이크와 네트워크 제약을 별도로 검증한 뒤 보조 빌드 대상으로 재검토한다.

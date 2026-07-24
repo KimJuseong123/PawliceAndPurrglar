@@ -37,10 +37,10 @@
 | ID | 우선순위 | 상태 | 작업 |
 |---|---|---|---|
 | BASE-001 | P0 | DONE | 목표 저장소 폴더 구조 생성 |
-| BASE-002 | P0 | TODO | 기존 실험 자산과 새 프로젝트 자산 경계 확정 |
-| BASE-003 | P0 | TODO | `Assets/_Project/Scenes/Main.unity` 생성 |
-| BASE-004 | P0 | TODO | 렌더 파이프라인과 입력 설정 검증 |
-| BASE-005 | P0 | TODO | 설정 데이터와 공통 ID 구조 |
+| BASE-002 | P0 | DONE | Unity 버전과 패키지 고정 |
+| BASE-003 | P0 | TODO | `Bootstrap`, `Game`, `Result` 기본 씬 구성 |
+| BASE-004 | P0 | TODO | 공통 설정 구조 생성 |
+| BASE-005 | P0 | TODO | 로깅과 오류 처리 |
 | BASE-006 | P1 | TODO | Edit Mode 및 Play Mode 테스트 어셈블리 |
 
 ## Epic 2. 카메라와 맵
@@ -90,7 +90,7 @@
 | PLAYER-005 | P0 | TODO | 역할 구분 |
 | PLAYER-006 | P1 | TODO | 보물 소지 이동 페널티 |
 
-## Epic 6. 보물과 까마귀 상인
+## Epic 6. 보물과 너구리 상인
 
 | ID | 우선순위 | 상태 | 작업 |
 |---|---|---|---|
@@ -99,7 +99,7 @@
 | LOOT-003 | P0 | TODO | 운반 |
 | LOOT-004 | P1 | TODO | 드롭 |
 | LOOT-005 | P2 | TODO | 숨기기 |
-| MERCHANT-001 | P0 | TODO | 까마귀 상인 판매 범위 |
+| MERCHANT-001 | P0 | TODO | 너구리 상인 판매 범위 |
 | MERCHANT-002 | P0 | TODO | 중복 판매 방지 |
 | MERCHANT-003 | P1 | TODO | 판매 피드백 |
 | MERCHANT-004 | P2 | TODO | 출현 위치 규칙 |

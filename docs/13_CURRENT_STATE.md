@@ -22,7 +22,7 @@
 - 경기 시간 4분
 - 원근감 있는 3D 기울어진 탑다운
 - 경찰과 강아지, 도둑과 고양이
-- 도둑의 판매 NPC는 까마귀 상인
+- 도둑의 판매 NPC는 너구리 상인
 - 동물 명령은 숫자키 `1`~`4`로 먼저 구현
 - 실제 음성 입력과 자연어 분류는 핵심 루프 검증 후 적용
 - 대부분의 모델은 그레이박스 이후 Blender에서 제작
@@ -31,6 +31,13 @@
 ## 저장소에서 확인된 상태
 
 - Unity 버전: `6000.5.4f1`
+- URP: `17.5.0`
+- Input System: `1.19.0`, Player Settings `Both`
+- Unity Test Framework: `1.7.0`
+- AI Navigation: `2.0.13`
+- Cinemachine: `3.1.7`
+- 첫 빌드 대상: Windows x86_64
+- 네트워크 우선 후보: Netcode for GameObjects와 Unity Multiplayer Services, 미설치
 - `AGENTS.md` 존재
 - `README.md` 존재
 - 프로젝트 문서 패키지 작성
@@ -82,7 +89,7 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 - `Idle`, `Run`, `ComedyRun`
 - 새 그레이박스 맵
 - 새 경기 상태와 4분 타이머
-- 새 보물, 까마귀 상인, 체포 시스템
+- 새 보물, 너구리 상인, 체포 시스템
 - 숫자키 동물 명령 상태 머신
 - 새 결과 화면
 
@@ -111,26 +118,29 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 - 실행 중인 Unity 프로세스는 확인되지 않았다.
 - 실행 중인 프로세스 없이 남아 있던 `Temp/UnityLockfile`을 제거했다.
 - Unity `6000.5.4f1` 배치 모드에서 새 폴더 임포트와 `.meta` 생성을 검증했다.
+- 불필요한 2D 편집, Collaborate, Rider, Visual Scripting, Multiplayer Center 패키지를 제거했다.
+- Windows 64비트 대상 패키지 재해석과 전체 스크립트 컴파일을 오류 없이 완료했다.
+- 기존 TopDown Engine 셰이더의 fallback 관련 비차단 경고가 남아 있다.
 - 새 메인 씬과 Play Mode는 아직 검증하지 않았다.
 
 ## 현재 작업
 
-- 작업 ID: BASE-001
-- 작업: 목표 저장소 폴더 구조 생성
+- 작업 ID: BASE-002
+- 작업: Unity 버전과 패키지 고정
 - 상태: 완료
-- 완료 결과: 로컬 Git 저장소, LFS 규칙, 프로젝트·외부 에셋·Blender·빌드·제출 경계와 Unity 폴더 메타 생성
+- 완료 결과: Unity와 핵심 패키지 버전, Windows x86_64 우선 대상, 네트워크 후보를 고정하고 패키지 재해석과 컴파일 검증 완료
 
 ## 바로 다음 작업
 
-1. `BASE-002`: 레거시 실험물과 새 구현의 경계 확정
-2. `BASE-003`: 새 메인 씬 생성
-3. `RIG-001`: 경찰 모델 축, 단위, 피벗 점검
-4. `RIG-002`: 경찰 리깅
+1. `BASE-003`: Bootstrap, Game, Result 기본 씬 구성
+2. `BASE-004`: 공통 설정 구조 생성
+3. `BASE-005`: 로깅과 오류 처리
+4. `BASE-006`: 테스트 구조 생성
 
 ## 차단 요소
 
-- 네트워크 패키지와 권한 구조 미정
-- 실제 음성 입력 기술과 목표 플랫폼 미정
+- 네트워크 패키지 최종 채택과 권한 구조 미정
+- 실제 음성 입력 기술 미정
 
 두 항목은 현재 단계 작업을 차단하지 않는다.
 
@@ -142,6 +152,7 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 | 2026-07-24 | Unity 버전 확인 | `6000.5.4f1` |
 | 2026-07-24 | BASE-001 목표 폴더와 Git 경계 검사 | 완료 |
 | 2026-07-24 | Unity 배치 임포트와 컴파일 | 오류 없이 종료 |
+| 2026-07-24 | BASE-002 패키지 재해석과 Windows 64비트 대상 컴파일 | 오류 없이 종료 |
 | 2026-07-24 | 새 메인 씬 확인 | 존재하지 않음 |
 | 2026-07-24 | Unity Play Mode | 실행하지 않음 |
 
