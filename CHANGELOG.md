@@ -17,6 +17,8 @@
 - `Assets/_Project/`, `Assets/ThirdParty/`, `ArtSource/Blender/`, `Builds/`, `Submission/` 목표 폴더 구조
 - Unity `6000.5.4f1`, URP `17.5.0`, Input System `1.19.0`, Test Framework `1.7.0` 고정 환경
 - Windows x86_64 우선 빌드 대상과 네트워크 기술 검증 후보
+- `Bootstrap`, `Game`, `Result` 기본 씬과 빌드 순서
+- 중앙화된 씬 ID, 로더, 공통 전환 버튼과 에디터 검증 도구
 
 ### Changed
 
@@ -35,6 +37,6 @@
 
 ### Known
 
-- 새 `Assets/_Project/Scenes/Bootstrap.unity`, `Game.unity`, `Result.unity`는 아직 없음
 - 기존 경찰 모델은 리그와 애니메이션이 없음
 - 네트워크 최종 방식과 실제 음성 기술은 미정
+- 기본 씬 버튼의 직접 Play Mode 클릭 검증은 아직 수행하지 않음

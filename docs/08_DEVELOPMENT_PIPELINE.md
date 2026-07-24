@@ -23,14 +23,15 @@
 
 - `Assets/_Project/` 구조 생성
 - 외부 에셋 경계 확인
-- 메인 씬 생성
+- Bootstrap, Game, Result 기본 씬 생성
 - 렌더 파이프라인과 입력 설정
 - 공통 설정 데이터
 - 테스트 어셈블리
 
 완료 조건:
 
-- `Assets/_Project/Scenes/Main.unity`가 열린다.
+- `Assets/_Project/Scenes/Bootstrap.unity`가 시작 씬으로 열린다.
+- 공통 로더로 `Game`과 `Result` 씬을 이동할 수 있다.
 - 그레이박스 오브젝트가 정상 렌더링된다.
 - 컴파일 오류와 치명적 콘솔 예외가 없다.
 

@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/CatCops/Scenes/CatCopsPrototype.unity
-    guid: 708869b7cce65cd4396848e51c52e547
+    path: Assets/_Project/Scenes/Bootstrap.unity
+    guid: b5164281a7d222742a1236858d8235ea
+  - enabled: 1
+    path: Assets/_Project/Scenes/Game.unity
+    guid: d3d36a4df32277a49adc911e9a6b5a68
+  - enabled: 1
+    path: Assets/_Project/Scenes/Result.unity
+    guid: 2cea88d132091f04d89b43a27bcd90ff
   m_configObjects: {}

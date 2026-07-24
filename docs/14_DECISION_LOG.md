@@ -160,6 +160,19 @@
 - 영향: Network, Integration, Match, Build
 - 재검토 조건: 기술 검증 실패, 비용 또는 운영 조건이 공모전 범위와 맞지 않을 때
 
+### DEC-014 MVP 기본 씬을 Bootstrap, Game, Result로 나눈다
+
+- 날짜: 2026-07-24
+- 상태: 확정
+- 배경: 실행 시작, 경기와 결과 화면의 책임을 최소 단위로 분리해야 한다.
+- 고려한 선택지: 단일 Main 씬, Bootstrap과 Game, Bootstrap과 Game과 Result
+- 결정: `Bootstrap`, `Game`, `Result` 세 씬을 사용하고 `Bootstrap`을 빌드 첫 씬으로 둔다.
+- 이유: 현재 MVP에 필요한 실행 흐름만 만들면서 경기 재시작과 결과 화면을 분리할 수 있다.
+- 장점: 책임 분리, 빌드 시작점 고정, 이후 씬 확장 용이
+- 단점: 씬 간 상태 전달 구조는 별도로 설계해야 함
+- 영향: Scenes, Core, UI, Build
+- 재검토 조건: 로비 또는 별도 메인 메뉴가 MVP에 반드시 필요해질 때
+
 ### DEC-009 Blender 원본과 Unity 반입물을 분리한다
 
 - 날짜: 2026-07-24

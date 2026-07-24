@@ -69,6 +69,17 @@ Submission/
 Assets/CatCops/Scenes/CatCopsPrototype.unity
 ```
 
+- 새 기본 씬 존재:
+
+```text
+Assets/_Project/Scenes/Bootstrap.unity
+Assets/_Project/Scenes/Game.unity
+Assets/_Project/Scenes/Result.unity
+```
+
+- 빌드 씬 순서: `Bootstrap`, `Game`, `Result`
+- 공통 씬 ID와 로더: `GameSceneCatalog`, `GameSceneLoader`
+
 - 기존 경찰 Blender 원본 존재:
 
 ```text
@@ -83,7 +94,6 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 
 ## 아직 존재하지 않는 목표 결과
 
-- `Assets/_Project/Scenes/Main.unity`
 - 새 구조의 경찰 프리팹
 - 경찰 Armature와 Avatar
 - `Idle`, `Run`, `ComedyRun`
@@ -121,21 +131,22 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 - 불필요한 2D 편집, Collaborate, Rider, Visual Scripting, Multiplayer Center 패키지를 제거했다.
 - Windows 64비트 대상 패키지 재해석과 전체 스크립트 컴파일을 오류 없이 완료했다.
 - 기존 TopDown Engine 셰이더의 fallback 관련 비차단 경고가 남아 있다.
-- 새 메인 씬과 Play Mode는 아직 검증하지 않았다.
+- 기본 씬 생성, 빌드 순서와 전환 대상은 에디터 자동 검증을 완료했다.
+- 실제 Play Mode에서 버튼을 직접 클릭하는 수동 검증은 아직 수행하지 않았다.
 
 ## 현재 작업
 
-- 작업 ID: BASE-002
-- 작업: Unity 버전과 패키지 고정
+- 작업 ID: BASE-003
+- 작업: Bootstrap, Game, Result 기본 씬 구성
 - 상태: 완료
-- 완료 결과: Unity와 핵심 패키지 버전, Windows x86_64 우선 대상, 네트워크 후보를 고정하고 패키지 재해석과 컴파일 검증 완료
+- 완료 결과: 공통 씬 ID와 로더, 세 기본 씬, 씬 이동 버튼, 빌드 씬 순서와 자동 검증 도구 생성
 
 ## 바로 다음 작업
 
-1. `BASE-003`: Bootstrap, Game, Result 기본 씬 구성
-2. `BASE-004`: 공통 설정 구조 생성
-3. `BASE-005`: 로깅과 오류 처리
-4. `BASE-006`: 테스트 구조 생성
+1. `BASE-004`: 공통 설정 구조 생성
+2. `BASE-005`: 로깅과 오류 처리
+3. `BASE-006`: 테스트 구조 생성
+4. `TECH-001`: 목표 플랫폼 빌드 검증
 
 ## 차단 요소
 
@@ -153,7 +164,8 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 | 2026-07-24 | BASE-001 목표 폴더와 Git 경계 검사 | 완료 |
 | 2026-07-24 | Unity 배치 임포트와 컴파일 | 오류 없이 종료 |
 | 2026-07-24 | BASE-002 패키지 재해석과 Windows 64비트 대상 컴파일 | 오류 없이 종료 |
-| 2026-07-24 | 새 메인 씬 확인 | 존재하지 않음 |
+| 2026-07-24 | BASE-003 기본 씬 생성과 빌드 순서 검사 | 완료 |
+| 2026-07-24 | BASE-003 씬별 전환 대상 자동 검사 | 완료 |
 | 2026-07-24 | Unity Play Mode | 실행하지 않음 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

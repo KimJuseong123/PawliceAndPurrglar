@@ -250,14 +250,17 @@ ArtSource/Blender
 
 ## 9. 씬
 
-목표 메인 씬:
+기본 씬:
 
 ```text
-Assets/_Project/Scenes/Main.unity
+Assets/_Project/Scenes/Bootstrap.unity
+Assets/_Project/Scenes/Game.unity
+Assets/_Project/Scenes/Result.unity
 ```
 
-현재 이 씬은 아직 없다.
-새 씬을 만들기 전 `docs/13_CURRENT_STATE.md`를 갱신한다.
+`Bootstrap`은 시작 지점, `Game`은 경기 조립, `Result`는 결과 표시를 담당한다.
+씬 이름과 경로는 `GameSceneCatalog`에서 관리하고 전환은 `GameSceneLoader`를 통한다.
+빌드 씬 순서는 `Bootstrap`, `Game`, `Result`로 고정한다.
 
 씬은 조립과 참조를 담당하고 게임 규칙을 직접 소유하지 않는다.
 

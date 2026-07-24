@@ -92,6 +92,22 @@
 - 최종 상태: 반영
 - 비고: Netcode for GameObjects와 Unity Multiplayer Services는 후보이며 아직 설치하지 않음
 
+### AI-20260724-004
+
+- 날짜: 2026-07-24
+- 작업자: 프로젝트 담당자
+- 사용 도구: OpenAI Codex
+- 모델 또는 기능: Unity C# 구현, 에디터 자동화, 배치 검증
+- 작업 목적: 프로젝트 실행의 최소 씬 흐름과 중앙화된 씬 전환 구조 생성
+- 관련 작업 ID: BASE-003
+- 입력 프롬프트 요약: Bootstrap, Game, Result 씬을 만들고 시작 씬, Game 이동, 빌드 씬 목록과 중복되지 않는 씬 이름 관리를 구현
+- AI 생성 결과: `GameSceneCatalog`, `GameSceneLoader`, 공통 전환 버튼, 세 기본 씬과 씬 생성·검증 도구
+- 실제 반영 파일: `Assets/_Project/Scripts/Core/`, `Assets/_Project/Scripts/UI/`, `Assets/_Project/Editor/`, `Assets/_Project/Scenes/`, `ProjectSettings/EditorBuildSettings.asset`
+- 사람이 수정하거나 결정한 내용: MVP 기본 씬은 Bootstrap, Game, Result만 먼저 사용
+- 검증 방법: Unity 배치 컴파일, 씬 파일과 필수 오브젝트 검사, 씬별 전환 대상과 빌드 순서 자동 검증
+- 최종 상태: 반영
+- 비고: 실제 에디터 Play Mode에서 버튼을 직접 클릭하는 수동 검증은 별도 수행 필요
+
 ## 기록 시 주의사항
 
 - 비밀 키, 개인정보, 전체 음성 데이터는 기록하지 않는다.

@@ -257,22 +257,26 @@ PawsAndLoot/
 
 ## 실행 방법
 
-새 구조의 메인 씬은 다음 경로를 목표로 합니다.
+기본 씬은 다음 세 개입니다.
 
 ```text
-Assets/_Project/Scenes/Main.unity
+Assets/_Project/Scenes/Bootstrap.unity
+Assets/_Project/Scenes/Game.unity
+Assets/_Project/Scenes/Result.unity
 ```
 
-현재는 구조를 다시 만드는 단계이므로 이 씬이 아직 존재한다고 가정하지 않습니다.
-실제 실행 가능한 씬과 Unity 버전은 `docs/13_CURRENT_STATE.md`를 만든 뒤 그 문서에서 관리합니다.
+빌드 순서는 `Bootstrap`, `Game`, `Result`이며 시작 씬은 `Bootstrap`입니다.
+씬 이름과 경로는 `GameSceneCatalog` 한 곳에서 관리합니다.
 
 기본 실행 절차:
 
 1. `ProjectSettings/ProjectVersion.txt`에 적힌 Unity 버전을 설치합니다.
 2. Unity Hub에서 저장소 루트를 프로젝트로 엽니다.
 3. 패키지 임포트와 스크립트 컴파일이 끝날 때까지 기다립니다.
-4. `docs/13_CURRENT_STATE.md`에 기록된 현재 메인 씬을 엽니다.
-5. Play Mode에서 콘솔 오류와 핵심 흐름을 확인합니다.
+4. `Assets/_Project/Scenes/Bootstrap.unity`를 엽니다.
+5. Play Mode에서 `START GAME`을 눌러 `Game` 씬으로 이동합니다.
+6. `SHOW RESULT`를 눌러 `Result` 씬으로 이동합니다.
+7. `PLAY AGAIN` 또는 `BACK TO START`로 흐름을 다시 확인합니다.
 
 ## 개발 원칙
 
