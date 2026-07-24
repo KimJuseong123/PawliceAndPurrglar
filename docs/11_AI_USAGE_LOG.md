@@ -172,6 +172,22 @@
 - 최종 상태: 반영
 - 비고: 빌드 출력과 LocalLow 결과 파일은 저장소에 커밋하지 않음
 
+### AI-20260724-009
+
+- 날짜: 2026-07-24
+- 작업자: 프로젝트 담당자
+- 사용 도구: OpenAI Codex
+- 모델 또는 기능: Blender Python 모델·리그 생성, Unity FBX 임포트와 Windows 빌드 자동 검증
+- 작업 목적: 최종 모델 제작 전에 Blender와 Unity 사이의 단위, 축, 리그, 애니메이션과 모델 교체 규격 확인
+- 관련 작업 ID: TECH-002
+- 입력 프롬프트 요약: 단순 몸체, 3~5본, `Idle`, `Walk`, 재질 1개를 실제 빌드에서 검증하고 모델 교체 후 이동과 충돌을 유지
+- AI 생성 결과: Blender 5.2 테스트 더미 생성기, `.blend`, `.fbx`, Generic 리그, Animator, `PlayerRoot/VisualRoot` 프리팹과 검증 장면
+- 실제 반영 파일: `ArtSource/Blender/TechnicalValidation/`, `Assets/_Project/Art/TechnicalValidation/`, 검증 프리팹·씬·스크립트와 관련 문서
+- 사람이 수정하거나 결정한 내용: 기존 경찰 모델은 변경하지 않고 별도 테스트 더미로 파이프라인만 검증
+- 검증 방법: Blender 배치 생성, Unity Windows 빌드, LocalLow JSON 전 항목 통과, 실제 렌더 캡처, Edit Mode 7/7과 Play Mode 1/1
+- 최종 상태: 반영
+- 비고: 최종 경찰의 Humanoid Avatar와 고급 웨이트는 RIG 작업에서 별도로 검증
+
 ## 기록 시 주의사항
 
 - 비밀 키, 개인정보, 전체 음성 데이터는 기록하지 않는다.

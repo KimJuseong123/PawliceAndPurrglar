@@ -56,6 +56,19 @@
 WebGL 로컬 서버와 GitHub Pages는 Windows 우선 단계에서는 `NOT RUN`이다.
 WebGL을 다시 목표로 정할 때 별도 검증한다.
 
+### TECH-002 Blender 연동
+
+- Blender 5.2 배치 모드에서 `.blend`와 `.fbx` 생성
+- Unity Generic 리그 임포트
+- 5본, 단일 SkinnedMeshRenderer와 단일 재질 검사
+- `Idle`, `Walk` 클립 이름 정규화와 Animator 재생
+- 모델 높이 1.8m 이상 2.5m 이하
+- 원점, 축, 회전과 `VisualRoot` 스케일 검사
+- 이동 및 Collider가 `PlayerRoot`에 남아 있는지 검사
+- 루트 모션 비활성화 검사
+- 실제 WindowsPlayer 결과 JSON과 렌더 스크린샷 확인
+- Edit Mode 모델 교체 계약 테스트
+
 ## 4. 경찰 모델과 애니메이션
 
 ### 임포트

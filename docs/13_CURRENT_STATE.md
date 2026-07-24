@@ -116,6 +116,17 @@ Builds/TechnicalValidation/Windows/PawsAndLootTech.exe
 - 실제 WindowsPlayer에서 1280×720, Input System, W 키 이동 약 8m 확인
 - WebGL 로컬 서버와 GitHub Pages 검증은 Windows 우선 단계에서 미실행
 
+- Blender TECH-002 테스트 원본과 Unity 반입 파일:
+
+```text
+ArtSource/Blender/TechnicalValidation/TechRig.blend
+Assets/_Project/Art/TechnicalValidation/TechRig.fbx
+```
+
+- Blender 5.2에서 2.31m 테스트 더미, Generic 5본, 단일 파란 재질, `Idle`·`Walk` 생성
+- `PlayerRoot`의 이동·Collider와 교체 가능한 `VisualRoot`를 분리한 검증 프리팹 생성
+- 실제 WindowsPlayer에서 5본, 재질 1개, 두 클립, 축·스케일, 루트 모션 비활성화 확인
+
 - 기존 경찰 Blender 원본 존재:
 
 ```text
@@ -173,15 +184,15 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 ## 현재 작업
 
 - 작업 ID: 없음
-- 작업: TECH-001 Windows 목표 플랫폼 빌드 검증 완료
+- 작업: TECH-002 Blender 모델 연동 검증 완료
 - 상태: 다음 작업 시작 대기
-- 완료 범위: TechnicalTest 씬, Windows x86_64 빌드, 1280×720, Input System과 실제 키보드 큐브 이동
+- 완료 범위: 별도 테스트 더미, 5본 Generic 리그, 단일 재질, `Idle`·`Walk`, 교체형 `VisualRoot`, Windows 빌드
 
 ## 바로 다음 작업
 
-1. `TECH-002`: Blender 모델 연동 검증
-2. `TECH-003`: 음성 텍스트 변환 검증 필요성 결정
-3. `NET-001`: 네트워크 접속 기술 검증
+1. `TECH-003`: 음성 텍스트 변환 검증 필요성 결정
+2. `NET-001`: 네트워크 접속 기술 검증
+3. `NET-002`: 역할 배정 기술 검증
 
 ## 차단 요소
 
@@ -211,6 +222,11 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 | 2026-07-24 | TECH-001 Windows x86_64 개발 빌드 | 성공 |
 | 2026-07-24 | TECH-001 WindowsPlayer 씬·입력·해상도 | 1280×720, 이동 약 8m, 통과 |
 | 2026-07-24 | TECH-001 WebGL 로컬 서버·GitHub Pages | Windows 우선으로 미실행 |
+| 2026-07-24 | TECH-002 Blender 5.2 `.blend`·FBX 생성 | 성공 |
+| 2026-07-24 | TECH-002 Unity Generic 리그·재질·애니메이션 임포트 | 5본, 1재질, `Idle`·`Walk`, 통과 |
+| 2026-07-24 | TECH-002 WindowsPlayer 구조·렌더 검증 | 2.31m, `VisualRoot` 분리, 통과 |
+| 2026-07-24 | TECH-002 Edit Mode 테스트 | 7/7 통과 |
+| 2026-07-24 | TECH-002 Play Mode 테스트 | 1/1 통과 |
 | 2026-07-24 | Unity Play Mode | 실행하지 않음 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

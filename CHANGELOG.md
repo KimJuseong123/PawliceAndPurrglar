@@ -25,6 +25,8 @@
 - 개발·제출 빌드별 로그 레벨 설정, 동일 키 중복 억제와 원본 예외 기록
 - 분리된 런타임, Edit Mode, Play Mode Assembly Definition과 기본 테스트
 - Windows TECH-001 전용 씬, Input System 이동 큐브와 실행 결과 기록
+- Blender 5.2 테스트 더미 생성기, 5본 Generic 리그, 단일 재질과 `Idle`·`Walk`
+- 이동·충돌과 모델을 분리한 `PlayerRoot/VisualRoot` 검증 프리팹과 TECH-002 Windows 빌드
 
 ### Changed
 

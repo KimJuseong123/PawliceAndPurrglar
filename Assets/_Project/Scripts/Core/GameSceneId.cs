@@ -5,6 +5,7 @@ namespace PawsAndLoot.Core
         Bootstrap = 0,
         Game = 1,
         Result = 2,
-        TechnicalTest = 3
+        TechnicalTest = 3,
+        BlenderTechnicalTest = 4
     }
 }

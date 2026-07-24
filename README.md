@@ -377,3 +377,34 @@ Builds/TechnicalValidation/Windows/PawsAndLootTech.exe
 Windows가 첫 목표 플랫폼이므로 WebGL 로컬 서버와 GitHub Pages 검증은 현재
 수행하지 않습니다. WebGL을 보조 플랫폼으로 다시 채택할 때 TECH-001의 별도
 WebGL 검증으로 진행합니다.
+
+### Blender 연동 검증
+
+TECH-002 테스트 모델은 최종 캐릭터가 아니라 단위, 축, 리그, 애니메이션과
+모델 교체 구조를 확인하는 전용 더미입니다. Blender 5.2에서 다음 명령으로
+원본 `.blend`와 Unity 반입용 `.fbx`를 다시 생성할 수 있습니다.
+
+```powershell
+& "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" `
+  --background `
+  --python "C:\Users\SSAFY\CatCops\ArtSource\Blender\TechnicalValidation\create_tech_rig.py"
+```
+
+Unity 메뉴 `Paws & Loot > Technical Validation > Build Windows TECH-002`는
+다음을 자동으로 검사하고 Windows 개발 빌드를 생성합니다.
+
+- 미터 단위, 발 중앙 원점, Unity 축과 회전
+- Generic 리그 5본과 단일 스킨 메시
+- Blender에서 가져온 파란 재질 1개
+- `Idle`, `Walk` 애니메이션
+- `PlayerRoot`의 이동 및 Collider와 교체 가능한 `VisualRoot` 분리
+- 루트 모션 비활성화
+
+```text
+Assets/_Project/Scenes/BlenderTechnicalTest.unity
+Assets/_Project/Prefabs/TechnicalValidation/TechRigPlayer.prefab
+Builds/TechnicalValidation/Windows/PawsAndLootBlenderTech.exe
+```
+
+실행 결과는 같은 LocalLow 폴더의 `tech-002-result.json`과
+`tech-002-screenshot.png`에 기록됩니다.

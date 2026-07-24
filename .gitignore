@@ -16,6 +16,7 @@
 *.csproj
 *.sln
 *.slnx
+*.blend1
 *.user
 *.pidb
 *.booproj
