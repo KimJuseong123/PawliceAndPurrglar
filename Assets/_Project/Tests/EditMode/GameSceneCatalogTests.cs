@@ -24,6 +24,7 @@ namespace PawsAndLoot.Tests.EditMode
         [TestCase(GameSceneId.TechnicalTest, "TechnicalTest")]
         [TestCase(GameSceneId.BlenderTechnicalTest, "BlenderTechnicalTest")]
         [TestCase(GameSceneId.VoiceTechnicalTest, "VoiceTechnicalTest")]
+        [TestCase(GameSceneId.NetworkTechnicalTest, "NetworkTechnicalTest")]
         public void GetName_ReturnsCentralizedSceneName(
             GameSceneId sceneId,
             string expectedName)

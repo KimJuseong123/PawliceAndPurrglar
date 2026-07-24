@@ -2,6 +2,7 @@
   "name": "PawsAndLoot.Runtime",
   "rootNamespace": "PawsAndLoot",
   "references": [
+    "Unity.Netcode.Runtime",
     "Unity.InputSystem",
     "Unity.ugui"
   ],

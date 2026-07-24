@@ -138,6 +138,17 @@ Builds/TechnicalValidation/Windows/PawsAndLootVoiceTech.exe
 - Unity 내장 `DictationRecognizer` 생성은 `0x80004003`으로 실패
 - 실제 발화 텍스트 출력은 미검증이며 TECH-003은 `BLOCKED`
 
+- NET-001 로컬 접속 검증 씬과 빌드:
+
+```text
+Assets/_Project/Scenes/NetworkTechnicalTest.unity
+Builds/TechnicalValidation/Windows/PawsAndLootNetworkTech.exe
+```
+
+- NGO `2.13.0`, Unity Transport `6.5.0`으로 `127.0.0.1` Host·Client 접속
+- 실제 WindowsPlayer 두 개에서 플레이어 2명, 소유자·위치 분리와 이동 동기화 확인
+- Client 종료를 Host가 감지했으며 Host·Client 결과 모두 `passed: true`
+
 - 기존 경찰 Blender 원본 존재:
 
 ```text
@@ -195,19 +206,18 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 ## 현재 작업
 
 - 작업 ID: 없음
-- 작업: TECH-003 기술 검증 결과 기록 완료
-- 상태: 다음 작업 시작 대기
-- 차단 결과: 현재 PC에서 Windows 내장 받아쓰기 미지원, 음성 팩 또는 외부 STT 재검증 필요
+- 작업: NET-001 완료 후 NET-002 시작 전
+- 상태: `READY`
 
 ## 바로 다음 작업
 
-1. `NET-001`: 네트워크 접속 기술 검증
-2. `NET-002`: 역할 배정 기술 검증
-3. `TECH-003`: Windows 음성 팩 또는 외부 STT 후보 결정 후 재개
+1. `NET-002`: 역할 배정 기술 검증
+2. `TECH-003`: Windows 음성 팩 또는 외부 STT 후보 결정 후 재개
+3. 기술 검증 관문 A 판정
 
 ## 차단 요소
 
-- 네트워크 패키지 최종 채택과 권한 구조 미정
+- 네트워크 서비스와 최종 권한 구조 미정
 - 현재 개발 PC에서 Unity 내장 Windows 받아쓰기 생성 실패
 - 실제 음성 입력 기술 미정
 
@@ -245,6 +255,11 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 | 2026-07-24 | TECH-003 마이크와 실패 복구 | 장치 1개, 키보드 대체 입력 통과 |
 | 2026-07-24 | TECH-003 Unity 내장 받아쓰기 | `0x80004003`, 차단 |
 | 2026-07-24 | TECH-003 실제 발화 텍스트 | 미실행, recognizer 생성 불가 |
-| 2026-07-24 | Unity Play Mode | 실행하지 않음 |
+| 2026-07-24 | NET-001 Windows x86_64 개발 빌드 | 성공 |
+| 2026-07-24 | NET-001 Host·Client 접속과 플레이어 2명 | 통과 |
+| 2026-07-24 | NET-001 소유자·위치 분리와 이동 동기화 | 통과 |
+| 2026-07-24 | NET-001 Client 종료 처리 | Host 감지, 통과 |
+| 2026-07-24 | NET-001 Edit Mode 테스트 | 9/9 통과 |
+| 2026-07-24 | NET-001 Play Mode 테스트 | 1/1 통과 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

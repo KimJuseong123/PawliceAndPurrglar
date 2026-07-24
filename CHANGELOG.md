@@ -28,6 +28,8 @@
 - Blender 5.2 테스트 더미 생성기, 5본 Generic 리그, 단일 재질과 `Idle`·`Walk`
 - 이동·충돌과 모델을 분리한 `PlayerRoot/VisualRoot` 검증 프리팹과 TECH-002 Windows 빌드
 - Windows 마이크, 받아쓰기 상태, 오류 코드와 키보드 대체 입력을 표시하는 TECH-003 격리 빌드
+- Netcode for GameObjects `2.13.0`과 Unity Transport `6.5.0`
+- 로컬 직접 IP Host·Client 접속, 두 플레이어 위치 동기화와 종료 처리를 검증하는 NET-001 빌드
 
 ### Changed
 
@@ -39,6 +41,7 @@
 - Unity 생성 파일과 테스트 결과를 제외하도록 `.gitignore` 보강
 - 사용하지 않는 2D 편집, Collaborate, Rider, Visual Scripting, Multiplayer Center 패키지 제거
 - 남아 있던 `DefaultCompany`와 이전 실험 제품명을 `PawsAndLoot`으로 수정
+- Unity `6000.5`와 맞지 않는 NGO `2.7.0` 대신 컴파일과 실행 검증을 통과한 `2.13.0` 채택
 
 ### Deprecated
 
@@ -48,6 +51,6 @@
 ### Known
 
 - 기존 경찰 모델은 리그와 애니메이션이 없음
-- 네트워크 최종 방식과 실제 음성 기술은 미정
+- 네트워크 서비스·권한 구조와 실제 음성 기술은 미정
 - 현재 개발 PC에서 Unity 내장 Windows 받아쓰기가 `0x80004003`으로 생성되지 않음
 - 기본 씬 버튼의 직접 Play Mode 클릭 검증은 아직 수행하지 않음

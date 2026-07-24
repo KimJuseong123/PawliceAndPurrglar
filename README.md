@@ -438,3 +438,37 @@ Windows 음성 언어 팩이 준비된 PC에서 재검증하거나 외부 STT �
 
 - 공식 API: https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Windows.Speech.DictationRecognizer.html
 - 로컬 결과: `tech-003-result.json`, `tech-003-screenshot.png`
+
+### 로컬 네트워크 접속 검증
+
+NET-001은 Netcode for GameObjects `2.13.0`과 Unity Transport `6.5.0`으로
+직접 IP Host·Client 접속을 확인하는 격리된 장면입니다. Lobby, Relay와 본게임
+규칙 동기화는 포함하지 않습니다.
+
+```text
+Assets/_Project/Scenes/NetworkTechnicalTest.unity
+Builds/TechnicalValidation/Windows/PawsAndLootNetworkTech.exe
+```
+
+Unity 메뉴 `Paws & Loot > Technical Validation > Build Windows NET-001`로
+빌드한 뒤 PowerShell에서 두 프로세스를 실행합니다.
+
+```powershell
+$exe = "C:\Users\SSAFY\CatCops\Builds\TechnicalValidation\Windows\PawsAndLootNetworkTech.exe"
+$hostProcess = Start-Process $exe -PassThru -ArgumentList @(
+  "-netMode", "host", "-netInstance", "host",
+  "-netAddress", "127.0.0.1", "-netPort", "7979",
+  "-netQuitAfter", "12"
+)
+Start-Sleep -Seconds 2
+$clientProcess = Start-Process $exe -PassThru -ArgumentList @(
+  "-netMode", "client", "-netInstance", "client",
+  "-netAddress", "127.0.0.1", "-netPort", "7979",
+  "-netDisconnectAfter", "8", "-netQuitAfter", "10"
+)
+```
+
+결과는 LocalLow 폴더의 `net-001-host-result.json`과
+`net-001-client-result.json`에 기록됩니다. 2026-07-24 실제 Windows 빌드에서는
+두 플레이어 생성, 서로 다른 소유자와 위치, 이동 동기화, Client 종료 감지가
+두 결과 모두 `passed: true`였습니다.

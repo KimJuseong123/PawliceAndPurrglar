@@ -211,8 +211,12 @@ Keyboard / UI / Future Voice
 
 ## 7. 네트워크 경계
 
-네트워크 패키지는 아직 미정이다.
-그 전까지 다음을 구분한다.
+NET-001 기술 검증에는 Netcode for GameObjects `2.13.0`과 Unity Transport
+`6.5.0`을 사용한다. 로컬 직접 IP Host·Client 접속, 플레이어 생성, 소유자별
+위치 동기화와 연결 종료는 실제 Windows 빌드에서 통과했다.
+
+이 선택은 기술 스파이크 기준이며 Relay, Lobby, 서버 운영과 최종 권한 구조는
+확정하지 않았다. 본게임 코드에서는 다음 경계를 유지한다.
 
 - 로컬 입력
 - 로컬 카메라와 화면 연출
@@ -233,6 +237,9 @@ Keyboard / UI / Future Voice
 - UI 애니메이션
 - 비결정적 파티클
 - 사운드 변형
+
+NET-001 검증 코드는 `TechnicalValidation`에 격리하며 Core 규칙에서
+`NetworkManager`, `NetworkVariable` 등 NGO 타입을 직접 참조하지 않는다.
 
 ## 8. 모델 및 애니메이션 파이프라인
 

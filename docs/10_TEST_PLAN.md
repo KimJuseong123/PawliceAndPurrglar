@@ -89,6 +89,22 @@ WebGL을 다시 목표로 정할 때 별도 검증한다.
 Windows 음성 언어 팩이 준비된 PC 또는 새 STT 후보에서 실제 한국어 문장이
 표시되기 전에는 TECH-003을 통과로 처리하지 않는다.
 
+### NET-001 로컬 접속
+
+- NGO `2.13.0`과 Unity Transport `6.5.0`으로 Windows 빌드
+- `127.0.0.1`의 동일 포트에 Host와 Client 접속
+- 플레이어 오브젝트 2개 생성
+- 서로 다른 `OwnerClientId`와 시작 위치 확인
+- 두 프로세스에서 위치 변화 동기화 관찰
+- Client가 종료된 뒤 Host의 연결 종료 콜백 확인
+- Host와 Client 결과 JSON 모두 `passed: true`
+
+2026-07-24 실제 실행 결과:
+
+- Host 연결 콜백 2회, 최대 플레이어 2명, 원격 종료 감지
+- Client 로컬 ID 1, 최대 플레이어 2명, 로컬 종료 처리
+- Edit Mode 9/9, Play Mode 1/1 통과
+
 ## 4. 경찰 모델과 애니메이션
 
 ### 임포트

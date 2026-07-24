@@ -7,6 +7,7 @@ namespace PawsAndLoot.Core
         Result = 2,
         TechnicalTest = 3,
         BlenderTechnicalTest = 4,
-        VoiceTechnicalTest = 5
+        VoiceTechnicalTest = 5,
+        NetworkTechnicalTest = 6
     }
 }
