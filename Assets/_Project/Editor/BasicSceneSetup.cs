@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using PawsAndLoot.Config;
 using PawsAndLoot.Core;
 using PawsAndLoot.UI;
 using UnityEditor;
@@ -83,6 +84,40 @@ namespace PawsAndLoot.Editor
             Debug.Log("BASE-003 scene validation passed.");
         }
 
+        [MenuItem("Paws & Loot/Setup/Ensure Bootstrap Services")]
+        public static void EnsureBootstrapServices()
+        {
+            EnsureSceneDirectory();
+
+            string path = GameSceneCatalog.GetPath(GameSceneId.Bootstrap);
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException($"Required scene is missing: {path}", path);
+            }
+
+            Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+            GameConfigSet configSet = LoadDefaultConfigSet();
+            GameConfigBootstrap bootstrap = FindBootstrap(scene);
+
+            if (bootstrap == null)
+            {
+                GameObject servicesObject = FindRoot(scene, "Project Services")
+                    ?? new GameObject("Project Services");
+                bootstrap = servicesObject.AddComponent<GameConfigBootstrap>();
+            }
+
+            bootstrap.ConfigSet = configSet;
+            EditorUtility.SetDirty(bootstrap);
+
+            if (!EditorSceneManager.SaveScene(scene))
+            {
+                throw new InvalidOperationException($"Failed to save scene: {path}");
+            }
+
+            ValidateSceneContents(GameSceneId.Bootstrap, scene);
+            Debug.Log("Bootstrap project services created and validated.");
+        }
+
         private static void EnsureSceneDirectory()
         {
             if (!AssetDatabase.IsValidFolder(GameSceneCatalog.SceneRoot))
@@ -102,6 +137,7 @@ namespace PawsAndLoot.Editor
             CreateCamera();
             CreateInterface(sceneId, title, subtitle, buttons);
             CreateEventSystem();
+            CreateProjectServices(sceneId);
 
             string path = GameSceneCatalog.GetPath(sceneId);
             if (!EditorSceneManager.SaveScene(scene, path))
@@ -215,6 +251,60 @@ namespace PawsAndLoot.Editor
         {
             var eventSystemObject = new GameObject("EventSystem", typeof(EventSystem));
             eventSystemObject.AddComponent<InputSystemUIInputModule>();
+        }
+
+        private static void CreateProjectServices(GameSceneId sceneId)
+        {
+            if (sceneId != GameSceneId.Bootstrap)
+            {
+                return;
+            }
+
+            var servicesObject = new GameObject("Project Services");
+            GameConfigBootstrap bootstrap = servicesObject.AddComponent<GameConfigBootstrap>();
+            bootstrap.ConfigSet = LoadDefaultConfigSet();
+        }
+
+        private static GameConfigSet LoadDefaultConfigSet()
+        {
+            GameConfigSet configSet =
+                AssetDatabase.LoadAssetAtPath<GameConfigSet>(GameConfigSetup.DefaultSetPath);
+            if (configSet == null)
+            {
+                throw new GameConfigurationException(
+                    $"Required GameConfigSet is missing at '{GameConfigSetup.DefaultSetPath}'. " +
+                    "Run 'Paws & Loot/Setup/Create Default Config Assets' first.");
+            }
+
+            return configSet;
+        }
+
+        private static GameConfigBootstrap FindBootstrap(Scene scene)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                GameConfigBootstrap bootstrap =
+                    root.GetComponentInChildren<GameConfigBootstrap>(true);
+                if (bootstrap != null)
+                {
+                    return bootstrap;
+                }
+            }
+
+            return null;
+        }
+
+        private static GameObject FindRoot(Scene scene, string name)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name == name)
+                {
+                    return root;
+                }
+            }
+
+            return null;
         }
 
         private static void CreateButton(
@@ -358,12 +448,14 @@ namespace PawsAndLoot.Editor
             bool hasCanvas = false;
             bool hasEventSystem = false;
             var navigationTargets = new List<GameSceneId>();
+            GameConfigBootstrap configBootstrap = null;
 
             foreach (GameObject root in scene.GetRootGameObjects())
             {
                 hasCamera |= root.GetComponentInChildren<Camera>(true) != null;
                 hasCanvas |= root.GetComponentInChildren<Canvas>(true) != null;
                 hasEventSystem |= root.GetComponentInChildren<EventSystem>(true) != null;
+                configBootstrap ??= root.GetComponentInChildren<GameConfigBootstrap>(true);
 
                 foreach (SceneNavigationButton button in root.GetComponentsInChildren<SceneNavigationButton>(true))
                 {
@@ -391,6 +483,23 @@ namespace PawsAndLoot.Editor
                     throw new InvalidOperationException(
                         $"Scene '{sceneId}' is missing navigation to '{expectedTarget}'.");
                 }
+            }
+
+            if (sceneId == GameSceneId.Bootstrap)
+            {
+                if (configBootstrap == null)
+                {
+                    throw new InvalidOperationException(
+                        "Bootstrap scene must contain a GameConfigBootstrap component.");
+                }
+
+                if (configBootstrap.ConfigSet == null)
+                {
+                    throw new GameConfigurationException(
+                        "Bootstrap GameConfigBootstrap is missing its required GameConfigSet reference.");
+                }
+
+                configBootstrap.ConfigSet.ValidateOrThrow();
             }
         }
 

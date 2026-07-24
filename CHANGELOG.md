@@ -19,6 +19,8 @@
 - Windows x86_64 우선 빌드 대상과 네트워크 기술 검증 후보
 - `Bootstrap`, `Game`, `Result` 기본 씬과 빌드 순서
 - 중앙화된 씬 ID, 로더, 공통 전환 버튼과 에디터 검증 도구
+- 경기, 플레이어, 보물, 체포, 동물과 음성용 ScriptableObject 설정
+- 필수 설정을 묶는 `DefaultGameConfigSet`, Bootstrap 초기화와 명확한 범위 오류 검증
 
 ### Changed
 

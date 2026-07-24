@@ -79,6 +79,15 @@ Assets/_Project/Scenes/Result.unity
 
 - 빌드 씬 순서: `Bootstrap`, `Game`, `Result`
 - 공통 씬 ID와 로더: `GameSceneCatalog`, `GameSceneLoader`
+- 공통 설정 에셋과 런타임 접근:
+
+```text
+Assets/_Project/Settings/Configs/
+Assets/_Project/Scripts/Core/Configuration/
+```
+
+- `Bootstrap`의 `GameConfigBootstrap`이 여섯 설정 에셋을 시작 시 검증
+- 설정 누락과 범위 오류는 필드명을 포함한 `GameConfigurationException`으로 중단
 
 - 기존 경찰 Blender 원본 존재:
 
@@ -136,17 +145,16 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 
 ## 현재 작업
 
-- 작업 ID: BASE-003
-- 작업: Bootstrap, Game, Result 기본 씬 구성
-- 상태: 완료
-- 완료 결과: 공통 씬 ID와 로더, 세 기본 씬, 씬 이동 버튼, 빌드 씬 순서와 자동 검증 도구 생성
+- 작업 ID: 없음
+- 작업: BASE-004 공통 설정 구조 생성 완료
+- 상태: 다음 작업 시작 대기
+- 완료 범위: 여섯 설정 ScriptableObject, 설정 묶음과 런타임 접근, 누락·범위 검증, 기본 에셋과 Bootstrap 연결
 
 ## 바로 다음 작업
 
-1. `BASE-004`: 공통 설정 구조 생성
-2. `BASE-005`: 로깅과 오류 처리
-3. `BASE-006`: 테스트 구조 생성
-4. `TECH-001`: 목표 플랫폼 빌드 검증
+1. `BASE-005`: 로깅과 오류 처리
+2. `BASE-006`: 테스트 구조 생성
+3. `TECH-001`: 목표 플랫폼 빌드 검증
 
 ## 차단 요소
 
@@ -166,6 +174,8 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 | 2026-07-24 | BASE-002 패키지 재해석과 Windows 64비트 대상 컴파일 | 오류 없이 종료 |
 | 2026-07-24 | BASE-003 기본 씬 생성과 빌드 순서 검사 | 완료 |
 | 2026-07-24 | BASE-003 씬별 전환 대상 자동 검사 | 완료 |
+| 2026-07-24 | BASE-004 기본 설정 에셋 생성과 전체 범위 검사 | 완료 |
+| 2026-07-24 | BASE-004 누락 설정 참조 오류 메시지 검사 | 완료 |
 | 2026-07-24 | Unity Play Mode | 실행하지 않음 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

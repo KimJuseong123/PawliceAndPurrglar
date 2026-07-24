@@ -172,21 +172,29 @@ UI는 이벤트를 구독해 표시하며 UI 텍스트가 게임 값을 소유�
 
 ## 5. 설정 데이터
 
-ScriptableObject 또는 독립 설정 데이터로 분리할 후보:
+BASE-004에서 다음 ScriptableObject를 구현했다.
 
-- `MatchConfig`
-- `CameraConfig`
-- `PlayerConfig`
-- `LootConfig`
-- `ArrestConfig`
-- `ThrowableConfig`
-- `DogCommandConfig`
-- `CatCommandConfig`
-- `MapConfig`
-- `AnimationConfig`
-- `VoiceCommandDictionary`
+- `MatchConfig`: 경기 시간, 목표 금액
+- `PlayerConfig`: 이동과 대시 속도, 대시 지속 시간과 쿨타임
+- `LootConfig`: 희귀도별 보물 가격
+- `ArrestConfig`: 체포 거리와 완료 시간
+- `CompanionConfig`: 동물 이동 속도와 명령 쿨타임
+- `VoiceConfig`: 음성 기능 활성화 여부, 키보드 대체 입력, 최대 발화 시간
 
-경기 시간, 목표 금액, 이동 속도, 체포 시간, 명령 쿨타임, 감지 거리, 보물 가격을 씬과 코드에 중복 작성하지 않는다.
+`DefaultGameConfigSet`이 여섯 에셋의 필수 참조를 묶고 `Bootstrap`의
+`GameConfigBootstrap`이 시작 시 전체 범위를 검증한 뒤 `GameConfigService`에 등록한다.
+참조 누락이나 0 이하 수치, 역전된 속도와 가격은 필드명을 포함한
+`GameConfigurationException`으로 즉시 실패한다.
+
+기본 에셋 경로:
+
+```text
+Assets/_Project/Settings/Configs/
+```
+
+향후 기능이 실제로 구현될 때만 `CameraConfig`, `ThrowableConfig`, 명령별 설정과
+`AnimationConfig`를 추가한다. 경기 시간, 목표 금액, 이동 속도, 체포 시간,
+명령 쿨타임, 감지 거리와 보물 가격을 씬과 코드에 중복 작성하지 않는다.
 
 ## 6. 명령 데이터 흐름
 

@@ -145,6 +145,17 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 Unity Hub에서 저장소 루트를 열면 `Packages/manifest.json`과 `Packages/packages-lock.json`을 기준으로 패키지가 복원됩니다.
 네트워크는 Netcode for GameObjects와 Unity Multiplayer Services를 우선 후보로 두지만 기술 검증 전에는 설치하지 않습니다.
 
+핵심 게임 수치는 다음 Inspector 에셋에서 관리합니다.
+
+```text
+Assets/_Project/Settings/Configs/
+```
+
+`Paws & Loot > Setup > Create Default Config Assets`는 기본 설정을 생성하고
+Bootstrap 씬에 연결합니다. `Validate Default Config Assets`는 저장된 값과 필수
+참조를 검사합니다. 현재 목표 금액, 이동, 대시, 체포, 보물 가격과 동물 수치는
+플레이테스트 전 프로토타입 가설입니다.
+
 현재 확정된 사항:
 
 - 임시 제목은 `멍경찰과 냥도둑`

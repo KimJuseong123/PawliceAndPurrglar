@@ -173,6 +173,19 @@
 - 영향: Scenes, Core, UI, Build
 - 재검토 조건: 로비 또는 별도 메인 메뉴가 MVP에 반드시 필요해질 때
 
+### DEC-015 핵심 게임 수치를 ScriptableObject 설정으로 관리한다
+
+- 날짜: 2026-07-24
+- 상태: 확정
+- 배경: 경기와 이동, 보물, 체포, 동물 명령 수치가 기능 코드와 씬에 흩어지는 것을 막아야 한다.
+- 고려한 선택지: 코드 상수, 씬 컴포넌트 직렬화, 기능별 ScriptableObject와 설정 묶음
+- 결정: 기능별 여섯 ScriptableObject를 `DefaultGameConfigSet`으로 묶고 Bootstrap에서 시작 시 검증한다.
+- 이유: Inspector에서 값을 확인하면서도 런타임 시스템은 동일한 검증된 설정을 조회할 수 있다.
+- 장점: 밸런스 조정 위치가 명확하고 누락과 잘못된 범위를 빠르게 발견한다.
+- 단점: 새로운 필수 설정을 추가할 때 설정 묶음과 기본 에셋 생성기를 함께 갱신해야 한다.
+- 영향: Config, Bootstrap, Match, Player, Loot, Arrest, Companion, Voice
+- 재검토 조건: 원격 설정 또는 서버 권한 설정이 필요해져 로컬 ScriptableObject만으로 부족할 때
+
 ### DEC-009 Blender 원본과 Unity 반입물을 분리한다
 
 - 날짜: 2026-07-24
