@@ -148,6 +148,9 @@ Builds/TechnicalValidation/Windows/PawsAndLootNetworkTech.exe
 - NGO `2.13.0`, Unity Transport `6.5.0`으로 `127.0.0.1` Host·Client 접속
 - 실제 WindowsPlayer 두 개에서 플레이어 2명, 소유자·위치 분리와 이동 동기화 확인
 - Client 종료를 Host가 감지했으며 Host·Client 결과 모두 `passed: true`
+- NET-002에서 Host `Police`, Client `Thief`를 서버 권한으로 배정
+- 양쪽 모두 경찰 1명·도둑 1명, 역할 중복 없음, 로컬 역할 인식과 시작점 분리 통과
+- 세 번째 접속을 거절하고 Host에서 거절 1회 확인
 
 - 기존 경찰 Blender 원본 존재:
 
@@ -206,14 +209,15 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 ## 현재 작업
 
 - 작업 ID: 없음
-- 작업: NET-001 완료 후 NET-002 시작 전
-- 상태: `READY`
+- 작업: 기술 검증 관문 A 판정 완료
+- 상태: `BLOCKED`
+- 차단 항목: TECH-003 실제 음성 텍스트 출력
 
 ## 바로 다음 작업
 
-1. `NET-002`: 역할 배정 기술 검증
-2. `TECH-003`: Windows 음성 팩 또는 외부 STT 후보 결정 후 재개
-3. 기술 검증 관문 A 판정
+1. `TECH-003`: Windows 음성 팩 PC 또는 외부 STT 후보로 재검증
+2. 기술 검증 관문 A 재판정
+3. 관문 통과 또는 단축키 프로토타입 분리 결정 후 `MAP-001`
 
 ## 차단 요소
 
@@ -224,6 +228,17 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 네트워크 기술 스파이크는 계속할 수 있다. 본격적인 게임 기능 개발은 기술 관문 A의
 음성 항목을 통과하거나, 단축키 프로토타입과 음성 검증을 분리한다는 별도 결정을
 기록한 뒤 시작한다.
+
+## 기술 검증 관문 A
+
+| 항목 | 상태 |
+|---|---|
+| Unity Windows 빌드 | PASS |
+| Blender 테스트 모델 임포트 | PASS |
+| 음성 텍스트 출력 | BLOCKED |
+| 두 플레이어 접속 | PASS |
+| 역할 배정 | PASS |
+| 전체 관문 | BLOCKED |
 
 ## 최근 검증
 
@@ -261,5 +276,12 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 | 2026-07-24 | NET-001 Client 종료 처리 | Host 감지, 통과 |
 | 2026-07-24 | NET-001 Edit Mode 테스트 | 9/9 통과 |
 | 2026-07-24 | NET-001 Play Mode 테스트 | 1/1 통과 |
+| 2026-07-24 | NET-002 Host·Client 역할 배정 | `Police` 1명, `Thief` 1명, 통과 |
+| 2026-07-24 | NET-002 역할별 시작점과 로컬 역할 인식 | 양쪽 통과 |
+| 2026-07-24 | NET-002 세 번째 접속 제한 | 거절 1회, 통과 |
+| 2026-07-24 | NET-002 렌더 캡처 | 파란 경찰·빨간 도둑, HUD 확인 |
+| 2026-07-24 | NET-002 Edit Mode 테스트 | 15/15 통과 |
+| 2026-07-24 | NET-002 Play Mode 테스트 | 1/1 통과 |
+| 2026-07-24 | 기술 검증 관문 A | TECH-003 미통과로 `BLOCKED` |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

@@ -11,27 +11,37 @@ namespace PawsAndLoot.TechnicalValidation
                 Vector3.zero,
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Owner);
+        private readonly NetworkVariable<TechnicalPlayerRole> _role =
+            new(
+                TechnicalPlayerRole.Unassigned,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
 
         private Renderer _renderer;
         private Vector3 _spawnPosition;
+        private bool _ownerSpawnInitialized;
 
         public Vector3 NetworkPosition => _networkPosition.Value;
+        public TechnicalPlayerRole Role => _role.Value;
 
         public override void OnNetworkSpawn()
         {
             _renderer = GetComponentInChildren<Renderer>();
-            ApplyOwnerColor();
+            _role.OnValueChanged += OnRoleChanged;
 
-            if (!IsOwner)
+            if (IsServer)
             {
-                return;
+                _role.Value = TechnicalRoleAssignment.GetRole(
+                    OwnerClientId,
+                    NetworkManager.ServerClientId);
             }
 
-            _spawnPosition = OwnerClientId == NetworkManager.ServerClientId
-                ? new Vector3(-2.2f, 0.65f, 0f)
-                : new Vector3(2.2f, 0.65f, 0f);
-            _networkPosition.Value = _spawnPosition;
-            transform.position = _spawnPosition;
+            ApplyRole(_role.Value);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            _role.OnValueChanged -= OnRoleChanged;
         }
 
         private void Update()
@@ -41,7 +51,7 @@ namespace PawsAndLoot.TechnicalValidation
                 return;
             }
 
-            if (IsOwner)
+            if (IsOwner && _ownerSpawnInitialized)
             {
                 float phase = (float)OwnerClientId * 1.3f;
                 Vector3 movement = new(
@@ -57,16 +67,42 @@ namespace PawsAndLoot.TechnicalValidation
                 12f * Time.deltaTime);
         }
 
-        private void ApplyOwnerColor()
+        private void OnRoleChanged(
+            TechnicalPlayerRole previousRole,
+            TechnicalPlayerRole currentRole)
+        {
+            ApplyRole(currentRole);
+        }
+
+        private void ApplyRole(TechnicalPlayerRole role)
+        {
+            ApplyRoleColor(role);
+            if (!IsOwner || role == TechnicalPlayerRole.Unassigned)
+            {
+                return;
+            }
+
+            _spawnPosition = TechnicalRoleAssignment.GetSpawnPosition(role);
+            _networkPosition.Value = _spawnPosition;
+            transform.position = _spawnPosition;
+            _ownerSpawnInitialized = true;
+        }
+
+        private void ApplyRoleColor(TechnicalPlayerRole role)
         {
             if (_renderer == null)
             {
                 return;
             }
 
-            Color color = OwnerClientId == NetworkManager.ServerClientId
-                ? new Color(0.08f, 0.38f, 0.95f)
-                : new Color(0.95f, 0.22f, 0.12f);
+            Color color = role switch
+            {
+                TechnicalPlayerRole.Police =>
+                    new Color(0.08f, 0.38f, 0.95f),
+                TechnicalPlayerRole.Thief =>
+                    new Color(0.95f, 0.22f, 0.12f),
+                _ => Color.white
+            };
             var properties = new MaterialPropertyBlock();
             _renderer.GetPropertyBlock(properties);
             properties.SetColor("_BaseColor", color);

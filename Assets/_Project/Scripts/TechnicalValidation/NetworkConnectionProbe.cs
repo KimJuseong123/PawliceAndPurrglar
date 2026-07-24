@@ -19,6 +19,7 @@ namespace PawsAndLoot.TechnicalValidation
         private NetworkValidationResult _result;
         private string _mode;
         private string _instanceName;
+        private string _taskId;
         private string _resultPath;
         private string _screenshotPath;
         private float _startedAt;
@@ -48,6 +49,8 @@ namespace PawsAndLoot.TechnicalValidation
             string[] arguments = Environment.GetCommandLineArgs();
             _mode = GetArgument(arguments, "-netMode", "host").ToLowerInvariant();
             _instanceName = GetArgument(arguments, "-netInstance", _mode);
+            _taskId = GetArgument(arguments, "-netTask", "net-001")
+                .ToLowerInvariant();
             string address = GetArgument(arguments, "-netAddress", "127.0.0.1");
             ushort port = ParseUShort(
                 GetArgument(arguments, "-netPort", "7777"),
@@ -64,10 +67,10 @@ namespace PawsAndLoot.TechnicalValidation
 
             _resultPath = Path.Combine(
                 Application.persistentDataPath,
-                $"net-001-{_instanceName}-result.json");
+                $"{_taskId}-{_instanceName}-result.json");
             _screenshotPath = Path.Combine(
                 Application.persistentDataPath,
-                $"net-001-{_instanceName}-screenshot.png");
+                $"{_taskId}-{_instanceName}-screenshot.png");
             _startedAt = Time.unscaledTime;
             _result = new NetworkValidationResult
             {
@@ -78,6 +81,7 @@ namespace PawsAndLoot.TechnicalValidation
                     .name,
                 mode = _mode,
                 instanceName = _instanceName,
+                taskId = _taskId,
                 address = address,
                 port = port,
                 screenshotPath = _screenshotPath,
@@ -97,6 +101,7 @@ namespace PawsAndLoot.TechnicalValidation
                 port,
                 _mode == "host" ? "0.0.0.0" : null);
 
+            ConfigureConnectionApproval();
             networkManager.OnClientConnectedCallback += OnClientConnected;
             networkManager.OnClientDisconnectCallback += OnClientDisconnected;
 
@@ -215,6 +220,7 @@ namespace PawsAndLoot.TechnicalValidation
                 }
 
                 _result.positionsWereDistinct |= greatestSeparation > 2f;
+                ObserveRoles(spawned);
                 _resultDirty = true;
             }
 
@@ -260,6 +266,7 @@ namespace PawsAndLoot.TechnicalValidation
 
             networkManager.OnClientConnectedCallback -= OnClientConnected;
             networkManager.OnClientDisconnectCallback -= OnClientDisconnected;
+            networkManager.ConnectionApprovalCallback = null;
             if (networkManager.IsListening)
             {
                 networkManager.Shutdown();
@@ -287,6 +294,14 @@ namespace PawsAndLoot.TechnicalValidation
                 && _result.positionsWereDistinct
                 && _result.observedSynchronizedMovement
                 && disconnectPassed;
+            if (_taskId == "net-002")
+            {
+                _result.passed &=
+                    _result.onePoliceOneThief
+                    && _result.rolesWereUnique
+                    && _result.roleStartPositionsDistinct
+                    && _result.localRoleKnown;
+            }
 
             File.WriteAllText(_resultPath, JsonUtility.ToJson(_result, true));
             _resultDirty = false;
@@ -307,7 +322,12 @@ namespace PawsAndLoot.TechnicalValidation
                 fontSize = 17
             };
 
-            GUI.Label(new Rect(40f, 38f, 430f, 34f), "NET-001 LOCAL CONNECTION", titleStyle);
+            GUI.Label(
+                new Rect(40f, 38f, 430f, 34f),
+                _taskId == "net-002"
+                    ? "NET-002 ROLE ASSIGNMENT"
+                    : "NET-001 LOCAL CONNECTION",
+                titleStyle);
             GUI.Label(
                 new Rect(40f, 82f, 430f, 28f),
                 $"Instance: {_instanceName} / Mode: {_mode}",
@@ -333,12 +353,87 @@ namespace PawsAndLoot.TechnicalValidation
                 : _result?.localShutdownHandled;
             GUI.Label(
                 new Rect(40f, 250f, 430f, 28f),
-                $"Disconnect handled: {YesNo(disconnectHandled)}",
+                _taskId == "net-002"
+                    ? $"Local role: {_result?.localRole ?? "Unknown"}"
+                    : $"Disconnect handled: {YesNo(disconnectHandled)}",
                 bodyStyle);
             GUI.Label(
                 new Rect(40f, 282f, 430f, 28f),
                 $"Validation: {(_result?.passed == true ? "PASSED" : "RUNNING")}",
                 bodyStyle);
+        }
+
+        private void ConfigureConnectionApproval()
+        {
+            if (_taskId != "net-002")
+            {
+                return;
+            }
+
+            networkManager.NetworkConfig.ConnectionApproval = true;
+            if (_mode == "host")
+            {
+                networkManager.ConnectionApprovalCallback =
+                    ApproveRoleValidationConnection;
+            }
+        }
+
+        private void ApproveRoleValidationConnection(
+            NetworkManager.ConnectionApprovalRequest request,
+            NetworkManager.ConnectionApprovalResponse response)
+        {
+            bool approved = TechnicalRoleAssignment.CanApprove(
+                networkManager.ConnectedClients.Count);
+            response.Approved = approved;
+            response.CreatePlayerObject = approved;
+            response.Position = null;
+            response.Rotation = null;
+            response.Pending = false;
+            response.Reason = approved
+                ? string.Empty
+                : "NET-002 accepts exactly two players.";
+
+            if (!approved)
+            {
+                _result.rejectedConnectionCount++;
+                _resultDirty = true;
+            }
+        }
+
+        private void ObserveRoles(TechnicalNetworkPlayer[] players)
+        {
+            int policeCount = players.Count(
+                player => player.Role == TechnicalPlayerRole.Police);
+            int thiefCount = players.Count(
+                player => player.Role == TechnicalPlayerRole.Thief);
+
+            _result.policeCount = Mathf.Max(
+                _result.policeCount,
+                policeCount);
+            _result.thiefCount = Mathf.Max(
+                _result.thiefCount,
+                thiefCount);
+            _result.onePoliceOneThief |=
+                policeCount == 1 && thiefCount == 1;
+            _result.rolesWereUnique |=
+                players.All(
+                    player => player.Role != TechnicalPlayerRole.Unassigned)
+                && players.Select(player => player.Role).Distinct().Count() == 2;
+            _result.roleStartPositionsDistinct |=
+                Vector3.Distance(
+                    TechnicalRoleAssignment.GetSpawnPosition(
+                        TechnicalPlayerRole.Police),
+                    TechnicalRoleAssignment.GetSpawnPosition(
+                        TechnicalPlayerRole.Thief)) > 2f;
+
+            TechnicalNetworkPlayer localPlayer = players.FirstOrDefault(
+                player => player.IsOwner);
+            if (localPlayer != null
+                && localPlayer.Role != TechnicalPlayerRole.Unassigned)
+            {
+                _result.localRoleKnown = true;
+                _result.localRole = localPlayer.Role.ToString();
+            }
         }
 
         private static string YesNo(bool? value)
@@ -391,6 +486,7 @@ namespace PawsAndLoot.TechnicalValidation
             public string sceneName;
             public string mode;
             public string instanceName;
+            public string taskId;
             public string address;
             public int port;
             public bool passed;
@@ -404,6 +500,14 @@ namespace PawsAndLoot.TechnicalValidation
             public bool sawDistinctOwners;
             public bool positionsWereDistinct;
             public bool observedSynchronizedMovement;
+            public int policeCount;
+            public int thiefCount;
+            public bool onePoliceOneThief;
+            public bool rolesWereUnique;
+            public bool roleStartPositionsDistinct;
+            public bool localRoleKnown;
+            public string localRole;
+            public int rejectedConnectionCount;
             public bool localShutdownRequested;
             public bool localShutdownHandled;
             public bool remoteDisconnectObserved;

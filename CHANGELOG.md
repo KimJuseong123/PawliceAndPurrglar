@@ -30,6 +30,7 @@
 - Windows 마이크, 받아쓰기 상태, 오류 코드와 키보드 대체 입력을 표시하는 TECH-003 격리 빌드
 - Netcode for GameObjects `2.13.0`과 Unity Transport `6.5.0`
 - 로컬 직접 IP Host·Client 접속, 두 플레이어 위치 동기화와 종료 처리를 검증하는 NET-001 빌드
+- 서버 권한 경찰·도둑 역할 배정, 역할별 시작점과 2명 제한을 검증하는 NET-002 모드
 
 ### Changed
 
@@ -42,6 +43,7 @@
 - 사용하지 않는 2D 편집, Collaborate, Rider, Visual Scripting, Multiplayer Center 패키지 제거
 - 남아 있던 `DefaultCompany`와 이전 실험 제품명을 `PawsAndLoot`으로 수정
 - Unity `6000.5`와 맞지 않는 NGO `2.7.0` 대신 컴파일과 실행 검증을 통과한 `2.13.0` 채택
+- 네트워크 기술 검증 역할을 Host 경찰, 첫 Client 도둑으로 고정하고 추가 접속을 거절
 
 ### Deprecated
 

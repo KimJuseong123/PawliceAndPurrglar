@@ -130,6 +130,12 @@ namespace PawsAndLoot.Editor
             }
         }
 
+        [MenuItem("Paws & Loot/Technical Validation/Build Windows NET-002")]
+        public static void BuildWindowsRoleValidation()
+        {
+            BuildWindows();
+        }
+
         private static GameObject CreatePlayerPrefab()
         {
             Material material = LoadOrCreateMaterial();

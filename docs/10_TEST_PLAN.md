@@ -105,6 +105,22 @@ Windows 음성 언어 팩이 준비된 PC 또는 새 STT 후보에서 실제 한
 - Client 로컬 ID 1, 최대 플레이어 2명, 로컬 종료 처리
 - Edit Mode 9/9, Play Mode 1/1 통과
 
+### NET-002 역할 배정
+
+- 역할 값은 서버만 쓰고 모든 클라이언트가 읽음
+- Host는 `Police`, 첫 원격 Client는 `Thief`
+- 경찰 1명, 도둑 1명, `Unassigned`와 중복 역할 없음
+- 역할별 시작 위치 간 거리 2m 초과
+- Host와 Client 결과에 각자의 로컬 역할 기록
+- 세 번째 접속 거절과 거절 사유 확인
+
+2026-07-24 실제 실행 결과:
+
+- Host: `Police`, 경찰 1명·도둑 1명, `passed: true`
+- Client: `Thief`, 경찰 1명·도둑 1명, `passed: true`
+- 세 번째 Client: 접속 거절, Host `rejectedConnectionCount: 1`
+- Edit Mode 15/15, Play Mode 1/1 통과
+
 ## 4. 경찰 모델과 애니메이션
 
 ### 임포트

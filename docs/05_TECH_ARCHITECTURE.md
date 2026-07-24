@@ -241,6 +241,11 @@ NET-001 기술 검증에는 Netcode for GameObjects `2.13.0`과 Unity Transport
 NET-001 검증 코드는 `TechnicalValidation`에 격리하며 Core 규칙에서
 `NetworkManager`, `NetworkVariable` 등 NGO 타입을 직접 참조하지 않는다.
 
+NET-002 기술 검증에서는 서버만 역할 `NetworkVariable`을 쓸 수 있다. Host는
+경찰, 승인된 첫 원격 Client는 도둑이며 접속 승인 단계에서 최대 2명으로
+제한한다. 역할별 시작 위치와 시각 표현은 동기화된 역할을 읽어 적용한다.
+이 규칙은 기술 검증용이며 실제 로비의 역할 선택 방식은 별도 설계한다.
+
 ## 8. 모델 및 애니메이션 파이프라인
 
 ```text

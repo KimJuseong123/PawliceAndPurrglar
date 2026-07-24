@@ -472,3 +472,26 @@ $clientProcess = Start-Process $exe -PassThru -ArgumentList @(
 `net-001-client-result.json`에 기록됩니다. 2026-07-24 실제 Windows 빌드에서는
 두 플레이어 생성, 서로 다른 소유자와 위치, 이동 동기화, Client 종료 감지가
 두 결과 모두 `passed: true`였습니다.
+
+NET-002는 같은 실행 파일에 `-netTask net-002`를 추가합니다.
+
+```powershell
+$hostProcess = Start-Process $exe -PassThru -ArgumentList @(
+  "-netTask", "net-002",
+  "-netMode", "host", "-netInstance", "host",
+  "-netAddress", "127.0.0.1", "-netPort", "7980",
+  "-netQuitAfter", "12"
+)
+Start-Sleep -Seconds 2
+$clientProcess = Start-Process $exe -PassThru -ArgumentList @(
+  "-netTask", "net-002",
+  "-netMode", "client", "-netInstance", "client",
+  "-netAddress", "127.0.0.1", "-netPort", "7980",
+  "-netDisconnectAfter", "8", "-netQuitAfter", "10"
+)
+```
+
+서버가 Host를 `Police`, 첫 원격 Client를 `Thief`로 배정합니다. 두 역할은 서로
+다른 시작점과 색상을 사용하며 세 번째 접속은 거절됩니다. 2026-07-24 실제
+Windows 실행에서 양쪽 모두 경찰 1명·도둑 1명, 역할 중복 없음, 로컬 역할 인식과
+역할별 시작점 분리를 확인해 `passed: true`였습니다.
