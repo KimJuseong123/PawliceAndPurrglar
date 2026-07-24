@@ -24,6 +24,7 @@
 - Match, Player, Loot, Arrest, Companion, Voice, Network 분류형 런타임 로그
 - 개발·제출 빌드별 로그 레벨 설정, 동일 키 중복 억제와 원본 예외 기록
 - 분리된 런타임, Edit Mode, Play Mode Assembly Definition과 기본 테스트
+- Windows TECH-001 전용 씬, Input System 이동 큐브와 실행 결과 기록
 
 ### Changed
 
@@ -34,6 +35,7 @@
 - 대부분의 최종 모델링을 그레이박스 프로토타입 이후로 이동
 - Unity 생성 파일과 테스트 결과를 제외하도록 `.gitignore` 보강
 - 사용하지 않는 2D 편집, Collaborate, Rider, Visual Scripting, Multiplayer Center 패키지 제거
+- 남아 있던 `DefaultCompany`와 이전 실험 제품명을 `PawsAndLoot`으로 수정
 
 ### Deprecated
 

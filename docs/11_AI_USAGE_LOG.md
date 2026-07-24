@@ -156,6 +156,22 @@
 - 최종 상태: 반영
 - 비고: 테스트 0개 발견은 성공으로 처리하지 않음
 
+### AI-20260724-008
+
+- 날짜: 2026-07-24
+- 작업자: 프로젝트 담당자
+- 사용 도구: OpenAI Codex
+- 모델 또는 기능: Unity 기술 검증 씬·빌드 자동화, Windows 입력 자동 검증
+- 작업 목적: 목표 플랫폼의 씬 로딩, 해상도, 키보드 입력과 실행 빌드 가능 여부 확인
+- 관련 작업 ID: TECH-001
+- 입력 프롬프트 요약: 실제 Windows 빌드에서 큐브를 키보드로 이동할 수 있는지 검증
+- AI 생성 결과: `TechnicalTest` 씬, Input System 이동 큐브, 결과 JSON·스크린샷과 Windows 빌드 도구
+- 실제 반영 파일: `Assets/_Project/Scenes/TechnicalTest.unity`, `Assets/_Project/Scripts/TechnicalValidation/`, `TechnicalValidationSetup.cs`
+- 사람이 수정하거나 결정한 내용: Windows x86_64를 우선 통과시키고 WebGL 서버·GitHub Pages는 보조 플랫폼 재검토 시 수행
+- 검증 방법: WindowsPlayer 실행, W 키 입력, 1280×720과 약 8m 이동 결과 JSON, 화면 캡처 확인
+- 최종 상태: 반영
+- 비고: 빌드 출력과 LocalLow 결과 파일은 저장소에 커밋하지 않음
+
 ## 기록 시 주의사항
 
 - 비밀 키, 개인정보, 전체 음성 데이터는 기록하지 않는다.

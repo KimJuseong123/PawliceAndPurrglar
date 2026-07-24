@@ -44,6 +44,18 @@
 - 동일 `Once` 키의 중복 출력 억제 검사
 - 프로젝트 코드의 빈 `catch`와 매 프레임 로그 호출 검사
 
+### TECH-001 Windows 빌드
+
+- `TechnicalTest` 씬 로드
+- Windows x86_64 실행 파일 생성
+- Input System 키보드 장치 확인
+- 1280×720 창 모드 확인
+- 실제 W 키 입력 후 큐브 이동 거리 기록
+- 실행 결과 JSON과 스크린샷 생성
+
+WebGL 로컬 서버와 GitHub Pages는 Windows 우선 단계에서는 `NOT RUN`이다.
+WebGL을 다시 목표로 정할 때 별도 검증한다.
+
 ## 4. 경찰 모델과 애니메이션
 
 ### 임포트

@@ -11,7 +11,7 @@
 ## 현재 단계
 
 ```text
-단계 1: 저장소와 Unity 기반 정리
+단계 2: 고위험 기술 사전 검증
 ```
 
 ## 확정된 제품 방향
@@ -106,6 +106,16 @@ Assets/_Project/Tests/EditMode/PawsAndLoot.Tests.EditMode.asmdef
 Assets/_Project/Tests/PlayMode/PawsAndLoot.Tests.PlayMode.asmdef
 ```
 
+- Windows TECH-001 검증 씬과 빌드:
+
+```text
+Assets/_Project/Scenes/TechnicalTest.unity
+Builds/TechnicalValidation/Windows/PawsAndLootTech.exe
+```
+
+- 실제 WindowsPlayer에서 1280×720, Input System, W 키 이동 약 8m 확인
+- WebGL 로컬 서버와 GitHub Pages 검증은 Windows 우선 단계에서 미실행
+
 - 기존 경찰 Blender 원본 존재:
 
 ```text
@@ -163,15 +173,15 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 ## 현재 작업
 
 - 작업 ID: 없음
-- 작업: BASE-006 테스트 구조 생성 완료
+- 작업: TECH-001 Windows 목표 플랫폼 빌드 검증 완료
 - 상태: 다음 작업 시작 대기
-- 완료 범위: 런타임 Assembly Definition, 분리된 Edit Mode·Play Mode 어셈블리, 배치 Test Runner 검증
+- 완료 범위: TechnicalTest 씬, Windows x86_64 빌드, 1280×720, Input System과 실제 키보드 큐브 이동
 
 ## 바로 다음 작업
 
-1. `BASE-006`: 테스트 구조 생성
-2. `TECH-001`: 목표 플랫폼 빌드 검증
-3. `RIG-001`: 경찰 모델 축, 단위, 피벗 점검
+1. `TECH-002`: Blender 모델 연동 검증
+2. `TECH-003`: 음성 텍스트 변환 검증 필요성 결정
+3. `NET-001`: 네트워크 접속 기술 검증
 
 ## 차단 요소
 
@@ -198,6 +208,9 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 | 2026-07-24 | BASE-005 빈 `catch`와 매 프레임 로그 정적 검색 | 발견 없음 |
 | 2026-07-24 | BASE-006 Edit Mode 테스트 | 5/5 통과 |
 | 2026-07-24 | BASE-006 Play Mode 테스트 | 1/1 통과 |
+| 2026-07-24 | TECH-001 Windows x86_64 개발 빌드 | 성공 |
+| 2026-07-24 | TECH-001 WindowsPlayer 씬·입력·해상도 | 1280×720, 이동 약 8m, 통과 |
+| 2026-07-24 | TECH-001 WebGL 로컬 서버·GitHub Pages | Windows 우선으로 미실행 |
 | 2026-07-24 | Unity Play Mode | 실행하지 않음 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

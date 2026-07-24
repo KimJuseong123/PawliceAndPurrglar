@@ -4,6 +4,7 @@ namespace PawsAndLoot.Core
     {
         Bootstrap = 0,
         Game = 1,
-        Result = 2
+        Result = 2,
+        TechnicalTest = 3
     }
 }

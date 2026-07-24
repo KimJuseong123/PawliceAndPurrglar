@@ -352,3 +352,28 @@ if ($playMode.ExitCode -ne 0) { throw "Play Mode tests failed." }
 
 Test Runner의 프로세스 종료 코드와 결과 XML을 모두 확인합니다. 테스트가 0개
 발견된 실행은 성공으로 간주하지 않습니다.
+
+## 기술 검증 빌드
+
+Windows TECH-001 검증 씬:
+
+```text
+Assets/_Project/Scenes/TechnicalTest.unity
+```
+
+Unity 메뉴 `Paws & Loot > Technical Validation > Build Windows TECH-001`로
+WASD 이동 큐브가 포함된 Windows x86_64 개발 빌드를 생성합니다.
+
+```text
+Builds/TechnicalValidation/Windows/PawsAndLootTech.exe
+```
+
+실행 결과는 다음 로컬 경로에 JSON과 스크린샷으로 기록됩니다.
+
+```text
+%USERPROFILE%\AppData\LocalLow\PawsAndLoot\PawsAndLoot\
+```
+
+Windows가 첫 목표 플랫폼이므로 WebGL 로컬 서버와 GitHub Pages 검증은 현재
+수행하지 않습니다. WebGL을 보조 플랫폼으로 다시 채택할 때 TECH-001의 별도
+WebGL 검증으로 진행합니다.
