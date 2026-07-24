@@ -293,6 +293,27 @@ Assets/_Project/Scenes/Result.unity
 
 ## 11. 오류 처리
 
+런타임 로그는 `GameLogger`만 사용하고 다음 분류를 붙인다.
+
+- `Match`
+- `Player`
+- `Loot`
+- `Arrest`
+- `Companion`
+- `Voice`
+- `Network`
+
+로그 형식은 `[PawsAndLoot][Category][Level] message`다.
+`DefaultGameLogConfig`은 Editor와 Development Build에서 `Debug` 이상,
+일반 제출 빌드에서 `Warning` 이상을 출력한다. 개발 최소 레벨은 제출 최소
+레벨보다 반드시 상세해야 하며, 오류 레벨은 설정으로 완전히 숨길 수 없다.
+
+상태 전환은 한 번만 기록하고 `Update`, `FixedUpdate`, `LateUpdate`에서
+매 프레임 로그를 남기지 않는다. 반복될 수 있는 경고는 안정적인 키와
+`DebugOnce`, `InfoOnce`, `WarningOnce`, `ErrorOnce`를 사용한다.
+예외를 처리할 때는 원본 예외를 `GameLogger.Exception`에 전달해 스택 추적을
+보존하며 빈 `catch`로 실패를 숨기지 않는다.
+
 동물 경로 실패:
 
 - 제한 횟수 재탐색

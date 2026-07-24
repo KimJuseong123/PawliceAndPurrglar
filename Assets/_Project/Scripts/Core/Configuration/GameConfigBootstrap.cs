@@ -1,4 +1,5 @@
 using UnityEngine;
+using PawsAndLoot.Logging;
 
 namespace PawsAndLoot.Config
 {
@@ -24,6 +25,11 @@ namespace PawsAndLoot.Config
             }
 
             GameConfigService.Initialize(configSet);
+            GameLogger.InfoOnce(
+                GameLogCategory.Match,
+                "game-config-initialized",
+                $"Game configuration initialized from '{configSet.name}'.",
+                this);
             DontDestroyOnLoad(gameObject);
         }
     }

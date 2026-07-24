@@ -124,6 +124,22 @@
 - 최종 상태: 반영
 - 비고: 최종 밸런스는 플레이테스트 후 조정
 
+### AI-20260724-006
+
+- 날짜: 2026-07-24
+- 작업자: 프로젝트 담당자
+- 사용 도구: OpenAI Codex
+- 모델 또는 기능: Unity C# 구현, 에디터 자동 검증, 정적 코드 검색
+- 작업 목적: 게임 시스템별 로그를 일관되게 추적하고 제출 빌드의 로그 노이즈를 제한
+- 관련 작업 ID: BASE-005
+- 입력 프롬프트 요약: Match, Player, Loot, Arrest, Companion, Voice, Network 로그와 오류 처리 기반 구현
+- AI 생성 결과: `GameLogger`, `GameLogConfig`, Bootstrap, 7개 분류, 빌드별 최소 레벨, 중복 억제와 예외 기록 API
+- 실제 반영 파일: `Assets/_Project/Scripts/Core/Logging/`, `Assets/_Project/Settings/Logging/`, Bootstrap 씬, 관련 문서
+- 사람이 수정하거나 결정한 내용: 개발 기본 레벨은 Debug, 제출 기본 레벨은 Warning으로 구분
+- 검증 방법: Unity 배치 컴파일, 7개 분류 출력, 동일 키 중복 억제, 빈 `catch`와 매 프레임 로그 정적 검색
+- 최종 상태: 반영
+- 비고: 파일 및 원격 로그 수집은 MVP 범위에 포함하지 않음
+
 ## 기록 시 주의사항
 
 - 비밀 키, 개인정보, 전체 음성 데이터는 기록하지 않는다.

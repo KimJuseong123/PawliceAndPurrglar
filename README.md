@@ -156,6 +156,17 @@ Bootstrap 씬에 연결합니다. `Validate Default Config Assets`는 저장된 
 참조를 검사합니다. 현재 목표 금액, 이동, 대시, 체포, 보물 가격과 동물 수치는
 플레이테스트 전 프로토타입 가설입니다.
 
+런타임 로그 설정은 다음 에셋에서 확인합니다.
+
+```text
+Assets/_Project/Settings/Logging/DefaultGameLogConfig.asset
+```
+
+Editor와 Development Build는 `Debug` 이상, 일반 제출 빌드는 `Warning` 이상을
+기본 출력합니다. 런타임 코드는 직접 `Debug.Log`를 호출하지 않고
+`GameLogger`의 Match, Player, Loot, Arrest, Companion, Voice, Network 분류를
+사용합니다.
+
 현재 확정된 사항:
 
 - 임시 제목은 `멍경찰과 냥도둑`

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using PawsAndLoot.Logging;
 
 namespace PawsAndLoot.Core
 {
@@ -11,10 +12,15 @@ namespace PawsAndLoot.Core
 
             if (!Application.CanStreamedLevelBeLoaded(sceneName))
             {
-                Debug.LogError($"Scene '{sceneName}' is not enabled in Build Settings.");
+                GameLogger.Error(
+                    GameLogCategory.Match,
+                    $"Scene '{sceneName}' is not enabled in Build Settings.");
                 return;
             }
 
+            GameLogger.Info(
+                GameLogCategory.Match,
+                $"Loading scene '{sceneName}' from '{SceneManager.GetActiveScene().name}'.");
             SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
         }
     }

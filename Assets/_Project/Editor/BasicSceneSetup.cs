@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
+using PawsAndLoot.Logging;
 using PawsAndLoot.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -97,17 +98,29 @@ namespace PawsAndLoot.Editor
 
             Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
             GameConfigSet configSet = LoadDefaultConfigSet();
-            GameConfigBootstrap bootstrap = FindBootstrap(scene);
+            GameLogConfig logConfig = LoadDefaultLogConfig();
+            GameConfigBootstrap configBootstrap = FindConfigBootstrap(scene);
+            GameLogBootstrap logBootstrap = FindLogBootstrap(scene);
+            GameObject servicesObject = configBootstrap != null
+                ? configBootstrap.gameObject
+                : logBootstrap != null
+                    ? logBootstrap.gameObject
+                    : FindRoot(scene, "Project Services") ?? new GameObject("Project Services");
 
-            if (bootstrap == null)
+            if (logBootstrap == null)
             {
-                GameObject servicesObject = FindRoot(scene, "Project Services")
-                    ?? new GameObject("Project Services");
-                bootstrap = servicesObject.AddComponent<GameConfigBootstrap>();
+                logBootstrap = servicesObject.AddComponent<GameLogBootstrap>();
             }
 
-            bootstrap.ConfigSet = configSet;
-            EditorUtility.SetDirty(bootstrap);
+            if (configBootstrap == null)
+            {
+                configBootstrap = servicesObject.AddComponent<GameConfigBootstrap>();
+            }
+
+            logBootstrap.Config = logConfig;
+            configBootstrap.ConfigSet = configSet;
+            EditorUtility.SetDirty(logBootstrap);
+            EditorUtility.SetDirty(configBootstrap);
 
             if (!EditorSceneManager.SaveScene(scene))
             {
@@ -261,8 +274,12 @@ namespace PawsAndLoot.Editor
             }
 
             var servicesObject = new GameObject("Project Services");
-            GameConfigBootstrap bootstrap = servicesObject.AddComponent<GameConfigBootstrap>();
-            bootstrap.ConfigSet = LoadDefaultConfigSet();
+            GameLogBootstrap logBootstrap = servicesObject.AddComponent<GameLogBootstrap>();
+            logBootstrap.Config = LoadDefaultLogConfig();
+
+            GameConfigBootstrap configBootstrap =
+                servicesObject.AddComponent<GameConfigBootstrap>();
+            configBootstrap.ConfigSet = LoadDefaultConfigSet();
         }
 
         private static GameConfigSet LoadDefaultConfigSet()
@@ -279,12 +296,41 @@ namespace PawsAndLoot.Editor
             return configSet;
         }
 
-        private static GameConfigBootstrap FindBootstrap(Scene scene)
+        private static GameLogConfig LoadDefaultLogConfig()
+        {
+            GameLogConfig logConfig =
+                AssetDatabase.LoadAssetAtPath<GameLogConfig>(GameLogSetup.DefaultConfigPath);
+            if (logConfig == null)
+            {
+                throw new GameConfigurationException(
+                    $"Required GameLogConfig is missing at '{GameLogSetup.DefaultConfigPath}'. " +
+                    "Run 'Paws & Loot/Setup/Create Default Log Config' first.");
+            }
+
+            return logConfig;
+        }
+
+        private static GameConfigBootstrap FindConfigBootstrap(Scene scene)
         {
             foreach (GameObject root in scene.GetRootGameObjects())
             {
                 GameConfigBootstrap bootstrap =
                     root.GetComponentInChildren<GameConfigBootstrap>(true);
+                if (bootstrap != null)
+                {
+                    return bootstrap;
+                }
+            }
+
+            return null;
+        }
+
+        private static GameLogBootstrap FindLogBootstrap(Scene scene)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                GameLogBootstrap bootstrap =
+                    root.GetComponentInChildren<GameLogBootstrap>(true);
                 if (bootstrap != null)
                 {
                     return bootstrap;
@@ -449,6 +495,7 @@ namespace PawsAndLoot.Editor
             bool hasEventSystem = false;
             var navigationTargets = new List<GameSceneId>();
             GameConfigBootstrap configBootstrap = null;
+            GameLogBootstrap logBootstrap = null;
 
             foreach (GameObject root in scene.GetRootGameObjects())
             {
@@ -456,6 +503,7 @@ namespace PawsAndLoot.Editor
                 hasCanvas |= root.GetComponentInChildren<Canvas>(true) != null;
                 hasEventSystem |= root.GetComponentInChildren<EventSystem>(true) != null;
                 configBootstrap ??= root.GetComponentInChildren<GameConfigBootstrap>(true);
+                logBootstrap ??= root.GetComponentInChildren<GameLogBootstrap>(true);
 
                 foreach (SceneNavigationButton button in root.GetComponentsInChildren<SceneNavigationButton>(true))
                 {
@@ -500,6 +548,20 @@ namespace PawsAndLoot.Editor
                 }
 
                 configBootstrap.ConfigSet.ValidateOrThrow();
+
+                if (logBootstrap == null)
+                {
+                    throw new InvalidOperationException(
+                        "Bootstrap scene must contain a GameLogBootstrap component.");
+                }
+
+                if (logBootstrap.Config == null)
+                {
+                    throw new GameConfigurationException(
+                        "Bootstrap GameLogBootstrap is missing its required GameLogConfig reference.");
+                }
+
+                logBootstrap.Config.ValidateOrThrow();
             }
         }
 

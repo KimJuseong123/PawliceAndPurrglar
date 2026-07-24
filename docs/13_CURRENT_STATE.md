@@ -88,6 +88,16 @@ Assets/_Project/Scripts/Core/Configuration/
 
 - `Bootstrap`의 `GameConfigBootstrap`이 여섯 설정 에셋을 시작 시 검증
 - 설정 누락과 범위 오류는 필드명을 포함한 `GameConfigurationException`으로 중단
+- 분류형 런타임 로그와 설정:
+
+```text
+Assets/_Project/Scripts/Core/Logging/
+Assets/_Project/Settings/Logging/DefaultGameLogConfig.asset
+```
+
+- 개발 로그는 `Debug` 이상, 제출 로그는 `Warning` 이상
+- 동일 `Once` 키는 실행 세션에서 한 번만 출력
+- `GameLogger.Exception`이 원본 예외와 스택 추적을 보존
 
 - 기존 경찰 Blender 원본 존재:
 
@@ -146,15 +156,15 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 ## 현재 작업
 
 - 작업 ID: 없음
-- 작업: BASE-004 공통 설정 구조 생성 완료
+- 작업: BASE-005 로깅과 오류 처리 완료
 - 상태: 다음 작업 시작 대기
-- 완료 범위: 여섯 설정 ScriptableObject, 설정 묶음과 런타임 접근, 누락·범위 검증, 기본 에셋과 Bootstrap 연결
+- 완료 범위: 7개 로그 분류, 개발·제출 빌드 레벨, 중복 억제, 예외 원문 보존과 Bootstrap 연결
 
 ## 바로 다음 작업
 
-1. `BASE-005`: 로깅과 오류 처리
-2. `BASE-006`: 테스트 구조 생성
-3. `TECH-001`: 목표 플랫폼 빌드 검증
+1. `BASE-006`: 테스트 구조 생성
+2. `TECH-001`: 목표 플랫폼 빌드 검증
+3. `RIG-001`: 경찰 모델 축, 단위, 피벗 점검
 
 ## 차단 요소
 
@@ -176,6 +186,9 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 | 2026-07-24 | BASE-003 씬별 전환 대상 자동 검사 | 완료 |
 | 2026-07-24 | BASE-004 기본 설정 에셋 생성과 전체 범위 검사 | 완료 |
 | 2026-07-24 | BASE-004 누락 설정 참조 오류 메시지 검사 | 완료 |
+| 2026-07-24 | BASE-005 7개 로그 분류와 출력 형식 검사 | 완료 |
+| 2026-07-24 | BASE-005 동일 키 중복 로그 억제 검사 | 완료 |
+| 2026-07-24 | BASE-005 빈 `catch`와 매 프레임 로그 정적 검색 | 발견 없음 |
 | 2026-07-24 | Unity Play Mode | 실행하지 않음 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

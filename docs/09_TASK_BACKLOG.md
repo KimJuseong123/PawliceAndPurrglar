@@ -40,7 +40,7 @@
 | BASE-002 | P0 | DONE | Unity 버전과 패키지 고정 |
 | BASE-003 | P0 | DONE | `Bootstrap`, `Game`, `Result` 기본 씬 구성 |
 | BASE-004 | P0 | DONE | 공통 설정 구조 생성 |
-| BASE-005 | P0 | TODO | 로깅과 오류 처리 |
+| BASE-005 | P0 | DONE | 로깅과 오류 처리 |
 | BASE-006 | P1 | TODO | Edit Mode 및 Play Mode 테스트 어셈블리 |
 
 ## Epic 2. 카메라와 맵
@@ -188,6 +188,6 @@
 
 ## 바로 다음 작업
 
-1. `BASE-005` 로깅과 오류 처리
-2. `BASE-006` Edit Mode 및 Play Mode 테스트 어셈블리
-3. `TECH-001` 목표 플랫폼 빌드 검증
+1. `BASE-006` Edit Mode 및 Play Mode 테스트 어셈블리
+2. `TECH-001` 목표 플랫폼 빌드 검증
+3. `RIG-001` 경찰 모델 축, 단위, 피벗 점검
