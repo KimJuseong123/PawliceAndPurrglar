@@ -274,6 +274,18 @@ Assets/_Project/Scenes/Result.unity
 
 ## 10. 테스트
 
+어셈블리 경계:
+
+```text
+Assets/_Project/Scripts/PawsAndLoot.Runtime.asmdef
+Assets/_Project/Tests/EditMode/PawsAndLoot.Tests.EditMode.asmdef
+Assets/_Project/Tests/PlayMode/PawsAndLoot.Tests.PlayMode.asmdef
+```
+
+테스트 어셈블리는 `PawsAndLoot.Runtime`을 참조하며 런타임 어셈블리는 테스트
+어셈블리를 참조하지 않는다. Edit Mode 테스트는 Editor에서만 컴파일하고,
+Play Mode 테스트는 일반 빌드에서 `TestAssemblies`로 제외한다.
+
 ### Edit Mode
 
 - 경기 상태 전환

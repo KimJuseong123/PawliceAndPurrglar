@@ -41,7 +41,7 @@
 | BASE-003 | P0 | DONE | `Bootstrap`, `Game`, `Result` 기본 씬 구성 |
 | BASE-004 | P0 | DONE | 공통 설정 구조 생성 |
 | BASE-005 | P0 | DONE | 로깅과 오류 처리 |
-| BASE-006 | P1 | TODO | Edit Mode 및 Play Mode 테스트 어셈블리 |
+| BASE-006 | P1 | DONE | Edit Mode 및 Play Mode 테스트 어셈블리 |
 
 ## Epic 2. 카메라와 맵
 

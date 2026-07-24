@@ -98,6 +98,13 @@ Assets/_Project/Settings/Logging/DefaultGameLogConfig.asset
 - 개발 로그는 `Debug` 이상, 제출 로그는 `Warning` 이상
 - 동일 `Once` 키는 실행 세션에서 한 번만 출력
 - `GameLogger.Exception`이 원본 예외와 스택 추적을 보존
+- 런타임과 테스트 Assembly Definition:
+
+```text
+Assets/_Project/Scripts/PawsAndLoot.Runtime.asmdef
+Assets/_Project/Tests/EditMode/PawsAndLoot.Tests.EditMode.asmdef
+Assets/_Project/Tests/PlayMode/PawsAndLoot.Tests.PlayMode.asmdef
+```
 
 - 기존 경찰 Blender 원본 존재:
 
@@ -156,9 +163,9 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 ## 현재 작업
 
 - 작업 ID: 없음
-- 작업: BASE-005 로깅과 오류 처리 완료
+- 작업: BASE-006 테스트 구조 생성 완료
 - 상태: 다음 작업 시작 대기
-- 완료 범위: 7개 로그 분류, 개발·제출 빌드 레벨, 중복 억제, 예외 원문 보존과 Bootstrap 연결
+- 완료 범위: 런타임 Assembly Definition, 분리된 Edit Mode·Play Mode 어셈블리, 배치 Test Runner 검증
 
 ## 바로 다음 작업
 
@@ -189,6 +196,8 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 | 2026-07-24 | BASE-005 7개 로그 분류와 출력 형식 검사 | 완료 |
 | 2026-07-24 | BASE-005 동일 키 중복 로그 억제 검사 | 완료 |
 | 2026-07-24 | BASE-005 빈 `catch`와 매 프레임 로그 정적 검색 | 발견 없음 |
+| 2026-07-24 | BASE-006 Edit Mode 테스트 | 5/5 통과 |
+| 2026-07-24 | BASE-006 Play Mode 테스트 | 1/1 통과 |
 | 2026-07-24 | Unity Play Mode | 실행하지 않음 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

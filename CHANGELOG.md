@@ -23,6 +23,7 @@
 - 필수 설정을 묶는 `DefaultGameConfigSet`, Bootstrap 초기화와 명확한 범위 오류 검증
 - Match, Player, Loot, Arrest, Companion, Voice, Network 분류형 런타임 로그
 - 개발·제출 빌드별 로그 레벨 설정, 동일 키 중복 억제와 원본 예외 기록
+- 분리된 런타임, Edit Mode, Play Mode Assembly Definition과 기본 테스트
 
 ### Changed
 

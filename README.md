@@ -311,3 +311,44 @@ Assets/_Project/Scenes/Result.unity
 - AI 도구 사용 내역은 `docs/11_AI_USAGE_LOG.md`에 남깁니다.
 
 세부 작업 규칙은 [AGENTS.md](AGENTS.md)를 따릅니다.
+
+## 테스트 실행
+
+테스트 코드는 런타임 코드와 분리되어 있습니다.
+
+```text
+Assets/_Project/Scripts/PawsAndLoot.Runtime.asmdef
+Assets/_Project/Tests/EditMode/PawsAndLoot.Tests.EditMode.asmdef
+Assets/_Project/Tests/PlayMode/PawsAndLoot.Tests.PlayMode.asmdef
+```
+
+Unity 에디터에서는 `Window > General > Test Runner`를 열고 `EditMode` 또는
+`PlayMode` 탭에서 `Run All`을 실행합니다.
+
+PowerShell 배치 실행 예시:
+
+```powershell
+$unity = "C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe"
+$project = "C:\Users\SSAFY\CatCops"
+
+$editMode = Start-Process $unity -Wait -PassThru -ArgumentList @(
+  "-batchmode", "-nographics",
+  "-projectPath", $project,
+  "-runTests", "-testPlatform", "EditMode",
+  "-testResults", "$project\Logs\TestResults\editmode.xml",
+  "-logFile", "$project\Logs\editmode-tests.log"
+)
+if ($editMode.ExitCode -ne 0) { throw "Edit Mode tests failed." }
+
+$playMode = Start-Process $unity -Wait -PassThru -ArgumentList @(
+  "-batchmode", "-nographics",
+  "-projectPath", $project,
+  "-runTests", "-testPlatform", "PlayMode",
+  "-testResults", "$project\Logs\TestResults\playmode.xml",
+  "-logFile", "$project\Logs\playmode-tests.log"
+)
+if ($playMode.ExitCode -ne 0) { throw "Play Mode tests failed." }
+```
+
+Test Runner의 프로세스 종료 코드와 결과 XML을 모두 확인합니다. 테스트가 0개
+발견된 실행은 성공으로 간주하지 않습니다.
