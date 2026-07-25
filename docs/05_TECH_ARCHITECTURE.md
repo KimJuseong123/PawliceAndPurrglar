@@ -169,6 +169,11 @@ PlayerKeyboardInput
 `ENDING`으로 전환한다. 재경기 시스템은 gameplay 비활성 상태에서
 `ResetMatchTimer()`를 호출해 초기값을 복원할 수 있다.
 
+`CommonHudPresenter`는 경기 런타임, 로컬 역할 선택기와 상호작용 스캐너의
+읽기 값만 사용한다. 시간·역할·상태·상호작용 문구를 매 프레임 갱신하지만
+상태 전환이나 상호작용 실행은 호출하지 않는다. 정적 인스턴스 보호는 씬
+재진입 중 생성된 두 번째 HUD를 제거한다.
+
 ### Companions
 
 책임:

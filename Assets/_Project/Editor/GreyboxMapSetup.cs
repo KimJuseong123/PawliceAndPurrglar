@@ -221,7 +221,7 @@ namespace PawsAndLoot.Editor
                 LoadPlayerMoveSpeed(),
                 traversalProbe,
                 villageRoot.transform);
-            CreateSceneInterface(roleSelector);
+            CreateSceneInterface(roleSelector, matchRuntime);
 
             string scenePath = GameSceneCatalog.GetPath(GameSceneId.Game);
             if (!EditorSceneManager.SaveScene(scene, scenePath))
@@ -1173,7 +1173,8 @@ namespace PawsAndLoot.Editor
         }
 
         private static void CreateSceneInterface(
-            LocalPlayerRoleSelector roleSelector)
+            LocalPlayerRoleSelector roleSelector,
+            MatchRuntimeState matchRuntime)
         {
             var canvasObject = new GameObject(
                 "Scene UI",
@@ -1188,6 +1189,42 @@ namespace PawsAndLoot.Editor
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
+
+            RectTransform hudRoot = CreateRect(
+                "Common HUD",
+                canvasObject.transform);
+            hudRoot.anchorMin = Vector2.zero;
+            hudRoot.anchorMax = Vector2.one;
+            hudRoot.offsetMin = Vector2.zero;
+            hudRoot.offsetMax = Vector2.zero;
+
+            Text roleLabel = CreateHudLabel(
+                "Role",
+                hudRoot,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(28f, -28f),
+                new Vector2(260f, 48f),
+                TextAnchor.MiddleLeft,
+                26);
+            Text stateLabel = CreateHudLabel(
+                "Match State",
+                hudRoot,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(28f, -80f),
+                new Vector2(300f, 42f),
+                TextAnchor.MiddleLeft,
+                20);
+            Text timerLabel = CreateHudLabel(
+                "Match Timer",
+                hudRoot,
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -24f),
+                new Vector2(220f, 68f),
+                TextAnchor.MiddleCenter,
+                40);
 
             RectTransform buttonRect = CreateRect(
                 "SHOW RESULT Button",
@@ -1250,15 +1287,47 @@ namespace PawsAndLoot.Editor
             promptLabel.color = Color.white;
             promptLabel.raycastTarget = false;
 
-            InteractionPromptPresenter promptPresenter =
-                promptRect.gameObject.AddComponent<
-                    InteractionPromptPresenter>();
-            promptPresenter.Configure(roleSelector, promptLabel);
+            CommonHudPresenter hudPresenter =
+                hudRoot.gameObject.AddComponent<CommonHudPresenter>();
+            hudPresenter.Configure(
+                matchRuntime,
+                roleSelector,
+                timerLabel,
+                roleLabel,
+                stateLabel,
+                promptLabel);
 
             var eventSystem = new GameObject(
                 "EventSystem",
                 typeof(EventSystem));
             eventSystem.AddComponent<InputSystemUIInputModule>();
+        }
+
+        private static Text CreateHudLabel(
+            string name,
+            Transform parent,
+            Vector2 anchorMin,
+            Vector2 anchorMax,
+            Vector2 anchoredPosition,
+            Vector2 size,
+            TextAnchor alignment,
+            int fontSize)
+        {
+            RectTransform rect = CreateRect(name, parent);
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.pivot = anchorMin;
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = size;
+            Text label = rect.gameObject.AddComponent<Text>();
+            label.font = Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            label.fontSize = fontSize;
+            label.fontStyle = FontStyle.Bold;
+            label.alignment = alignment;
+            label.color = Color.white;
+            label.raycastTarget = false;
+            return label;
         }
 
         private static PlayerConfig LoadPlayerConfig()

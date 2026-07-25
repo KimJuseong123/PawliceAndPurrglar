@@ -28,11 +28,11 @@ namespace PawsAndLoot.Tests.EditMode
                     root.GetComponentsInChildren<
                         PrototypeInteractable>(true))
                 .ToArray();
-            InteractionPromptPresenter[] presenters = scene
+            CommonHudPresenter[] presenters = scene
                 .GetRootGameObjects()
                 .SelectMany(root =>
                     root.GetComponentsInChildren<
-                        InteractionPromptPresenter>(true))
+                        CommonHudPresenter>(true))
                 .ToArray();
 
             Assert.That(scanners, Has.Length.EqualTo(2));
