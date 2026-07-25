@@ -344,7 +344,15 @@ LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint
 한 평가 시점에 모은다. 순수 규칙 객체 `MatchResultArbiter`가
 `체포 > 목표 판매 > 시간 종료` 순으로 `MatchResult`를 한 번만 결정한다.
 결과에는 승리 진영, 종료 이유, 판매 금액, 남은 시간이 들어간다. UI는 이 판정
-경로에 참여하지 않는다. 실제 `ENDING` 전환은 `MATCH-005`의 책임이다.
+경로에 참여하지 않는다.
+
+`MatchEndController`는 확정된 `MatchResult`를 구독하고 첫 결과에만
+`PLAYING -> ENDING` 전환을 수행한다. 전환과 함께
+`LocalPlayerRoleSelector`의 이동·대시·상호작용·드롭 입력을 모두 비활성화하고
+진행 중인 체포를 즉시 중단한다. 타이머와 보물 시스템은
+`IMatchStateReader.IsGameplayActive`를 통해 같은 `ENDING` 상태를 읽으므로
+별도의 중복 종료 플래그 없이 멈춘다. 종료 결과는 컨트롤러가 보관하며
+`MATCH-006` 결과 화면 전환의 입력 데이터가 된다.
 
 `ArrestHudPresenter`는 역할 선택기와 체포 진행·완료 컨트롤러를 읽기만 한다.
 경찰에게는 체포 준비·진행률·중단·완료를, 도둑에게는 진행 중 위험 경고와

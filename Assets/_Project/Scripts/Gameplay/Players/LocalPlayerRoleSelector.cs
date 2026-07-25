@@ -19,6 +19,7 @@ namespace PawsAndLoot.Gameplay.Players
         public PlayerRole ActiveRole { get; private set; }
         public PlayerRoleControlBinding ActiveBinding { get; private set; }
         public IReadOnlyList<PlayerRoleControlBinding> Bindings => bindings;
+        public bool IsGameplayInputEnabled { get; private set; } = true;
 
         public void Configure(
             IEnumerable<PlayerRoleControlBinding> roleBindings,
@@ -28,6 +29,7 @@ namespace PawsAndLoot.Gameplay.Players
             bindings = new List<PlayerRoleControlBinding>(roleBindings);
             followCamera = camera;
             defaultRole = configuredDefaultRole;
+            IsGameplayInputEnabled = true;
         }
 
         public void SelectRole(PlayerRole role)
@@ -50,15 +52,17 @@ namespace PawsAndLoot.Gameplay.Players
                 }
 
                 bool isSelected = binding.Role == role;
-                binding.KeyboardInput.IsLocallyControlled = isSelected;
+                bool canControl =
+                    isSelected && IsGameplayInputEnabled;
+                binding.KeyboardInput.IsLocallyControlled = canControl;
                 if (binding.InteractionInput != null)
                 {
-                    binding.InteractionInput.IsLocallyControlled = isSelected;
+                    binding.InteractionInput.IsLocallyControlled = canControl;
                 }
 
                 if (binding.LootDropInput != null)
                 {
-                    binding.LootDropInput.IsLocallyControlled = isSelected;
+                    binding.LootDropInput.IsLocallyControlled = canControl;
                 }
 
                 if (isSelected)
@@ -76,6 +80,29 @@ namespace PawsAndLoot.Gameplay.Players
             ActiveRole = role;
             ActiveBinding = selected;
             followCamera?.SetTarget(selected.Identity.transform, true);
+        }
+
+        public void DisableGameplayInput()
+        {
+            IsGameplayInputEnabled = false;
+            foreach (PlayerRoleControlBinding binding in bindings)
+            {
+                if (binding?.KeyboardInput == null)
+                {
+                    continue;
+                }
+
+                binding.KeyboardInput.IsLocallyControlled = false;
+                if (binding.InteractionInput != null)
+                {
+                    binding.InteractionInput.IsLocallyControlled = false;
+                }
+
+                if (binding.LootDropInput != null)
+                {
+                    binding.LootDropInput.IsLocallyControlled = false;
+                }
+            }
         }
 
         public static PlayerRole ResolveRole(

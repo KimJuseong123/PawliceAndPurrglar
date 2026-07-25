@@ -80,6 +80,11 @@ namespace PawsAndLoot.Gameplay.Arrest
             IsCompleted = false;
         }
 
+        public void HandleMatchEnded()
+        {
+            Interrupt(ArrestInterruptionReason.MatchNotPlaying);
+        }
+
         public bool TryMarkCompleted()
         {
             if (IsCompleted

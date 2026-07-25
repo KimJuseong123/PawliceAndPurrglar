@@ -219,6 +219,10 @@ namespace PawsAndLoot.Editor
                 villageRoot.transform,
                 controlBindings,
                 followCamera);
+            ConfigureMatchEndController(
+                controlBindings,
+                matchRuntime,
+                roleSelector);
             CreatePrototypeInteractionTargets(
                 villageRoot.transform,
                 locations,
@@ -1094,6 +1098,41 @@ namespace PawsAndLoot.Editor
                 selectorObject.AddComponent<LocalPlayerRoleSelector>();
             selector.Configure(bindings, followCamera, PlayerRole.Police);
             return selector;
+        }
+
+        private static void ConfigureMatchEndController(
+            IReadOnlyList<PlayerRoleControlBinding> bindings,
+            MatchRuntimeState matchRuntime,
+            LocalPlayerRoleSelector roleSelector)
+        {
+            ArrestProgressController arrestProgress = null;
+            foreach (PlayerRoleControlBinding binding in bindings)
+            {
+                if (binding.Role == PlayerRole.Police)
+                {
+                    arrestProgress =
+                        binding.Identity.GetComponent<
+                            ArrestProgressController>();
+                    break;
+                }
+            }
+
+            MatchResultEvaluator resultEvaluator =
+                matchRuntime.GetComponent<MatchResultEvaluator>();
+            if (resultEvaluator == null || arrestProgress == null)
+            {
+                throw new InvalidOperationException(
+                    "MATCH-005 requires result evaluation and arrest progress.");
+            }
+
+            MatchEndController endController =
+                matchRuntime.gameObject.AddComponent<
+                    MatchEndController>();
+            endController.Configure(
+                matchRuntime,
+                resultEvaluator,
+                roleSelector,
+                arrestProgress);
         }
 
         private static void CreatePrototypeInteractionTargets(
