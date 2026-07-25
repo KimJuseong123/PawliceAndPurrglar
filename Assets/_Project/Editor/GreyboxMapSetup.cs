@@ -200,10 +200,14 @@ namespace PawsAndLoot.Editor
             PawsAndLoot.Gameplay.Camera.TopDownFollowCamera followCamera =
                 ConfigurePlayerFollowCamera(
                     roleMarkers[PlayerRole.Police].transform);
-            CreateLocalRoleSelector(
+            LocalPlayerRoleSelector roleSelector = CreateLocalRoleSelector(
                 villageRoot.transform,
                 controlBindings,
                 followCamera);
+            CreatePrototypeInteractionTargets(
+                villageRoot.transform,
+                locations,
+                ladders);
 
             CreateRouteLine(
                 map.GetRoute(GreyboxMapDefinition.CrossingRouteId),
@@ -214,7 +218,7 @@ namespace PawsAndLoot.Editor
                 LoadPlayerMoveSpeed(),
                 traversalProbe,
                 villageRoot.transform);
-            CreateSceneInterface();
+            CreateSceneInterface(roleSelector);
 
             string scenePath = GameSceneCatalog.GetPath(GameSceneId.Game);
             if (!EditorSceneManager.SaveScene(scene, scenePath))
@@ -911,9 +915,25 @@ namespace PawsAndLoot.Editor
                 player.AddComponent<PlayerKeyboardInput>();
             keyboardInput.Configure(motor, locallyControlled);
 
+            PlayerRoleIdentity identity =
+                player.GetComponent<PlayerRoleIdentity>();
+            PlayerInteractionScanner interactionScanner =
+                player.AddComponent<PlayerInteractionScanner>();
+            interactionScanner.Configure(
+                identity,
+                playerConfig,
+                matchRuntime);
+            PlayerInteractionInput interactionInput =
+                player.AddComponent<PlayerInteractionInput>();
+            interactionInput.Configure(
+                interactionScanner,
+                locallyControlled);
+
             return new PlayerRoleControlBinding(
-                player.GetComponent<PlayerRoleIdentity>(),
-                keyboardInput);
+                identity,
+                keyboardInput,
+                interactionScanner,
+                interactionInput);
         }
 
         private static PawsAndLoot.Gameplay.Camera.TopDownFollowCamera
@@ -934,7 +954,7 @@ namespace PawsAndLoot.Editor
             return followCamera;
         }
 
-        private static void CreateLocalRoleSelector(
+        private static LocalPlayerRoleSelector CreateLocalRoleSelector(
             Transform parent,
             IEnumerable<PlayerRoleControlBinding> bindings,
             PawsAndLoot.Gameplay.Camera.TopDownFollowCamera followCamera)
@@ -944,6 +964,71 @@ namespace PawsAndLoot.Editor
             LocalPlayerRoleSelector selector =
                 selectorObject.AddComponent<LocalPlayerRoleSelector>();
             selector.Configure(bindings, followCamera, PlayerRole.Police);
+            return selector;
+        }
+
+        private static void CreatePrototypeInteractionTargets(
+            Transform parent,
+            IReadOnlyDictionary<GreyboxLocationId, Transform> locations,
+            IReadOnlyList<Transform> ladders)
+        {
+            Transform root = CreateChild(
+                "PLAYER-004 Interaction Targets",
+                parent);
+            CreatePrototypeInteractionTarget(
+                "Prototype Loot",
+                locations[GreyboxLocationId.JewelryStore].position
+                    + new Vector3(1.8f, 0.5f, 0f),
+                PlayerInteractionType.Loot,
+                "Pick up prototype loot",
+                new Color(0.75f, 0.3f, 0.95f),
+                root);
+            CreatePrototypeInteractionTarget(
+                "Prototype Sale Point",
+                locations[GreyboxLocationId.RaccoonMarket].position
+                    + new Vector3(-1.8f, 0.5f, 0f),
+                PlayerInteractionType.Sale,
+                "Sell carried loot",
+                MarketGold,
+                root);
+            CreatePrototypeInteractionTarget(
+                "Prototype Ladder Point",
+                ladders[0].position + new Vector3(0f, 0.5f, -1.25f),
+                PlayerInteractionType.Traversal,
+                "Use ladder",
+                new Color(0.2f, 0.75f, 0.95f),
+                root);
+            CreatePrototypeInteractionTarget(
+                "Prototype Plaza Point",
+                locations[GreyboxLocationId.CentralPlaza].position
+                    + new Vector3(-2f, 0.5f, 0f),
+                PlayerInteractionType.Generic,
+                "Inspect plaza marker",
+                Color.white,
+                root);
+        }
+
+        private static void CreatePrototypeInteractionTarget(
+            string name,
+            Vector3 position,
+            PlayerInteractionType interactionType,
+            string prompt,
+            Color color,
+            Transform parent)
+        {
+            GameObject target = GameObject.CreatePrimitive(
+                PrimitiveType.Cube);
+            target.name = name;
+            target.transform.SetParent(parent);
+            target.transform.position = position;
+            target.transform.localScale = Vector3.one * 0.75f;
+            target.GetComponent<Renderer>().sharedMaterial =
+                LoadOrCreateMaterial(
+                    $"Interaction_{interactionType}",
+                    color);
+            PrototypeInteractable interactable =
+                target.AddComponent<PrototypeInteractable>();
+            interactable.Configure(interactionType, prompt);
         }
 
         private static void AddLocation(
@@ -1071,7 +1156,8 @@ namespace PawsAndLoot.Editor
             probe.MoveSpeedMetersPerSecond = moveSpeed;
         }
 
-        private static void CreateSceneInterface()
+        private static void CreateSceneInterface(
+            LocalPlayerRoleSelector roleSelector)
         {
             var canvasObject = new GameObject(
                 "Scene UI",
@@ -1118,6 +1204,40 @@ namespace PawsAndLoot.Editor
             text.alignment = TextAnchor.MiddleCenter;
             text.color = Color.white;
             text.raycastTarget = false;
+
+            RectTransform promptRect = CreateRect(
+                "Interaction Prompt",
+                canvasObject.transform);
+            promptRect.anchorMin = new Vector2(0.5f, 0f);
+            promptRect.anchorMax = new Vector2(0.5f, 0f);
+            promptRect.pivot = new Vector2(0.5f, 0f);
+            promptRect.anchoredPosition = new Vector2(0f, 42f);
+            promptRect.sizeDelta = new Vector2(620f, 56f);
+            Image promptBackground =
+                promptRect.gameObject.AddComponent<Image>();
+            promptBackground.color =
+                new Color(0.02f, 0.04f, 0.08f, 0.88f);
+
+            RectTransform promptLabelRect =
+                CreateRect("Prompt Label", promptRect);
+            promptLabelRect.anchorMin = Vector2.zero;
+            promptLabelRect.anchorMax = Vector2.one;
+            promptLabelRect.offsetMin = Vector2.zero;
+            promptLabelRect.offsetMax = Vector2.zero;
+            Text promptLabel =
+                promptLabelRect.gameObject.AddComponent<Text>();
+            promptLabel.font = Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            promptLabel.fontSize = 24;
+            promptLabel.fontStyle = FontStyle.Bold;
+            promptLabel.alignment = TextAnchor.MiddleCenter;
+            promptLabel.color = Color.white;
+            promptLabel.raycastTarget = false;
+
+            InteractionPromptPresenter promptPresenter =
+                promptRect.gameObject.AddComponent<
+                    InteractionPromptPresenter>();
+            promptPresenter.Configure(roleSelector, promptLabel);
 
             var eventSystem = new GameObject(
                 "EventSystem",

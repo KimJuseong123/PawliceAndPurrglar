@@ -16,3 +16,4 @@ MonoBehaviour:
   dashSpeed: 9
   dashDurationSeconds: 0.25
   dashCooldownSeconds: 5
+  interactionRange: 2

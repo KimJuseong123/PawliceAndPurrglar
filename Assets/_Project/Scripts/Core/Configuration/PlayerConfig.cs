@@ -18,10 +18,15 @@ namespace PawsAndLoot.Config
         [SerializeField, Min(0f), Tooltip("Delay before another dash can start.")]
         private float dashCooldownSeconds = 5f;
 
+        [Header("Interaction")]
+        [SerializeField, Min(0.01f), Tooltip("Maximum distance for selecting an interactable target.")]
+        private float interactionRange = 2f;
+
         public float MoveSpeed => moveSpeed;
         public float DashSpeed => dashSpeed;
         public float DashDurationSeconds => dashDurationSeconds;
         public float DashCooldownSeconds => dashCooldownSeconds;
+        public float InteractionRange => interactionRange;
 
         public override void ValidateOrThrow()
         {
@@ -29,6 +34,7 @@ namespace PawsAndLoot.Config
             GameConfigValidation.RequirePositive(this, dashSpeed, nameof(dashSpeed));
             GameConfigValidation.RequirePositive(this, dashDurationSeconds, nameof(dashDurationSeconds));
             GameConfigValidation.RequireNonNegative(this, dashCooldownSeconds, nameof(dashCooldownSeconds));
+            GameConfigValidation.RequirePositive(this, interactionRange, nameof(interactionRange));
 
             if (dashSpeed <= moveSpeed)
             {

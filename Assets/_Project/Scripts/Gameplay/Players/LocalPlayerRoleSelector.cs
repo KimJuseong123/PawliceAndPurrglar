@@ -17,6 +17,7 @@ namespace PawsAndLoot.Gameplay.Players
         private TopDownFollowCamera followCamera;
 
         public PlayerRole ActiveRole { get; private set; }
+        public PlayerRoleControlBinding ActiveBinding { get; private set; }
         public IReadOnlyList<PlayerRoleControlBinding> Bindings => bindings;
 
         public void Configure(
@@ -50,6 +51,11 @@ namespace PawsAndLoot.Gameplay.Players
 
                 bool isSelected = binding.Role == role;
                 binding.KeyboardInput.IsLocallyControlled = isSelected;
+                if (binding.InteractionInput != null)
+                {
+                    binding.InteractionInput.IsLocallyControlled = isSelected;
+                }
+
                 if (isSelected)
                 {
                     selected = binding;
@@ -63,6 +69,7 @@ namespace PawsAndLoot.Gameplay.Players
             }
 
             ActiveRole = role;
+            ActiveBinding = selected;
             followCamera?.SetTarget(selected.Identity.transform, true);
         }
 

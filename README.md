@@ -544,6 +544,9 @@ Builds/TechnicalValidation/Windows/PawsAndLootMapGreybox.exe
 ```text
 WASD  이동
 Space 대시
+E     가장 가까운 유효 대상과 상호작용
 ```
 
 대시는 벽을 통과하지 않으며 경기 중이고 쿨타임이 끝났을 때만 시작됩니다.
+상호작용 안내는 화면 아래에 표시되며, 경찰과 도둑의 권한 및 현재 경기 상태를
+모두 통과한 대상만 선택됩니다.

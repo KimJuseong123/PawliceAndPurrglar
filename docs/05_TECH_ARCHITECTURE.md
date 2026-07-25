@@ -147,6 +147,12 @@ PlayerKeyboardInput
 충돌 규칙이 달라지지 않는다. `IsDashing`, 남은 쿨타임과 정규화 값은 읽기
 전용으로 공개하며 UI는 이를 표시만 한다.
 
+상호작용은 `PlayerInteractionScanner`가 `PlayerConfig.InteractionRange` 안의
+`IPlayerInteractable`을 찾고, 경기 상태와 `PlayerRolePermissions`를 통과한
+가장 가까운 대상 하나만 선택한다. `PlayerInteractionInput`은 선택된 로컬
+역할의 `E` 입력만 전달한다. 대상 실행과 안내 UI는 스캐너의 읽기 결과를
+사용하므로 UI가 권한이나 게임 규칙을 변경하지 않는다.
+
 ### Companions
 
 책임:
