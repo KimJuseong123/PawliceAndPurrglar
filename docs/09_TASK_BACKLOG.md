@@ -123,7 +123,7 @@
 | ARREST-002 | P0 | DONE | 체포 진행도 |
 | ARREST-003 | P0 | DONE | 체포 중단 |
 | ARREST-004 | P0 | DONE | 체포 완료 |
-| ARREST-005 | P0 | TODO | 체포 UI |
+| ARREST-005 | P0 | DONE | 체포 UI |
 | THROW-001 | P1 | TODO | 소품 줍기와 던지기 |
 | THROW-002 | P1 | TODO | 투척 궤적과 착탄 |
 | THROW-003 | P1 | TODO | 바나나 미끄러짐 |
@@ -155,7 +155,7 @@
 | UI-003 | P0 | DONE | 도둑 HUD |
 | UI-004 | P0 | TODO | 명령 슬롯과 쿨타임 |
 | UI-005 | P0 | TODO | 명령 성공과 실패 |
-| UI-006 | P0 | TODO | 체포 게이지 |
+| UI-006 | P0 | DONE | 체포 게이지 (`ARREST-005`에 통합) |
 | UI-007 | P0 | DONE | 역할별 목표 안내 |
 | UI-008 | P1 | TODO | 첫 경기 안내 |
 
@@ -213,6 +213,6 @@ NET-001과 NET-002는 본격 멀티플레이가 아니라 패키지와 권한 �
 
 ## 바로 다음 작업
 
-1. `ARREST-004` 체포 완료
-2. `ARREST-005` 체포 UI
-3. `UI-002` 경찰 HUD
+1. `ARREST-005` 체포 UI
+2. `UI-002` 경찰 HUD
+3. `MATCH-004` 승리 판정

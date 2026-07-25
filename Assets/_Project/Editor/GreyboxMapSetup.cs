@@ -1375,6 +1375,71 @@ namespace PawsAndLoot.Editor
                 TextAnchor.MiddleCenter,
                 40);
 
+            RectTransform arrestHudRect = CreateRect(
+                "Arrest HUD",
+                hudRoot);
+            arrestHudRect.anchorMin = new Vector2(0.5f, 0f);
+            arrestHudRect.anchorMax = new Vector2(0.5f, 0f);
+            arrestHudRect.pivot = new Vector2(0.5f, 0f);
+            arrestHudRect.anchoredPosition = new Vector2(0f, 112f);
+            arrestHudRect.sizeDelta = new Vector2(520f, 96f);
+            Image arrestHudBackground =
+                arrestHudRect.gameObject.AddComponent<Image>();
+            arrestHudBackground.color =
+                new Color(0.03f, 0.05f, 0.09f, 0.92f);
+
+            Text arrestStatusLabel = CreateHudLabel(
+                "Arrest Status",
+                arrestHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -10f),
+                new Vector2(330f, 40f),
+                TextAnchor.MiddleLeft,
+                22);
+            Text thiefWarningLabel = CreateHudLabel(
+                "Thief Warning",
+                arrestHudRect,
+                new Vector2(1f, 1f),
+                new Vector2(1f, 1f),
+                new Vector2(-18f, -10f),
+                new Vector2(140f, 40f),
+                TextAnchor.MiddleRight,
+                23);
+            thiefWarningLabel.color =
+                new Color(1f, 0.32f, 0.2f);
+
+            RectTransform arrestBarBackground = CreateRect(
+                "Arrest Bar Background",
+                arrestHudRect);
+            arrestBarBackground.anchorMin = new Vector2(0f, 0f);
+            arrestBarBackground.anchorMax = new Vector2(1f, 0f);
+            arrestBarBackground.pivot = new Vector2(0.5f, 0f);
+            arrestBarBackground.anchoredPosition =
+                new Vector2(0f, 16f);
+            arrestBarBackground.sizeDelta =
+                new Vector2(-36f, 20f);
+            Image arrestBarBackgroundImage =
+                arrestBarBackground.gameObject.AddComponent<Image>();
+            arrestBarBackgroundImage.color =
+                new Color(0f, 0f, 0f, 0.72f);
+
+            RectTransform arrestBarFill = CreateRect(
+                "Arrest Bar Fill",
+                arrestBarBackground);
+            arrestBarFill.anchorMin = Vector2.zero;
+            arrestBarFill.anchorMax = Vector2.one;
+            arrestBarFill.offsetMin = new Vector2(3f, 3f);
+            arrestBarFill.offsetMax = new Vector2(-3f, -3f);
+            Image arrestProgressFill =
+                arrestBarFill.gameObject.AddComponent<Image>();
+            arrestProgressFill.type = Image.Type.Filled;
+            arrestProgressFill.fillMethod =
+                Image.FillMethod.Horizontal;
+            arrestProgressFill.fillOrigin =
+                (int)Image.OriginHorizontal.Left;
+            arrestProgressFill.fillAmount = 0f;
+
             RectTransform thiefHudRect = CreateRect(
                 "Thief HUD",
                 hudRoot);
@@ -1588,6 +1653,38 @@ namespace PawsAndLoot.Editor
                 lootPriceLabel,
                 movementPenaltyLabel,
                 saleAvailabilityLabel);
+
+            PlayerRoleControlBinding policeBinding = null;
+            foreach (PlayerRoleControlBinding binding
+                     in roleSelector.Bindings)
+            {
+                if (binding.Role == PlayerRole.Police)
+                {
+                    policeBinding = binding;
+                    break;
+                }
+            }
+
+            if (policeBinding == null)
+            {
+                throw new InvalidOperationException(
+                    "Arrest HUD requires a Police control binding.");
+            }
+
+            GameObject policePlayer =
+                policeBinding.Identity.gameObject;
+            ArrestHudPresenter arrestHudPresenter =
+                hudRoot.gameObject.AddComponent<ArrestHudPresenter>();
+            arrestHudPresenter.Configure(
+                roleSelector,
+                policePlayer.GetComponent<
+                    ArrestProgressController>(),
+                policePlayer.GetComponent<
+                    ArrestCompletionController>(),
+                arrestHudRect.gameObject,
+                arrestProgressFill,
+                arrestStatusLabel,
+                thiefWarningLabel);
 
             var eventSystem = new GameObject(
                 "EventSystem",

@@ -80,6 +80,8 @@
 - 실제 진행 중이었을 때만 원인별 `ProgressInterrupted` 이벤트를 한 번 발행하는 중복 방지 검증
 - 체포 진행도 완료를 한 번만 확정하고 경찰 승리·결과 연출 요청을 발행하는 `ArrestCompletionController`
 - 체포 직후 `ENDING` 전환으로 이동과 상호작용을 함께 중지하는 ARREST-004 통합 검증
+- 경찰의 체포 진행·중단·완료와 도둑의 위험 경고를 역할별로 표시하는 `ArrestHudPresenter`
+- 게임 상태를 변경하지 않는 읽기 전용 체포 게이지와 역할 전환 표시를 검증하는 ARREST-005 테스트
 
 ### Changed
 
