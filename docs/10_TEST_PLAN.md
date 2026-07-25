@@ -201,6 +201,22 @@ Windows 음성 언어 팩이 준비된 PC 또는 새 STT 후보에서 실제 한
 - Game 씬 파란 경찰·빨간 도둑 마커 렌더 확인
 - 역할 테스트 포함 Edit Mode 40/40 통과
 
+### PLAYER-001 경찰 이동
+
+- Input System WASD 입력을 공통 이동 모터에 전달
+- `PLAYING`이 아닐 때 수평 이동 없음
+- `PlayerConfig.MoveSpeed`를 사용한 프레임 독립 이동
+- CharacterController가 벽을 통과하지 않음
+- 0.25m 테스트 계단을 `stepOffset`으로 통과
+- 원근 탑다운 카메라가 경찰 목표를 추적
+- 일반 Game 실행에서 MAP 자동 횡단 프로브 비활성화
+
+2026-07-25 실제 검증:
+
+- Windows x86_64 개발 빌드 성공
+- 경찰 이동 Play Mode 3개와 기존 스모크 포함 4/4 통과
+- 전체 Edit Mode 40/40 통과
+
 ## 6. 경찰 승리
 
 ### 시간 종료

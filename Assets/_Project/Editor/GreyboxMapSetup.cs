@@ -5,6 +5,7 @@ using PawsAndLoot.Config;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
+using PawsAndLoot.Match;
 using PawsAndLoot.UI;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -172,11 +173,18 @@ namespace PawsAndLoot.Editor
                 rooftops,
                 ladders,
                 trashBins);
-            CreateRolePreviewMarkers(
+            Dictionary<PlayerRole, GameObject> roleMarkers =
+                CreateRolePreviewMarkers(
                 map,
                 locationsRoot,
                 PoliceBlue,
                 ThiefRed);
+            MatchRuntimeState matchRuntime =
+                CreatePrototypeMatchRuntime(villageRoot.transform);
+            ConfigurePoliceMovement(
+                roleMarkers[PlayerRole.Police],
+                matchRuntime,
+                LoadPlayerConfig());
 
             CreateRouteLine(
                 map.GetRoute(GreyboxMapDefinition.CrossingRouteId),
@@ -793,25 +801,29 @@ namespace PawsAndLoot.Editor
             }
         }
 
-        private static void CreateRolePreviewMarkers(
+        private static Dictionary<PlayerRole, GameObject>
+            CreateRolePreviewMarkers(
             GreyboxMapDefinition map,
             Transform parent,
             Color policeColor,
             Color thiefColor)
         {
-            CreateRolePreviewMarker(
-                map,
-                parent,
-                PlayerRole.Police,
-                policeColor);
-            CreateRolePreviewMarker(
-                map,
-                parent,
-                PlayerRole.Thief,
-                thiefColor);
+            return new Dictionary<PlayerRole, GameObject>
+            {
+                [PlayerRole.Police] = CreateRolePreviewMarker(
+                    map,
+                    parent,
+                    PlayerRole.Police,
+                    policeColor),
+                [PlayerRole.Thief] = CreateRolePreviewMarker(
+                    map,
+                    parent,
+                    PlayerRole.Thief,
+                    thiefColor)
+            };
         }
 
-        private static void CreateRolePreviewMarker(
+        private static GameObject CreateRolePreviewMarker(
             GreyboxMapDefinition map,
             Transform parent,
             PlayerRole role,
@@ -824,14 +836,71 @@ namespace PawsAndLoot.Editor
             marker.transform.position =
                 PlayerRoleSpawnResolver.Resolve(map, role).position
                 + Vector3.up;
-            marker.transform.localScale =
-                new Vector3(0.85f, 1f, 0.85f);
             marker.GetComponent<Renderer>().sharedMaterial =
                 LoadOrCreateMaterial($"Role_{role}", color);
 
             PlayerRoleIdentity identity =
                 marker.AddComponent<PlayerRoleIdentity>();
             identity.Configure(role);
+            return marker;
+        }
+
+        private static MatchRuntimeState CreatePrototypeMatchRuntime(
+            Transform parent)
+        {
+            var runtimeObject = new GameObject("Match Runtime");
+            runtimeObject.transform.SetParent(parent);
+            MatchRuntimeState runtime =
+                runtimeObject.AddComponent<MatchRuntimeState>();
+            runtime.Configure(true);
+            return runtime;
+        }
+
+        private static void ConfigurePoliceMovement(
+            GameObject police,
+            MatchRuntimeState matchRuntime,
+            PlayerConfig playerConfig)
+        {
+            police.name = "Police Player";
+            Collider primitiveCollider = police.GetComponent<Collider>();
+            if (primitiveCollider != null)
+            {
+                UnityEngine.Object.DestroyImmediate(primitiveCollider);
+            }
+
+            CharacterController controller =
+                police.AddComponent<CharacterController>();
+            controller.height = 2f;
+            controller.radius = 0.45f;
+            controller.center = Vector3.zero;
+            controller.slopeLimit = 45f;
+            controller.stepOffset = 0.35f;
+            controller.skinWidth = 0.08f;
+
+            PlayerMovementMotor motor =
+                police.AddComponent<PlayerMovementMotor>();
+            motor.Configure(
+                controller,
+                playerConfig,
+                matchRuntime,
+                Camera.main != null ? Camera.main.transform : null);
+
+            PlayerKeyboardInput keyboardInput =
+                police.AddComponent<PlayerKeyboardInput>();
+            keyboardInput.Configure(motor, true);
+
+            if (Camera.main == null)
+            {
+                throw new InvalidOperationException(
+                    "PLAYER-001 requires the Game scene Main Camera.");
+            }
+
+            var followCamera = Camera.main.gameObject.AddComponent<
+                PawsAndLoot.Gameplay.Camera.TopDownFollowCamera>();
+            followCamera.Configure(
+                police.transform,
+                new Vector3(0f, 16f, -14f),
+                0.12f);
         }
 
         private static void AddLocation(
@@ -1013,7 +1082,7 @@ namespace PawsAndLoot.Editor
             eventSystem.AddComponent<InputSystemUIInputModule>();
         }
 
-        private static float LoadPlayerMoveSpeed()
+        private static PlayerConfig LoadPlayerConfig()
         {
             PlayerConfig config =
                 AssetDatabase.LoadAssetAtPath<PlayerConfig>(PlayerConfigPath);
@@ -1024,7 +1093,12 @@ namespace PawsAndLoot.Editor
             }
 
             config.ValidateOrThrow();
-            return config.MoveSpeed;
+            return config;
+        }
+
+        private static float LoadPlayerMoveSpeed()
+        {
+            return LoadPlayerConfig().MoveSpeed;
         }
 
         private static GameObject CreateCube(

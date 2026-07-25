@@ -182,6 +182,18 @@ Assets/_Project/Scripts/Gameplay/Players/
 - 경찰 체포, 도둑 보물·판매 권한을 중앙 권한표로 검사
 - Game 씬의 파란 경찰·빨간 도둑 임시 표시 확인
 
+- PLAYER-001 경찰 이동:
+
+```text
+Assets/_Project/Scripts/Gameplay/Players/PlayerMovementMotor.cs
+Assets/_Project/Scripts/Gameplay/Players/PlayerKeyboardInput.cs
+Assets/_Project/Scripts/Gameplay/Camera/TopDownFollowCamera.cs
+```
+
+- WASD, CharacterController 벽 충돌·계단, 프레임 독립 이동
+- `IMatchStateReader.IsGameplayActive`가 참일 때만 수평 이동
+- 경찰을 추적하는 원근 탑다운 카메라
+
 - 기존 경찰 Blender 원본 존재:
 
 ```text
@@ -237,16 +249,16 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 
 ## 현재 작업
 
-- 작업 ID: `PLAYER-005`
-- 작업: 본게임 경찰·도둑 역할, 시작점과 상호작용 권한 구분
+- 작업 ID: `PLAYER-001`
+- 작업: 경기 상태를 따르는 경찰 이동과 추적 카메라
 - 상태: `DONE`
-- 결과: 역할 2종, 시작점 분리, 권한표와 역할별 색상 마커
+- 결과: 공통 이동 모터, 경찰 WASD, 충돌·계단과 카메라 추적
 
 ## 바로 다음 작업
 
-1. `PLAYER-001`: 공통 이동 구조를 사용하는 경찰 이동
-2. `PLAYER-002`: 같은 구조를 재사용하는 도둑 이동
-3. `PLAYER-003`: 대시
+1. `PLAYER-002`: 같은 구조를 재사용하는 도둑 이동
+2. `PLAYER-003`: 대시
+3. `PLAYER-004`: 공통 상호작용
 
 ## 차단 요소
 
@@ -321,5 +333,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 | 2026-07-25 | PLAYER-005 Windows 개발 빌드 | 성공 |
 | 2026-07-25 | PLAYER-005 역할 표시 렌더 | 파란 경찰·빨간 도둑 확인 |
 | 2026-07-25 | PLAYER-005 Edit Mode 테스트 | 40/40 통과 |
+| 2026-07-25 | PLAYER-001 Windows 개발 빌드 | 성공 |
+| 2026-07-25 | PLAYER-001 이동 Play Mode 테스트 | 4/4 통과 |
+| 2026-07-25 | PLAYER-001 Edit Mode 회귀 테스트 | 40/40 통과 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

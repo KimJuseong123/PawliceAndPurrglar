@@ -60,6 +60,13 @@ namespace PawsAndLoot.Gameplay.Map
 
         private void Start()
         {
+            _autoQuit = HasArgument("-mapAutoQuit");
+            if (!_autoQuit)
+            {
+                gameObject.SetActive(false);
+                return;
+            }
+
             if (map == null || characterController == null)
             {
                 throw new InvalidOperationException(
@@ -76,7 +83,6 @@ namespace PawsAndLoot.Gameplay.Map
 
             Application.runInBackground = true;
             Screen.SetResolution(1280, 720, FullScreenMode.Windowed);
-            _autoQuit = HasArgument("-mapAutoQuit");
             _resultPath = Path.Combine(
                 Application.persistentDataPath,
                 "map-001-result.json");

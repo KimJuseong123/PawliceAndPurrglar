@@ -117,6 +117,25 @@ PlayerRoleIdentity
 | 판매 | 거부 | 허용 |
 | 체포 | 허용 | 거부 |
 
+이동 입력과 물리는 분리한다.
+
+```text
+PlayerKeyboardInput
+-> PlayerMovementMotor
+   ├─ PlayerConfig
+   ├─ IMatchStateReader
+   └─ CharacterController
+```
+
+`PlayerKeyboardInput`은 Input System의 WASD 벡터만 생성한다.
+`PlayerMovementMotor`는 카메라 기준 월드 방향, 설정 속도, 중력과 충돌을
+적용하며 `PLAYING`이 아닐 때 수평 이동을 만들지 않는다. 경찰과 도둑은 같은
+모터를 사용하고 역할별 차이는 설정과 로컬 제어 권한으로만 둔다.
+
+`TopDownFollowCamera`는 원근 투영을 유지하고 목표 위치를 `LateUpdate`에서
+추적한다. 맵 검증용 `GreyboxTraversalProbe`는 `-mapAutoQuit` 인자가 있을 때만
+동작해 일반 Game 실행의 플레이어와 충돌하지 않는다.
+
 ### Companions
 
 책임:

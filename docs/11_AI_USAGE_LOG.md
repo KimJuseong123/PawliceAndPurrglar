@@ -284,6 +284,22 @@
 - 최종 상태: 반영
 - 비고: 역할 표시는 최종 캐릭터가 아닌 파란색·빨간색 캡슐 마커
 
+### AI-20260725-016
+
+- 날짜: 2026-07-25
+- 작업자: 프로젝트 담당자
+- 사용 도구: OpenAI Codex
+- 모델 또는 기능: Unity Input System, CharacterController 이동과 Play Mode 물리 테스트
+- 작업 목적: 경찰이 회색 상자 맵을 프레임 독립적으로 이동하고 충돌·계단·경기 상태 제한과 카메라 추적을 검증
+- 관련 작업 ID: PLAYER-001
+- 입력 프롬프트 요약: WASD, 벽 충돌, 경사 또는 계단, 카메라 추적, PLAYING 중 이동 구현
+- AI 생성 결과: `PlayerMovementMotor`, `PlayerKeyboardInput`, `TopDownFollowCamera`, 최소 `MatchRuntimeState`
+- 실제 반영 파일: 플레이어·카메라 런타임 코드, Game 씬 생성기, Play Mode 이동 테스트와 관련 문서
+- 사람이 수정하거나 결정한 내용: 키보드 입력과 이동 물리를 분리하고 CharacterController 이동을 양 역할 공통 기반으로 사용
+- 검증 방법: Windows 빌드, 벽·계단·프레임 독립성·상태 제한·카메라 Play Mode 테스트
+- 최종 상태: 반영
+- 비고: MatchRuntimeState의 즉시 PLAYING 시작은 MATCH-002에서 카운트다운으로 교체 예정
+
 ## 기록 시 주의사항
 
 - 비밀 키, 개인정보, 전체 음성 데이터는 기록하지 않는다.

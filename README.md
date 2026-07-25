@@ -180,6 +180,7 @@ Editor와 Development Build는 `Debug` 이상, 일반 제출 빌드는 `Warning`
 - 기존 경찰 모델만 리깅 및 애니메이션 테스트에 사용
 - 경기 상태는 `LOBBY → READY → PLAYING → ENDING → RESULT` 순서만 허용
 - 본게임 역할은 `Police`, `Thief`로 구분하며 맵의 서로 다른 시작점을 사용
+- 경찰은 `WASD`로 이동하며 `CharacterController` 충돌과 원근 탑다운 카메라를 사용
 
 아직 확정되지 않은 사항:
 
@@ -524,3 +525,6 @@ Builds/TechnicalValidation/Windows/PawsAndLootMapGreybox.exe
 시작점까지 자동 이동하고 결과를 `map-001-result.json`과
 `map-001-screenshot.png`에 기록합니다. 2026-07-24 실제 빌드는 72m 경로를
 17.58초에 횡단했고 끼임 0회로 통과했습니다.
+
+일반 실행에서는 MAP 자동 횡단 프로브가 비활성화되고 파란 경찰을 `WASD`로
+조작할 수 있습니다. 이동은 경기 상태가 `PLAYING`일 때만 적용됩니다.
