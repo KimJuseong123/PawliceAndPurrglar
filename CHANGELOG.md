@@ -55,6 +55,8 @@
 - READY와 경기 시작 직후 경찰·도둑 목표를 한 문장으로 표시하는 역할 안내
 - `AVAILABLE`, `RESERVED`, `CARRIED`, `DROPPED`, `HIDDEN`, `SOLD` 보물 상태 머신
 - 판매된 보물의 모든 후속 전환을 거부하는 종료 상태 규칙
+- 안정적인 ID·표시 이름·희귀도를 가진 `LootDefinition` 데이터 에셋 3종
+- `LootConfig` 단일 가격표로 관리하는 일반 200·고급 350·희귀 500 가격
 
 ### Changed
 

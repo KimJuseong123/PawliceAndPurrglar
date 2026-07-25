@@ -302,6 +302,11 @@ Assets/_Project/Settings/Configs/
 `AnimationConfig`를 추가한다. 경기 시간, 목표 금액, 이동 속도, 체포 시간,
 명령 쿨타임, 감지 거리와 보물 가격을 씬과 코드에 중복 작성하지 않는다.
 
+개별 보물은 `LootDefinition`의 stable ID, 표시 이름과 `LootRarity`를
+참조한다. 실제 가격은 정의의 이름이나 UI 문자열이 아니라
+`LootConfig.GetPrice(rarity)`에서만 조회한다. 기본 정의는
+`Assets/_Project/Data/Loot/`에 둔다.
+
 ## 6. 명령 데이터 흐름
 
 ```text

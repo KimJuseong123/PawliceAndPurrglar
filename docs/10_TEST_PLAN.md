@@ -352,6 +352,19 @@ Windows 음성 언어 팩이 준비된 PC 또는 새 STT 후보에서 실제 한
 - 상태 전환 포함 Edit Mode 61/61 통과
 - 전체 Play Mode 19/19 통과
 
+### LOOT-008 보물 가격 데이터
+
+- 기본 LootDefinition 3개와 stable ID 중복 없음
+- Common 200, Uncommon 350, Rare 500
+- 에셋 이름과 표시 이름 변경이 가격에 영향 없음
+- 가격은 LootConfig와 rarity 조합으로만 조회
+
+2026-07-25 실제 검증:
+
+- Windows x86_64 개발 빌드 성공
+- 가격 데이터 포함 Edit Mode 63/63 통과
+- 전체 Play Mode 19/19 통과
+
 ## 6. 경찰 승리
 
 ### 시간 종료

@@ -444,6 +444,22 @@
 - 최종 상태: 반영
 - 비고: Edit Mode 61/61, Play Mode 19/19 통과
 
+### AI-20260725-026
+
+- 날짜: 2026-07-25
+- 작업자: 프로젝트 담당자
+- 사용 도구: OpenAI Codex
+- 모델 또는 기능: Unity ScriptableObject 데이터와 AssetDatabase 검증
+- 작업 목적: 보물 종류와 가격을 이름·UI가 아닌 데이터로 관리
+- 관련 작업 ID: LOOT-008
+- 입력 프롬프트 요약: 일반 200, 고급 350, 희귀 500과 데이터 기반 가격 조회
+- AI 생성 결과: `LootDefinition`, 기본 정의 3종과 생성·검증 도구
+- 실제 반영 파일: Gameplay/Loot, Assets/_Project/Data/Loot, Edit Mode 테스트
+- 사람이 수정하거나 결정한 내용: stable ID와 표시 이름은 가격 계산에서 제외하고 rarity만 LootConfig에 전달
+- 검증 방법: 기본 에셋 수·ID·희귀도별 가격과 이름 비의존 테스트, Windows 빌드
+- 최종 상태: 반영
+- 비고: Edit Mode 63/63, Play Mode 19/19 통과
+
 ## 기록 시 주의사항
 
 - 비밀 키, 개인정보, 전체 음성 데이터는 기록하지 않는다.
