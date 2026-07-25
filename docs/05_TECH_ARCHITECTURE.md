@@ -274,6 +274,12 @@ AVAILABLE·DROPPED·HIDDEN에서 예약, RESERVED에서 운반, CARRIED에서
 드롭·숨김·판매로 한정한다. SOLD는 종료 상태이며 어떤 요청도 다시 상태를
 변경하지 못한다.
 
+보물 획득의 권한과 단일 소지는 플레이어 루트의 `LootCarrier`가 소유한다.
+`LootItem`은 자신의 상태와 현재 소지자를 소유하며, `IPlayerInteractable`을 통해
+기존 최근접 상호작용 흐름에 참여한다. 획득은 도둑 역할, PLAYING 상태, 빈손,
+획득 가능한 보물 상태를 모두 통과할 때만 `RESERVED → CARRIED`로 완료된다.
+시각적 부착은 LOOT-003에서 추가하며 소유 관계를 Transform 부모 관계로 판정하지 않는다.
+
 이벤트 이름은 구현 전에 코드 스타일에 맞춰 확정한다.
 
 ## 5. 설정 데이터

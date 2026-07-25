@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
+using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Match;
@@ -30,6 +31,8 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Settings/Configs/PlayerConfig.asset";
         private const string MatchConfigPath =
             "Assets/_Project/Settings/Configs/MatchConfig.asset";
+        private const string CommonLootDefinitionPath =
+            "Assets/_Project/Data/Loot/common-trinket.asset";
 
         private static readonly Color GroundColor =
             new(0.28f, 0.34f, 0.31f);
@@ -942,6 +945,8 @@ namespace PawsAndLoot.Editor
             interactionInput.Configure(
                 interactionScanner,
                 locallyControlled);
+            LootCarrier lootCarrier = player.AddComponent<LootCarrier>();
+            lootCarrier.Configure(identity, matchRuntime);
             player.AddComponent<NetworkObject>();
             player.GetComponent<PlayerVisualRoot>().ValidateOrThrow();
 
@@ -991,12 +996,10 @@ namespace PawsAndLoot.Editor
             Transform root = CreateChild(
                 "PLAYER-004 Interaction Targets",
                 parent);
-            CreatePrototypeInteractionTarget(
+            CreateLootTarget(
                 "Prototype Loot",
                 locations[GreyboxLocationId.JewelryStore].position
                     + new Vector3(1.8f, 0.5f, 0f),
-                PlayerInteractionType.Loot,
-                "Pick up prototype loot",
                 new Color(0.75f, 0.3f, 0.95f),
                 root);
             CreatePrototypeInteractionTarget(
@@ -1045,6 +1048,36 @@ namespace PawsAndLoot.Editor
             PrototypeInteractable interactable =
                 target.AddComponent<PrototypeInteractable>();
             interactable.Configure(interactionType, prompt);
+        }
+
+        private static void CreateLootTarget(
+            string name,
+            Vector3 position,
+            Color color,
+            Transform parent)
+        {
+            GameObject target = GameObject.CreatePrimitive(
+                PrimitiveType.Cube);
+            target.name = name;
+            target.transform.SetParent(parent);
+            target.transform.position = position;
+            target.transform.localScale = Vector3.one * 0.75f;
+            target.GetComponent<Renderer>().sharedMaterial =
+                LoadOrCreateMaterial("Interaction_Loot", color);
+
+            LootDefinition definition =
+                AssetDatabase.LoadAssetAtPath<LootDefinition>(
+                    CommonLootDefinitionPath);
+            if (definition == null)
+            {
+                throw new GameConfigurationException(
+                    $"Game scene requires LootDefinition at "
+                    + $"'{CommonLootDefinitionPath}'.");
+            }
+
+            definition.ValidateOrThrow();
+            LootItem loot = target.AddComponent<LootItem>();
+            loot.Configure(definition);
         }
 
         private static void AddLocation(

@@ -4,6 +4,7 @@ using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.UI;
 using UnityEditor.SceneManagement;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace PawsAndLoot.Tests.EditMode
@@ -22,11 +23,12 @@ namespace PawsAndLoot.Tests.EditMode
                     root.GetComponentsInChildren<
                         PlayerInteractionScanner>(true))
                 .ToArray();
-            PrototypeInteractable[] targets = scene
+            IPlayerInteractable[] targets = scene
                 .GetRootGameObjects()
                 .SelectMany(root =>
                     root.GetComponentsInChildren<
-                        PrototypeInteractable>(true))
+                        MonoBehaviour>(true))
+                .OfType<IPlayerInteractable>()
                 .ToArray();
             CommonHudPresenter[] presenters = scene
                 .GetRootGameObjects()
