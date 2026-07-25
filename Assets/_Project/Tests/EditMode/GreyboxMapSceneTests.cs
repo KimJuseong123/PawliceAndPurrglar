@@ -48,8 +48,7 @@ namespace PawsAndLoot.Tests.EditMode
                 GreyboxMapDefinition.CrossingRouteId);
             PrototypeInteractable marker = Object
                 .FindObjectsByType<PrototypeInteractable>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None)
+                    FindObjectsInactive.Include)
                 .Single(candidate =>
                     candidate.name == "Prototype Plaza Point");
             Vector2 markerPosition = ToPlanar(

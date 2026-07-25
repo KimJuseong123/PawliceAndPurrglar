@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
+using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
@@ -31,6 +32,8 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Settings/Configs/PlayerConfig.asset";
         private const string MatchConfigPath =
             "Assets/_Project/Settings/Configs/MatchConfig.asset";
+        private const string ArrestConfigPath =
+            "Assets/_Project/Settings/Configs/ArrestConfig.asset";
         private const string LootConfigPath =
             "Assets/_Project/Settings/Configs/LootConfig.asset";
         private const string CommonLootDefinitionPath =
@@ -205,6 +208,7 @@ namespace PawsAndLoot.Editor
                     playerConfig,
                     false)
             };
+            ConfigureArrestRangeSensor(controlBindings);
             PawsAndLoot.Gameplay.Camera.TopDownFollowCamera followCamera =
                 ConfigurePlayerFollowCamera(
                     roleMarkers[PlayerRole.Police].transform);
@@ -1000,6 +1004,38 @@ namespace PawsAndLoot.Editor
             return followCamera;
         }
 
+        private static void ConfigureArrestRangeSensor(
+            IReadOnlyList<PlayerRoleControlBinding> bindings)
+        {
+            PlayerRoleIdentity police = null;
+            PlayerRoleIdentity thief = null;
+            foreach (PlayerRoleControlBinding binding in bindings)
+            {
+                if (binding.Role == PlayerRole.Police)
+                {
+                    police = binding.Identity;
+                }
+                else if (binding.Role == PlayerRole.Thief)
+                {
+                    thief = binding.Identity;
+                }
+            }
+
+            if (police == null || thief == null)
+            {
+                throw new InvalidOperationException(
+                    "ARREST-001 requires Police and Thief players.");
+            }
+
+            ArrestRangeSensor sensor =
+                police.gameObject.AddComponent<ArrestRangeSensor>();
+            sensor.Configure(
+                police,
+                thief,
+                LoadArrestConfig(),
+                Physics.AllLayers);
+        }
+
         private static LocalPlayerRoleSelector CreateLocalRoleSelector(
             Transform parent,
             IEnumerable<PlayerRoleControlBinding> bindings,
@@ -1614,6 +1650,22 @@ namespace PawsAndLoot.Editor
             {
                 throw new GameConfigurationException(
                     $"Game scene requires LootConfig at '{LootConfigPath}'.");
+            }
+
+            config.ValidateOrThrow();
+            return config;
+        }
+
+        private static ArrestConfig LoadArrestConfig()
+        {
+            ArrestConfig config =
+                AssetDatabase.LoadAssetAtPath<ArrestConfig>(
+                    ArrestConfigPath);
+            if (config == null)
+            {
+                throw new GameConfigurationException(
+                    $"Game scene requires ArrestConfig at "
+                    + $"'{ArrestConfigPath}'.");
             }
 
             config.ValidateOrThrow();

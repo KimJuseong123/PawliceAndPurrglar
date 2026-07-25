@@ -119,10 +119,11 @@
 
 | ID | 우선순위 | 상태 | 작업 |
 |---|---|---|---|
-| ARREST-001 | P0 | TODO | 체포 범위 감지 |
-| ARREST-002 | P0 | TODO | 체포 진행과 중단 |
-| ARREST-003 | P0 | TODO | 체포 완료 |
-| ARREST-004 | P0 | TODO | 체포 UI |
+| ARREST-001 | P0 | DONE | 체포 범위 감지 |
+| ARREST-002 | P0 | TODO | 체포 진행도 |
+| ARREST-003 | P0 | TODO | 체포 중단 |
+| ARREST-004 | P0 | TODO | 체포 완료 |
+| ARREST-005 | P0 | TODO | 체포 UI |
 | THROW-001 | P1 | TODO | 소품 줍기와 던지기 |
 | THROW-002 | P1 | TODO | 투척 궤적과 착탄 |
 | THROW-003 | P1 | TODO | 바나나 미끄러짐 |
@@ -212,6 +213,6 @@ NET-001과 NET-002는 본격 멀티플레이가 아니라 패키지와 권한 �
 
 ## 바로 다음 작업
 
-1. `MERCHANT-001` 너구리 상인 판매 범위
-2. `ARREST-001` 체포 범위 감지
-3. `COMP-001` 공통 명령 요청과 검증
+1. `ARREST-001` 체포 범위 감지
+2. `ARREST-002` 체포 진행도
+3. `ARREST-003` 체포 중단

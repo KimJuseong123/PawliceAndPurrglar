@@ -125,8 +125,7 @@ namespace PawsAndLoot.Gameplay.Map
         {
             CharacterController[] controllers =
                 FindObjectsByType<CharacterController>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
+                    FindObjectsInactive.Include);
             foreach (CharacterController controller in controllers)
             {
                 if (controller != characterController)

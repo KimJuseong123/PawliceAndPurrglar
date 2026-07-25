@@ -1,6 +1,7 @@
 using System.Linq;
 using NUnit.Framework;
 using PawsAndLoot.Core;
+using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.UI;
@@ -43,6 +44,12 @@ namespace PawsAndLoot.Tests.EditMode
                     root.GetComponentsInChildren<
                         ThiefHudPresenter>(true))
                 .ToArray();
+            ArrestRangeSensor[] arrestSensors = scene
+                .GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<
+                        ArrestRangeSensor>(true))
+                .ToArray();
 
             Assert.That(scanners, Has.Length.EqualTo(2));
             Assert.That(
@@ -58,6 +65,8 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(thiefPresenters, Has.Length.EqualTo(1));
             Assert.DoesNotThrow(
                 thiefPresenters[0].ValidateOrThrow);
+            Assert.That(arrestSensors, Has.Length.EqualTo(1));
+            Assert.DoesNotThrow(arrestSensors[0].ValidateOrThrow);
             Assert.That(
                 scene.GetRootGameObjects()
                     .SelectMany(root =>

@@ -318,6 +318,13 @@ LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint
 같은 보물을 재판매하는 경우도 금액에 반영하지 않는다. 로컬 입력도 같은 API를 거치며
 각 시도에 순차 ID를 발급한다. 실패한 요청은 상태와 금액을 바꾸지 않는다.
 
+체포 거리와 시야 판정은 경찰 루트의 `ArrestRangeSensor`가 소유한다. 센서는
+명시적으로 연결된 `Police`와 `Thief`만 검사하며 `ArrestConfig.ArrestDistance`
+이내인지 확인한다. 시야 Raycast에서는 두 플레이어 자신의 Collider와 Trigger를
+제외하고 실제 장애물만 차단 요소로 처리한다. 감지 결과가 바뀔 때만
+`TargetEntered` 또는 `TargetExited`를 한 번 발행한다. 경기 상태와 진행도는
+후속 ARREST 작업이 별도로 소유한다.
+
 이벤트 이름은 구현 전에 코드 스타일에 맞춰 확정한다.
 
 ## 5. 설정 데이터
