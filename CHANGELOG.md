@@ -41,6 +41,8 @@
 - Input System WASD와 CharacterController를 사용하는 공통 플레이어 이동 모터
 - 경찰 추적용 3D 원근 탑다운 카메라와 경기 상태 이동 제한
 - MAP 자동 횡단 프로브를 명시적 `-mapAutoQuit` 검증 실행으로 격리
+- 경찰 이동 코드를 복사하지 않고 같은 모터를 사용하는 도둑 이동
+- `-playerRole Police|Thief` 로컬 역할 선택과 선택 역할 카메라 추적
 
 ### Changed
 

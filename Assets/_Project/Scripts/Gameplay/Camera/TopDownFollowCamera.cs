@@ -31,6 +31,15 @@ namespace PawsAndLoot.Gameplay.Camera
             SnapToTarget();
         }
 
+        public void SetTarget(Transform followTarget, bool snap)
+        {
+            target = followTarget;
+            if (snap)
+            {
+                SnapToTarget();
+            }
+        }
+
         public void SnapToTarget()
         {
             if (target == null)

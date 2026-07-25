@@ -217,6 +217,21 @@ Windows 음성 언어 팩이 준비된 PC 또는 새 STT 후보에서 실제 한
 - 경찰 이동 Play Mode 3개와 기존 스모크 포함 4/4 통과
 - 전체 Edit Mode 40/40 통과
 
+### PLAYER-002 도둑 이동
+
+- Game 씬 경찰·도둑 모두 `PlayerMovementMotor` 사용
+- 양 역할 모두 같은 CharacterController 높이·반지름·경사·계단 규칙 사용
+- 도둑은 `ThiefSpawn`, 경찰은 `PoliceSpawn` 유지
+- 로컬 역할 선택 시 한 역할의 키보드 입력만 활성화
+- `-playerRole Thief` 인자 해석과 잘못된 값의 경찰 fallback
+- 선택 역할로 카메라 목표 변경
+
+2026-07-25 실제 검증:
+
+- Windows x86_64 개발 빌드 성공
+- 공유 이동 구조 포함 Edit Mode 44/44 통과
+- 이동·충돌 Play Mode 4/4 통과
+
 ## 6. 경찰 승리
 
 ### 시간 종료

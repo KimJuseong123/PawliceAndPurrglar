@@ -528,3 +528,13 @@ Builds/TechnicalValidation/Windows/PawsAndLootMapGreybox.exe
 
 일반 실행에서는 MAP 자동 횡단 프로브가 비활성화되고 파란 경찰을 `WASD`로
 조작할 수 있습니다. 이동은 경기 상태가 `PLAYING`일 때만 적용됩니다.
+
+도둑 이동을 확인할 때는 같은 실행 파일에 역할 인자를 전달합니다.
+
+```powershell
+& ".\Builds\TechnicalValidation\Windows\PawsAndLootMapGreybox.exe" `
+  -playerRole Thief
+```
+
+경찰과 도둑은 동일한 이동·충돌 코드를 사용하며 선택된 한 역할만 로컬 입력과
+카메라를 받습니다.

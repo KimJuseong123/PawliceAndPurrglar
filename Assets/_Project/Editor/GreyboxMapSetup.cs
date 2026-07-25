@@ -181,10 +181,29 @@ namespace PawsAndLoot.Editor
                 ThiefRed);
             MatchRuntimeState matchRuntime =
                 CreatePrototypeMatchRuntime(villageRoot.transform);
-            ConfigurePoliceMovement(
-                roleMarkers[PlayerRole.Police],
-                matchRuntime,
-                LoadPlayerConfig());
+            PlayerConfig playerConfig = LoadPlayerConfig();
+            var controlBindings = new List<PlayerRoleControlBinding>
+            {
+                ConfigureSharedPlayerMovement(
+                    roleMarkers[PlayerRole.Police],
+                    PlayerRole.Police,
+                    matchRuntime,
+                    playerConfig,
+                    true),
+                ConfigureSharedPlayerMovement(
+                    roleMarkers[PlayerRole.Thief],
+                    PlayerRole.Thief,
+                    matchRuntime,
+                    playerConfig,
+                    false)
+            };
+            PawsAndLoot.Gameplay.Camera.TopDownFollowCamera followCamera =
+                ConfigurePlayerFollowCamera(
+                    roleMarkers[PlayerRole.Police].transform);
+            CreateLocalRoleSelector(
+                villageRoot.transform,
+                controlBindings,
+                followCamera);
 
             CreateRouteLine(
                 map.GetRoute(GreyboxMapDefinition.CrossingRouteId),
@@ -856,20 +875,23 @@ namespace PawsAndLoot.Editor
             return runtime;
         }
 
-        private static void ConfigurePoliceMovement(
-            GameObject police,
+        private static PlayerRoleControlBinding
+            ConfigureSharedPlayerMovement(
+            GameObject player,
+            PlayerRole role,
             MatchRuntimeState matchRuntime,
-            PlayerConfig playerConfig)
+            PlayerConfig playerConfig,
+            bool locallyControlled)
         {
-            police.name = "Police Player";
-            Collider primitiveCollider = police.GetComponent<Collider>();
+            player.name = $"{role} Player";
+            Collider primitiveCollider = player.GetComponent<Collider>();
             if (primitiveCollider != null)
             {
                 UnityEngine.Object.DestroyImmediate(primitiveCollider);
             }
 
             CharacterController controller =
-                police.AddComponent<CharacterController>();
+                player.AddComponent<CharacterController>();
             controller.height = 2f;
             controller.radius = 0.45f;
             controller.center = Vector3.zero;
@@ -878,7 +900,7 @@ namespace PawsAndLoot.Editor
             controller.skinWidth = 0.08f;
 
             PlayerMovementMotor motor =
-                police.AddComponent<PlayerMovementMotor>();
+                player.AddComponent<PlayerMovementMotor>();
             motor.Configure(
                 controller,
                 playerConfig,
@@ -886,21 +908,42 @@ namespace PawsAndLoot.Editor
                 Camera.main != null ? Camera.main.transform : null);
 
             PlayerKeyboardInput keyboardInput =
-                police.AddComponent<PlayerKeyboardInput>();
-            keyboardInput.Configure(motor, true);
+                player.AddComponent<PlayerKeyboardInput>();
+            keyboardInput.Configure(motor, locallyControlled);
 
+            return new PlayerRoleControlBinding(
+                player.GetComponent<PlayerRoleIdentity>(),
+                keyboardInput);
+        }
+
+        private static PawsAndLoot.Gameplay.Camera.TopDownFollowCamera
+            ConfigurePlayerFollowCamera(Transform initialTarget)
+        {
             if (Camera.main == null)
             {
                 throw new InvalidOperationException(
-                    "PLAYER-001 requires the Game scene Main Camera.");
+                    "Player movement requires the Game scene Main Camera.");
             }
 
             var followCamera = Camera.main.gameObject.AddComponent<
                 PawsAndLoot.Gameplay.Camera.TopDownFollowCamera>();
             followCamera.Configure(
-                police.transform,
+                initialTarget,
                 new Vector3(0f, 16f, -14f),
                 0.12f);
+            return followCamera;
+        }
+
+        private static void CreateLocalRoleSelector(
+            Transform parent,
+            IEnumerable<PlayerRoleControlBinding> bindings,
+            PawsAndLoot.Gameplay.Camera.TopDownFollowCamera followCamera)
+        {
+            var selectorObject = new GameObject("Local Player Role Selector");
+            selectorObject.transform.SetParent(parent);
+            LocalPlayerRoleSelector selector =
+                selectorObject.AddComponent<LocalPlayerRoleSelector>();
+            selector.Configure(bindings, followCamera, PlayerRole.Police);
         }
 
         private static void AddLocation(

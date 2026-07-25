@@ -136,6 +136,11 @@ PlayerKeyboardInput
 추적한다. 맵 검증용 `GreyboxTraversalProbe`는 `-mapAutoQuit` 인자가 있을 때만
 동작해 일반 Game 실행의 플레이어와 충돌하지 않는다.
 
+`LocalPlayerRoleSelector`는 역할별 `PlayerRoleControlBinding`을 보유하고
+선택된 한 역할의 키보드 입력만 활성화한다. 기본 역할은 경찰이며 개발 빌드에서
+`-playerRole Thief`로 도둑 조작을 검증할 수 있다. 이 선택기는 네트워크 역할
+권한을 대신하지 않으며, 실제 멀티플레이 연결 시 로컬 소유권 어댑터로 교체한다.
+
 ### Companions
 
 책임:
