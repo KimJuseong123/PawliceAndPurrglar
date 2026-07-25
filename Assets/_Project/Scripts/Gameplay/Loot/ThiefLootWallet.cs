@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Players;
 using UnityEngine;
@@ -13,6 +14,11 @@ namespace PawsAndLoot.Gameplay.Loot
         [SerializeField]
         private MatchConfig matchConfig;
 
+        private readonly HashSet<LootRequestId>
+            _creditedSaleRequests = new();
+        private readonly HashSet<LootItem>
+            _creditedLoot = new();
+
         public event Action<int, int> SaleAmountChanged;
         public event Action VictoryCheckRequested;
 
@@ -23,6 +29,8 @@ namespace PawsAndLoot.Gameplay.Loot
             TargetAmount > 0 && SoldAmount >= TargetAmount;
         public LootItem LastSoldLoot { get; private set; }
         public int LastSalePrice { get; private set; }
+        public int CreditedSaleCount =>
+            _creditedSaleRequests.Count;
 
         public void Configure(
             PlayerRoleIdentity configuredIdentity,
@@ -38,6 +46,8 @@ namespace PawsAndLoot.Gameplay.Loot
             SoldAmount = 0;
             LastSoldLoot = null;
             LastSalePrice = 0;
+            _creditedSaleRequests.Clear();
+            _creditedLoot.Clear();
         }
 
         public void ValidateOrThrow()
@@ -57,23 +67,34 @@ namespace PawsAndLoot.Gameplay.Loot
             matchConfig.ValidateOrThrow();
         }
 
-        internal bool CanRecordSale(LootItem loot, int price)
+        internal bool CanRecordSale(
+            LootItem loot,
+            int price,
+            LootRequestId requestId)
         {
             ValidateOrThrow();
             return loot != null
                 && loot.Definition != null
-                && price > 0;
+                && price > 0
+                && requestId.IsValid
+                && !_creditedSaleRequests.Contains(requestId)
+                && !_creditedLoot.Contains(loot);
         }
 
-        internal void RecordSale(LootItem loot, int price)
+        internal void RecordSale(
+            LootItem loot,
+            int price,
+            LootRequestId requestId)
         {
-            if (!CanRecordSale(loot, price)
+            if (!CanRecordSale(loot, price, requestId)
                 || loot.CurrentState != LootState.Sold)
             {
                 throw new InvalidOperationException(
                     "Only a successfully sold loot item can be credited.");
             }
 
+            _creditedSaleRequests.Add(requestId);
+            _creditedLoot.Add(loot);
             int previousAmount = SoldAmount;
             SoldAmount += price;
             LastSoldLoot = loot;

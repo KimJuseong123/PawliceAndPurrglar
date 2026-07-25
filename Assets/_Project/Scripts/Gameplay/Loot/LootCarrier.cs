@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Match;
@@ -20,6 +21,9 @@ namespace PawsAndLoot.Gameplay.Loot
         private Transform carryPoint;
 
         private IMatchStateReader _matchState;
+        private readonly HashSet<LootRequestId> _completedRequests =
+            new();
+        private ulong _nextLocalRequestValue = 1;
 
         public event Action<LootItem, LootItem> HeldLootChanged;
 
@@ -36,12 +40,23 @@ namespace PawsAndLoot.Gameplay.Loot
             _matchState = configuredMatchState;
             matchStateSource = configuredMatchState as MonoBehaviour;
             carryPoint = configuredCarryPoint;
+            _completedRequests.Clear();
+            _nextLocalRequestValue = 1;
         }
 
         public bool TryAcquire(LootItem loot)
         {
+            return TryAcquire(loot, CreateLocalRequestId());
+        }
+
+        public bool TryAcquire(
+            LootItem loot,
+            LootRequestId requestId)
+        {
             ValidateOrThrow();
-            if (loot == null
+            if (!requestId.IsValid
+                || _completedRequests.Contains(requestId)
+                || loot == null
                 || identity == null
                 || identity.Role != PlayerRole.Thief
                 || !IsGameplayActive()
@@ -53,6 +68,7 @@ namespace PawsAndLoot.Gameplay.Loot
 
             LootItem previous = HeldLoot;
             HeldLoot = loot;
+            _completedRequests.Add(requestId);
             HeldLootChanged?.Invoke(previous, HeldLoot);
             return true;
         }
@@ -102,8 +118,21 @@ namespace PawsAndLoot.Gameplay.Loot
             ThiefLootWallet wallet,
             LootConfig lootConfig)
         {
+            return TrySell(
+                wallet,
+                lootConfig,
+                CreateLocalRequestId());
+        }
+
+        public bool TrySell(
+            ThiefLootWallet wallet,
+            LootConfig lootConfig,
+            LootRequestId requestId)
+        {
             ValidateOrThrow();
-            if (identity.Role != PlayerRole.Thief
+            if (!requestId.IsValid
+                || _completedRequests.Contains(requestId)
+                || identity.Role != PlayerRole.Thief
                 || !IsGameplayActive()
                 || HeldLoot == null
                 || wallet == null
@@ -115,15 +144,19 @@ namespace PawsAndLoot.Gameplay.Loot
             lootConfig.ValidateOrThrow();
             LootItem soldLoot = HeldLoot;
             int price = soldLoot.Definition.GetPrice(lootConfig);
-            if (!wallet.CanRecordSale(soldLoot, price)
+            if (!wallet.CanRecordSale(
+                    soldLoot,
+                    price,
+                    requestId)
                 || !soldLoot.TrySell(this))
             {
                 return false;
             }
 
             HeldLoot = null;
+            _completedRequests.Add(requestId);
             HeldLootChanged?.Invoke(soldLoot, null);
-            wallet.RecordSale(soldLoot, price);
+            wallet.RecordSale(soldLoot, price, requestId);
             return true;
         }
 
@@ -177,6 +210,17 @@ namespace PawsAndLoot.Gameplay.Loot
             }
 
             return _matchState?.IsGameplayActive == true;
+        }
+
+        private LootRequestId CreateLocalRequestId()
+        {
+            ulong value = _nextLocalRequestValue++;
+            if (_nextLocalRequestValue == 0)
+            {
+                _nextLocalRequestValue = 1;
+            }
+
+            return new LootRequestId(value);
         }
     }
 }

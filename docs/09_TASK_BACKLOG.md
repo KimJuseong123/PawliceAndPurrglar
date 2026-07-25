@@ -109,7 +109,7 @@
 | LOOT-004 | P1 | DONE | 드롭 |
 | LOOT-005 | P2 | TODO | 숨기기 |
 | LOOT-006 | P0 | DONE | 보물 판매 |
-| LOOT-007 | P0 | TODO | 중복 획득·판매 방지 |
+| LOOT-007 | P0 | DONE | 중복 획득·판매 방지 |
 | MERCHANT-001 | P0 | TODO | 너구리 상인 판매 범위 |
 | MERCHANT-002 | P0 | TODO | 중복 판매 방지 |
 | MERCHANT-003 | P1 | TODO | 판매 피드백 |
