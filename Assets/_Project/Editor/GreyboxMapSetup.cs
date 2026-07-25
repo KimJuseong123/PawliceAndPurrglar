@@ -1226,6 +1226,34 @@ namespace PawsAndLoot.Editor
                 TextAnchor.MiddleCenter,
                 40);
 
+            RectTransform objectiveRect = CreateRect(
+                "Role Objective",
+                hudRoot);
+            objectiveRect.anchorMin = new Vector2(0.5f, 1f);
+            objectiveRect.anchorMax = new Vector2(0.5f, 1f);
+            objectiveRect.pivot = new Vector2(0.5f, 1f);
+            objectiveRect.anchoredPosition = new Vector2(0f, -104f);
+            objectiveRect.sizeDelta = new Vector2(760f, 76f);
+            Image objectiveBackground =
+                objectiveRect.gameObject.AddComponent<Image>();
+            objectiveBackground.color =
+                new Color(0.03f, 0.05f, 0.09f, 0.9f);
+            RectTransform objectiveLabelRect =
+                CreateRect("Objective Label", objectiveRect);
+            objectiveLabelRect.anchorMin = Vector2.zero;
+            objectiveLabelRect.anchorMax = Vector2.one;
+            objectiveLabelRect.offsetMin = new Vector2(24f, 8f);
+            objectiveLabelRect.offsetMax = new Vector2(-24f, -8f);
+            Text objectiveLabel =
+                objectiveLabelRect.gameObject.AddComponent<Text>();
+            objectiveLabel.font = Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            objectiveLabel.fontSize = 22;
+            objectiveLabel.fontStyle = FontStyle.Bold;
+            objectiveLabel.alignment = TextAnchor.MiddleCenter;
+            objectiveLabel.color = Color.white;
+            objectiveLabel.raycastTarget = false;
+
             RectTransform buttonRect = CreateRect(
                 "SHOW RESULT Button",
                 canvasObject.transform);
@@ -1296,6 +1324,14 @@ namespace PawsAndLoot.Editor
                 roleLabel,
                 stateLabel,
                 promptLabel);
+            RoleObjectivePresenter objectivePresenter =
+                hudRoot.gameObject.AddComponent<
+                    RoleObjectivePresenter>();
+            objectivePresenter.Configure(
+                matchRuntime,
+                roleSelector,
+                objectiveRect.gameObject,
+                objectiveLabel);
 
             var eventSystem = new GameObject(
                 "EventSystem",

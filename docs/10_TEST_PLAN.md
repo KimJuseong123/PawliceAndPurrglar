@@ -323,6 +323,22 @@ Windows 음성 언어 팩이 준비된 PC 또는 새 STT 후보에서 실제 한
 - HUD와 기존 기능 Play Mode 16/16 통과
 - 숨김 창 자동 캡처는 렌더 프레임 미생성으로 시간 초과, Player 예외 없음
 
+### UI-007 역할별 목표 안내
+
+- LOBBY에서는 숨김
+- READY 전체에서 표시
+- Police와 Thief 문구가 다름
+- 문구는 역할별 3문장 이하
+- PLAYING 시작 후 4초 뒤 숨김
+- Presenter 갱신 전후 경기 상태 동일
+- Game 씬에 Presenter 하나만 존재
+
+2026-07-25 실제 검증:
+
+- Windows x86_64 개발 빌드 성공
+- 전체 Edit Mode 47/47 통과
+- 목표 안내와 기존 기능 Play Mode 19/19 통과
+
 ## 6. 경찰 승리
 
 ### 시간 종료

@@ -174,6 +174,10 @@ PlayerKeyboardInput
 상태 전환이나 상호작용 실행은 호출하지 않는다. 정적 인스턴스 보호는 씬
 재진입 중 생성된 두 번째 HUD를 제거한다.
 
+`RoleObjectivePresenter`는 READY 동안과 PLAYING 시작 후 4초 동안 현재
+로컬 역할의 목표 문구를 표시한다. 문구는 역할별 한 문장이며 Presenter는
+경기 상태를 읽기만 한다. 결과 화면은 별도 `MATCH-006` 범위로 남긴다.
+
 ### Companions
 
 책임:
