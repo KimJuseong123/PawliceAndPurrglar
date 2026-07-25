@@ -958,6 +958,9 @@ namespace PawsAndLoot.Editor
             LootDropInput lootDropInput =
                 player.AddComponent<LootDropInput>();
             lootDropInput.Configure(lootCarrier, locallyControlled);
+            LootCarryMovementPenalty carryPenalty =
+                player.AddComponent<LootCarryMovementPenalty>();
+            carryPenalty.Configure(lootCarrier, motor);
             player.AddComponent<NetworkObject>();
             player.GetComponent<PlayerVisualRoot>().ValidateOrThrow();
 

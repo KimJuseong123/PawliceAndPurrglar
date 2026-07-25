@@ -24,6 +24,7 @@ namespace PawsAndLoot.Gameplay.Players
         private Vector3 _dashDirection;
         private float _dashRemainingSeconds;
         private float _dashCooldownRemainingSeconds;
+        private bool _lootCarryPenaltyActive;
 
         public Vector3 LastPlanarVelocity { get; private set; }
         public bool CanMove => _matchState?.IsGameplayActive == true;
@@ -35,6 +36,16 @@ namespace PawsAndLoot.Gameplay.Players
                 ? Mathf.Clamp01(
                     _dashCooldownRemainingSeconds
                     / playerConfig.DashCooldownSeconds)
+                : 0f;
+        public bool IsLootCarryPenaltyActive =>
+            _lootCarryPenaltyActive;
+        public float MovementSpeedMultiplier =>
+            _lootCarryPenaltyActive && playerConfig != null
+                ? playerConfig.LootCarrySpeedMultiplier
+                : 1f;
+        public float EffectiveMoveSpeed =>
+            playerConfig != null
+                ? playerConfig.MoveSpeed * MovementSpeedMultiplier
                 : 0f;
 
         public void Configure(
@@ -53,6 +64,13 @@ namespace PawsAndLoot.Gameplay.Players
                 ?? throw new ArgumentNullException(nameof(matchStateReader));
             matchStateSource = matchStateReader as MonoBehaviour;
             orientationReference = movementOrientation;
+            _lootCarryPenaltyActive = false;
+        }
+
+        public void SetLootCarryPenalty(bool active)
+        {
+            ValidateDependencies();
+            _lootCarryPenaltyActive = active;
         }
 
         public void Move(Vector2 input, float deltaTime)
@@ -84,6 +102,7 @@ namespace PawsAndLoot.Gameplay.Players
                 direction = GetWorldDirection(input);
             }
 
+            speed *= MovementSpeedMultiplier;
             LastPlanarVelocity = direction * speed;
 
             if (direction.sqrMagnitude > 0.0001f)
@@ -150,6 +169,11 @@ namespace PawsAndLoot.Gameplay.Players
             }
 
             ValidateDependencies();
+        }
+
+        private void OnDisable()
+        {
+            _lootCarryPenaltyActive = false;
         }
 
         private Vector3 GetWorldDirection(Vector2 input)

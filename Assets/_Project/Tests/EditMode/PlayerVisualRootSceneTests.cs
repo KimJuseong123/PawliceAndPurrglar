@@ -53,6 +53,9 @@ namespace PawsAndLoot.Tests.EditMode
                 Assert.That(
                     carrier.CarryPoint.parent,
                     Is.EqualTo(player.transform));
+                Assert.That(
+                    player.GetComponent<LootCarryMovementPenalty>(),
+                    Is.Not.Null);
             }
         }
     }

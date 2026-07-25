@@ -18,6 +18,9 @@ namespace PawsAndLoot.Config
         [SerializeField, Min(0f), Tooltip("Delay before another dash can start.")]
         private float dashCooldownSeconds = 5f;
 
+        [SerializeField, Range(0.01f, 1f), Tooltip("Movement multiplier while carrying loot.")]
+        private float lootCarrySpeedMultiplier = 0.9f;
+
         [Header("Interaction")]
         [SerializeField, Min(0.01f), Tooltip("Maximum distance for selecting an interactable target.")]
         private float interactionRange = 2f;
@@ -26,6 +29,8 @@ namespace PawsAndLoot.Config
         public float DashSpeed => dashSpeed;
         public float DashDurationSeconds => dashDurationSeconds;
         public float DashCooldownSeconds => dashCooldownSeconds;
+        public float LootCarrySpeedMultiplier =>
+            lootCarrySpeedMultiplier;
         public float InteractionRange => interactionRange;
 
         public override void ValidateOrThrow()
@@ -34,6 +39,7 @@ namespace PawsAndLoot.Config
             GameConfigValidation.RequirePositive(this, dashSpeed, nameof(dashSpeed));
             GameConfigValidation.RequirePositive(this, dashDurationSeconds, nameof(dashDurationSeconds));
             GameConfigValidation.RequireNonNegative(this, dashCooldownSeconds, nameof(dashCooldownSeconds));
+            GameConfigValidation.RequirePositive(this, lootCarrySpeedMultiplier, nameof(lootCarrySpeedMultiplier));
             GameConfigValidation.RequirePositive(this, interactionRange, nameof(interactionRange));
 
             if (dashSpeed <= moveSpeed)
@@ -42,6 +48,14 @@ namespace PawsAndLoot.Config
                     this,
                     nameof(dashSpeed),
                     $"dash speed must exceed move speed ({moveSpeed}), received {dashSpeed}");
+            }
+
+            if (lootCarrySpeedMultiplier > 1f)
+            {
+                throw GameConfigValidation.CreateException(
+                    this,
+                    nameof(lootCarrySpeedMultiplier),
+                    $"carry multiplier cannot exceed 1, received {lootCarrySpeedMultiplier}");
             }
         }
     }

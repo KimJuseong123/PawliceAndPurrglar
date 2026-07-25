@@ -96,7 +96,7 @@
 | PLAYER-003 | P1 | DONE | 대시 |
 | PLAYER-004 | P0 | DONE | 공통 상호작용 |
 | PLAYER-005 | P0 | DONE | 역할 구분 |
-| PLAYER-006 | P1 | TODO | 보물 소지 이동 페널티 |
+| PLAYER-006 | P1 | DONE | 보물 소지 이동 페널티 |
 
 ## Epic 6. 보물과 너구리 상인
 

@@ -16,4 +16,5 @@ MonoBehaviour:
   dashSpeed: 9
   dashDurationSeconds: 0.25
   dashCooldownSeconds: 5
+  lootCarrySpeedMultiplier: 0.9
   interactionRange: 2

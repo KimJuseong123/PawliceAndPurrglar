@@ -293,6 +293,12 @@ LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint
 지형 내부로 들어가지 않게 한다. 지면을 찾지 못하거나 PLAYING이 아니면 상태와
 소유권을 변경하지 않는다. 성공할 때만 `CARRIED → DROPPED`와 소지 해제를 수행한다.
 
+`LootCarryMovementPenalty`는 `LootCarrier.HeldLootChanged`를 구독해 공통
+`PlayerMovementMotor`에 보물 소지 여부를 불리언으로 전달한다. 실제 배율은
+`PlayerConfig.LootCarrySpeedMultiplier`의 기본값 0.9를 사용한다. 불리언 상태이므로
+중복 이벤트가 배율을 누적하지 않으며, 소지 해제와 플레이어 비활성화 시 1.0으로
+복구된다. 일반 이동과 대시 모두 같은 배율을 적용한다.
+
 이벤트 이름은 구현 전에 코드 스타일에 맞춰 확정한다.
 
 ## 5. 설정 데이터
@@ -300,7 +306,7 @@ LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint
 BASE-004에서 다음 ScriptableObject를 구현했다.
 
 - `MatchConfig`: 경기 시간, 목표 금액
-- `PlayerConfig`: 이동과 대시 속도, 대시 지속 시간과 쿨타임
+- `PlayerConfig`: 이동과 대시 속도, 대시 지속 시간과 쿨타임, 보물 운반 속도 배율
 - `LootConfig`: 희귀도별 보물 가격
 - `ArrestConfig`: 체포 거리와 완료 시간
 - `CompanionConfig`: 동물 이동 속도와 명령 쿨타임
