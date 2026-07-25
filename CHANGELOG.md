@@ -74,6 +74,8 @@
 - 도둑 HUD의 빈손·운반·판매 가능·정산 완료·역할 전환 표시를 검증하는 Play Mode 테스트
 - 경찰·도둑 거리와 장애물을 검사하고 진입·이탈 이벤트를 발행하는 `ArrestRangeSensor`
 - 비활성·잘못된 역할·자기 자신을 체포 대상으로 인정하지 않는 ARREST-001 검증
+- `PLAYING` 중 유효한 체포 감지가 유지될 때만 시간을 누적하는 `ArrestProgressController`
+- `ArrestConfig`의 1.5초 체포 시간을 0~1 진행도로 변환하고 완료 값에서 중복 누적을 막는 ARREST-002 검증
 
 ### Changed
 

@@ -325,6 +325,12 @@ LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint
 `TargetEntered` 또는 `TargetExited`를 한 번 발행한다. 경기 상태와 진행도는
 후속 ARREST 작업이 별도로 소유한다.
 
+`ArrestProgressController`는 센서와 `IMatchStateReader`를 읽어
+`PLAYING` 중 감지가 유지될 때만 전달받은 `deltaTime`을 누적한다.
+진행 시간은 `ArrestConfig.ArrestDurationSeconds`를 넘지 않으며 외부에는
+0~1의 `ProgressNormalized`와 완료 준비 상태를 제공한다. 체포 완료 이벤트와
+승리 요청은 ARREST-004가 소유한다.
+
 이벤트 이름은 구현 전에 코드 스타일에 맞춰 확정한다.
 
 ## 5. 설정 데이터

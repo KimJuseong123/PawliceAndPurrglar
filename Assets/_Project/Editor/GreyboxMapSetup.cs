@@ -208,7 +208,7 @@ namespace PawsAndLoot.Editor
                     playerConfig,
                     false)
             };
-            ConfigureArrestRangeSensor(controlBindings);
+            ConfigureArrestSystem(controlBindings, matchRuntime);
             PawsAndLoot.Gameplay.Camera.TopDownFollowCamera followCamera =
                 ConfigurePlayerFollowCamera(
                     roleMarkers[PlayerRole.Police].transform);
@@ -1004,8 +1004,9 @@ namespace PawsAndLoot.Editor
             return followCamera;
         }
 
-        private static void ConfigureArrestRangeSensor(
-            IReadOnlyList<PlayerRoleControlBinding> bindings)
+        private static void ConfigureArrestSystem(
+            IReadOnlyList<PlayerRoleControlBinding> bindings,
+            MatchRuntimeState matchRuntime)
         {
             PlayerRoleIdentity police = null;
             PlayerRoleIdentity thief = null;
@@ -1027,13 +1028,17 @@ namespace PawsAndLoot.Editor
                     "ARREST-001 requires Police and Thief players.");
             }
 
+            ArrestConfig config = LoadArrestConfig();
             ArrestRangeSensor sensor =
                 police.gameObject.AddComponent<ArrestRangeSensor>();
             sensor.Configure(
                 police,
                 thief,
-                LoadArrestConfig(),
+                config,
                 Physics.AllLayers);
+            ArrestProgressController progress =
+                police.gameObject.AddComponent<ArrestProgressController>();
+            progress.Configure(sensor, matchRuntime, config);
         }
 
         private static LocalPlayerRoleSelector CreateLocalRoleSelector(
