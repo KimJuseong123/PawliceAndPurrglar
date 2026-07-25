@@ -30,6 +30,7 @@ namespace PawsAndLoot.Editor
             GameConfigSet configSet = LoadOrCreate<GameConfigSet>(DefaultSetPath);
 
             configSet.Configure(match, player, loot, arrest, companion, voice);
+            EditorUtility.SetDirty(match);
             EditorUtility.SetDirty(player);
             EditorUtility.SetDirty(configSet);
             AssetDatabase.SaveAssets();

@@ -1,4 +1,5 @@
 using System;
+using PawsAndLoot.Config;
 using UnityEngine;
 
 namespace PawsAndLoot.Match
@@ -6,9 +7,13 @@ namespace PawsAndLoot.Match
     public sealed class MatchRuntimeState : MonoBehaviour, IMatchStateReader
     {
         [SerializeField]
-        private bool startPlayingImmediately = true;
+        private MatchConfig matchConfig;
+
+        [SerializeField]
+        private bool startCountdownAutomatically = true;
 
         private readonly MatchStateMachine _stateMachine = new();
+        private bool _countdownActive;
 
         public event Action<MatchStateChanged> StateChanged
         {
@@ -18,10 +23,16 @@ namespace PawsAndLoot.Match
 
         public MatchState CurrentState => _stateMachine.CurrentState;
         public bool IsGameplayActive => _stateMachine.IsGameplayActive;
+        public bool IsCountdownActive => _countdownActive;
+        public float ReadyCountdownRemainingSeconds { get; private set; }
 
-        public void Configure(bool shouldStartPlayingImmediately)
+        public void Configure(
+            MatchConfig configuredMatchConfig,
+            bool shouldStartCountdownAutomatically)
         {
-            startPlayingImmediately = shouldStartPlayingImmediately;
+            matchConfig = configuredMatchConfig;
+            startCountdownAutomatically =
+                shouldStartCountdownAutomatically;
         }
 
         public bool TryTransitionTo(MatchState nextState)
@@ -29,15 +40,64 @@ namespace PawsAndLoot.Match
             return _stateMachine.TryTransitionTo(nextState);
         }
 
-        private void Awake()
+        public bool BeginCountdown()
         {
-            if (!startPlayingImmediately)
+            if (_countdownActive
+                || matchConfig == null
+                || CurrentState != MatchState.Lobby)
+            {
+                return false;
+            }
+
+            matchConfig.ValidateOrThrow();
+            if (!_stateMachine.TryTransitionTo(MatchState.Ready))
+            {
+                return false;
+            }
+
+            ReadyCountdownRemainingSeconds =
+                matchConfig.ReadyCountdownSeconds;
+            _countdownActive = true;
+            return true;
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!_countdownActive || CurrentState != MatchState.Ready)
             {
                 return;
             }
 
-            _stateMachine.TryTransitionTo(MatchState.Ready);
+            ReadyCountdownRemainingSeconds = Mathf.Max(
+                0f,
+                ReadyCountdownRemainingSeconds
+                    - Mathf.Max(0f, deltaTime));
+            if (ReadyCountdownRemainingSeconds > 0f)
+            {
+                return;
+            }
+
+            _countdownActive = false;
             _stateMachine.TryTransitionTo(MatchState.Playing);
+        }
+
+        private void Awake()
+        {
+            if (matchConfig == null)
+            {
+                throw new InvalidOperationException(
+                    "MatchRuntimeState requires a MatchConfig.");
+            }
+
+            if (startCountdownAutomatically)
+            {
+                BeginCountdown();
+            }
+        }
+
+        private void Update()
+        {
+            Tick(Time.deltaTime);
         }
     }
 }

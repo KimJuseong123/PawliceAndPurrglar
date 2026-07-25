@@ -48,6 +48,7 @@
 - Game 씬 보물·판매·사다리·일반 프로토타입 상호작용 지점과 안내 UI
 - 물리·이동·상호작용·네트워크와 렌더 모델을 분리한 `PlayerVisualRoot`
 - Blender 모델 교체 후에도 루트 충돌과 이동을 유지하는 VisualRoot 계약 테스트
+- `MatchConfig` 기반 3초 READY 카운트다운과 중복 시작 방지
 
 ### Changed
 

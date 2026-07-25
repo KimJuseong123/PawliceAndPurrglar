@@ -276,6 +276,21 @@ Windows 음성 언어 팩이 준비된 PC 또는 새 STT 후보에서 실제 한
 - 전체 Edit Mode 46/46 통과
 - 모델 교체와 기존 기능 Play Mode 8/8 통과
 
+### MATCH-002 경기 시작 카운트다운
+
+- 새 런타임은 LOBBY에서 시작
+- 첫 시작 요청만 READY 전환
+- 3초 카운트다운 중 gameplay 비활성
+- 0초 도달 전 PLAYING 전환 금지
+- 0초 도달 시 한 번만 PLAYING 전환
+- PLAYING 이후 재시작 요청 거부
+
+2026-07-25 실제 검증:
+
+- Windows x86_64 개발 빌드 성공
+- 전체 Edit Mode 46/46 통과
+- 카운트다운과 기존 기능 Play Mode 9/9 통과
+
 ## 6. 경찰 승리
 
 ### 시간 종료

@@ -159,6 +159,11 @@ PlayerKeyboardInput
 교체와 루트 모션 비활성화를 담당한다. 따라서 FBX 교체는 충돌 크기, 이동 주체,
 네트워크 식별자를 변경하지 않는다.
 
+`MatchRuntimeState`는 `MatchConfig.ReadyCountdownSeconds`를 읽어
+`LOBBY → READY → PLAYING`을 순서대로 전환한다. 카운트다운 동안
+`IsGameplayActive`는 false이며, 중복 시작 요청은 거부된다. 프레임 갱신과
+테스트가 같은 `Tick(deltaTime)` 경로를 사용한다.
+
 ### Companions
 
 책임:

@@ -36,6 +36,22 @@ namespace PawsAndLoot.Config
             }
         }
 
+        public static void RequireInRange(
+            Object owner,
+            float value,
+            float minimum,
+            float maximum,
+            string fieldName)
+        {
+            if (value < minimum || value > maximum)
+            {
+                throw CreateException(
+                    owner,
+                    fieldName,
+                    $"expected {minimum} to {maximum}, received {value}");
+            }
+        }
+
         public static void RequireTrue(Object owner, bool value, string fieldName, string reason)
         {
             if (!value)

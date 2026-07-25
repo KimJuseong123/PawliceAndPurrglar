@@ -28,6 +28,8 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Materials/Greybox";
         private const string PlayerConfigPath =
             "Assets/_Project/Settings/Configs/PlayerConfig.asset";
+        private const string MatchConfigPath =
+            "Assets/_Project/Settings/Configs/MatchConfig.asset";
 
         private static readonly Color GroundColor =
             new(0.28f, 0.34f, 0.31f);
@@ -887,7 +889,7 @@ namespace PawsAndLoot.Editor
             runtimeObject.transform.SetParent(parent);
             MatchRuntimeState runtime =
                 runtimeObject.AddComponent<MatchRuntimeState>();
-            runtime.Configure(true);
+            runtime.Configure(LoadMatchConfig(), true);
             return runtime;
         }
 
@@ -1267,6 +1269,20 @@ namespace PawsAndLoot.Editor
             {
                 throw new GameConfigurationException(
                     $"MAP-001 requires PlayerConfig at '{PlayerConfigPath}'.");
+            }
+
+            config.ValidateOrThrow();
+            return config;
+        }
+
+        private static MatchConfig LoadMatchConfig()
+        {
+            MatchConfig config =
+                AssetDatabase.LoadAssetAtPath<MatchConfig>(MatchConfigPath);
+            if (config == null)
+            {
+                throw new GameConfigurationException(
+                    $"Game scene requires MatchConfig at '{MatchConfigPath}'.");
             }
 
             config.ValidateOrThrow();
