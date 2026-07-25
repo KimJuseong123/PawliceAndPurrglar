@@ -4,6 +4,7 @@ using System.IO;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Map;
+using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.UI;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -171,6 +172,11 @@ namespace PawsAndLoot.Editor
                 rooftops,
                 ladders,
                 trashBins);
+            CreateRolePreviewMarkers(
+                map,
+                locationsRoot,
+                PoliceBlue,
+                ThiefRed);
 
             CreateRouteLine(
                 map.GetRoute(GreyboxMapDefinition.CrossingRouteId),
@@ -785,6 +791,47 @@ namespace PawsAndLoot.Editor
                     pair.Key,
                     pair.Value);
             }
+        }
+
+        private static void CreateRolePreviewMarkers(
+            GreyboxMapDefinition map,
+            Transform parent,
+            Color policeColor,
+            Color thiefColor)
+        {
+            CreateRolePreviewMarker(
+                map,
+                parent,
+                PlayerRole.Police,
+                policeColor);
+            CreateRolePreviewMarker(
+                map,
+                parent,
+                PlayerRole.Thief,
+                thiefColor);
+        }
+
+        private static void CreateRolePreviewMarker(
+            GreyboxMapDefinition map,
+            Transform parent,
+            PlayerRole role,
+            Color color)
+        {
+            GameObject marker = GameObject.CreatePrimitive(
+                PrimitiveType.Capsule);
+            marker.name = $"{role} Role Preview";
+            marker.transform.SetParent(parent);
+            marker.transform.position =
+                PlayerRoleSpawnResolver.Resolve(map, role).position
+                + Vector3.up;
+            marker.transform.localScale =
+                new Vector3(0.85f, 1f, 0.85f);
+            marker.GetComponent<Renderer>().sharedMaterial =
+                LoadOrCreateMaterial($"Role_{role}", color);
+
+            PlayerRoleIdentity identity =
+                marker.AddComponent<PlayerRoleIdentity>();
+            identity.Configure(role);
         }
 
         private static void AddLocation(

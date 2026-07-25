@@ -95,6 +95,28 @@ LOBBY -> READY -> PLAYING -> ENDING -> RESULT
 - `ThrowableItem`
 - `StatusEffectController`
 
+역할 경계:
+
+```text
+PlayerRoleIdentity
+├─ PlayerRole
+├─ PlayerRolePermissions
+└─ PlayerRoleSpawnResolver -> GreyboxMapDefinition
+```
+
+본게임 역할은 기술 검증 전용 `TechnicalPlayerRole`을 재사용하지 않는다.
+`Police`와 `Thief`는 맵의 `PoliceSpawn`, `ThiefSpawn`을 각각 사용한다.
+상호작용 구현은 역할을 직접 비교하지 않고 `PlayerRolePermissions`의 다음
+권한표를 조회한다.
+
+| 상호작용 | Police | Thief |
+|---|---:|---:|
+| 일반 | 허용 | 허용 |
+| 사다리 등 이동 경로 | 허용 | 허용 |
+| 보물 획득 | 거부 | 허용 |
+| 판매 | 거부 | 허용 |
+| 체포 | 허용 | 거부 |
+
 ### Companions
 
 책임:
