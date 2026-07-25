@@ -87,6 +87,12 @@ namespace PawsAndLoot.Tests.EditMode
                     root.GetComponentsInChildren<
                         MatchEndController>(true))
                 .ToArray();
+            MatchResultFlowController[] resultFlows = scene
+                .GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<
+                        MatchResultFlowController>(true))
+                .ToArray();
 
             Assert.That(scanners, Has.Length.EqualTo(2));
             Assert.That(
@@ -126,6 +132,9 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(endControllers, Has.Length.EqualTo(1));
             Assert.DoesNotThrow(
                 endControllers[0].ValidateOrThrow);
+            Assert.That(resultFlows, Has.Length.EqualTo(1));
+            Assert.DoesNotThrow(
+                resultFlows[0].ValidateOrThrow);
             Assert.That(
                 scene.GetRootGameObjects()
                     .SelectMany(root =>

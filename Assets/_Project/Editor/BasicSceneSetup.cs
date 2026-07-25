@@ -4,6 +4,7 @@ using System.IO;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
 using PawsAndLoot.Logging;
+using PawsAndLoot.Match;
 using PawsAndLoot.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -42,12 +43,12 @@ namespace PawsAndLoot.Editor
 
             CreateScene(
                 GameSceneId.Result,
-                "RESULT",
-                "MATCH FLOW COMPLETE",
+                "NO MATCH RESULT",
+                "PLAY A MATCH TO VIEW THE RESULT",
                 new[]
                 {
-                    new ButtonSpec("PLAY AGAIN", GameSceneId.Game, PoliceBlue),
-                    new ButtonSpec("BACK TO START", GameSceneId.Bootstrap, MerchantGold)
+                    new ButtonSpec("REMATCH", GameSceneId.Game, PoliceBlue),
+                    new ButtonSpec("MAIN MENU", GameSceneId.Bootstrap, MerchantGold)
                 });
 
             ApplyBuildSettings();
@@ -196,8 +197,14 @@ namespace PawsAndLoot.Editor
             SetRect(thiefBar, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(360f, 18f), new Vector2(-220f, -44f));
             thiefBar.gameObject.AddComponent<Image>().color = ThiefRed;
 
+            bool isResultScene = sceneId == GameSceneId.Result;
             RectTransform panel = CreateRect("Flow Panel", canvasRect);
-            SetRect(panel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(860f, 500f), Vector2.zero);
+            SetRect(
+                panel,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(860f, isResultScene ? 620f : 500f),
+                Vector2.zero);
             panel.gameObject.AddComponent<Image>().color = PanelColor;
 
             CreateText(
@@ -207,30 +214,63 @@ namespace PawsAndLoot.Editor
                 20,
                 FontStyle.Bold,
                 MerchantGold,
-                new Vector2(0f, 170f),
+                new Vector2(0f, isResultScene ? 230f : 170f),
                 new Vector2(720f, 32f));
 
-            CreateText(
+            Text titleLabel = CreateText(
                 "Title",
                 panel,
                 title,
                 64,
                 FontStyle.Bold,
                 Color.white,
-                new Vector2(0f, 95f),
+                new Vector2(0f, isResultScene ? 155f : 95f),
                 new Vector2(780f, 88f));
 
-            CreateText(
+            Text subtitleLabel = CreateText(
                 "Subtitle",
                 panel,
                 subtitle,
                 22,
                 FontStyle.Normal,
                 MutedText,
-                new Vector2(0f, 25f),
+                new Vector2(0f, isResultScene ? 88f : 25f),
                 new Vector2(760f, 40f));
 
-            float firstButtonY = buttons.Count == 1 ? -105f : -70f;
+            if (isResultScene)
+            {
+                MatchResultSession.Clear();
+                Text soldAmountLabel = CreateText(
+                    "Sold Amount",
+                    panel,
+                    "SOLD 0 GOLD",
+                    28,
+                    FontStyle.Bold,
+                    MerchantGold,
+                    new Vector2(0f, 28f),
+                    new Vector2(700f, 42f));
+                Text remainingTimeLabel = CreateText(
+                    "Remaining Time",
+                    panel,
+                    "TIME 00:00",
+                    25,
+                    FontStyle.Normal,
+                    MutedText,
+                    new Vector2(0f, -18f),
+                    new Vector2(700f, 38f));
+                ResultScreenPresenter presenter =
+                    panel.gameObject.AddComponent<
+                        ResultScreenPresenter>();
+                presenter.Configure(
+                    titleLabel,
+                    subtitleLabel,
+                    soldAmountLabel,
+                    remainingTimeLabel);
+            }
+
+            float firstButtonY = isResultScene
+                ? -105f
+                : buttons.Count == 1 ? -105f : -70f;
             for (int index = 0; index < buttons.Count; index++)
             {
                 ButtonSpec spec = buttons[index];
@@ -489,6 +529,7 @@ namespace PawsAndLoot.Editor
             var navigationTargets = new List<GameSceneId>();
             GameConfigBootstrap configBootstrap = null;
             GameLogBootstrap logBootstrap = null;
+            ResultScreenPresenter resultPresenter = null;
 
             foreach (GameObject root in scene.GetRootGameObjects())
             {
@@ -497,6 +538,9 @@ namespace PawsAndLoot.Editor
                 hasEventSystem |= root.GetComponentInChildren<EventSystem>(true) != null;
                 configBootstrap ??= root.GetComponentInChildren<GameConfigBootstrap>(true);
                 logBootstrap ??= root.GetComponentInChildren<GameLogBootstrap>(true);
+                resultPresenter ??=
+                    root.GetComponentInChildren<
+                        ResultScreenPresenter>(true);
 
                 foreach (SceneNavigationButton button in root.GetComponentsInChildren<SceneNavigationButton>(true))
                 {
@@ -556,6 +600,16 @@ namespace PawsAndLoot.Editor
 
                 logBootstrap.Config.ValidateOrThrow();
             }
+            else if (sceneId == GameSceneId.Result)
+            {
+                if (resultPresenter == null)
+                {
+                    throw new InvalidOperationException(
+                        "Result scene must contain one ResultScreenPresenter.");
+                }
+
+                resultPresenter.ValidateOrThrow();
+            }
         }
 
         private static IReadOnlyList<GameSceneId> GetExpectedNavigationTargets(GameSceneId sceneId)
@@ -563,7 +617,7 @@ namespace PawsAndLoot.Editor
             return sceneId switch
             {
                 GameSceneId.Bootstrap => new[] { GameSceneId.Game },
-                GameSceneId.Game => new[] { GameSceneId.Result },
+                GameSceneId.Game => Array.Empty<GameSceneId>(),
                 GameSceneId.Result => new[] { GameSceneId.Game, GameSceneId.Bootstrap },
                 _ => throw new ArgumentOutOfRangeException(nameof(sceneId), sceneId, "Unknown game scene.")
             };

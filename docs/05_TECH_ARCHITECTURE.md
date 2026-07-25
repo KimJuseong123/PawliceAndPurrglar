@@ -352,7 +352,14 @@ LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint
 진행 중인 체포를 즉시 중단한다. 타이머와 보물 시스템은
 `IMatchStateReader.IsGameplayActive`를 통해 같은 `ENDING` 상태를 읽으므로
 별도의 중복 종료 플래그 없이 멈춘다. 종료 결과는 컨트롤러가 보관하며
-`MATCH-006` 결과 화면 전환의 입력 데이터가 된다.
+결과 화면 전환의 입력 데이터가 된다.
+
+`MatchResultFlowController`는 종료 이벤트를 받으면 첫 `MatchResult`를
+`MatchResultSession`에 저장하고 `ENDING -> RESULT` 전환 후 중앙
+`GameSceneLoader`로 Result 씬을 연다. 정적 세션은 씬 전환 중에만 결과를
+유지하며 새 Game 씬이 시작될 때 초기화된다. Result 씬의
+`ResultScreenPresenter`는 세션을 읽어 승리 진영, 종료 이유, 판매 금액과
+남은 시간을 표시하고 경기 규칙을 변경하지 않는다.
 
 `ArrestHudPresenter`는 역할 선택기와 체포 진행·완료 컨트롤러를 읽기만 한다.
 경찰에게는 체포 준비·진행률·중단·완료를, 도둑에게는 진행 중 위험 경고와

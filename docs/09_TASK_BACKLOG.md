@@ -84,7 +84,7 @@
 | MATCH-003 | P0 | DONE | 4분 타이머 |
 | MATCH-004 | P0 | DONE | 승리 판정 |
 | MATCH-005 | P0 | DONE | 단일 경기 종료 |
-| MATCH-006 | P0 | TODO | 결과 화면 |
+| MATCH-006 | P0 | DONE | 결과 화면 |
 | MATCH-007 | P0 | TODO | 재시작 초기화 |
 
 ## Epic 5. 플레이어

@@ -700,6 +700,22 @@
 - 최종 상태: 반영
 - 비고: Edit Mode 72/72, Play Mode 47/47 통과
 
+### AI-20260725-042
+
+- 날짜: 2026-07-25
+- 작성자 / 프로젝트 담당자:
+- 사용 도구: OpenAI Codex
+- 모델 또는 기능: Unity 결과 씬 전환과 읽기 전용 결과 Presenter
+- 사용 목적: 한 경기의 확정 결과를 별도 Result 씬에서 일관되게 표시
+- 관련 작업 ID: MATCH-006
+- 입력 프롬프트 요약: 승리 진영·이유·판매액·남은 시간, 재경기·메인 메뉴 버튼
+- AI 생성 결과: `MatchResultSession`, `MatchResultFlowController`, `ResultScreenPresenter`, Result 씬 UI
+- 실제 반영 파일: Core/Match, UI, Game·Result 씬 생성기와 씬, Edit/Play Mode 테스트, UI 문서
+- 사람이 수정하거나 결정한 내용: 임시 결과 버튼을 제거하고 정상 종료 후 자동으로 Result 씬 전환
+- 검증 방법: 세 결과 문구 단위 검증, 실제 Game 종료 통합 테스트, Windows x86_64 빌드
+- 최종 상태: 반영
+- 비고: Edit Mode 78/78, Play Mode 48/48 통과
+
 ## 기록 시 주의사항
 
 - 비밀 키, 개인정보, 전체 음성 데이터는 기록하지 않는다.

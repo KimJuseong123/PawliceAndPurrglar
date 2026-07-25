@@ -219,10 +219,14 @@ namespace PawsAndLoot.Editor
                 villageRoot.transform,
                 controlBindings,
                 followCamera);
-            ConfigureMatchEndController(
+            MatchEndController matchEndController =
+                ConfigureMatchEndController(
                 controlBindings,
                 matchRuntime,
                 roleSelector);
+            ConfigureMatchResultFlow(
+                matchRuntime,
+                matchEndController);
             CreatePrototypeInteractionTargets(
                 villageRoot.transform,
                 locations,
@@ -273,8 +277,8 @@ namespace PawsAndLoot.Editor
             Camera camera = FindInScene<Camera>(scene);
             Canvas canvas = FindInScene<Canvas>(scene);
             EventSystem eventSystem = FindInScene<EventSystem>(scene);
-            SceneNavigationButton navigation =
-                FindInScene<SceneNavigationButton>(scene);
+            MatchResultFlowController resultFlow =
+                FindInScene<MatchResultFlowController>(scene);
 
             if (map == null
                 || probe == null
@@ -282,14 +286,14 @@ namespace PawsAndLoot.Editor
                 || camera.orthographic
                 || canvas == null
                 || eventSystem == null
-                || navigation == null
-                || navigation.TargetScene != GameSceneId.Result)
+                || resultFlow == null)
             {
                 throw new InvalidOperationException(
-                    "MAP-001 scene requires its map, traversal probe, perspective camera, UI, and Result navigation.");
+                    "MAP-001 scene requires its map, traversal probe, perspective camera, UI, and result flow.");
             }
 
             map.ValidateOrThrow();
+            resultFlow.ValidateOrThrow();
             if (map.Locations.Count != 7
                 || map.Rooftops.Count < 3
                 || map.Ladders.Count < 3
@@ -1100,7 +1104,7 @@ namespace PawsAndLoot.Editor
             return selector;
         }
 
-        private static void ConfigureMatchEndController(
+        private static MatchEndController ConfigureMatchEndController(
             IReadOnlyList<PlayerRoleControlBinding> bindings,
             MatchRuntimeState matchRuntime,
             LocalPlayerRoleSelector roleSelector)
@@ -1133,6 +1137,17 @@ namespace PawsAndLoot.Editor
                 resultEvaluator,
                 roleSelector,
                 arrestProgress);
+            return endController;
+        }
+
+        private static void ConfigureMatchResultFlow(
+            MatchRuntimeState matchRuntime,
+            MatchEndController matchEndController)
+        {
+            MatchResultFlowController resultFlow =
+                matchRuntime.gameObject.AddComponent<
+                    MatchResultFlowController>();
+            resultFlow.Configure(matchRuntime, matchEndController);
         }
 
         private static void CreatePrototypeInteractionTargets(
@@ -1689,38 +1704,6 @@ namespace PawsAndLoot.Editor
             objectiveLabel.alignment = TextAnchor.MiddleCenter;
             objectiveLabel.color = Color.white;
             objectiveLabel.raycastTarget = false;
-
-            RectTransform buttonRect = CreateRect(
-                "SHOW RESULT Button",
-                canvasObject.transform);
-            buttonRect.anchorMin = Vector2.one;
-            buttonRect.anchorMax = Vector2.one;
-            buttonRect.pivot = Vector2.one;
-            buttonRect.anchoredPosition = new Vector2(-28f, -28f);
-            buttonRect.sizeDelta = new Vector2(190f, 54f);
-
-            Image image = buttonRect.gameObject.AddComponent<Image>();
-            image.color = new Color(0.55f, 0.12f, 0.09f, 0.92f);
-            buttonRect.gameObject.AddComponent<Button>();
-            SceneNavigationButton navigation =
-                buttonRect.gameObject.AddComponent<SceneNavigationButton>();
-            navigation.TargetScene = GameSceneId.Result;
-
-            RectTransform labelRect =
-                CreateRect("Label", buttonRect);
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = Vector2.zero;
-            labelRect.offsetMax = Vector2.zero;
-            Text text = labelRect.gameObject.AddComponent<Text>();
-            text.text = "RESULT";
-            text.font = Resources.GetBuiltinResource<Font>(
-                "LegacyRuntime.ttf");
-            text.fontSize = 20;
-            text.fontStyle = FontStyle.Bold;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.raycastTarget = false;
 
             RectTransform promptRect = CreateRect(
                 "Interaction Prompt",
