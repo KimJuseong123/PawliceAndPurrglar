@@ -178,6 +178,7 @@ Editor와 Development Build는 `Debug` 이상, 일반 제출 빌드는 `Warning`
 - AI 및 음성 기능은 숫자키 명령으로 먼저 검증
 - 최종 모델은 그레이박스 프로토타입 이후 적용
 - 기존 경찰 모델만 리깅 및 애니메이션 테스트에 사용
+- 경기 상태는 `LOBBY → READY → PLAYING → ENDING → RESULT` 순서만 허용
 
 아직 확정되지 않은 사항:
 

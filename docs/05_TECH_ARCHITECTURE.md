@@ -47,13 +47,31 @@ Blender 원본은 `ArtSource/Blender/`, Unity 반입 FBX는 `Assets/_Project/Art
 - 공통 ID와 인터페이스
 - 규칙 이벤트
 
-후보 타입:
+구현 타입:
 
 - `MatchState`
+- `IMatchStateReader`
+- `MatchStateChanged`
+- `MatchStateMachine`
+
+후속 후보 타입:
+
 - `MatchRules`
 - `MatchResult`
 - `MatchResultEvaluator`
 - `GameClock`
+
+`MatchStateMachine`은 `LOBBY`에서 시작하고 아래 순서만 허용하는 순수 C#
+객체다.
+
+```text
+LOBBY -> READY -> PLAYING -> ENDING -> RESULT
+```
+
+같은 상태, 역방향, 건너뛰기와 정의되지 않은 상태 전환은 상태와 이벤트를
+변경하지 않고 `false`를 반환한다. 다른 시스템은 `IMatchStateReader`를 통해
+현재 상태와 `PLAYING` 여부만 읽는다. 네트워크, UI, 타이머는 이 객체를 직접
+소유하지 않으며 후속 조립 계층에서 연결한다.
 
 ### Gameplay
 

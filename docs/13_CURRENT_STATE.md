@@ -37,7 +37,7 @@
 - AI Navigation: `2.0.13`
 - Cinemachine: `3.1.7`
 - 첫 빌드 대상: Windows x86_64
-- 네트워크 우선 후보: Netcode for GameObjects와 Unity Multiplayer Services, 미설치
+- 네트워크 기술 검증: Netcode for GameObjects `2.13.0`, Unity Transport `6.5.0`
 - `AGENTS.md` 존재
 - `README.md` 존재
 - 프로젝트 문서 패키지 작성
@@ -152,6 +152,26 @@ Builds/TechnicalValidation/Windows/PawsAndLootNetworkTech.exe
 - 양쪽 모두 경찰 1명·도둑 1명, 역할 중복 없음, 로컬 역할 인식과 시작점 분리 통과
 - 세 번째 접속을 거절하고 Host에서 거절 1회 확인
 
+- MAP-001 회색 상자 마을:
+
+```text
+Assets/_Project/Scenes/Game.unity
+Assets/_Project/Scripts/Gameplay/Map/
+```
+
+- 56×44m, 필수 장소 7개, 경로 9개, 지붕 3개, 사다리 3개, 쓰레기통 위치 4개
+- WindowsPlayer 72m 자동 횡단 17.58초, 끼임 0회
+
+- MATCH-001 경기 상태:
+
+```text
+Assets/_Project/Scripts/Core/Match/
+```
+
+- `LOBBY -> READY -> PLAYING -> ENDING -> RESULT` 순차 전환만 허용
+- 중복·건너뛰기·역방향·정의되지 않은 상태 전환 거부
+- `IMatchStateReader`로 현재 상태와 경기 활성 여부 조회
+
 - 기존 경찰 Blender 원본 존재:
 
 ```text
@@ -169,7 +189,7 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 - 새 구조의 경찰 프리팹
 - 경찰 Armature와 Avatar
 - `Idle`, `Run`, `ComedyRun`
-- 새 경기 상태와 4분 타이머
+- 4분 타이머와 경기 상태 런타임 조립
 - 새 보물, 너구리 상인, 체포 시스템
 - 숫자키 동물 명령 상태 머신
 - 새 결과 화면
@@ -207,15 +227,15 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 
 ## 현재 작업
 
-- 작업 ID: `MAP-001`
-- 작업: 순환형 그레이박스 마을 제작과 동선 검증
+- 작업 ID: `MATCH-001`
+- 작업: 경기 생명주기 상태와 허용 전환 정의
 - 상태: `DONE`
-- 결과: 56×44m, 필수 장소 7개, 경로 9개, Windows 횡단 끼임 0회
+- 결과: 순차 전환, 읽기 계약, 상태 변경 알림과 잘못된 전환 차단
 
 ## 바로 다음 작업
 
-1. `MATCH-001`: 경기 상태 정의
-2. `PLAYER-005`: 역할 구분
+1. `PLAYER-005`: 역할 구분
+2. `PLAYER-001`: 공통 이동 구조를 사용하는 경찰 이동
 3. `TECH-003`: 핵심 단축키 프로토타입과 분리해 외부 STT 후보로 재검증
 
 ## 차단 요소
@@ -286,5 +306,7 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 | 2026-07-24 | MAP-001 Edit Mode 테스트 | 20/20 통과 |
 | 2026-07-24 | MAP-001 Play Mode 테스트 | 1/1 통과 |
 | 2026-07-24 | BASE-003 씬 계약 회귀 검사 | 오류 없이 종료 |
+| 2026-07-24 | MATCH-001 상태 전환 테스트 | Edit Mode 30/30 통과 |
+| 2026-07-24 | MATCH-001 Play Mode 회귀 테스트 | 1/1 통과 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.
