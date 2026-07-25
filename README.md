@@ -539,6 +539,10 @@ Builds/TechnicalValidation/Windows/PawsAndLootMapGreybox.exe
 경찰과 도둑은 동일한 이동·충돌 코드를 사용하며 선택된 한 역할만 로컬 입력과
 카메라를 받습니다.
 
+각 플레이어의 `CharacterController`, 이동, 상호작용과 `NetworkObject`는
+`PlayerRoot`에 있고 임시 캡슐은 `VisualRoot/PlaceholderModel` 아래에 있습니다.
+Blender 모델은 `VisualRoot` 아래의 모델만 교체하며 루트 모션은 사용하지 않습니다.
+
 공통 조작:
 
 ```text

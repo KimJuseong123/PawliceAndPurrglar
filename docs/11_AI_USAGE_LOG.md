@@ -348,6 +348,22 @@
 - 최종 상태: 반영
 - 비고: Edit Mode 45/45, Play Mode 7/7 통과
 
+### AI-20260725-020
+
+- 날짜: 2026-07-25
+- 작업자: 프로젝트 담당자
+- 사용 도구: OpenAI Codex
+- 모델 또는 기능: Unity 계층 분리, NGO 컴포넌트와 모델 교체 회귀 테스트
+- 작업 목적: Blender 모델을 나중에 교체해도 플레이어 물리와 조작을 유지하는 구조 확정
+- 관련 작업 ID: ART-001
+- 입력 프롬프트 요약: PlayerRoot와 VisualRoot 분리, 이동의 애니메이션 비의존, 모델 교체 가능
+- AI 생성 결과: `PlayerVisualRoot`, 역할별 `VisualRoot/PlaceholderModel`, 교체 검증 테스트
+- 실제 반영 파일: 플레이어 런타임 코드, Game 씬 생성기, Edit/Play Mode 테스트
+- 사람이 수정하거나 결정한 내용: CharacterController는 동작 특성상 PlayerRoot에 유지하고 시각 모델만 자식으로 분리
+- 검증 방법: Windows 빌드, 씬 계층 계약, 모델 교체 전후 충돌 인스턴스와 이동 비교
+- 최종 상태: 반영
+- 비고: Edit Mode 46/46, Play Mode 8/8 통과
+
 ## 기록 시 주의사항
 
 - 비밀 키, 개인정보, 전체 음성 데이터는 기록하지 않는다.

@@ -2,7 +2,8 @@
   "name": "PawsAndLoot.Tests.EditMode",
   "rootNamespace": "PawsAndLoot.Tests.EditMode",
   "references": [
-    "PawsAndLoot.Runtime"
+    "PawsAndLoot.Runtime",
+    "Unity.Netcode.Runtime"
   ],
   "includePlatforms": [
     "Editor"

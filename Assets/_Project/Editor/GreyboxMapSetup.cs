@@ -7,6 +7,7 @@ using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Match;
 using PawsAndLoot.UI;
+using Unity.Netcode;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -852,19 +853,30 @@ namespace PawsAndLoot.Editor
             PlayerRole role,
             Color color)
         {
-            GameObject marker = GameObject.CreatePrimitive(
-                PrimitiveType.Capsule);
-            marker.name = $"{role} Role Preview";
+            var marker = new GameObject($"{role} Role Preview");
             marker.transform.SetParent(parent);
             marker.transform.position =
                 PlayerRoleSpawnResolver.Resolve(map, role).position
                 + Vector3.up;
-            marker.GetComponent<Renderer>().sharedMaterial =
+
+            Transform visualRoot = CreateChild(
+                "VisualRoot",
+                marker.transform);
+            GameObject placeholder = GameObject.CreatePrimitive(
+                PrimitiveType.Capsule);
+            placeholder.name = "PlaceholderModel";
+            placeholder.transform.SetParent(visualRoot, false);
+            placeholder.GetComponent<Renderer>().sharedMaterial =
                 LoadOrCreateMaterial($"Role_{role}", color);
+            UnityEngine.Object.DestroyImmediate(
+                placeholder.GetComponent<Collider>());
 
             PlayerRoleIdentity identity =
                 marker.AddComponent<PlayerRoleIdentity>();
             identity.Configure(role);
+            PlayerVisualRoot playerVisualRoot =
+                marker.AddComponent<PlayerVisualRoot>();
+            playerVisualRoot.Configure(visualRoot, placeholder);
             return marker;
         }
 
@@ -928,6 +940,8 @@ namespace PawsAndLoot.Editor
             interactionInput.Configure(
                 interactionScanner,
                 locallyControlled);
+            player.AddComponent<NetworkObject>();
+            player.GetComponent<PlayerVisualRoot>().ValidateOrThrow();
 
             return new PlayerRoleControlBinding(
                 identity,

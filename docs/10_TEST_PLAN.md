@@ -262,6 +262,20 @@ Windows 음성 언어 팩이 준비된 PC 또는 새 STT 후보에서 실제 한
 - 전체 Edit Mode 45/45 통과
 - 상호작용과 기존 이동 Play Mode 7/7 통과
 
+### ART-001 캐릭터 VisualRoot 구조
+
+- 경찰과 도둑 모두 직계 `VisualRoot/PlaceholderModel` 보유
+- CharacterController·이동·상호작용·NetworkObject는 PlayerRoot에 유지
+- 모델 교체 전후 CharacterController 인스턴스 동일
+- Animator 없이 이동 가능
+- 교체 모델의 root motion 자동 비활성화
+
+2026-07-25 실제 검증:
+
+- Windows x86_64 개발 빌드 성공
+- 전체 Edit Mode 46/46 통과
+- 모델 교체와 기존 기능 Play Mode 8/8 통과
+
 ## 6. 경찰 승리
 
 ### 시간 종료

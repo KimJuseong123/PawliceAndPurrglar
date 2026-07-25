@@ -2,7 +2,8 @@
   "name": "PawsAndLoot.Tests.PlayMode",
   "rootNamespace": "PawsAndLoot.Tests.PlayMode",
   "references": [
-    "PawsAndLoot.Runtime"
+    "PawsAndLoot.Runtime",
+    "Unity.Netcode.Runtime"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

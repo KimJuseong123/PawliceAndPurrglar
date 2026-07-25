@@ -153,6 +153,12 @@ PlayerKeyboardInput
 역할의 `E` 입력만 전달한다. 대상 실행과 안내 UI는 스캐너의 읽기 결과를
 사용하므로 UI가 권한이나 게임 규칙을 변경하지 않는다.
 
+본게임 플레이어는 `PlayerRoot`에 `CharacterController`,
+`PlayerMovementMotor`, `PlayerInteractionScanner`, `NetworkObject`를 두고,
+시각 모델만 직계 자식 `VisualRoot` 아래에 둔다. `PlayerVisualRoot`가 모델
+교체와 루트 모션 비활성화를 담당한다. 따라서 FBX 교체는 충돌 크기, 이동 주체,
+네트워크 식별자를 변경하지 않는다.
+
 ### Companions
 
 책임:

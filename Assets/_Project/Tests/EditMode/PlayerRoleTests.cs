@@ -66,7 +66,8 @@ namespace PawsAndLoot.Tests.EditMode
                 Is.EquivalentTo(new[] { PlayerRole.Police, PlayerRole.Thief }));
 
             Renderer[] renderers = identities
-                .Select(identity => identity.GetComponent<Renderer>())
+                .Select(identity =>
+                    identity.GetComponentInChildren<Renderer>(true))
                 .ToArray();
             Assert.That(renderers, Has.All.Not.Null);
             Assert.That(
