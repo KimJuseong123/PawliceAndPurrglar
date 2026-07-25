@@ -204,6 +204,12 @@ Assets/_Project/Scripts/Gameplay/Players/PlayerRoleControlBinding.cs
 - 경찰·도둑 모두 같은 `PlayerMovementMotor`와 CharacterController 사용
 - 기본 경찰, `-playerRole Thief` 실행 시 도둑 입력과 카메라 선택
 
+- PLAYER-003 공통 대시:
+
+- Space 입력, `PlayerConfig`의 대시 속도·지속시간·쿨타임 사용
+- 일반 이동과 동일한 CharacterController 충돌
+- 경기 종료 취소, 연속 입력 차단과 쿨타임 상태 조회
+
 - 기존 경찰 Blender 원본 존재:
 
 ```text
@@ -259,16 +265,16 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 
 ## 현재 작업
 
-- 작업 ID: `PLAYER-002`
-- 작업: 경찰 이동 구조를 재사용하는 도둑 이동
+- 작업 ID: `PLAYER-003`
+- 작업: 공통 플레이어 대시와 쿨타임
 - 상태: `DONE`
-- 결과: 양 역할 공통 이동·충돌, 역할별 시작점과 로컬 역할 선택
+- 결과: Space 대시, 벽 충돌, 쿨타임과 경기 상태 제한
 
 ## 바로 다음 작업
 
-1. `PLAYER-003`: 대시
-2. `PLAYER-004`: 공통 상호작용
-3. `ART-001`: 캐릭터 VisualRoot 구조
+1. `PLAYER-004`: 공통 상호작용
+2. `ART-001`: 캐릭터 VisualRoot 구조
+3. `MATCH-002`: 준비 카운트다운
 
 ## 차단 요소
 
@@ -349,5 +355,7 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 | 2026-07-25 | PLAYER-002 Windows 개발 빌드 | 성공 |
 | 2026-07-25 | PLAYER-002 Edit Mode 테스트 | 44/44 통과 |
 | 2026-07-25 | PLAYER-002 Play Mode 회귀 테스트 | 4/4 통과 |
+| 2026-07-25 | PLAYER-003 Windows 개발 빌드 | 성공 |
+| 2026-07-25 | PLAYER-003 Play Mode 테스트 | 5/5 통과 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.

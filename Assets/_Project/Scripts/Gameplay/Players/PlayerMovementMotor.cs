@@ -21,9 +21,21 @@ namespace PawsAndLoot.Gameplay.Players
 
         private IMatchStateReader _matchState;
         private float _verticalVelocity;
+        private Vector3 _dashDirection;
+        private float _dashRemainingSeconds;
+        private float _dashCooldownRemainingSeconds;
 
         public Vector3 LastPlanarVelocity { get; private set; }
         public bool CanMove => _matchState?.IsGameplayActive == true;
+        public bool IsDashing => _dashRemainingSeconds > 0f;
+        public float DashCooldownRemainingSeconds =>
+            _dashCooldownRemainingSeconds;
+        public float DashCooldownNormalized =>
+            playerConfig != null && playerConfig.DashCooldownSeconds > 0f
+                ? Mathf.Clamp01(
+                    _dashCooldownRemainingSeconds
+                    / playerConfig.DashCooldownSeconds)
+                : 0f;
 
         public void Configure(
             CharacterController controller,
@@ -52,10 +64,27 @@ namespace PawsAndLoot.Gameplay.Players
                 return;
             }
 
-            Vector3 direction = CanMove
-                ? GetWorldDirection(input)
-                : Vector3.zero;
-            LastPlanarVelocity = direction * playerConfig.MoveSpeed;
+            _dashCooldownRemainingSeconds = Mathf.Max(
+                0f,
+                _dashCooldownRemainingSeconds - deltaTime);
+            if (!CanMove)
+            {
+                _dashRemainingSeconds = 0f;
+            }
+
+            Vector3 direction = Vector3.zero;
+            float speed = playerConfig.MoveSpeed;
+            if (CanMove && IsDashing)
+            {
+                direction = _dashDirection;
+                speed = playerConfig.DashSpeed;
+            }
+            else if (CanMove)
+            {
+                direction = GetWorldDirection(input);
+            }
+
+            LastPlanarVelocity = direction * speed;
 
             if (direction.sqrMagnitude > 0.0001f)
             {
@@ -74,6 +103,43 @@ namespace PawsAndLoot.Gameplay.Players
             Vector3 velocity =
                 LastPlanarVelocity + Vector3.up * _verticalVelocity;
             characterController.Move(velocity * deltaTime);
+
+            if (IsDashing)
+            {
+                _dashRemainingSeconds = Mathf.Max(
+                    0f,
+                    _dashRemainingSeconds - deltaTime);
+            }
+        }
+
+        public bool TryStartDash(Vector2 input)
+        {
+            ValidateDependencies();
+            if (!CanMove
+                || IsDashing
+                || _dashCooldownRemainingSeconds > 0f)
+            {
+                return false;
+            }
+
+            Vector3 requestedDirection = GetWorldDirection(input);
+            if (requestedDirection.sqrMagnitude <= 0.0001f)
+            {
+                requestedDirection = transform.forward;
+                requestedDirection.y = 0f;
+                if (requestedDirection.sqrMagnitude <= 0.0001f)
+                {
+                    requestedDirection = Vector3.forward;
+                }
+
+                requestedDirection.Normalize();
+            }
+
+            _dashDirection = requestedDirection;
+            _dashRemainingSeconds = playerConfig.DashDurationSeconds;
+            _dashCooldownRemainingSeconds =
+                playerConfig.DashCooldownSeconds;
+            return true;
         }
 
         private void Awake()

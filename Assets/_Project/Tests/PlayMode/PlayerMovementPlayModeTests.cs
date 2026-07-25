@@ -128,6 +128,54 @@ namespace PawsAndLoot.Tests.PlayMode
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator DashUsesCooldownStopsAtWallAndRequiresPlaying()
+        {
+            GameObject floor = CreateBox(
+                "Floor",
+                new Vector3(0f, -0.25f, 0f),
+                new Vector3(20f, 0.5f, 20f));
+            GameObject wall = CreateBox(
+                "Wall",
+                new Vector3(0f, 1f, 2f),
+                new Vector3(5f, 2f, 0.5f));
+            var state = new MutableMatchStateReader();
+            PlayerMovementMotor motor = CreateMotor(
+                "Dash Player",
+                new Vector3(0f, 1f, 0f),
+                state);
+            Physics.SyncTransforms();
+
+            Assert.That(motor.TryStartDash(Vector2.up), Is.False);
+            state.IsGameplayActive = true;
+            Assert.That(motor.TryStartDash(Vector2.up), Is.True);
+            Assert.That(motor.IsDashing, Is.True);
+            Assert.That(
+                motor.LastPlanarVelocity.magnitude,
+                Is.EqualTo(0f));
+
+            Simulate(motor, Vector2.up, 30, 1f / 60f);
+            Assert.That(motor.IsDashing, Is.False);
+            Assert.That(motor.transform.position.z, Is.LessThan(1.45f));
+            Assert.That(motor.DashCooldownRemainingSeconds, Is.GreaterThan(0f));
+            Assert.That(motor.DashCooldownNormalized, Is.InRange(0f, 1f));
+            Assert.That(motor.TryStartDash(Vector2.up), Is.False);
+
+            Simulate(motor, Vector2.zero, 330, 1f / 60f);
+            Assert.That(motor.DashCooldownRemainingSeconds, Is.EqualTo(0f));
+            Assert.That(motor.TryStartDash(Vector2.left), Is.True);
+
+            state.IsGameplayActive = false;
+            motor.Move(Vector2.left, 1f / 60f);
+            Assert.That(motor.IsDashing, Is.False);
+            Assert.That(motor.LastPlanarVelocity, Is.EqualTo(Vector3.zero));
+
+            Object.Destroy(motor.gameObject);
+            Object.Destroy(wall);
+            Object.Destroy(floor);
+            yield return null;
+        }
+
         private static PlayerMovementMotor CreateMotor(
             string name,
             Vector3 position,

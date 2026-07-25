@@ -93,7 +93,7 @@
 |---|---|---|---|
 | PLAYER-001 | P0 | DONE | 경찰 이동 |
 | PLAYER-002 | P0 | DONE | 도둑 이동 |
-| PLAYER-003 | P1 | TODO | 대시 |
+| PLAYER-003 | P1 | DONE | 대시 |
 | PLAYER-004 | P0 | TODO | 공통 상호작용 |
 | PLAYER-005 | P0 | DONE | 역할 구분 |
 | PLAYER-006 | P1 | TODO | 보물 소지 이동 페널티 |
@@ -209,6 +209,6 @@ NET-001과 NET-002는 본격 멀티플레이가 아니라 패키지와 권한 �
 
 ## 바로 다음 작업
 
-1. `PLAYER-003` 대시
-2. `PLAYER-004` 공통 상호작용
-3. `ART-001` 캐릭터 VisualRoot 구조
+1. `PLAYER-004` 공통 상호작용
+2. `ART-001` 캐릭터 VisualRoot 구조
+3. `MATCH-002` 준비 카운트다운

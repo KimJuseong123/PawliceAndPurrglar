@@ -141,6 +141,12 @@ PlayerKeyboardInput
 `-playerRole Thief`로 도둑 조작을 검증할 수 있다. 이 선택기는 네트워크 역할
 권한을 대신하지 않으며, 실제 멀티플레이 연결 시 로컬 소유권 어댑터로 교체한다.
 
+대시는 `PlayerMovementMotor` 내부의 짧은 상태다. 시작 시 방향을 고정하고
+`PlayerConfig.DashSpeed`, `DashDurationSeconds`, `DashCooldownSeconds`를
+사용한다. 이동 적용은 일반 이동과 같은 CharacterController 경로를 거치므로
+충돌 규칙이 달라지지 않는다. `IsDashing`, 남은 쿨타임과 정규화 값은 읽기
+전용으로 공개하며 UI는 이를 표시만 한다.
+
 ### Companions
 
 책임:

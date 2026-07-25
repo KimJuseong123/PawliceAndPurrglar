@@ -39,6 +39,11 @@ namespace PawsAndLoot.Gameplay.Players
                 : new Vector2(
                     ReadAxis(keyboard.aKey, keyboard.dKey),
                     ReadAxis(keyboard.sKey, keyboard.wKey));
+            if (keyboard?.spaceKey.wasPressedThisFrame == true)
+            {
+                movementMotor.TryStartDash(input);
+            }
+
             movementMotor.Move(input, Time.deltaTime);
         }
 

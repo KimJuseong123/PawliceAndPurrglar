@@ -538,3 +538,12 @@ Builds/TechnicalValidation/Windows/PawsAndLootMapGreybox.exe
 
 경찰과 도둑은 동일한 이동·충돌 코드를 사용하며 선택된 한 역할만 로컬 입력과
 카메라를 받습니다.
+
+공통 조작:
+
+```text
+WASD  이동
+Space 대시
+```
+
+대시는 벽을 통과하지 않으며 경기 중이고 쿨타임이 끝났을 때만 시작됩니다.
