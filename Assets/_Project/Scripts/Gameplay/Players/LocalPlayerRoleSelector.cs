@@ -56,6 +56,11 @@ namespace PawsAndLoot.Gameplay.Players
                     binding.InteractionInput.IsLocallyControlled = isSelected;
                 }
 
+                if (binding.LootDropInput != null)
+                {
+                    binding.LootDropInput.IsLocallyControlled = isSelected;
+                }
+
                 if (isSelected)
                 {
                     selected = binding;

@@ -955,6 +955,9 @@ namespace PawsAndLoot.Editor
                 identity,
                 matchRuntime,
                 player.transform.Find("CarryPoint"));
+            LootDropInput lootDropInput =
+                player.AddComponent<LootDropInput>();
+            lootDropInput.Configure(lootCarrier, locallyControlled);
             player.AddComponent<NetworkObject>();
             player.GetComponent<PlayerVisualRoot>().ValidateOrThrow();
 
@@ -962,7 +965,8 @@ namespace PawsAndLoot.Editor
                 identity,
                 keyboardInput,
                 interactionScanner,
-                interactionInput);
+                interactionInput,
+                lootDropInput);
         }
 
         private static PawsAndLoot.Gameplay.Camera.TopDownFollowCamera

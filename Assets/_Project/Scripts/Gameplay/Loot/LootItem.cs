@@ -17,11 +17,13 @@ namespace PawsAndLoot.Gameplay.Loot
 
         private LootStateMachine _stateMachine;
         private Collider[] _worldColliders;
+        private float _worldClearance;
 
         public event Action<LootStateChanged> StateChanged;
 
         public LootDefinition Definition => definition;
         public Transform PresentationRoot => presentationRoot;
+        public float WorldClearance => GetWorldClearance();
         public LootState CurrentState =>
             EnsureStateMachine().CurrentState;
         public LootCarrier CurrentCarrier { get; private set; }
@@ -106,7 +108,28 @@ namespace PawsAndLoot.Gameplay.Loot
             }
 
             CurrentCarrier = null;
-            RestorePresentationToWorld();
+            RestorePresentationToWorld(presentationRoot.position);
+            return true;
+        }
+
+        internal bool TryDrop(
+            LootCarrier carrier,
+            Vector3 worldPosition)
+        {
+            if (carrier == null
+                || CurrentCarrier != carrier
+                || CurrentState != LootState.Carried)
+            {
+                return false;
+            }
+
+            if (!EnsureStateMachine().TryTransitionTo(LootState.Dropped))
+            {
+                return false;
+            }
+
+            CurrentCarrier = null;
+            RestorePresentationToWorld(worldPosition);
             return true;
         }
 
@@ -137,20 +160,51 @@ namespace PawsAndLoot.Gameplay.Loot
         {
             _worldColliders =
                 GetComponentsInChildren<Collider>(true);
+            _worldClearance =
+                CalculateWorldClearance(_worldColliders);
             SetWorldCollidersEnabled(false);
             presentationRoot.SetParent(carryPoint, false);
             presentationRoot.localPosition = Vector3.zero;
             presentationRoot.localRotation = Quaternion.identity;
         }
 
-        private void RestorePresentationToWorld()
+        private void RestorePresentationToWorld(Vector3 worldPosition)
         {
-            Vector3 carriedPosition = presentationRoot.position;
             presentationRoot.SetParent(transform, false);
-            transform.position = carriedPosition;
+            transform.position = worldPosition;
             presentationRoot.localPosition = Vector3.zero;
             presentationRoot.localRotation = Quaternion.identity;
             SetWorldCollidersEnabled(true);
+        }
+
+        private float GetWorldClearance()
+        {
+            if (_worldClearance > 0f)
+            {
+                return _worldClearance;
+            }
+
+            Collider[] colliders =
+                GetComponentsInChildren<Collider>(true);
+            _worldClearance = CalculateWorldClearance(colliders);
+            return _worldClearance;
+        }
+
+        private static float CalculateWorldClearance(
+            Collider[] colliders)
+        {
+            float clearance = 0f;
+            foreach (Collider worldCollider in colliders)
+            {
+                if (worldCollider != null)
+                {
+                    clearance = Mathf.Max(
+                        clearance,
+                        worldCollider.bounds.extents.y);
+                }
+            }
+
+            return clearance;
         }
 
         private void SetWorldCollidersEnabled(bool enabled)

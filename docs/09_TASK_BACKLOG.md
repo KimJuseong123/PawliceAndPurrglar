@@ -106,7 +106,7 @@
 | LOOT-008 | P0 | DONE | 보물 가격 데이터 |
 | LOOT-002 | P0 | DONE | 보물 획득 |
 | LOOT-003 | P0 | DONE | 운반 |
-| LOOT-004 | P1 | TODO | 드롭 |
+| LOOT-004 | P1 | DONE | 드롭 |
 | LOOT-005 | P2 | TODO | 숨기기 |
 | LOOT-006 | P0 | TODO | 보물 판매 |
 | LOOT-007 | P0 | TODO | 중복 획득·판매 방지 |
