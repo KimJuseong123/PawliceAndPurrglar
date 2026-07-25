@@ -33,6 +33,7 @@ namespace PawsAndLoot.Gameplay.Arrest
             CanProgress() && ProgressNormalized < 1f;
         public bool IsReadyToComplete =>
             ProgressNormalized >= 1f;
+        public bool IsCompleted { get; private set; }
 
         public void Configure(
             ArrestRangeSensor configuredRangeSensor,
@@ -44,12 +45,18 @@ namespace PawsAndLoot.Gameplay.Arrest
             matchStateSource = configuredMatchState as MonoBehaviour;
             arrestConfig = configuredArrestConfig;
             ProgressSeconds = 0f;
+            IsCompleted = false;
             ValidateOrThrow();
             SubscribeToSensor();
         }
 
         public void Tick(float deltaTime)
         {
+            if (IsCompleted)
+            {
+                return;
+            }
+
             if (TryGetInterruptionReason(
                     out ArrestInterruptionReason reason))
             {
@@ -70,6 +77,20 @@ namespace PawsAndLoot.Gameplay.Arrest
         public void ResetProgress()
         {
             ProgressSeconds = 0f;
+            IsCompleted = false;
+        }
+
+        public bool TryMarkCompleted()
+        {
+            if (IsCompleted
+                || !IsReadyToComplete
+                || !CanProgress())
+            {
+                return false;
+            }
+
+            IsCompleted = true;
+            return true;
         }
 
         public void ValidateOrThrow()
@@ -126,7 +147,7 @@ namespace PawsAndLoot.Gameplay.Arrest
 
         private void Interrupt(ArrestInterruptionReason reason)
         {
-            if (ProgressSeconds <= 0f)
+            if (IsCompleted || ProgressSeconds <= 0f)
             {
                 return;
             }

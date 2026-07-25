@@ -336,7 +336,12 @@ LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint
 `ArrestInterruptionReason`으로 구분하며 실제 누적값이 있었을 때만
 `ProgressInterrupted`를 한 번 발행한다.
 
-이벤트 이름은 구현 전에 코드 스타일에 맞춰 확정한다.
+`ArrestCompletionController`는 정규화 진행도가 1에 도달한 첫 유효 요청만
+완료 처리한다. 완료 시 `ArrestCompleted`, `PoliceVictoryRequested`,
+`ResultPresentationRequested`를 한 번씩 발행하고 `MatchRuntimeState`를
+`ENDING`으로 전환한다. 기존 이동·상호작용 시스템은 모두 경기 활성 상태를
+읽으므로 별도 입력 차단 분기 없이 즉시 멈춘다. 최종 승자 데이터 확정과
+Result 씬 전환은 각각 `MATCH-004`와 `MATCH-006` 범위로 남긴다.
 
 ## 5. 설정 데이터
 

@@ -78,6 +78,8 @@
 - `ArrestConfig`의 1.5초 체포 시간을 0~1 진행도로 변환하고 완료 값에서 중복 누적을 막는 ARREST-002 검증
 - 범위·시야 상실, 참가자 비활성화, 경기 상태 변경 시 진행도를 즉시 초기화하는 ARREST-003 중단 규칙
 - 실제 진행 중이었을 때만 원인별 `ProgressInterrupted` 이벤트를 한 번 발행하는 중복 방지 검증
+- 체포 진행도 완료를 한 번만 확정하고 경찰 승리·결과 연출 요청을 발행하는 `ArrestCompletionController`
+- 체포 직후 `ENDING` 전환으로 이동과 상호작용을 함께 중지하는 ARREST-004 통합 검증
 
 ### Changed
 

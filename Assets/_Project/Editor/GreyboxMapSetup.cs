@@ -1039,6 +1039,9 @@ namespace PawsAndLoot.Editor
             ArrestProgressController progress =
                 police.gameObject.AddComponent<ArrestProgressController>();
             progress.Configure(sensor, matchRuntime, config);
+            ArrestCompletionController completion =
+                police.gameObject.AddComponent<ArrestCompletionController>();
+            completion.Configure(progress, matchRuntime);
         }
 
         private static LocalPlayerRoleSelector CreateLocalRoleSelector(
