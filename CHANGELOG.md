@@ -76,6 +76,8 @@
 - 비활성·잘못된 역할·자기 자신을 체포 대상으로 인정하지 않는 ARREST-001 검증
 - `PLAYING` 중 유효한 체포 감지가 유지될 때만 시간을 누적하는 `ArrestProgressController`
 - `ArrestConfig`의 1.5초 체포 시간을 0~1 진행도로 변환하고 완료 값에서 중복 누적을 막는 ARREST-002 검증
+- 범위·시야 상실, 참가자 비활성화, 경기 상태 변경 시 진행도를 즉시 초기화하는 ARREST-003 중단 규칙
+- 실제 진행 중이었을 때만 원인별 `ProgressInterrupted` 이벤트를 한 번 발행하는 중복 방지 검증
 
 ### Changed
 

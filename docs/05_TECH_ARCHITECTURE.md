@@ -331,6 +331,11 @@ LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint
 0~1의 `ProgressNormalized`와 완료 준비 상태를 제공한다. 체포 완료 이벤트와
 승리 요청은 ARREST-004가 소유한다.
 
+진행 중 거리 또는 시야 조건을 잃거나 참가자가 비활성화되거나 경기가
+`PLAYING`을 벗어나면 진행도를 즉시 0으로 초기화한다. 중단 원인은
+`ArrestInterruptionReason`으로 구분하며 실제 누적값이 있었을 때만
+`ProgressInterrupted`를 한 번 발행한다.
+
 이벤트 이름은 구현 전에 코드 스타일에 맞춰 확정한다.
 
 ## 5. 설정 데이터
