@@ -164,6 +164,11 @@ PlayerKeyboardInput
 `IsGameplayActive`는 false이며, 중복 시작 요청은 거부된다. 프레임 갱신과
 테스트가 같은 `Tick(deltaTime)` 경로를 사용한다.
 
+같은 런타임은 `MatchConfig.MatchDurationSeconds`로 남은 경기 시간을
+초기화한다. 시간은 `PLAYING`에서만 감소하고 0에서 고정되며, 만료 시
+`ENDING`으로 전환한다. 재경기 시스템은 gameplay 비활성 상태에서
+`ResetMatchTimer()`를 호출해 초기값을 복원할 수 있다.
+
 ### Companions
 
 책임:

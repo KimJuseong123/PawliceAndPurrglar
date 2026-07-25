@@ -25,6 +25,7 @@ namespace PawsAndLoot.Match
         public bool IsGameplayActive => _stateMachine.IsGameplayActive;
         public bool IsCountdownActive => _countdownActive;
         public float ReadyCountdownRemainingSeconds { get; private set; }
+        public float RemainingMatchSeconds { get; private set; }
 
         public void Configure(
             MatchConfig configuredMatchConfig,
@@ -33,6 +34,11 @@ namespace PawsAndLoot.Match
             matchConfig = configuredMatchConfig;
             startCountdownAutomatically =
                 shouldStartCountdownAutomatically;
+            if (matchConfig != null)
+            {
+                RemainingMatchSeconds =
+                    matchConfig.MatchDurationSeconds;
+            }
         }
 
         public bool TryTransitionTo(MatchState nextState)
@@ -50,6 +56,7 @@ namespace PawsAndLoot.Match
             }
 
             matchConfig.ValidateOrThrow();
+            ResetMatchTimer();
             if (!_stateMachine.TryTransitionTo(MatchState.Ready))
             {
                 return false;
@@ -63,22 +70,47 @@ namespace PawsAndLoot.Match
 
         public void Tick(float deltaTime)
         {
-            if (!_countdownActive || CurrentState != MatchState.Ready)
+            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+            if (_countdownActive && CurrentState == MatchState.Ready)
+            {
+                ReadyCountdownRemainingSeconds = Mathf.Max(
+                    0f,
+                    ReadyCountdownRemainingSeconds - safeDeltaTime);
+                if (ReadyCountdownRemainingSeconds <= 0f)
+                {
+                    _countdownActive = false;
+                    _stateMachine.TryTransitionTo(MatchState.Playing);
+                }
+
+                return;
+            }
+
+            if (CurrentState != MatchState.Playing)
             {
                 return;
             }
 
-            ReadyCountdownRemainingSeconds = Mathf.Max(
+            RemainingMatchSeconds = Mathf.Max(
                 0f,
-                ReadyCountdownRemainingSeconds
-                    - Mathf.Max(0f, deltaTime));
-            if (ReadyCountdownRemainingSeconds > 0f)
+                RemainingMatchSeconds - safeDeltaTime);
+            if (RemainingMatchSeconds <= 0f)
             {
-                return;
+                _stateMachine.TryTransitionTo(MatchState.Ending);
+            }
+        }
+
+        public bool ResetMatchTimer()
+        {
+            if (matchConfig == null
+                || CurrentState == MatchState.Playing)
+            {
+                return false;
             }
 
-            _countdownActive = false;
-            _stateMachine.TryTransitionTo(MatchState.Playing);
+            matchConfig.ValidateOrThrow();
+            RemainingMatchSeconds =
+                matchConfig.MatchDurationSeconds;
+            return true;
         }
 
         private void Awake()
@@ -89,6 +121,7 @@ namespace PawsAndLoot.Match
                     "MatchRuntimeState requires a MatchConfig.");
             }
 
+            ResetMatchTimer();
             if (startCountdownAutomatically)
             {
                 BeginCountdown();

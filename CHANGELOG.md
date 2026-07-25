@@ -49,6 +49,7 @@
 - 물리·이동·상호작용·네트워크와 렌더 모델을 분리한 `PlayerVisualRoot`
 - Blender 모델 교체 후에도 루트 충돌과 이동을 유지하는 VisualRoot 계약 테스트
 - `MatchConfig` 기반 3초 READY 카운트다운과 중복 시작 방지
+- PLAYING에서만 감소하고 0초에 ENDING으로 전환되는 4분 경기 타이머
 
 ### Changed
 
