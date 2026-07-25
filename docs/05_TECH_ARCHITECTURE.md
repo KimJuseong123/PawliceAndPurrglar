@@ -269,6 +269,11 @@ UI는 이벤트를 구독해 표시하며 UI 텍스트가 게임 값을 소유�
 - `VoiceRecognized`
 - `MatchEnded`
 
+보물 규칙은 `LootStateMachine`이 소유한다. 허용 전환은 게임 규칙 문서의
+AVAILABLE·DROPPED·HIDDEN에서 예약, RESERVED에서 운반, CARRIED에서
+드롭·숨김·판매로 한정한다. SOLD는 종료 상태이며 어떤 요청도 다시 상태를
+변경하지 못한다.
+
 이벤트 이름은 구현 전에 코드 스타일에 맞춰 확정한다.
 
 ## 5. 설정 데이터
