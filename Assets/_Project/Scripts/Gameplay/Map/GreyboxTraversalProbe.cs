@@ -83,6 +83,7 @@ namespace PawsAndLoot.Gameplay.Map
 
             Application.runInBackground = true;
             Screen.SetResolution(1280, 720, FullScreenMode.Windowed);
+            DisableOtherCharacterControllers();
             _resultPath = Path.Combine(
                 Application.persistentDataPath,
                 "map-001-result.json");
@@ -118,6 +119,21 @@ namespace PawsAndLoot.Gameplay.Map
                 status = "Traversing"
             };
             WriteResult();
+        }
+
+        private void DisableOtherCharacterControllers()
+        {
+            CharacterController[] controllers =
+                FindObjectsByType<CharacterController>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            foreach (CharacterController controller in controllers)
+            {
+                if (controller != characterController)
+                {
+                    controller.gameObject.SetActive(false);
+                }
+            }
         }
 
         private void Update()

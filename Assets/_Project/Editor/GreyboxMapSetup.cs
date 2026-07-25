@@ -1045,7 +1045,7 @@ namespace PawsAndLoot.Editor
             CreatePrototypeInteractionTarget(
                 "Prototype Plaza Point",
                 locations[GreyboxLocationId.CentralPlaza].position
-                    + new Vector3(-2f, 0.5f, 0f),
+                    + new Vector3(-3f, 0.5f, -3f),
                 PlayerInteractionType.Generic,
                 "Inspect plaza marker",
                 Color.white,
