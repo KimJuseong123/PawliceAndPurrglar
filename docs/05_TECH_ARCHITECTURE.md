@@ -348,6 +348,11 @@ Result 씬 전환은 각각 `MATCH-004`와 `MATCH-006` 범위로 남긴다.
 체포 완료를 표시한다. 게이지는 `ProgressNormalized`를 그대로 사용하며
 Presenter의 갱신은 경기 상태나 체포 진행도를 변경하지 않는다.
 
+`PoliceHudPresenter`는 `MatchRuntimeState`, 도둑 지갑과 운반 상태,
+체포 진행도를 묶어 경찰 역할 전용 패널로 표시한다. 보물 운반 중에는
+도난 진행 알림을, 판매 후에는 마지막 판매 금액을 보여준다. Presenter는
+역할 선택기에 따라 표시만 전환하며 타이머·지갑·체포 시스템을 수정하지 않는다.
+
 ## 5. 설정 데이터
 
 BASE-004에서 다음 ScriptableObject를 구현했다.

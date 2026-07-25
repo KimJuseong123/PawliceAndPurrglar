@@ -44,6 +44,12 @@ namespace PawsAndLoot.Tests.EditMode
                     root.GetComponentsInChildren<
                         ThiefHudPresenter>(true))
                 .ToArray();
+            PoliceHudPresenter[] policePresenters = scene
+                .GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<
+                        PoliceHudPresenter>(true))
+                .ToArray();
             ArrestHudPresenter[] arrestHudPresenters = scene
                 .GetRootGameObjects()
                 .SelectMany(root =>
@@ -83,6 +89,9 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(thiefPresenters, Has.Length.EqualTo(1));
             Assert.DoesNotThrow(
                 thiefPresenters[0].ValidateOrThrow);
+            Assert.That(policePresenters, Has.Length.EqualTo(1));
+            Assert.DoesNotThrow(
+                policePresenters[0].ValidateOrThrow);
             Assert.That(arrestHudPresenters, Has.Length.EqualTo(1));
             Assert.DoesNotThrow(
                 arrestHudPresenters[0].ValidateOrThrow);

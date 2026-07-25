@@ -1440,6 +1440,78 @@ namespace PawsAndLoot.Editor
                 (int)Image.OriginHorizontal.Left;
             arrestProgressFill.fillAmount = 0f;
 
+            RectTransform policeHudRect = CreateRect(
+                "Police HUD",
+                hudRoot);
+            policeHudRect.anchorMin = Vector2.one;
+            policeHudRect.anchorMax = Vector2.one;
+            policeHudRect.pivot = Vector2.one;
+            policeHudRect.anchoredPosition =
+                new Vector2(-28f, -104f);
+            policeHudRect.sizeDelta = new Vector2(360f, 304f);
+            Image policeHudBackground =
+                policeHudRect.gameObject.AddComponent<Image>();
+            policeHudBackground.color =
+                new Color(0.03f, 0.1f, 0.24f, 0.92f);
+
+            Text policeHudTitle = CreateHudLabel(
+                "Title",
+                policeHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -14f),
+                new Vector2(324f, 38f),
+                TextAnchor.MiddleLeft,
+                24);
+            policeHudTitle.text = "POLICE STATUS";
+            Text policeTimeLabel = CreateHudLabel(
+                "Remaining Time",
+                policeHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -56f),
+                new Vector2(324f, 34f),
+                TextAnchor.MiddleLeft,
+                20);
+            Text policeThiefGoldLabel = CreateHudLabel(
+                "Thief Sale Amount",
+                policeHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -94f),
+                new Vector2(324f, 34f),
+                TextAnchor.MiddleLeft,
+                20);
+            Text policeArrestLabel = CreateHudLabel(
+                "Arrest Progress",
+                policeHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -132f),
+                new Vector2(324f, 34f),
+                TextAnchor.MiddleLeft,
+                20);
+            Text policeTheftAlertLabel = CreateHudLabel(
+                "Theft Alert",
+                policeHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -170f),
+                new Vector2(324f, 38f),
+                TextAnchor.MiddleLeft,
+                19);
+            policeTheftAlertLabel.color =
+                new Color(1f, 0.74f, 0.22f);
+            Text policeGoalLabel = CreateHudLabel(
+                "Current Goal",
+                policeHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -216f),
+                new Vector2(324f, 70f),
+                TextAnchor.UpperLeft,
+                18);
+
             RectTransform thiefHudRect = CreateRect(
                 "Thief HUD",
                 hudRoot);
@@ -1685,6 +1757,21 @@ namespace PawsAndLoot.Editor
                 arrestProgressFill,
                 arrestStatusLabel,
                 thiefWarningLabel);
+            PoliceHudPresenter policeHudPresenter =
+                hudRoot.gameObject.AddComponent<PoliceHudPresenter>();
+            policeHudPresenter.Configure(
+                roleSelector,
+                matchRuntime,
+                thiefPlayer.GetComponent<ThiefLootWallet>(),
+                thiefPlayer.GetComponent<LootCarrier>(),
+                policePlayer.GetComponent<
+                    ArrestProgressController>(),
+                policeHudRect.gameObject,
+                policeTimeLabel,
+                policeThiefGoldLabel,
+                policeArrestLabel,
+                policeTheftAlertLabel,
+                policeGoalLabel);
 
             var eventSystem = new GameObject(
                 "EventSystem",
