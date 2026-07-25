@@ -1,6 +1,7 @@
 using System.Linq;
 using NUnit.Framework;
 using PawsAndLoot.Core;
+using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
 using Unity.Netcode;
 using UnityEditor.SceneManagement;
@@ -45,6 +46,13 @@ namespace PawsAndLoot.Tests.EditMode
                 Assert.That(
                     player.CurrentVisual.transform.parent,
                     Is.EqualTo(player.VisualRoot));
+                LootCarrier carrier =
+                    player.GetComponent<LootCarrier>();
+                Assert.That(carrier, Is.Not.Null);
+                Assert.DoesNotThrow(carrier.ValidateOrThrow);
+                Assert.That(
+                    carrier.CarryPoint.parent,
+                    Is.EqualTo(player.transform));
             }
         }
     }

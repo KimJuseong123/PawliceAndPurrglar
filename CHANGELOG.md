@@ -60,6 +60,8 @@
 - 도둑·PLAYING·빈손 조건을 모두 검사하는 `LootCarrier` 보물 획득 권한
 - 획득 시 `RESERVED → CARRIED` 전환과 보물·소지자 양방향 소유 관계
 - Game 씬 보석상 앞 프로토타입 보물의 실제 획득 상호작용
+- 플레이어 루트의 `CarryPoint`를 따라오는 보물 `PresentationRoot`
+- 운반 중 월드 충돌체 비활성화와 소지자 비활성화·파괴 시 안전한 `DROPPED` 복구
 
 ### Changed
 

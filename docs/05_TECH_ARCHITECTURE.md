@@ -278,7 +278,14 @@ AVAILABLE·DROPPED·HIDDEN에서 예약, RESERVED에서 운반, CARRIED에서
 `LootItem`은 자신의 상태와 현재 소지자를 소유하며, `IPlayerInteractable`을 통해
 기존 최근접 상호작용 흐름에 참여한다. 획득은 도둑 역할, PLAYING 상태, 빈손,
 획득 가능한 보물 상태를 모두 통과할 때만 `RESERVED → CARRIED`로 완료된다.
-시각적 부착은 LOOT-003에서 추가하며 소유 관계를 Transform 부모 관계로 판정하지 않는다.
+소유 관계는 `LootCarrier.HeldLoot`와 `LootItem.CurrentCarrier`로 판정하며
+Transform 부모 관계를 게임 규칙의 근거로 사용하지 않는다.
+
+LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint`를 가진다.
+`LootItem` 루트는 상태·소유권·상호작용 충돌체를 유지하고, 직계 자식
+`PresentationRoot`만 소지자의 `CarryPoint`에 부착한다. 운반 중 월드 충돌체는
+비활성화한다. 소지자가 비활성화되거나 파괴되면 외형을 보물 루트로 되돌리고
+상태를 `DROPPED`로 전환해 보물 자체가 함께 사라지지 않게 한다.
 
 이벤트 이름은 구현 전에 코드 스타일에 맞춰 확정한다.
 

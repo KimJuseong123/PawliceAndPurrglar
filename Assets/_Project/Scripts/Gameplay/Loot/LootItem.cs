@@ -12,11 +12,16 @@ namespace PawsAndLoot.Gameplay.Loot
         [SerializeField]
         private LootState initialState = LootState.Available;
 
+        [SerializeField]
+        private Transform presentationRoot;
+
         private LootStateMachine _stateMachine;
+        private Collider[] _worldColliders;
 
         public event Action<LootStateChanged> StateChanged;
 
         public LootDefinition Definition => definition;
+        public Transform PresentationRoot => presentationRoot;
         public LootState CurrentState =>
             EnsureStateMachine().CurrentState;
         public LootCarrier CurrentCarrier { get; private set; }
@@ -33,9 +38,11 @@ namespace PawsAndLoot.Gameplay.Loot
 
         public void Configure(
             LootDefinition configuredDefinition,
+            Transform configuredPresentationRoot,
             LootState configuredInitialState = LootState.Available)
         {
             definition = configuredDefinition;
+            presentationRoot = configuredPresentationRoot;
             initialState = configuredInitialState;
             _stateMachine = null;
         }
@@ -52,15 +59,19 @@ namespace PawsAndLoot.Gameplay.Loot
             return carrier != null && carrier.TryAcquire(this);
         }
 
-        internal bool TryAcquire(LootCarrier carrier)
+        internal bool TryAcquire(
+            LootCarrier carrier,
+            Transform carryPoint)
         {
             if (carrier == null
+                || carryPoint == null
                 || CurrentCarrier != null
                 || !IsPickupState(CurrentState))
             {
                 return false;
             }
 
+            ValidatePresentationOrThrow();
             LootStateMachine stateMachine = EnsureStateMachine();
             if (!stateMachine.TryTransitionTo(LootState.Reserved))
             {
@@ -75,6 +86,27 @@ namespace PawsAndLoot.Gameplay.Loot
                     $"Loot '{name}' could not complete RESERVED -> CARRIED.");
             }
 
+            AttachPresentation(carryPoint);
+            return true;
+        }
+
+        internal bool TryReleaseFromUnavailableCarrier(
+            LootCarrier carrier)
+        {
+            if (carrier == null
+                || CurrentCarrier != carrier
+                || CurrentState != LootState.Carried)
+            {
+                return false;
+            }
+
+            if (!EnsureStateMachine().TryTransitionTo(LootState.Dropped))
+            {
+                return false;
+            }
+
+            CurrentCarrier = null;
+            RestorePresentationToWorld();
             return true;
         }
 
@@ -87,7 +119,64 @@ namespace PawsAndLoot.Gameplay.Loot
             }
 
             definition.ValidateOrThrow();
+            ValidatePresentationOrThrow();
             EnsureStateMachine();
+        }
+
+        private void OnDestroy()
+        {
+            LootCarrier carrier = CurrentCarrier;
+            CurrentCarrier = null;
+            if (carrier != null)
+            {
+                carrier.HandleLootUnavailable(this);
+            }
+        }
+
+        private void AttachPresentation(Transform carryPoint)
+        {
+            _worldColliders =
+                GetComponentsInChildren<Collider>(true);
+            SetWorldCollidersEnabled(false);
+            presentationRoot.SetParent(carryPoint, false);
+            presentationRoot.localPosition = Vector3.zero;
+            presentationRoot.localRotation = Quaternion.identity;
+        }
+
+        private void RestorePresentationToWorld()
+        {
+            Vector3 carriedPosition = presentationRoot.position;
+            presentationRoot.SetParent(transform, false);
+            transform.position = carriedPosition;
+            presentationRoot.localPosition = Vector3.zero;
+            presentationRoot.localRotation = Quaternion.identity;
+            SetWorldCollidersEnabled(true);
+        }
+
+        private void SetWorldCollidersEnabled(bool enabled)
+        {
+            if (_worldColliders == null)
+            {
+                return;
+            }
+
+            foreach (Collider worldCollider in _worldColliders)
+            {
+                if (worldCollider != null)
+                {
+                    worldCollider.enabled = enabled;
+                }
+            }
+        }
+
+        private void ValidatePresentationOrThrow()
+        {
+            if (presentationRoot == null
+                || presentationRoot.parent != transform)
+            {
+                throw new InvalidOperationException(
+                    $"LootItem '{name}' requires a direct PresentationRoot child.");
+            }
         }
 
         private LootStateMachine EnsureStateMachine()

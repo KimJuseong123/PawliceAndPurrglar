@@ -105,7 +105,7 @@
 | LOOT-001 | P0 | DONE | 보물 상태 정의 |
 | LOOT-008 | P0 | DONE | 보물 가격 데이터 |
 | LOOT-002 | P0 | DONE | 보물 획득 |
-| LOOT-003 | P0 | TODO | 운반 |
+| LOOT-003 | P0 | DONE | 운반 |
 | LOOT-004 | P1 | TODO | 드롭 |
 | LOOT-005 | P2 | TODO | 숨기기 |
 | LOOT-006 | P0 | TODO | 보물 판매 |

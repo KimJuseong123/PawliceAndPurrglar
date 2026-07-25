@@ -13,30 +13,37 @@ namespace PawsAndLoot.Gameplay.Loot
         [SerializeField]
         private MonoBehaviour matchStateSource;
 
+        [SerializeField]
+        private Transform carryPoint;
+
         private IMatchStateReader _matchState;
 
         public event Action<LootItem, LootItem> HeldLootChanged;
 
         public LootItem HeldLoot { get; private set; }
         public bool HasLoot => HeldLoot != null;
+        public Transform CarryPoint => carryPoint;
 
         public void Configure(
             PlayerRoleIdentity configuredIdentity,
-            IMatchStateReader configuredMatchState)
+            IMatchStateReader configuredMatchState,
+            Transform configuredCarryPoint)
         {
             identity = configuredIdentity;
             _matchState = configuredMatchState;
             matchStateSource = configuredMatchState as MonoBehaviour;
+            carryPoint = configuredCarryPoint;
         }
 
         public bool TryAcquire(LootItem loot)
         {
+            ValidateOrThrow();
             if (loot == null
                 || identity == null
                 || identity.Role != PlayerRole.Thief
                 || !IsGameplayActive()
                 || HeldLoot != null
-                || !loot.TryAcquire(this))
+                || !loot.TryAcquire(this, carryPoint))
             {
                 return false;
             }
@@ -45,6 +52,48 @@ namespace PawsAndLoot.Gameplay.Loot
             HeldLoot = loot;
             HeldLootChanged?.Invoke(previous, HeldLoot);
             return true;
+        }
+
+        public void ValidateOrThrow()
+        {
+            if (identity == null)
+            {
+                throw new InvalidOperationException(
+                    $"LootCarrier '{name}' requires PlayerRoleIdentity.");
+            }
+
+            if (carryPoint == null || !carryPoint.IsChildOf(transform))
+            {
+                throw new InvalidOperationException(
+                    $"LootCarrier '{name}' requires a CarryPoint under PlayerRoot.");
+            }
+        }
+
+        internal void HandleLootUnavailable(LootItem loot)
+        {
+            if (loot == null || HeldLoot != loot)
+            {
+                return;
+            }
+
+            LootItem previous = HeldLoot;
+            HeldLoot = null;
+            HeldLootChanged?.Invoke(previous, null);
+        }
+
+        private void OnDisable()
+        {
+            if (HeldLoot == null)
+            {
+                return;
+            }
+
+            LootItem previous = HeldLoot;
+            if (previous.TryReleaseFromUnavailableCarrier(this))
+            {
+                HeldLoot = null;
+                HeldLootChanged?.Invoke(previous, null);
+            }
         }
 
         private bool IsGameplayActive()

@@ -876,6 +876,11 @@ namespace PawsAndLoot.Editor
             UnityEngine.Object.DestroyImmediate(
                 placeholder.GetComponent<Collider>());
 
+            Transform carryPoint = CreateChild(
+                "CarryPoint",
+                marker.transform);
+            carryPoint.localPosition = new Vector3(0.7f, 0.8f, 0.4f);
+
             PlayerRoleIdentity identity =
                 marker.AddComponent<PlayerRoleIdentity>();
             identity.Configure(role);
@@ -946,7 +951,10 @@ namespace PawsAndLoot.Editor
                 interactionScanner,
                 locallyControlled);
             LootCarrier lootCarrier = player.AddComponent<LootCarrier>();
-            lootCarrier.Configure(identity, matchRuntime);
+            lootCarrier.Configure(
+                identity,
+                matchRuntime,
+                player.transform.Find("CarryPoint"));
             player.AddComponent<NetworkObject>();
             player.GetComponent<PlayerVisualRoot>().ValidateOrThrow();
 
@@ -1056,14 +1064,26 @@ namespace PawsAndLoot.Editor
             Color color,
             Transform parent)
         {
-            GameObject target = GameObject.CreatePrimitive(
-                PrimitiveType.Cube);
+            var target = new GameObject(name);
             target.name = name;
             target.transform.SetParent(parent);
             target.transform.position = position;
-            target.transform.localScale = Vector3.one * 0.75f;
-            target.GetComponent<Renderer>().sharedMaterial =
+            BoxCollider worldCollider =
+                target.AddComponent<BoxCollider>();
+            worldCollider.size = Vector3.one * 0.75f;
+
+            Transform presentationRoot = CreateChild(
+                "PresentationRoot",
+                target.transform);
+            GameObject placeholder = GameObject.CreatePrimitive(
+                PrimitiveType.Cube);
+            placeholder.name = "PlaceholderModel";
+            placeholder.transform.SetParent(presentationRoot, false);
+            placeholder.transform.localScale = Vector3.one * 0.75f;
+            placeholder.GetComponent<Renderer>().sharedMaterial =
                 LoadOrCreateMaterial("Interaction_Loot", color);
+            UnityEngine.Object.DestroyImmediate(
+                placeholder.GetComponent<Collider>());
 
             LootDefinition definition =
                 AssetDatabase.LoadAssetAtPath<LootDefinition>(
@@ -1077,7 +1097,7 @@ namespace PawsAndLoot.Editor
 
             definition.ValidateOrThrow();
             LootItem loot = target.AddComponent<LootItem>();
-            loot.Configure(definition);
+            loot.Configure(definition, presentationRoot);
         }
 
         private static void AddLocation(

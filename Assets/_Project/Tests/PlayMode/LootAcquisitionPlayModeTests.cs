@@ -59,8 +59,10 @@ namespace PawsAndLoot.Tests.PlayMode
             PlayerRoleIdentity identity =
                 player.AddComponent<PlayerRoleIdentity>();
             identity.Configure(role);
+            var carryPoint = new GameObject("CarryPoint");
+            carryPoint.transform.SetParent(player.transform, false);
             LootCarrier carrier = player.AddComponent<LootCarrier>();
-            carrier.Configure(identity, state);
+            carrier.Configure(identity, state, carryPoint.transform);
             return carrier;
         }
 
@@ -68,6 +70,11 @@ namespace PawsAndLoot.Tests.PlayMode
         {
             var lootObject = new GameObject(name);
             lootObject.SetActive(false);
+            lootObject.AddComponent<BoxCollider>();
+            var presentation = new GameObject("PresentationRoot");
+            presentation.transform.SetParent(
+                lootObject.transform,
+                false);
             LootDefinition definition =
                 ScriptableObject.CreateInstance<LootDefinition>();
             definition.Configure(
@@ -75,7 +82,7 @@ namespace PawsAndLoot.Tests.PlayMode
                 name,
                 LootRarity.Common);
             LootItem loot = lootObject.AddComponent<LootItem>();
-            loot.Configure(definition);
+            loot.Configure(definition, presentation.transform);
             lootObject.SetActive(true);
             return loot;
         }
