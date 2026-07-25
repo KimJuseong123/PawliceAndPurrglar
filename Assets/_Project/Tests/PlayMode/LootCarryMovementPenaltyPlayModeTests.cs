@@ -11,6 +11,21 @@ namespace PawsAndLoot.Tests.PlayMode
 {
     public sealed class LootCarryMovementPenaltyPlayModeTests
     {
+        [Test]
+        public void CarryPenaltyCanRestoreBeforeMotorAwake()
+        {
+            var root = new GameObject("Inactive Player");
+            root.SetActive(false);
+            PlayerMovementMotor motor =
+                root.AddComponent<PlayerMovementMotor>();
+
+            Assert.DoesNotThrow(
+                () => motor.SetLootCarryPenalty(true));
+            Assert.That(motor.IsLootCarryPenaltyActive, Is.True);
+
+            Object.DestroyImmediate(root);
+        }
+
         [UnityTest]
         public IEnumerator CarryPenaltyAppliesOnceAndClearsOnDrop()
         {

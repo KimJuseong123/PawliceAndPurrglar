@@ -1331,6 +1331,78 @@ namespace PawsAndLoot.Editor
                 TextAnchor.MiddleCenter,
                 40);
 
+            RectTransform thiefHudRect = CreateRect(
+                "Thief HUD",
+                hudRoot);
+            thiefHudRect.anchorMin = Vector2.one;
+            thiefHudRect.anchorMax = Vector2.one;
+            thiefHudRect.pivot = Vector2.one;
+            thiefHudRect.anchoredPosition =
+                new Vector2(-28f, -104f);
+            thiefHudRect.sizeDelta = new Vector2(360f, 286f);
+            Image thiefHudBackground =
+                thiefHudRect.gameObject.AddComponent<Image>();
+            thiefHudBackground.color =
+                new Color(0.18f, 0.05f, 0.04f, 0.92f);
+
+            Text thiefHudTitle = CreateHudLabel(
+                "Title",
+                thiefHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -14f),
+                new Vector2(324f, 38f),
+                TextAnchor.MiddleLeft,
+                24);
+            thiefHudTitle.text = "THIEF LOOT";
+            Text saleAmountLabel = CreateHudLabel(
+                "Sale Amount",
+                thiefHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -58f),
+                new Vector2(324f, 36f),
+                TextAnchor.MiddleLeft,
+                20);
+            Text heldLootLabel = CreateHudLabel(
+                "Held Loot",
+                thiefHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -100f),
+                new Vector2(324f, 36f),
+                TextAnchor.MiddleLeft,
+                20);
+            Text lootPriceLabel = CreateHudLabel(
+                "Loot Price",
+                thiefHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -142f),
+                new Vector2(324f, 36f),
+                TextAnchor.MiddleLeft,
+                20);
+            Text movementPenaltyLabel = CreateHudLabel(
+                "Movement Penalty",
+                thiefHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -184f),
+                new Vector2(324f, 36f),
+                TextAnchor.MiddleLeft,
+                20);
+            Text saleAvailabilityLabel = CreateHudLabel(
+                "Sale Availability",
+                thiefHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(18f, -230f),
+                new Vector2(324f, 40f),
+                TextAnchor.MiddleLeft,
+                21);
+            saleAvailabilityLabel.color =
+                new Color(1f, 0.78f, 0.25f);
+
             RectTransform objectiveRect = CreateRect(
                 "Role Objective",
                 hudRoot);
@@ -1437,6 +1509,41 @@ namespace PawsAndLoot.Editor
                 roleSelector,
                 objectiveRect.gameObject,
                 objectiveLabel);
+            PlayerRoleControlBinding thiefBinding = null;
+            foreach (PlayerRoleControlBinding binding
+                     in roleSelector.Bindings)
+            {
+                if (binding.Role == PlayerRole.Thief)
+                {
+                    thiefBinding = binding;
+                    break;
+                }
+            }
+
+            if (thiefBinding == null)
+            {
+                throw new InvalidOperationException(
+                    "Thief HUD requires a Thief control binding.");
+            }
+
+            GameObject thiefPlayer =
+                thiefBinding.Identity.gameObject;
+            ThiefHudPresenter thiefHudPresenter =
+                hudRoot.gameObject.AddComponent<
+                    ThiefHudPresenter>();
+            thiefHudPresenter.Configure(
+                roleSelector,
+                thiefPlayer.GetComponent<ThiefLootWallet>(),
+                thiefPlayer.GetComponent<LootCarrier>(),
+                thiefPlayer.GetComponent<PlayerMovementMotor>(),
+                thiefBinding.InteractionScanner,
+                LoadLootConfig(),
+                thiefHudRect.gameObject,
+                saleAmountLabel,
+                heldLootLabel,
+                lootPriceLabel,
+                movementPenaltyLabel,
+                saleAvailabilityLabel);
 
             var eventSystem = new GameObject(
                 "EventSystem",

@@ -178,6 +178,12 @@ PlayerKeyboardInput
 로컬 역할의 목표 문구를 표시한다. 문구는 역할별 한 문장이며 Presenter는
 경기 상태를 읽기만 한다. 결과 화면은 별도 `MATCH-006` 범위로 남긴다.
 
+`ThiefHudPresenter`는 도둑 역할에서만 우측 패널을 표시한다. 판매 금액과
+목표 금액은 `ThiefLootWallet`, 보유 보물과 가격은 `LootCarrier`와
+`LootDefinition`, 이동 페널티는 `PlayerMovementMotor`, 판매 가능 여부는
+`PlayerInteractionScanner`의 현재 `LootSaleZone`에서 읽는다. Presenter는
+상태 전환, 판매 요청, 지갑 정산을 호출하지 않는다.
+
 ### Companions
 
 책임:

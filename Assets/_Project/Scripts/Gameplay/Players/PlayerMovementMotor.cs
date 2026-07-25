@@ -69,7 +69,6 @@ namespace PawsAndLoot.Gameplay.Players
 
         public void SetLootCarryPenalty(bool active)
         {
-            ValidateDependencies();
             _lootCarryPenaltyActive = active;
         }
 

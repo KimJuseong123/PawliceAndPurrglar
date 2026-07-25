@@ -37,6 +37,12 @@ namespace PawsAndLoot.Tests.EditMode
                     root.GetComponentsInChildren<
                         CommonHudPresenter>(true))
                 .ToArray();
+            ThiefHudPresenter[] thiefPresenters = scene
+                .GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<
+                        ThiefHudPresenter>(true))
+                .ToArray();
 
             Assert.That(scanners, Has.Length.EqualTo(2));
             Assert.That(
@@ -49,6 +55,9 @@ namespace PawsAndLoot.Tests.EditMode
                     PlayerInteractionType.Generic
                 }));
             Assert.That(presenters, Has.Length.EqualTo(1));
+            Assert.That(thiefPresenters, Has.Length.EqualTo(1));
+            Assert.DoesNotThrow(
+                thiefPresenters[0].ValidateOrThrow);
             Assert.That(
                 scene.GetRootGameObjects()
                     .SelectMany(root =>
