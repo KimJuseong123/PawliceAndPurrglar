@@ -299,6 +299,13 @@ LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint
 중복 이벤트가 배율을 누적하지 않으며, 소지 해제와 플레이어 비활성화 시 1.0으로
 복구된다. 일반 이동과 대시 모두 같은 배율을 적용한다.
 
+판매는 너구리 장터의 트리거 `LootSaleZone`이 담당한다. 도둑이 구역 Bounds 안에
+있고 PLAYING이며 보물을 소지한 경우에만 `LootCarrier.TrySell`을 호출한다.
+가격은 `LootDefinition.GetPrice(LootConfig)`로 조회하고, 성공한 거래는 보물을
+`SOLD`로 전환한 뒤 소지 관계를 해제하고 `ThiefLootWallet`에 금액을 더한다.
+지갑은 누적 금액과 목표 금액을 조회 가능하게 유지하며, 정산 직후
+`VictoryCheckRequested`를 발행한다. 실제 승패 확정은 향후 MATCH 승패 시스템의 책임이다.
+
 이벤트 이름은 구현 전에 코드 스타일에 맞춰 확정한다.
 
 ## 5. 설정 데이터

@@ -133,6 +133,29 @@ namespace PawsAndLoot.Gameplay.Loot
             return true;
         }
 
+        internal bool TrySell(LootCarrier carrier)
+        {
+            if (carrier == null
+                || CurrentCarrier != carrier
+                || CurrentState != LootState.Carried)
+            {
+                return false;
+            }
+
+            if (!EnsureStateMachine().TryTransitionTo(LootState.Sold))
+            {
+                return false;
+            }
+
+            CurrentCarrier = null;
+            presentationRoot.SetParent(transform, false);
+            presentationRoot.localPosition = Vector3.zero;
+            presentationRoot.localRotation = Quaternion.identity;
+            presentationRoot.gameObject.SetActive(false);
+            SetWorldCollidersEnabled(false);
+            return true;
+        }
+
         private void Awake()
         {
             if (definition == null)

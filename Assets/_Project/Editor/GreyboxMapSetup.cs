@@ -31,6 +31,8 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Settings/Configs/PlayerConfig.asset";
         private const string MatchConfigPath =
             "Assets/_Project/Settings/Configs/MatchConfig.asset";
+        private const string LootConfigPath =
+            "Assets/_Project/Settings/Configs/LootConfig.asset";
         private const string CommonLootDefinitionPath =
             "Assets/_Project/Data/Loot/common-trinket.asset";
 
@@ -213,7 +215,8 @@ namespace PawsAndLoot.Editor
             CreatePrototypeInteractionTargets(
                 villageRoot.transform,
                 locations,
-                ladders);
+                ladders,
+                matchRuntime);
 
             CreateRouteLine(
                 map.GetRoute(GreyboxMapDefinition.CrossingRouteId),
@@ -961,6 +964,13 @@ namespace PawsAndLoot.Editor
             LootCarryMovementPenalty carryPenalty =
                 player.AddComponent<LootCarryMovementPenalty>();
             carryPenalty.Configure(lootCarrier, motor);
+            if (role == PlayerRole.Thief)
+            {
+                ThiefLootWallet wallet =
+                    player.AddComponent<ThiefLootWallet>();
+                wallet.Configure(identity, LoadMatchConfig());
+            }
+
             player.AddComponent<NetworkObject>();
             player.GetComponent<PlayerVisualRoot>().ValidateOrThrow();
 
@@ -1006,7 +1016,8 @@ namespace PawsAndLoot.Editor
         private static void CreatePrototypeInteractionTargets(
             Transform parent,
             IReadOnlyDictionary<GreyboxLocationId, Transform> locations,
-            IReadOnlyList<Transform> ladders)
+            IReadOnlyList<Transform> ladders,
+            MatchRuntimeState matchRuntime)
         {
             Transform root = CreateChild(
                 "PLAYER-004 Interaction Targets",
@@ -1017,14 +1028,13 @@ namespace PawsAndLoot.Editor
                     + new Vector3(1.8f, 0.5f, 0f),
                 new Color(0.75f, 0.3f, 0.95f),
                 root);
-            CreatePrototypeInteractionTarget(
+            CreateSaleZone(
                 "Prototype Sale Point",
                 locations[GreyboxLocationId.RaccoonMarket].position
                     + new Vector3(-1.8f, 0.5f, 0f),
-                PlayerInteractionType.Sale,
-                "Sell carried loot",
                 MarketGold,
-                root);
+                root,
+                matchRuntime);
             CreatePrototypeInteractionTarget(
                 "Prototype Ladder Point",
                 ladders[0].position + new Vector3(0f, 0.5f, -1.25f),
@@ -1105,6 +1115,41 @@ namespace PawsAndLoot.Editor
             definition.ValidateOrThrow();
             LootItem loot = target.AddComponent<LootItem>();
             loot.Configure(definition, presentationRoot);
+        }
+
+        private static void CreateSaleZone(
+            string name,
+            Vector3 position,
+            Color color,
+            Transform parent,
+            MatchRuntimeState matchRuntime)
+        {
+            var target = new GameObject(name);
+            target.transform.SetParent(parent);
+            target.transform.position = position;
+            BoxCollider saleArea = target.AddComponent<BoxCollider>();
+            saleArea.isTrigger = true;
+            saleArea.size = new Vector3(3f, 2f, 3f);
+
+            GameObject placeholder = GameObject.CreatePrimitive(
+                PrimitiveType.Cylinder);
+            placeholder.name = "SaleZoneMarker";
+            placeholder.transform.SetParent(target.transform, false);
+            placeholder.transform.localPosition =
+                new Vector3(0f, -0.45f, 0f);
+            placeholder.transform.localScale =
+                new Vector3(1.4f, 0.05f, 1.4f);
+            placeholder.GetComponent<Renderer>().sharedMaterial =
+                LoadOrCreateMaterial("Interaction_Sale", color);
+            UnityEngine.Object.DestroyImmediate(
+                placeholder.GetComponent<Collider>());
+
+            LootSaleZone saleZone =
+                target.AddComponent<LootSaleZone>();
+            saleZone.Configure(
+                saleArea,
+                LoadLootConfig(),
+                matchRuntime);
         }
 
         private static void AddLocation(
@@ -1448,6 +1493,20 @@ namespace PawsAndLoot.Editor
             {
                 throw new GameConfigurationException(
                     $"Game scene requires MatchConfig at '{MatchConfigPath}'.");
+            }
+
+            config.ValidateOrThrow();
+            return config;
+        }
+
+        private static LootConfig LoadLootConfig()
+        {
+            LootConfig config =
+                AssetDatabase.LoadAssetAtPath<LootConfig>(LootConfigPath);
+            if (config == null)
+            {
+                throw new GameConfigurationException(
+                    $"Game scene requires LootConfig at '{LootConfigPath}'.");
             }
 
             config.ValidateOrThrow();

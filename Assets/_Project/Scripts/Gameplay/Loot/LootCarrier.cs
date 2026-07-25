@@ -1,4 +1,5 @@
 using System;
+using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Match;
 using UnityEngine;
@@ -94,6 +95,35 @@ namespace PawsAndLoot.Gameplay.Loot
 
             HeldLoot = null;
             HeldLootChanged?.Invoke(previous, null);
+            return true;
+        }
+
+        public bool TrySell(
+            ThiefLootWallet wallet,
+            LootConfig lootConfig)
+        {
+            ValidateOrThrow();
+            if (identity.Role != PlayerRole.Thief
+                || !IsGameplayActive()
+                || HeldLoot == null
+                || wallet == null
+                || lootConfig == null)
+            {
+                return false;
+            }
+
+            lootConfig.ValidateOrThrow();
+            LootItem soldLoot = HeldLoot;
+            int price = soldLoot.Definition.GetPrice(lootConfig);
+            if (!wallet.CanRecordSale(soldLoot, price)
+                || !soldLoot.TrySell(this))
+            {
+                return false;
+            }
+
+            HeldLoot = null;
+            HeldLootChanged?.Invoke(soldLoot, null);
+            wallet.RecordSale(soldLoot, price);
             return true;
         }
 

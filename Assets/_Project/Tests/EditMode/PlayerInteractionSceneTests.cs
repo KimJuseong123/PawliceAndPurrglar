@@ -1,6 +1,7 @@
 using System.Linq;
 using NUnit.Framework;
 using PawsAndLoot.Core;
+using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.UI;
 using UnityEditor.SceneManagement;
@@ -48,6 +49,20 @@ namespace PawsAndLoot.Tests.EditMode
                     PlayerInteractionType.Generic
                 }));
             Assert.That(presenters, Has.Length.EqualTo(1));
+            Assert.That(
+                scene.GetRootGameObjects()
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<
+                            LootSaleZone>(true))
+                    .ToArray(),
+                Has.Length.EqualTo(1));
+            Assert.That(
+                scene.GetRootGameObjects()
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<
+                            ThiefLootWallet>(true))
+                    .ToArray(),
+                Has.Length.EqualTo(1));
         }
     }
 }
