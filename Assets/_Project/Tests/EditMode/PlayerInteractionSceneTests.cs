@@ -4,6 +4,7 @@ using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
+using PawsAndLoot.Match;
 using PawsAndLoot.UI;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -74,6 +75,12 @@ namespace PawsAndLoot.Tests.EditMode
                     root.GetComponentsInChildren<
                         ArrestCompletionController>(true))
                 .ToArray();
+            MatchResultEvaluator[] resultEvaluators = scene
+                .GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<
+                        MatchResultEvaluator>(true))
+                .ToArray();
 
             Assert.That(scanners, Has.Length.EqualTo(2));
             Assert.That(
@@ -107,6 +114,9 @@ namespace PawsAndLoot.Tests.EditMode
                 Has.Length.EqualTo(1));
             Assert.DoesNotThrow(
                 arrestCompletionControllers[0].ValidateOrThrow);
+            Assert.That(resultEvaluators, Has.Length.EqualTo(1));
+            Assert.DoesNotThrow(
+                resultEvaluators[0].ValidateOrThrow);
             Assert.That(
                 scene.GetRootGameObjects()
                     .SelectMany(root =>

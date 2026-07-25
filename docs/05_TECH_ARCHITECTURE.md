@@ -337,11 +337,14 @@ LOOT-003부터 각 플레이어 루트는 모델 교체와 무관한 `CarryPoint
 `ProgressInterrupted`를 한 번 발행한다.
 
 `ArrestCompletionController`는 정규화 진행도가 1에 도달한 첫 유효 요청만
-완료 처리한다. 완료 시 `ArrestCompleted`, `PoliceVictoryRequested`,
-`ResultPresentationRequested`를 한 번씩 발행하고 `MatchRuntimeState`를
-`ENDING`으로 전환한다. 기존 이동·상호작용 시스템은 모두 경기 활성 상태를
-읽으므로 별도 입력 차단 분기 없이 즉시 멈춘다. 최종 승자 데이터 확정과
-Result 씬 전환은 각각 `MATCH-004`와 `MATCH-006` 범위로 남긴다.
+완료 처리하고 `ArrestCompleted`와 `PoliceVictoryRequested`를 한 번씩
+발행한다. 직접 경기 상태를 변경하지 않으며 중앙 승패 판정기가 요청을 처리한다.
+
+`MatchResultEvaluator`는 체포, 지갑의 목표 금액 확인, 타이머 만료 요청을
+한 평가 시점에 모은다. 순수 규칙 객체 `MatchResultArbiter`가
+`체포 > 목표 판매 > 시간 종료` 순으로 `MatchResult`를 한 번만 결정한다.
+결과에는 승리 진영, 종료 이유, 판매 금액, 남은 시간이 들어간다. UI는 이 판정
+경로에 참여하지 않는다. 실제 `ENDING` 전환은 `MATCH-005`의 책임이다.
 
 `ArrestHudPresenter`는 역할 선택기와 체포 진행·완료 컨트롤러를 읽기만 한다.
 경찰에게는 체포 준비·진행률·중단·완료를, 도둑에게는 진행 중 위험 경고와

@@ -19,6 +19,8 @@ namespace PawsAndLoot.Tests.PlayMode
             MatchRuntimeState runtime =
                 runtimeObject.AddComponent<MatchRuntimeState>();
             runtime.Configure(config, false);
+            int expiredCount = 0;
+            runtime.TimerExpired += () => expiredCount++;
             runtimeObject.SetActive(true);
 
             float duration = config.MatchDurationSeconds;
@@ -42,10 +44,15 @@ namespace PawsAndLoot.Tests.PlayMode
 
             runtime.Tick(duration);
             Assert.That(runtime.RemainingMatchSeconds, Is.EqualTo(0f));
-            Assert.That(runtime.CurrentState, Is.EqualTo(MatchState.Ending));
+            Assert.That(runtime.CurrentState, Is.EqualTo(MatchState.Playing));
+            Assert.That(expiredCount, Is.EqualTo(1));
 
             runtime.Tick(20f);
             Assert.That(runtime.RemainingMatchSeconds, Is.EqualTo(0f));
+            Assert.That(expiredCount, Is.EqualTo(1));
+            Assert.That(
+                runtime.TryTransitionTo(MatchState.Ending),
+                Is.True);
             Assert.That(runtime.ResetMatchTimer(), Is.True);
             Assert.That(
                 runtime.RemainingMatchSeconds,

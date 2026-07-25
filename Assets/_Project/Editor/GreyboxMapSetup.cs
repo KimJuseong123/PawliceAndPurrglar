@@ -209,6 +209,9 @@ namespace PawsAndLoot.Editor
                     false)
             };
             ConfigureArrestSystem(controlBindings, matchRuntime);
+            ConfigureMatchResultEvaluator(
+                controlBindings,
+                matchRuntime);
             PawsAndLoot.Gameplay.Camera.TopDownFollowCamera followCamera =
                 ConfigurePlayerFollowCamera(
                     roleMarkers[PlayerRole.Police].transform);
@@ -1042,6 +1045,42 @@ namespace PawsAndLoot.Editor
             ArrestCompletionController completion =
                 police.gameObject.AddComponent<ArrestCompletionController>();
             completion.Configure(progress, matchRuntime);
+        }
+
+        private static void ConfigureMatchResultEvaluator(
+            IReadOnlyList<PlayerRoleControlBinding> bindings,
+            MatchRuntimeState matchRuntime)
+        {
+            ThiefLootWallet wallet = null;
+            ArrestCompletionController arrestCompletion = null;
+            foreach (PlayerRoleControlBinding binding in bindings)
+            {
+                if (binding.Role == PlayerRole.Thief)
+                {
+                    wallet = binding.Identity.GetComponent<
+                        ThiefLootWallet>();
+                }
+                else if (binding.Role == PlayerRole.Police)
+                {
+                    arrestCompletion =
+                        binding.Identity.GetComponent<
+                            ArrestCompletionController>();
+                }
+            }
+
+            if (wallet == null || arrestCompletion == null)
+            {
+                throw new InvalidOperationException(
+                    "MATCH-004 requires the Thief wallet and arrest completion.");
+            }
+
+            MatchResultEvaluator evaluator =
+                matchRuntime.gameObject.AddComponent<
+                    MatchResultEvaluator>();
+            evaluator.Configure(
+                matchRuntime,
+                wallet,
+                arrestCompletion);
         }
 
         private static LocalPlayerRoleSelector CreateLocalRoleSelector(

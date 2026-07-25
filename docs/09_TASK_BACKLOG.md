@@ -82,7 +82,7 @@
 | MATCH-001 | P0 | DONE | 경기 상태 정의 |
 | MATCH-002 | P0 | DONE | 준비 카운트다운 |
 | MATCH-003 | P0 | DONE | 4분 타이머 |
-| MATCH-004 | P0 | TODO | 승리 판정 |
+| MATCH-004 | P0 | DONE | 승리 판정 |
 | MATCH-005 | P0 | TODO | 단일 경기 종료 |
 | MATCH-006 | P0 | TODO | 결과 화면 |
 | MATCH-007 | P0 | TODO | 재시작 초기화 |

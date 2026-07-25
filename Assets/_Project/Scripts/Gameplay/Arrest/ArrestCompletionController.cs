@@ -15,7 +15,6 @@ namespace PawsAndLoot.Gameplay.Arrest
 
         public event Action ArrestCompleted;
         public event Action PoliceVictoryRequested;
-        public event Action ResultPresentationRequested;
 
         public bool IsCompleted { get; private set; }
 
@@ -40,13 +39,6 @@ namespace PawsAndLoot.Gameplay.Arrest
                 return false;
             }
 
-            if (!matchRuntime.TryTransitionTo(MatchState.Ending))
-            {
-                progressController.ResetProgress();
-                throw new InvalidOperationException(
-                    "Arrest completion could not enter the Ending state.");
-            }
-
             IsCompleted = true;
             GameLogger.Info(
                 GameLogCategory.Arrest,
@@ -54,7 +46,6 @@ namespace PawsAndLoot.Gameplay.Arrest
                 this);
             ArrestCompleted?.Invoke();
             PoliceVictoryRequested?.Invoke();
-            ResultPresentationRequested?.Invoke();
             return true;
         }
 

@@ -14,12 +14,15 @@ namespace PawsAndLoot.Match
 
         private readonly MatchStateMachine _stateMachine = new();
         private bool _countdownActive;
+        private bool _timerExpiredRaised;
 
         public event Action<MatchStateChanged> StateChanged
         {
             add => _stateMachine.StateChanged += value;
             remove => _stateMachine.StateChanged -= value;
         }
+
+        public event Action TimerExpired;
 
         public MatchState CurrentState => _stateMachine.CurrentState;
         public bool IsGameplayActive => _stateMachine.IsGameplayActive;
@@ -39,6 +42,8 @@ namespace PawsAndLoot.Match
                 RemainingMatchSeconds =
                     matchConfig.MatchDurationSeconds;
             }
+
+            _timerExpiredRaised = false;
         }
 
         public bool TryTransitionTo(MatchState nextState)
@@ -93,9 +98,11 @@ namespace PawsAndLoot.Match
             RemainingMatchSeconds = Mathf.Max(
                 0f,
                 RemainingMatchSeconds - safeDeltaTime);
-            if (RemainingMatchSeconds <= 0f)
+            if (RemainingMatchSeconds <= 0f
+                && !_timerExpiredRaised)
             {
-                _stateMachine.TryTransitionTo(MatchState.Ending);
+                _timerExpiredRaised = true;
+                TimerExpired?.Invoke();
             }
         }
 
@@ -110,6 +117,7 @@ namespace PawsAndLoot.Match
             matchConfig.ValidateOrThrow();
             RemainingMatchSeconds =
                 matchConfig.MatchDurationSeconds;
+            _timerExpiredRaised = false;
             return true;
         }
 
