@@ -20,6 +20,19 @@ namespace PawsAndLoot.Gameplay.Camera
 
         public Transform Target => target;
 
+        /// <summary>
+        /// The camera keeps one fixed orientation for the whole match. It is
+        /// derived from the constant offset instead of a per-frame LookAt,
+        /// because a smoothed position lags behind the target and a live
+        /// LookAt would swing the yaw while the player moves.
+        /// </summary>
+        public Quaternion FixedRotation =>
+            Quaternion.LookRotation(
+                (lookOffset - offset).sqrMagnitude > 0.0001f
+                    ? (lookOffset - offset).normalized
+                    : Vector3.forward,
+                Vector3.up);
+
         public void Configure(
             Transform followTarget,
             Vector3 followOffset,
@@ -48,7 +61,7 @@ namespace PawsAndLoot.Gameplay.Camera
             }
 
             transform.position = target.position + offset;
-            transform.LookAt(target.position + lookOffset);
+            transform.rotation = FixedRotation;
             _velocity = Vector3.zero;
         }
 
@@ -66,7 +79,7 @@ namespace PawsAndLoot.Gameplay.Camera
                 smoothTimeSeconds,
                 Mathf.Infinity,
                 deltaTime);
-            transform.LookAt(target.position + lookOffset);
+            transform.rotation = FixedRotation;
         }
 
         private void LateUpdate()

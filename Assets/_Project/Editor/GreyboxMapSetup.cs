@@ -52,9 +52,24 @@ namespace PawsAndLoot.Editor
         private static readonly Color MarketGold =
             new(0.95f, 0.62f, 0.12f);
 
+        /// <summary>
+        /// The chase camera looks due north from south of the player and never
+        /// yaws. The village is strictly axis aligned, so a straight southern
+        /// view keeps every road horizontal or vertical on screen, maps WASD
+        /// onto the map axes with no diagonal ambiguity, and minimises the
+        /// wall occlusion an angled view would create.
+        ///
+        /// Switching to a south-east view only needs an X value here, for
+        /// example (-11f, 16f, -11f) for a 45 degree yaw; the camera and the
+        /// movement basis both follow this single offset.
+        /// </summary>
+        private static readonly Vector3 FixedCameraOffset =
+            new(0f, 16f, -14f);
+
         [MenuItem("Paws & Loot/Setup/Rebuild MAP-001 Greybox Village")]
         public static void CreateGameScene()
         {
+            PlaceholderModelLibrary.ResetMissingAssetLog();
             EnsureMaterialFolder();
             Material ground = LoadOrCreateMaterial(
                 "Ground",
@@ -253,6 +268,14 @@ namespace PawsAndLoot.Editor
 
             AssetDatabase.SaveAssets();
             ValidateScene();
+            foreach (string missing in
+                PlaceholderModelLibrary.MissingAssetPaths)
+            {
+                Debug.LogWarning(
+                    $"[Placeholder] Model missing, kept greybox primitive: "
+                    + $"{missing}");
+            }
+
             Debug.Log("MAP-001 greybox village created and validated.");
         }
 
@@ -611,6 +634,20 @@ namespace PawsAndLoot.Editor
                     material,
                     parent,
                     true);
+
+                // The cube stays as the simple collider volume (MAP-005) and
+                // only its renderer is hidden once the model is available.
+                if (PlaceholderModelLibrary.TryInstantiateProp(
+                        "object_trash_can",
+                        bin.transform,
+                        new Vector3(0f, -0.5f, 0f),
+                        Vector3.zero,
+                        1f / 1.3f,
+                        material) != null)
+                {
+                    bin.GetComponent<Renderer>().enabled = false;
+                }
+
                 result.Add(bin.transform);
             }
 
@@ -885,14 +922,54 @@ namespace PawsAndLoot.Editor
             Transform visualRoot = CreateChild(
                 "VisualRoot",
                 marker.transform);
-            GameObject placeholder = GameObject.CreatePrimitive(
-                PrimitiveType.Capsule);
-            placeholder.name = "PlaceholderModel";
-            placeholder.transform.SetParent(visualRoot, false);
-            placeholder.GetComponent<Renderer>().sharedMaterial =
+            // CreateChild keeps the new object's world position, which leaves
+            // it at the world origin instead of on the player.
+            visualRoot.localPosition = Vector3.zero;
+            visualRoot.localRotation = Quaternion.identity;
+            Material roleMaterial =
                 LoadOrCreateMaterial($"Role_{role}", color);
-            UnityEngine.Object.DestroyImmediate(
-                placeholder.GetComponent<Collider>());
+            // A light head against the role colour keeps the two silhouettes
+            // readable while both roles share the same borrowed mesh.
+            Material headMaterial = LoadOrCreateMaterial(
+                "Placeholder_Head",
+                new Color(0.96f, 0.84f, 0.71f));
+            GameObject placeholder =
+                PlaceholderModelLibrary.TryInstantiateCharacter(
+                    role,
+                    visualRoot,
+                    roleMaterial,
+                    headMaterial);
+            if (placeholder == null)
+            {
+                placeholder = GameObject.CreatePrimitive(
+                    PrimitiveType.Capsule);
+                placeholder.name = "PlaceholderModel";
+                placeholder.transform.SetParent(visualRoot, false);
+                placeholder.GetComponent<Renderer>().sharedMaterial =
+                    roleMaterial;
+                UnityEngine.Object.DestroyImmediate(
+                    placeholder.GetComponent<Collider>());
+            }
+            else if (PlaceholderModelLibrary.TryGetWorldBounds(
+                         placeholder,
+                         out Bounds modelBounds))
+            {
+                PlaceholderModelLibrary.TryGetHeadRatio(
+                    placeholder,
+                    out float heads,
+                    out float _);
+                Debug.Log(
+                    $"[Placeholder] {role} model height "
+                    + $"{modelBounds.size.y:0.00}m, feet at "
+                    + $"y={modelBounds.min.y:0.00}m, "
+                    + $"proportion {heads:0.0} heads.");
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"{role} placeholder model '{placeholder.name}' has no "
+                    + "renderer, so the character would be invisible.");
+            }
 
             Transform carryPoint = CreateChild(
                 "CarryPoint",
@@ -1010,8 +1087,9 @@ namespace PawsAndLoot.Editor
                 PawsAndLoot.Gameplay.Camera.TopDownFollowCamera>();
             followCamera.Configure(
                 initialTarget,
-                new Vector3(0f, 16f, -14f),
+                FixedCameraOffset,
                 0.12f);
+            Camera.main.transform.rotation = followCamera.FixedRotation;
             return followCamera;
         }
 
@@ -1229,15 +1307,30 @@ namespace PawsAndLoot.Editor
             Transform presentationRoot = CreateChild(
                 "PresentationRoot",
                 target.transform);
-            GameObject placeholder = GameObject.CreatePrimitive(
-                PrimitiveType.Cube);
-            placeholder.name = "PlaceholderModel";
-            placeholder.transform.SetParent(presentationRoot, false);
-            placeholder.transform.localScale = Vector3.one * 0.75f;
-            placeholder.GetComponent<Renderer>().sharedMaterial =
-                LoadOrCreateMaterial("Interaction_Loot", color);
-            UnityEngine.Object.DestroyImmediate(
-                placeholder.GetComponent<Collider>());
+            // Keep the loot visual on the loot collider instead of the world
+            // origin that CreateChild would otherwise preserve.
+            presentationRoot.localPosition = Vector3.zero;
+            presentationRoot.localRotation = Quaternion.identity;
+            // The jewel box model is 0.23m wide, so it is scaled up to stay
+            // readable at the top-down camera distance.
+            if (PlaceholderModelLibrary.TryInstantiateProp(
+                    "item_jewel_box",
+                    presentationRoot,
+                    new Vector3(0f, -0.35f, 0f),
+                    Vector3.zero,
+                    2.4f,
+                    LoadOrCreateMaterial("Interaction_Loot", color)) == null)
+            {
+                GameObject placeholder = GameObject.CreatePrimitive(
+                    PrimitiveType.Cube);
+                placeholder.name = "PlaceholderModel";
+                placeholder.transform.SetParent(presentationRoot, false);
+                placeholder.transform.localScale = Vector3.one * 0.75f;
+                placeholder.GetComponent<Renderer>().sharedMaterial =
+                    LoadOrCreateMaterial("Interaction_Loot", color);
+                UnityEngine.Object.DestroyImmediate(
+                    placeholder.GetComponent<Collider>());
+            }
 
             LootDefinition definition =
                 AssetDatabase.LoadAssetAtPath<LootDefinition>(
@@ -1268,6 +1361,8 @@ namespace PawsAndLoot.Editor
             saleArea.isTrigger = true;
             saleArea.size = new Vector3(3f, 2f, 3f);
 
+            // Keep the flat gold marker so the sale trigger footprint stays
+            // readable, then stand the market stall model behind it.
             GameObject placeholder = GameObject.CreatePrimitive(
                 PrimitiveType.Cylinder);
             placeholder.name = "SaleZoneMarker";
@@ -1280,6 +1375,14 @@ namespace PawsAndLoot.Editor
                 LoadOrCreateMaterial("Interaction_Sale", color);
             UnityEngine.Object.DestroyImmediate(
                 placeholder.GetComponent<Collider>());
+
+            PlaceholderModelLibrary.TryInstantiateProp(
+                "object_secret_market_stall",
+                target.transform,
+                new Vector3(0f, -0.5f, 1.4f),
+                new Vector3(0f, 180f, 0f),
+                1f,
+                LoadOrCreateMaterial("RaccoonMarket", MarketGold));
 
             LootSaleZone saleZone =
                 target.AddComponent<LootSaleZone>();
@@ -1325,6 +1428,22 @@ namespace PawsAndLoot.Editor
         {
             Transform root = CreateChild(name, parent);
             root.position = position;
+
+            // The authored ladder is 2.8m tall and 0.88m wide along X, so it
+            // is stretched to the 4m greybox rooftop height and turned to
+            // keep its width across the original rail spacing.
+            const float GreyboxLadderHeight = 4f;
+            const float ModelLadderHeight = 2.8f;
+            if (PlaceholderModelLibrary.TryInstantiateProp(
+                    "object_ladder",
+                    root,
+                    Vector3.zero,
+                    new Vector3(0f, 90f, 0f),
+                    GreyboxLadderHeight / ModelLadderHeight,
+                    material) != null)
+            {
+                return root;
+            }
 
             CreateDecorativeCube(
                 "Left Rail",

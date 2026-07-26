@@ -89,6 +89,30 @@
 - 확정 결과를 받아 `ENDING`으로 한 번만 전환하고 이동·대시·상호작용·보물·체포를 중지하는 `MatchEndController`
 - 승리 진영·이유·판매 금액·남은 시간을 씬 간 전달하고 표시하는 MATCH-006 결과 흐름과 `ResultScreenPresenter`
 - 확정 결과 후 자동 Result 씬 전환, `REMATCH`와 `MAIN MENU` 결과 화면 버튼
+- 타이머·판매액·보물·플레이어 위치·체포 진행도 초기화와 중복 HUD 부재, 두 번째
+  경기의 정상 종료까지 검증하는 MATCH-007 재경기 Play Mode 테스트
+- `Bootstrap`, `Game`, `Result` 세 씬을 모두 포함해 결과 화면과 재경기까지
+  실행할 수 있는 `Build Windows Playtest` 메뉴와 Windows 개발 빌드
+- Claude Code 전용 작업 지침서 `CLAUDE.md`
+- 작업자가 제공한 프롭 원본 19종을 `ArtSource/Blender/Props/`에 보관하고
+  `Assets/_Project/Art/Props/`로 반입하는 FBX 내보내기 스크립트 2종
+- 보물(보석 상자), 너구리 장터 좌판, 쓰레기통 4개, 사다리 3개에 실제 프롭 모델
+  적용과 자산 누락 시 회색 상자로 되돌아가는 `PlaceholderModelLibrary`
+- 캐릭터 모델이 없어 외부 TopDown Engine 메시를 역할 색 URP 머티리얼로
+  강제 적용한 경찰·도둑 임시 시각 모델
+- 후보 캐릭터 메시의 키·머리 비율·본 수를 측정해 보고하는
+  `Audit Placeholder Character Models` 메뉴
+- 임시 캐릭터를 만화풍 몸체로 교체하고 머리 본을 2.2배로 키운 2톤 배색,
+  목표 신장 1.7m 정규화와 대기 애니메이션 적용
+- 캐릭터 참고용 콘셉트 렌더 이미지 `ArtSource/Reference/Characters/`
+
+### Fixed
+
+- 추격 카메라가 매 프레임 `LookAt`으로 회전해, 부드럽게 따라오는 카메라가
+  목표보다 뒤처질 때 시점이 이동 방향에 따라 흔들리던 문제. 카메라 회전을
+  고정 오프셋에서 유도한 단일 값으로 고정했다 (`ISSUE-013`)
+- `VisualRoot`와 `PresentationRoot`가 월드 원점에 남아 플레이어와 보물의 시각
+  모델이 실제 위치가 아닌 맵 중앙에 그려지던 문제 (`ISSUE-012`)
 
 ### Changed
 
@@ -117,6 +141,9 @@
 
 ### Known
 
+- Game 씬의 보물 1개 200골드로는 목표 1,000골드에 도달할 수 없어 도둑의 판매
+  승리 경로가 없음 (`ISSUE-011`)
+- 로컬 1인 조작만 가능해 경찰 대 도둑의 실제 추격은 미검증
 - 기존 경찰 모델은 리그와 애니메이션이 없음
 - 네트워크 서비스·권한 구조와 실제 음성 기술은 미정
 - 현재 개발 PC에서 Unity 내장 Windows 받아쓰기가 `0x80004003`으로 생성되지 않음
