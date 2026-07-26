@@ -1,6 +1,6 @@
 # 알려진 문제와 공백
 
-마지막 갱신: 2026-07-24
+마지막 갱신: 2026-07-26
 
 완료된 항목을 삭제하지 않고 해결 상태와 관련 작업을 기록한다.
 
@@ -22,6 +22,26 @@
 - 해결 기록:
 
 ## 현재 항목
+
+### ISSUE-014 CHAR-001 실행에 필요한 Unity 6000.5.4f1 실행 파일 경로를 현재 환경에서 찾지 못했다
+
+- 종류: 환경
+- 상태: OPEN
+- 심각도: Medium
+- 발견 날짜: 2026-07-26
+- 발생 환경: 로컬 개발 PC
+- 확인 절차: `ProjectSettings/ProjectVersion.txt`의 요구 버전과 로컬 Unity 설치 경로 비교
+- 예상: Unity `6000.5.4f1` 에디터로 CHAR-001 배치 실행과 빌드를 수행
+- 실제: `C:\Program Files\Unity\Hub\Editor\2022.3.6f1\Editor\Unity.exe`만 확인됐고,
+  요구 버전 `6000.5.4f1`의 실행 파일 경로는 확인하지 못했다
+- 영향: 신규 캐릭터 FBX 검증 장면 `CharacterTechnicalTest.unity`의 자동 실행,
+  Windows 빌드와 결과 JSON 생성이 아직 검증되지 않았다
+- 임시 해결: CHAR-001 스크립트, 런타임 프리뷰와 리포터를 먼저 추가했다.
+  Unity `6000.5.4f1` 경로를 확인한 뒤 `Paws & Loot > Technical Validation > Create CHAR-001 Scene`
+  또는 배치 `-executeMethod PawsAndLoot.Editor.CharacterTechnicalValidationSetup.CreateScene`
+  를 실행한다
+- 관련 작업: CHAR-001
+- 해결 기록:
 
 ### ISSUE-001 레거시 실험물과 새 목표 구조가 공존한다
 
