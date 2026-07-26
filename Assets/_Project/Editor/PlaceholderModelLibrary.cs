@@ -66,9 +66,155 @@ namespace PawsAndLoot.Editor
             MissingAssets.Clear();
         }
 
+        public const string CharacterDirectory =
+            "Assets/_Project/Art/Characters";
+
+        public const string BuildingDirectory =
+            "Assets/_Project/Art/Buildings";
+
         public static string GetPropPath(string stem)
         {
             return $"{PropDirectory}/{stem}.fbx";
+        }
+
+        /// <summary>
+        /// Instantiates an authored character mesh and normalises it to
+        /// <paramref name="targetHeight"/> with its feet on the ground plane
+        /// of <paramref name="parent"/>.
+        ///
+        /// The authored meshes arrive normalised to a roughly one-unit box, so
+        /// their relative sizes are meaningless and every character needs an
+        /// explicit target height. Their own textured material is kept.
+        /// </summary>
+        public static GameObject TryInstantiateAuthoredCharacter(
+            string stem,
+            Transform parent,
+            float targetHeight,
+            float groundOffset = CharacterFootOffset)
+        {
+            GameObject instance = TryInstantiate(
+                $"{CharacterDirectory}/{stem}.fbx",
+                parent,
+                $"{stem}_Model");
+            if (instance == null)
+            {
+                return null;
+            }
+
+            instance.transform.localRotation = Quaternion.identity;
+            StripColliders(instance);
+            NormaliseToHeight(instance, parent, targetHeight, groundOffset);
+            ApplyLocomotionController(instance);
+            DisableRootMotion(instance);
+            return instance;
+        }
+
+        /// <summary>
+        /// Assigns the shared locomotion controller when one exists and the
+        /// model imported as Humanoid. Quadrupeds and Generic rigs are left
+        /// alone because humanoid clips cannot retarget onto them.
+        /// </summary>
+        private static void ApplyLocomotionController(GameObject instance)
+        {
+            UnityEditor.Animations.AnimatorController controller =
+                CharacterAnimationSetup.LoadController();
+            if (controller == null)
+            {
+                return;
+            }
+
+            Animator animator = instance.GetComponent<Animator>();
+            if (animator == null
+                || animator.avatar == null
+                || !animator.avatar.isHuman)
+            {
+                return;
+            }
+
+            animator.runtimeAnimatorController = controller;
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        }
+
+        /// <summary>
+        /// Instantiates an authored building and scales it uniformly so its
+        /// footprint fits the greybox slot. Returns the resulting world height
+        /// so the caller can move the walkable rooftop collider onto the real
+        /// roof, or -1 when the model is unavailable.
+        /// </summary>
+        public static float TryInstantiateBuilding(
+            string stem,
+            Transform parent,
+            Vector3 groundCenter,
+            float footprintX,
+            float footprintZ)
+        {
+            GameObject instance = TryInstantiate(
+                $"{BuildingDirectory}/{stem}.fbx",
+                parent,
+                $"{stem}_Model");
+            if (instance == null)
+            {
+                return -1f;
+            }
+
+            instance.transform.localRotation = Quaternion.identity;
+            instance.transform.localScale = Vector3.one;
+            StripColliders(instance);
+            if (!TryGetWorldBounds(instance, out Bounds bounds)
+                || bounds.size.x <= 0.001f
+                || bounds.size.z <= 0.001f)
+            {
+                return -1f;
+            }
+
+            float scale = Mathf.Min(
+                footprintX / bounds.size.x,
+                footprintZ / bounds.size.z);
+            instance.transform.localScale = Vector3.one * scale;
+
+            if (!TryGetWorldBounds(instance, out Bounds scaled))
+            {
+                return -1f;
+            }
+
+            // Re-centre on the slot and drop the base onto the ground.
+            Vector3 delta = groundCenter - new Vector3(
+                scaled.center.x,
+                scaled.min.y,
+                scaled.center.z);
+            instance.transform.position += delta;
+            return scaled.size.y;
+        }
+
+        private static void NormaliseToHeight(
+            GameObject instance,
+            Transform parent,
+            float targetHeight,
+            float groundOffset)
+        {
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localScale = Vector3.one;
+            if (!TryGetWorldBounds(instance, out Bounds bounds)
+                || bounds.size.y <= 0.001f)
+            {
+                instance.transform.localPosition =
+                    new Vector3(0f, groundOffset, 0f);
+                return;
+            }
+
+            instance.transform.localScale =
+                Vector3.one * (targetHeight / bounds.size.y);
+            if (!TryGetWorldBounds(instance, out Bounds scaled))
+            {
+                return;
+            }
+
+            float groundY = parent.position.y + groundOffset;
+            instance.transform.localPosition += new Vector3(
+                parent.position.x - scaled.center.x,
+                groundY - scaled.min.y,
+                parent.position.z - scaled.center.z);
         }
 
         /// <summary>
@@ -364,6 +510,15 @@ namespace PawsAndLoot.Editor
                 instance.GetComponentsInChildren<Collider>(true))
             {
                 Object.DestroyImmediate(collider);
+            }
+        }
+
+        private static void DisableRootMotion(GameObject instance)
+        {
+            foreach (Animator animator in
+                instance.GetComponentsInChildren<Animator>(true))
+            {
+                animator.applyRootMotion = false;
             }
         }
     }

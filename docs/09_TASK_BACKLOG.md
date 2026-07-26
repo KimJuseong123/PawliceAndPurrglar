@@ -133,10 +133,13 @@
 
 | ID | 우선순위 | 상태 | 작업 |
 |---|---|---|---|
-| COMP-001 | P0 | TODO | 공통 명령 요청과 검증 |
-| COMP-002 | P0 | TODO | 숫자키 `1`~`4` 입력 어댑터 |
-| COMP-003 | P0 | TODO | 소유자 따라가기 |
-| COMP-004 | P0 | TODO | 경로 실패 복구 |
+| COMP-001 | P0 | DONE | 공통 AI 동료 상태 구조 (7개 상태) |
+| COMP-002 | P0 | DONE | 소유자 따라가기와 리쉬 복구 |
+| COMP-003 | P0 | DONE | 명령 요청 데이터 구조 |
+| COMP-004 | P0 | DONE | 명령 전달기 (입력과 AI 분리) |
+| COMP-005 | P0 | DONE | 명령 유효성 검사 |
+| COMP-006 | P0 | DONE | 경로 실패 복구 |
+| COMP-007 | P0 | TODO | 숫자키 명령의 실제 효과 (현재는 이동·대기만) |
 | DOG-001 | P0 | TODO | `TRACK` |
 | DOG-002 | P1 | TODO | `SEARCH` |
 | DOG-003 | P1 | TODO | `GUARD` |

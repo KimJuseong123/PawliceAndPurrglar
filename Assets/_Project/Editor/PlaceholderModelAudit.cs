@@ -12,6 +12,73 @@ namespace PawsAndLoot.Editor
     /// </summary>
     public static class PlaceholderModelAudit
     {
+        private static readonly string[] AuthoredPaths =
+        {
+            "Assets/_Project/Art/Characters/police.fbx",
+            "Assets/_Project/Art/Characters/thief.fbx",
+            "Assets/_Project/Art/Characters/dog.fbx",
+            "Assets/_Project/Art/Characters/cat.fbx",
+            "Assets/_Project/Art/Characters/raccoon.fbx",
+            "Assets/_Project/Art/Props/trashcan_lid.fbx",
+            "Assets/_Project/Art/Buildings/building_police_station.fbx",
+            "Assets/_Project/Art/Buildings/building_supermarket.fbx",
+            "Assets/_Project/Art/Buildings/building_bookstore.fbx",
+            "Assets/_Project/Art/Buildings/building_house_1f.fbx",
+            "Assets/_Project/Art/Buildings/"
+            + "building_house_1f_with_interior.fbx"
+        };
+
+        [MenuItem("Paws & Loot/Setup/Audit Authored Models")]
+        public static void AuditAuthored()
+        {
+            foreach (string path in AuthoredPaths)
+            {
+                GameObject asset =
+                    AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (asset == null)
+                {
+                    Debug.Log($"[Audit] MISSING {path}");
+                    continue;
+                }
+
+                GameObject instance = Object.Instantiate(asset);
+                try
+                {
+                    Report(path, instance);
+                    ReportClips(path);
+                }
+                finally
+                {
+                    Object.DestroyImmediate(instance);
+                }
+            }
+        }
+
+        private static void ReportClips(string path)
+        {
+            var clips = new List<string>();
+            foreach (Object sub in
+                AssetDatabase.LoadAllAssetsAtPath(path))
+            {
+                if (sub is AnimationClip clip
+                    && !clip.name.StartsWith("__preview__"))
+                {
+                    clips.Add($"{clip.name}({clip.length:0.00}s)");
+                }
+            }
+
+            var importer = AssetImporter.GetAtPath(path) as ModelImporter;
+            string rig = importer != null
+                ? importer.animationType.ToString()
+                : "unknown";
+            string scale = importer != null
+                ? importer.globalScale.ToString("0.###")
+                : "?";
+            Debug.Log(
+                $"[Audit]   rig={rig} importScale={scale} "
+                + $"clips={(clips.Count == 0 ? "none" : string.Join(", ", clips))}");
+        }
+
         private static readonly string[] CandidatePaths =
         {
             "Assets/TopDownEngine/Demos/Explodudes/Models/"

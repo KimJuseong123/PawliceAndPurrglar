@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using PawsAndLoot.Companions;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
+using PawsAndLoot.Input;
 using PawsAndLoot.Match;
 using PawsAndLoot.UI;
 using Unity.Netcode;
@@ -65,6 +67,17 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static readonly Vector3 FixedCameraOffset =
             new(0f, 16f, -14f);
+
+        /// <summary>
+        /// Authored characters arrive normalised to a roughly one-unit box, so
+        /// their relative sizes carry no meaning and each one is scaled to an
+        /// explicit height. The players share a height so neither role reads as
+        /// larger, and the animals are sized against them.
+        /// </summary>
+        private const float AuthoredCharacterHeight = 1.7f;
+        private const float AuthoredDogHeight = 0.75f;
+        private const float AuthoredCatHeight = 0.45f;
+        private const float AuthoredRaccoonHeight = 0.7f;
 
         [MenuItem("Paws & Loot/Setup/Rebuild MAP-001 Greybox Village")]
         public static void CreateGameScene()
@@ -146,7 +159,8 @@ namespace PawsAndLoot.Editor
                 featuresRoot,
                 LadderSide.West,
                 rooftops,
-                ladders);
+                ladders,
+                "building_supermarket");
             CreateStore(
                 "Bookstore",
                 new Vector3(9f, 0f, 6f),
@@ -157,7 +171,8 @@ namespace PawsAndLoot.Editor
                 featuresRoot,
                 LadderSide.East,
                 rooftops,
-                ladders);
+                ladders,
+                "building_bookstore");
             CreateStore(
                 "Jewelry Store",
                 new Vector3(9f, 0f, -6f),
@@ -257,6 +272,14 @@ namespace PawsAndLoot.Editor
                 LoadPlayerMoveSpeed(),
                 traversalProbe,
                 villageRoot.transform);
+            CreateAuthoredSceneDressing(
+                villageRoot.transform,
+                locations);
+            CreateCompanions(
+                villageRoot.transform,
+                controlBindings,
+                matchRuntime,
+                matchEndController);
             CreateSceneInterface(roleSelector, matchRuntime);
 
             string scenePath = GameSceneCatalog.GetPath(GameSceneId.Game);
@@ -492,6 +515,159 @@ namespace PawsAndLoot.Editor
                 parent);
         }
 
+        /// <summary>
+        /// Places the authored models that have no gameplay system yet: the
+        /// police station and houses the GDD map lists, the raccoon merchant
+        /// at its trading yard, and the two animals beside their owners.
+        ///
+        /// These are visual only. They carry no collider so they cannot block
+        /// the validated MAP-001 routes, and the animals have no AI until
+        /// COMP-001 lands. MAP-002 adds the real collision pass.
+        /// </summary>
+        private static void CreateAuthoredSceneDressing(
+            Transform parent,
+            IReadOnlyDictionary<GreyboxLocationId, Transform> locations)
+        {
+            Transform root = CreateChild("Authored Dressing", parent);
+            root.localPosition = Vector3.zero;
+
+            PlaceholderModelLibrary.TryInstantiateBuilding(
+                "building_police_station",
+                root,
+                locations[GreyboxLocationId.PoliceSpawn].position
+                    + new Vector3(-1f, 0f, 7f),
+                12f,
+                8f);
+            PlaceholderModelLibrary.TryInstantiateBuilding(
+                "building_house_1f",
+                root,
+                new Vector3(-15f, 0f, 17f),
+                10f,
+                8f);
+            PlaceholderModelLibrary.TryInstantiateBuilding(
+                "building_house_1f_with_interior",
+                root,
+                new Vector3(15f, 0f, 17f),
+                10f,
+                8f);
+
+            CreateAuthoredAnimal(
+                "raccoon",
+                root,
+                locations[GreyboxLocationId.RaccoonMarket].position
+                    + new Vector3(-9f, 0f, -6f),
+                AuthoredRaccoonHeight,
+                180f);
+        }
+
+        /// <summary>
+        /// COMP-001 scene assembly. Creates one companion per role, wires the
+        /// dispatcher between the input adapters and the agents, and returns
+        /// the dispatcher so match end can disable both animals.
+        /// </summary>
+        private static CompanionCommandDispatcher CreateCompanions(
+            Transform parent,
+            IReadOnlyList<PlayerRoleControlBinding> bindings,
+            MatchRuntimeState matchRuntime,
+            MatchEndController matchEndController)
+        {
+            Transform root = CreateChild("Companions", parent);
+            root.localPosition = Vector3.zero;
+            CompanionConfig config = LoadCompanionConfig();
+
+            var agents = new List<CompanionAgent>();
+            foreach (PlayerRoleControlBinding binding in bindings)
+            {
+                CompanionKind kind =
+                    CompanionCommandCatalog.GetCompanionKind(binding.Role);
+                string stem = kind == CompanionKind.Dog ? "dog" : "cat";
+                float height = kind == CompanionKind.Dog
+                    ? AuthoredDogHeight
+                    : AuthoredCatHeight;
+
+                var agentObject = new GameObject($"{kind} Companion");
+                agentObject.transform.SetParent(root, false);
+                agentObject.transform.position =
+                    binding.Identity.transform.position
+                    + new Vector3(1.6f, -1f, -1.2f);
+
+                if (PlaceholderModelLibrary.TryInstantiateAuthoredCharacter(
+                        stem,
+                        agentObject.transform,
+                        height,
+                        0f) == null)
+                {
+                    GameObject fallback = GameObject.CreatePrimitive(
+                        PrimitiveType.Capsule);
+                    fallback.name = $"{stem}_Fallback";
+                    fallback.transform.SetParent(
+                        agentObject.transform,
+                        false);
+                    fallback.transform.localScale =
+                        Vector3.one * height * 0.5f;
+                    UnityEngine.Object.DestroyImmediate(
+                        fallback.GetComponent<Collider>());
+                }
+
+                CompanionAgent agent =
+                    agentObject.AddComponent<CompanionAgent>();
+                agent.Configure(
+                    kind,
+                    binding.Identity.transform,
+                    config,
+                    matchRuntime);
+                agents.Add(agent);
+            }
+
+            var dispatcherObject = new GameObject("Companion Dispatcher");
+            dispatcherObject.transform.SetParent(root, false);
+            CompanionCommandDispatcher dispatcher =
+                dispatcherObject.AddComponent<
+                    CompanionCommandDispatcher>();
+            dispatcher.Configure(matchRuntime, agents);
+
+            CompanionMatchEndBridge bridge =
+                dispatcherObject.AddComponent<CompanionMatchEndBridge>();
+            bridge.Configure(matchEndController, dispatcher);
+
+            // One input adapter per role. Only the locally controlled role
+            // reacts, and it can only reach the AI through the dispatcher.
+            foreach (PlayerRoleControlBinding binding in bindings)
+            {
+                CompanionCommandKeyboardInput input =
+                    binding.Identity.gameObject.AddComponent<
+                        CompanionCommandKeyboardInput>();
+                input.Configure(
+                    dispatcher,
+                    binding.Identity,
+                    binding.Identity.transform,
+                    binding.KeyboardInput != null
+                    && binding.KeyboardInput.IsLocallyControlled);
+            }
+
+            return dispatcher;
+        }
+
+        private static void CreateAuthoredAnimal(
+            string stem,
+            Transform parent,
+            Vector3 groundPosition,
+            float targetHeight,
+            float yaw)
+        {
+            Transform anchor = CreateChild($"{stem} Visual", parent);
+            anchor.position = groundPosition;
+            anchor.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            if (PlaceholderModelLibrary.TryInstantiateAuthoredCharacter(
+                    stem,
+                    anchor,
+                    targetHeight,
+                    0f) == null)
+            {
+                UnityEngine.Object.DestroyImmediate(anchor.gameObject);
+            }
+        }
+
         private static void CreateStore(
             string name,
             Vector3 center,
@@ -502,10 +678,11 @@ namespace PawsAndLoot.Editor
             Transform featuresRoot,
             LadderSide ladderSide,
             ICollection<Transform> rooftops,
-            ICollection<Transform> ladders)
+            ICollection<Transform> ladders,
+            string buildingModelStem = null)
         {
             Transform root = CreateChild(name, buildingsRoot);
-            CreateCube(
+            GameObject body = CreateCube(
                 $"{name} Body",
                 center + Vector3.up * 1.8f,
                 new Vector3(12f, 3.6f, 8f),
@@ -521,6 +698,35 @@ namespace PawsAndLoot.Editor
                 true);
             rooftops.Add(roof.transform);
 
+            // An authored building replaces the greybox visual. The cubes stay
+            // as the simple colliders MAP-002 requires, with their renderers
+            // hidden, and the walkable rooftop collider moves onto the real
+            // roof height so the model is not clipped by a slab.
+            float modelHeight = -1f;
+            if (buildingModelStem != null)
+            {
+                modelHeight =
+                    PlaceholderModelLibrary.TryInstantiateBuilding(
+                        buildingModelStem,
+                        root,
+                        center,
+                        12f,
+                        8f);
+            }
+
+            if (modelHeight > 0f)
+            {
+                body.GetComponent<Renderer>().enabled = false;
+                roof.GetComponent<Renderer>().enabled = false;
+                body.transform.position =
+                    center + Vector3.up * (modelHeight * 0.5f);
+                body.transform.localScale =
+                    new Vector3(12f, modelHeight, 8f);
+                roof.transform.position =
+                    center + Vector3.up * (modelHeight + 0.3f);
+            }
+
+            float roofHeight = modelHeight > 0f ? modelHeight : 3.9f;
             Vector3 ladderPosition = ladderSide == LadderSide.West
                 ? center + new Vector3(-6.45f, 0f, 0f)
                 : center + new Vector3(6.45f, 0f, 0f);
@@ -528,7 +734,8 @@ namespace PawsAndLoot.Editor
                 $"{name} Ladder",
                 ladderPosition,
                 ladderMaterial,
-                featuresRoot);
+                featuresRoot,
+                roofHeight);
             ladders.Add(ladder);
 
             Vector3 labelPosition =
@@ -928,17 +1135,30 @@ namespace PawsAndLoot.Editor
             visualRoot.localRotation = Quaternion.identity;
             Material roleMaterial =
                 LoadOrCreateMaterial($"Role_{role}", color);
-            // A light head against the role colour keeps the two silhouettes
-            // readable while both roles share the same borrowed mesh.
-            Material headMaterial = LoadOrCreateMaterial(
-                "Placeholder_Head",
-                new Color(0.96f, 0.84f, 0.71f));
+
+            // Authored textured characters take priority. The borrowed cartoon
+            // mesh stays as the fallback for anyone without the external
+            // package, and the greybox capsule as the last resort.
             GameObject placeholder =
-                PlaceholderModelLibrary.TryInstantiateCharacter(
-                    role,
+                PlaceholderModelLibrary.TryInstantiateAuthoredCharacter(
+                    role == PlayerRole.Police ? "police" : "thief",
                     visualRoot,
-                    roleMaterial,
-                    headMaterial);
+                    AuthoredCharacterHeight);
+            if (placeholder == null)
+            {
+                // A light head against the role colour keeps the two
+                // silhouettes readable while both roles share one mesh.
+                Material headMaterial = LoadOrCreateMaterial(
+                    "Placeholder_Head",
+                    new Color(0.96f, 0.84f, 0.71f));
+                placeholder =
+                    PlaceholderModelLibrary.TryInstantiateCharacter(
+                        role,
+                        visualRoot,
+                        roleMaterial,
+                        headMaterial);
+            }
+
             if (placeholder == null)
             {
                 placeholder = GameObject.CreatePrimitive(
@@ -1031,6 +1251,22 @@ namespace PawsAndLoot.Editor
             PlayerKeyboardInput keyboardInput =
                 player.AddComponent<PlayerKeyboardInput>();
             keyboardInput.Configure(motor, locallyControlled);
+
+            // Locomotion animation reads the motor and never drives it, so a
+            // missing Animator leaves movement untouched.
+            Animator characterAnimator =
+                player.GetComponentInChildren<Animator>(true);
+            if (characterAnimator != null
+                && characterAnimator.runtimeAnimatorController != null)
+            {
+                PawsAndLoot.Animation.PlayerLocomotionAnimator locomotion =
+                    player.AddComponent<
+                        PawsAndLoot.Animation.PlayerLocomotionAnimator>();
+                locomotion.Configure(
+                    motor,
+                    characterAnimator,
+                    playerConfig.MoveSpeed);
+            }
 
             PlayerRoleIdentity identity =
                 player.GetComponent<PlayerRoleIdentity>();
@@ -1424,22 +1660,22 @@ namespace PawsAndLoot.Editor
             string name,
             Vector3 position,
             Material material,
-            Transform parent)
+            Transform parent,
+            float targetHeight = 4f)
         {
             Transform root = CreateChild(name, parent);
             root.position = position;
 
             // The authored ladder is 2.8m tall and 0.88m wide along X, so it
-            // is stretched to the 4m greybox rooftop height and turned to
-            // keep its width across the original rail spacing.
-            const float GreyboxLadderHeight = 4f;
+            // is stretched to whatever rooftop height it has to reach and
+            // turned to keep its width across the original rail spacing.
             const float ModelLadderHeight = 2.8f;
             if (PlaceholderModelLibrary.TryInstantiateProp(
                     "object_ladder",
                     root,
                     Vector3.zero,
                     new Vector3(0f, 90f, 0f),
-                    GreyboxLadderHeight / ModelLadderHeight,
+                    targetHeight / ModelLadderHeight,
                     material) != null)
             {
                 return root;
@@ -1984,6 +2220,22 @@ namespace PawsAndLoot.Editor
             label.color = Color.white;
             label.raycastTarget = false;
             return label;
+        }
+
+        private static CompanionConfig LoadCompanionConfig()
+        {
+            const string path =
+                "Assets/_Project/Settings/Configs/CompanionConfig.asset";
+            CompanionConfig config =
+                AssetDatabase.LoadAssetAtPath<CompanionConfig>(path);
+            if (config == null)
+            {
+                throw new GameConfigurationException(
+                    $"COMP-001 requires CompanionConfig at '{path}'.");
+            }
+
+            config.ValidateOrThrow();
+            return config;
         }
 
         private static PlayerConfig LoadPlayerConfig()
