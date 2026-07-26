@@ -294,6 +294,23 @@ Assets/_Project/Scenes/Result.unity
 빌드 순서는 `Bootstrap`, `Game`, `Result`이며 시작 씬은 `Bootstrap`입니다.
 씬 이름과 경로는 `GameSceneCatalog` 한 곳에서 관리합니다.
 
+### 저장소를 처음 받았을 때
+
+1. Git LFS를 설치하고 한 번 초기화합니다. 모델과 오디오는 LFS로 관리합니다.
+
+```bash
+git lfs install
+```
+
+2. 저장소를 클론합니다.
+3. **TopDown Engine을 각자 임포트합니다.** 이 외부 에셋은 라이선스가 재배포를
+   금지하므로 저장소에 포함하지 않습니다. 보유한 Asset Store 계정에서
+   `Assets/TopDownEngine/` 경로로 임포트하세요.
+
+TopDown Engine이 없어도 프로젝트는 컴파일과 빌드가 됩니다. 임시 캐릭터 모델만
+이 에셋의 메시를 빌려 쓰고 있어서, 없으면 회색 캡슐로 자동 대체됩니다.
+최종 캐릭터 모델(`MODEL-002`)이 들어오면 이 의존성은 사라집니다.
+
 기본 실행 절차:
 
 1. `ProjectSettings/ProjectVersion.txt`에 적힌 Unity 버전을 설치합니다.
