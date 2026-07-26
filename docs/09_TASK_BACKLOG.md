@@ -139,15 +139,43 @@
 | COMP-004 | P0 | DONE | 명령 전달기 (입력과 AI 분리) |
 | COMP-005 | P0 | DONE | 명령 유효성 검사 |
 | COMP-006 | P0 | DONE | 경로 실패 복구 |
-| COMP-007 | P0 | TODO | 숫자키 명령의 실제 효과 (현재는 이동·대기만) |
-| DOG-001 | P0 | TODO | `TRACK` |
-| DOG-002 | P1 | TODO | `SEARCH` |
-| DOG-003 | P1 | TODO | `GUARD` |
-| DOG-004 | P1 | TODO | `BARK` |
-| CAT-001 | P0 | TODO | `DISTRACT` |
-| CAT-002 | P1 | TODO | `SCOUT` |
-| CAT-003 | P2 | TODO | `STEAL` |
-| CAT-004 | P2 | TODO | `HIDE` |
+| COMP-007 | P0 | DONE | 숫자키 명령의 실제 효과 (`COMP-008` 해소, `DOG-003`·`CAT-004`로 대체) |
+| COMP-008 | P0 | DONE | 동료 벽 충돌 (`CharacterController`) |
+
+### 단계 9. 강아지와 고양이 최소 명령
+
+처음부터 8개를 만들지 않는다. 대표 명령 하나씩으로 재미를 먼저 검증한다.
+
+| ID | 우선순위 | 상태 | 작업 |
+|---|---|---|---|
+| DOG-001 | P0 | DONE | 강아지 소유와 따라가기 |
+| CAT-001 | P0 | DONE | 고양이 소유와 따라가기 |
+| DOG-002 | P0 | DONE | 강아지 명령 수신 (경찰 진영만) |
+| CAT-002 | P0 | DONE | 고양이 명령 수신 (도둑 진영만) |
+| DOG-007 | P1 | DONE | 강아지 명령 쿨타임 |
+| CAT-007 | P1 | DONE | 고양이 명령 쿨타임 |
+| DOG-008 | P1 | DONE | 강아지 경로 실패 복구 설정 |
+| CAT-008 | P1 | DONE | 고양이 경로 실패 복구 설정 |
+| UI-004 | P0 | DONE | 명령 버튼 (경찰 추적 / 도둑 교란) |
+| VOICE-007 | P0 | DONE | 버튼·숫자키가 `CommandRequest` 생성 |
+| DOG-003 | P0 | DONE | 추적 (흔적 기반, 실제 위치를 완벽히 알지 않음) |
+| CAT-004 | P0 | DONE | 교란 (정보만, 실제 위치 불변, 지속시간 제한, 중복 방지) |
+| UI-005 | P0 | DONE | 명령 쿨타임 표시 |
+| UI-006 | P0 | DONE | 명령 결과 피드백 |
+
+### 남은 명령 (재미 검증 후)
+
+| ID | 우선순위 | 상태 | 작업 |
+|---|---|---|---|
+| DOG-004 | P2 | TODO | `SEARCH` 실제 효과 |
+| DOG-005 | P2 | TODO | `GUARD` 실제 효과 |
+| DOG-006 | P2 | TODO | `BARK` 실제 효과 |
+| CAT-005 | P2 | TODO | `SCOUT` 실제 효과 |
+| CAT-006 | P2 | TODO | `STEAL` 실제 효과 |
+| CAT-009 | P2 | TODO | `HIDE` 실제 효과 |
+
+`SEARCH`, `GUARD`, `BARK`, `SCOUT`, `STEAL`, `HIDE`는 현재 지정 지점 이동과
+쿨타임만 수행하며 고유 효과가 없다. 이를 "명령 8개 완성"으로 표현하지 않는다.
 
 ## Epic 9. UI
 
@@ -213,7 +241,7 @@ Blender 모델 자체는 작업자가 제작한다. 이 저장소의 작업은 U
 | ART-002 | P1 | TODO | Unity 임포트 규칙 검사 도구 (스케일, 클립 이름, 머티리얼 위치, 경고) |
 | ART-003 | P1 | TODO | 기본 Animator 구성 (`Idle`, `Walk`, `Run`, `Command`, `Win`, `Lose`) |
 | ART-004 | P1 | TODO | 대표 모델 게임 적용 (Collider·이동 속도·체포 거리 유지) |
-| ART-005 | P1 | TODO | 대표 모델 성능 측정 (프레임, 드로우 콜, 본 수, 텍스처 메모리) |
+| ART-005 | P1 | DONE | 대표 모델 성능 측정 (드로우 콜 제외, 아래 결과) |
 | MODEL-003 | P2 | TODO | 경찰 모델 최종 제작 |
 | MODEL-004 | P2 | TODO | 도둑 모델 최종 제작 |
 | MODEL-005 | P2 | TODO | 강아지 모델 최종 제작 |

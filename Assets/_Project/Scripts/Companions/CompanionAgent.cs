@@ -52,6 +52,9 @@ namespace PawsAndLoot.Companions
         [SerializeField, Min(0.001f)]
         private float stuckDistanceThreshold = 0.05f;
 
+        [SerializeField]
+        private CharacterController characterController;
+
         private readonly CompanionStateMachine _stateMachine = new();
         private IMatchStateReader _matchState;
         private CompanionCommandRequest _activeRequest;
@@ -63,10 +66,21 @@ namespace PawsAndLoot.Companions
         private Vector3 _lastPosition;
         private bool _recoveryLogged;
 
+        [SerializeField]
+        private CompanionCommandResolver commandResolver;
+
         public event Action<CompanionStateChanged> StateChanged;
         public event Action<CompanionCommandId> CommandCompleted;
         public event Action<CompanionCommandId, CompanionCommandRejection>
             CommandRecovered;
+
+        /// <summary>
+        /// UI-006. Raised whenever a command produces a reportable result,
+        /// including refusals that happen at resolve time.
+        /// </summary>
+        public event Action<CompanionCommandOutcome> OutcomeReported;
+
+        public CompanionCommandOutcome LastOutcome { get; private set; }
 
         public CompanionKind CompanionKind => companionKind;
         public CompanionState CurrentState => _stateMachine.CurrentState;
@@ -82,8 +96,15 @@ namespace PawsAndLoot.Companions
             CompanionKind kind,
             Transform configuredOwner,
             CompanionConfig config,
-            IMatchStateReader matchStateReader)
+            IMatchStateReader matchStateReader,
+            CharacterController configuredController = null,
+            CompanionCommandResolver configuredResolver = null)
         {
+            characterController = configuredController != null
+                ? configuredController
+                : GetComponent<CharacterController>();
+            commandResolver = configuredResolver;
+            LastOutcome = CompanionCommandOutcome.None;
             companionKind = kind;
             owner = configuredOwner;
             companionConfig = config;
@@ -159,8 +180,38 @@ namespace PawsAndLoot.Companions
             _commandElapsedSeconds = 0f;
             _stuckElapsedSeconds = 0f;
             _recoveryLogged = false;
-            _hasCommandDestination =
-                request.TryGetDestination(out _commandDestination);
+
+            // The resolver decides what the command actually means. A refusal
+            // here is a gameplay result, so it still consumes the cooldown and
+            // gets reported instead of silently doing nothing.
+            if (commandResolver != null)
+            {
+                CompanionCommandResolver.Resolution resolution =
+                    commandResolver.Resolve(
+                        request,
+                        transform.position,
+                        request.IssuedAtSeconds);
+                ReportOutcome(resolution.Outcome);
+                if (!resolution.Accepted)
+                {
+                    _cooldownRemainingSeconds =
+                        companionConfig.CommandCooldownSeconds;
+                    _stateMachine.TryTransitionTo(
+                        CompanionState.ReturnToOwner);
+                    return true;
+                }
+
+                _hasCommandDestination = resolution.Destination.HasValue;
+                if (_hasCommandDestination)
+                {
+                    _commandDestination = resolution.Destination.Value;
+                }
+            }
+            else
+            {
+                _hasCommandDestination =
+                    request.TryGetDestination(out _commandDestination);
+            }
 
             CompanionState next = _hasCommandDestination
                 ? CompanionState.MoveToTarget
@@ -250,8 +301,8 @@ namespace PawsAndLoot.Companions
                 Vector3 rescue = owner.position
                     - owner.forward * stopDistance;
                 rescue.y = transform.position.y;
-                transform.position = rescue;
-                _lastPosition = rescue;
+                WarpTo(rescue);
+                _lastPosition = transform.position;
                 GameLogger.DebugOnce(
                     GameLogCategory.Companion,
                     $"companion-leash-{companionKind}",
@@ -331,8 +382,20 @@ namespace PawsAndLoot.Companions
                 companionConfig.CommandCooldownSeconds;
             if (_stateMachine.TryTransitionTo(CompanionState.Cooldown))
             {
+                ReportOutcome(CompanionCommandOutcome.Completed);
                 CommandCompleted?.Invoke(finished);
             }
+        }
+
+        private void ReportOutcome(CompanionCommandOutcome outcome)
+        {
+            if (outcome == CompanionCommandOutcome.None)
+            {
+                return;
+            }
+
+            LastOutcome = outcome;
+            OutcomeReported?.Invoke(outcome);
         }
 
         /// <summary>
@@ -361,10 +424,20 @@ namespace PawsAndLoot.Companions
 
             if (_stateMachine.TryTransitionTo(CompanionState.ReturnToOwner))
             {
+                ReportOutcome(CompanionCommandOutcome.Abandoned);
                 CommandRecovered?.Invoke(failed, reason);
             }
         }
 
+        /// <summary>
+        /// Moves one frame toward a destination and returns the distance
+        /// actually covered.
+        ///
+        /// A CharacterController does the displacement so walls and buildings
+        /// block the companion the same way they block players. The returned
+        /// travelled distance is the real one, not the requested one, which is
+        /// what lets the stuck detector notice a wall.
+        /// </summary>
         private float StepTowards(Vector3 destination, float deltaTime)
         {
             Vector3 current = transform.position;
@@ -372,20 +445,59 @@ namespace PawsAndLoot.Companions
                 destination.x,
                 current.y,
                 destination.z);
-            Vector3 next = Vector3.MoveTowards(
-                current,
-                flatDestination,
-                companionConfig.MoveSpeed * deltaTime);
-            transform.position = next;
+            Vector3 toDestination = flatDestination - current;
+            float distance = toDestination.magnitude;
+            if (distance <= 0.0001f)
+            {
+                return 0f;
+            }
 
-            Vector3 facing = flatDestination - current;
+            float stepLength = Mathf.Min(
+                companionConfig.MoveSpeed * deltaTime,
+                distance);
+            Vector3 direction = toDestination / distance;
+
+            if (characterController != null
+                && characterController.enabled)
+            {
+                // A little gravity keeps the capsule grounded on the greybox
+                // slabs instead of hovering after a step down.
+                Vector3 motion = direction * stepLength
+                    + Vector3.up * (Physics.gravity.y * 0.05f * deltaTime);
+                characterController.Move(motion);
+            }
+            else
+            {
+                transform.position = current + direction * stepLength;
+            }
+
+            Vector3 facing = direction;
             facing.y = 0f;
             if (facing.sqrMagnitude > 0.0001f)
             {
                 transform.forward = facing.normalized;
             }
 
-            return Vector3.Distance(current, next);
+            return PlanarDistance(current, transform.position);
+        }
+
+        /// <summary>
+        /// Teleporting has to go through the controller, otherwise the
+        /// character controller keeps its old internal position and the next
+        /// Move snaps the companion back.
+        /// </summary>
+        private void WarpTo(Vector3 position)
+        {
+            if (characterController != null)
+            {
+                bool wasEnabled = characterController.enabled;
+                characterController.enabled = false;
+                transform.position = position;
+                characterController.enabled = wasEnabled;
+                return;
+            }
+
+            transform.position = position;
         }
 
         private static float PlanarDistance(Vector3 a, Vector3 b)

@@ -275,12 +275,22 @@ namespace PawsAndLoot.Editor
             CreateAuthoredSceneDressing(
                 villageRoot.transform,
                 locations);
-            CreateCompanions(
-                villageRoot.transform,
-                controlBindings,
+            CompanionCommandDispatcher companionDispatcher =
+                CreateCompanions(
+                    villageRoot.transform,
+                    controlBindings,
+                    matchRuntime,
+                    matchEndController);
+            CreateSceneInterface(
+                roleSelector,
                 matchRuntime,
-                matchEndController);
-            CreateSceneInterface(roleSelector, matchRuntime);
+                companionDispatcher);
+
+            // ART-005 probe, inert unless -perfProbe is passed.
+            var perfObject = new GameObject("Scene Performance Probe");
+            perfObject.transform.SetParent(villageRoot.transform);
+            perfObject.AddComponent<
+                PawsAndLoot.TechnicalValidation.ScenePerformanceProbe>();
 
             string scenePath = GameSceneCatalog.GetPath(GameSceneId.Game);
             if (!EditorSceneManager.SaveScene(scene, scenePath))
@@ -575,6 +585,23 @@ namespace PawsAndLoot.Editor
             root.localPosition = Vector3.zero;
             CompanionConfig config = LoadCompanionConfig();
 
+            // DOG-003 and CAT-004 shared services. The trail lives on the
+            // thief because only the thief writes it.
+            PlayerRoleControlBinding policeBinding =
+                FindBinding(bindings, PlayerRole.Police);
+            PlayerRoleControlBinding thiefBinding =
+                FindBinding(bindings, PlayerRole.Thief);
+            ThiefScentTrail scentTrail =
+                thiefBinding.Identity.gameObject
+                    .AddComponent<ThiefScentTrail>();
+            scentTrail.Configure(0.5f, 12f, 0.75f);
+
+            var boardObject = new GameObject("Distraction Board");
+            boardObject.transform.SetParent(root, false);
+            DistractionBoard distractionBoard =
+                boardObject.AddComponent<DistractionBoard>();
+            distractionBoard.Configure(4f);
+
             var agents = new List<CompanionAgent>();
             foreach (PlayerRoleControlBinding binding in bindings)
             {
@@ -591,23 +618,47 @@ namespace PawsAndLoot.Editor
                     binding.Identity.transform.position
                     + new Vector3(1.6f, -1f, -1.2f);
 
+                // A CharacterController gives the companion the same wall and
+                // step collision the players use, sized to the animal.
+                CharacterController controller =
+                    agentObject.AddComponent<CharacterController>();
+                controller.height = Mathf.Max(0.4f, height);
+                controller.radius = Mathf.Max(0.15f, height * 0.32f);
+                controller.center =
+                    new Vector3(0f, controller.height * 0.5f, 0f);
+                controller.slopeLimit = 50f;
+                controller.stepOffset = Mathf.Min(0.3f, height * 0.4f);
+                controller.skinWidth = 0.04f;
+
+                Transform visualRoot = CreateChild(
+                    "VisualRoot",
+                    agentObject.transform);
+                visualRoot.localPosition = Vector3.zero;
+                visualRoot.localRotation = Quaternion.identity;
+
                 if (PlaceholderModelLibrary.TryInstantiateAuthoredCharacter(
                         stem,
-                        agentObject.transform,
+                        visualRoot,
                         height,
                         0f) == null)
                 {
                     GameObject fallback = GameObject.CreatePrimitive(
                         PrimitiveType.Capsule);
                     fallback.name = $"{stem}_Fallback";
-                    fallback.transform.SetParent(
-                        agentObject.transform,
-                        false);
+                    fallback.transform.SetParent(visualRoot, false);
                     fallback.transform.localScale =
                         Vector3.one * height * 0.5f;
                     UnityEngine.Object.DestroyImmediate(
                         fallback.GetComponent<Collider>());
                 }
+
+                CompanionCommandResolver resolver =
+                    agentObject.AddComponent<CompanionCommandResolver>();
+                resolver.Configure(
+                    scentTrail,
+                    distractionBoard,
+                    policeBinding.Identity.transform,
+                    26f);
 
                 CompanionAgent agent =
                     agentObject.AddComponent<CompanionAgent>();
@@ -615,7 +666,18 @@ namespace PawsAndLoot.Editor
                     kind,
                     binding.Identity.transform,
                     config,
-                    matchRuntime);
+                    matchRuntime,
+                    controller,
+                    resolver);
+
+                // Quadrupeds have no clips, so movement is faked on the visual
+                // child only, never on the collider root.
+                PawsAndLoot.Animation.CompanionProceduralAnimator hop =
+                    agentObject.AddComponent<
+                        PawsAndLoot.Animation.
+                            CompanionProceduralAnimator>();
+                hop.Configure(agent, visualRoot);
+
                 agents.Add(agent);
             }
 
@@ -646,6 +708,22 @@ namespace PawsAndLoot.Editor
             }
 
             return dispatcher;
+        }
+
+        private static PlayerRoleControlBinding FindBinding(
+            IReadOnlyList<PlayerRoleControlBinding> bindings,
+            PlayerRole role)
+        {
+            foreach (PlayerRoleControlBinding binding in bindings)
+            {
+                if (binding?.Identity != null && binding.Role == role)
+                {
+                    return binding;
+                }
+            }
+
+            throw new InvalidOperationException(
+                $"MAP-001 requires a control binding for '{role}'.");
         }
 
         private static void CreateAuthoredAnimal(
@@ -1769,9 +1847,89 @@ namespace PawsAndLoot.Editor
             probe.MoveSpeedMetersPerSecond = moveSpeed;
         }
 
+        /// <summary>
+        /// UI-004 button, UI-005 cooldown readout and UI-006 result line for
+        /// the local role's representative command.
+        /// </summary>
+        private static void CreateCompanionCommandHud(
+            Transform canvasRoot,
+            CompanionCommandDispatcher dispatcher,
+            LocalPlayerRoleSelector roleSelector)
+        {
+            RectTransform panel = CreateRect(
+                "Companion Command HUD",
+                canvasRoot);
+            panel.anchorMin = new Vector2(0f, 0f);
+            panel.anchorMax = new Vector2(0f, 0f);
+            panel.pivot = new Vector2(0f, 0f);
+            panel.anchoredPosition = new Vector2(40f, 150f);
+            panel.sizeDelta = new Vector2(420f, 150f);
+
+            Text commandLabel = CreateHudLabel(
+                "Command Name",
+                panel,
+                new Vector2(0f, 0f),
+                new Vector2(0f, 0f),
+                new Vector2(0f, 108f),
+                new Vector2(400f, 34f),
+                TextAnchor.LowerLeft,
+                26);
+            Text cooldownLabel = CreateHudLabel(
+                "Command Cooldown",
+                panel,
+                new Vector2(0f, 0f),
+                new Vector2(0f, 0f),
+                new Vector2(0f, 78f),
+                new Vector2(400f, 28f),
+                TextAnchor.LowerLeft,
+                20);
+            Text feedbackLabel = CreateHudLabel(
+                "Command Feedback",
+                panel,
+                new Vector2(0f, 0f),
+                new Vector2(0f, 0f),
+                new Vector2(0f, 0f),
+                new Vector2(400f, 34f),
+                TextAnchor.LowerLeft,
+                20);
+
+            RectTransform buttonRect = CreateRect("Command Button", panel);
+            buttonRect.anchorMin = new Vector2(0f, 0f);
+            buttonRect.anchorMax = new Vector2(0f, 0f);
+            buttonRect.pivot = new Vector2(0f, 0f);
+            buttonRect.anchoredPosition = new Vector2(0f, 40f);
+            buttonRect.sizeDelta = new Vector2(210f, 34f);
+            Image buttonImage = buttonRect.gameObject.AddComponent<Image>();
+            buttonImage.color = new Color(0.08f, 0.28f, 0.62f, 0.9f);
+            Button button = buttonRect.gameObject.AddComponent<Button>();
+            button.targetGraphic = buttonImage;
+            Text buttonLabel = CreateHudLabel(
+                "Command Button Label",
+                buttonRect,
+                new Vector2(0f, 0f),
+                new Vector2(1f, 1f),
+                Vector2.zero,
+                Vector2.zero,
+                TextAnchor.MiddleCenter,
+                18);
+            buttonLabel.text = "COMMAND  [1/2]";
+
+            CompanionCommandHudPresenter presenter =
+                panel.gameObject.AddComponent<
+                    CompanionCommandHudPresenter>();
+            presenter.Configure(
+                dispatcher,
+                roleSelector,
+                commandLabel,
+                cooldownLabel,
+                feedbackLabel,
+                button);
+        }
+
         private static void CreateSceneInterface(
             LocalPlayerRoleSelector roleSelector,
-            MatchRuntimeState matchRuntime)
+            MatchRuntimeState matchRuntime,
+            CompanionCommandDispatcher companionDispatcher)
         {
             var canvasObject = new GameObject(
                 "Scene UI",
@@ -2188,6 +2346,11 @@ namespace PawsAndLoot.Editor
                 policeArrestLabel,
                 policeTheftAlertLabel,
                 policeGoalLabel);
+
+            CreateCompanionCommandHud(
+                canvasObject.transform,
+                companionDispatcher,
+                roleSelector);
 
             var eventSystem = new GameObject(
                 "EventSystem",
