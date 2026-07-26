@@ -427,6 +427,37 @@ WebGL은 목표 플랫폼이 아니며(`ISSUE-008`) 측정 목적으로만 빌�
 VSync 상한에 붙어 있다. `ART-012` 머티리얼 통합과 정적 배칭을 적용할 근거로
 이 수치를 기준선으로 삼는다.
 
+## 직접 IP 로비 검증 결과
+
+`DEC-027` 호스트 권한 + 직접 IP를 채택하고 로비를 만들었다. 실제 Windows 빌드
+두 프로세스로 검증했다.
+
+| 항목 | 호스트 | 클라이언트 |
+|---|---|---|
+| `sessionMode` | `Host` | `Client` |
+| `connectedPlayers` | 2 | 서버 전용 값이라 0 |
+| `rolesAssigned` | **true** | **true** |
+| `localRole` | **Police** | **Thief** |
+| `policeClientId` | 0 | 0 |
+| `passed` | **true** | **true** |
+
+`policeClientId`가 양쪽에서 0으로 일치한다. 즉 두 화면이 같은 역할 배정을
+읽는다. 내 IP는 `192.168.35.197`로 정확히 표시됐다.
+
+### 이 과정에서 고친 것 세 가지
+
+1. `Awake()`에서 `StartHost`/`StartClient`를 호출해 NetworkManager 초기화 전에
+   실행되어 `NullReferenceException`이 났다. 시작을 첫 `Update`로 미뤘다.
+2. 호스트만 런타임에 `ConnectionApproval`을 켜면 NGO가 설정 해시 불일치로
+   클라이언트를 끊는다. 씬 설정에서 양쪽 동일하게 켜고 콜백만 호스트에 붙였다.
+3. 역할 보드를 씬에 배치했더니 클라이언트가
+   `NetworkPrefab could not be found`로 스폰에 실패하고 끊겼다.
+   `EnableSceneManagement = false`에서는 in-scene NetworkObject도 프리팹 목록
+   에서 찾는다. 프리팹으로 등록해 호스트가 스폰하도록 바꿨다.
+
+`ConnectedClientsIds`는 NGO에서 서버 전용이라 클라이언트에서 항상 비어 있다.
+클라이언트의 준비 판정은 접속 여부와 복제된 역할 보드로만 한다.
+
 ## 현재 작업
 
 - 작업 ID: 단계 13 사운드와 연출

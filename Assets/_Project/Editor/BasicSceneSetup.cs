@@ -145,6 +145,7 @@ namespace PawsAndLoot.Editor
             CreateInterface(sceneId, title, subtitle, buttons);
             CreateEventSystem();
             CreateProjectServices(sceneId);
+            NetworkLobbySetup.Build(sceneId);
 
             string path = GameSceneCatalog.GetPath(sceneId);
             if (!EditorSceneManager.SaveScene(scene, path))

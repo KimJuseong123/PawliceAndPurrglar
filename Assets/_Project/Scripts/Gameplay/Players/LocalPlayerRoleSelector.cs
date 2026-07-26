@@ -105,10 +105,43 @@ namespace PawsAndLoot.Gameplay.Players
             }
         }
 
+        /// <summary>
+        /// Role decided by the lobby for this machine, if a session assigned
+        /// one. Survives the scene load into the match, which is why it is
+        /// static; cleared when a fresh process starts.
+        /// </summary>
+        private static PlayerRole? _overrideRole;
+
+        public static PlayerRole? OverriddenRole => _overrideRole;
+
+        public static void OverrideRole(PlayerRole role)
+        {
+            _overrideRole = role;
+        }
+
+        public static void ClearOverriddenRole()
+        {
+            _overrideRole = null;
+        }
+
+        [RuntimeInitializeOnLoadMethod(
+            RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOverride()
+        {
+            _overrideRole = null;
+        }
+
         public static PlayerRole ResolveRole(
             IEnumerable<string> arguments,
             PlayerRole fallback)
         {
+            // A lobby assignment wins over the command line, because the server
+            // decided it and both machines must agree.
+            if (_overrideRole.HasValue)
+            {
+                return _overrideRole.Value;
+            }
+
             if (arguments == null)
             {
                 return fallback;
