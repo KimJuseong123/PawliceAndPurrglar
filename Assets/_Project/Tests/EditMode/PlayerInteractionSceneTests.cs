@@ -3,6 +3,7 @@ using NUnit.Framework;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Loot;
+using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Match;
 using PawsAndLoot.UI;
@@ -97,7 +98,8 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(scanners, Has.Length.EqualTo(2));
 
             // One prototype loot plus the two LOOT-005 hiding spots all use the
-            // Loot type, which keeps them thief only.
+            // Loot type, which keeps them thief only. The three Traversal
+            // targets are the MAP-003 climbable ladders, one per store.
             Assert.That(
                 targets.Select(target => target.InteractionType),
                 Is.EquivalentTo(new[]
@@ -106,6 +108,8 @@ namespace PawsAndLoot.Tests.EditMode
                     PlayerInteractionType.Loot,
                     PlayerInteractionType.Loot,
                     PlayerInteractionType.Sale,
+                    PlayerInteractionType.Traversal,
+                    PlayerInteractionType.Traversal,
                     PlayerInteractionType.Traversal,
                     PlayerInteractionType.Generic
                 }));
@@ -116,6 +120,21 @@ namespace PawsAndLoot.Tests.EditMode
                             LootHidingSpot>(true))
                     .ToArray(),
                 Has.Length.EqualTo(2));
+
+            LadderTraversal[] ladders = scene
+                .GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<LadderTraversal>(true))
+                .ToArray();
+            Assert.That(ladders, Has.Length.EqualTo(3));
+            foreach (LadderTraversal ladder in ladders)
+            {
+                Assert.DoesNotThrow(ladder.ValidateOrThrow);
+                Assert.That(
+                    ladder.TopPoint.position.y,
+                    Is.GreaterThan(ladder.BottomPoint.position.y),
+                    "A ladder must lead upward.");
+            }
             Assert.That(presenters, Has.Length.EqualTo(1));
             Assert.That(thiefPresenters, Has.Length.EqualTo(1));
             Assert.DoesNotThrow(

@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8168ebd564dbca34d93afb8e9a00a6a2, type: 3}
+  m_Name: GameSoundBank
+  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Audio.GameSoundBank
+  entries:
+  - soundId: 1
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 2
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 3
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 4
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 5
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 6
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 7
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 8
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 9
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 10
+    clip: {fileID: 0}
+    volume: 1
+  musicVolume: 0.35
+  musicTrack: {fileID: 0}
+  voiceDuckingMultiplier: 0.25

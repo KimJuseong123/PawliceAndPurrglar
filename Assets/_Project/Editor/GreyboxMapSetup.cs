@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using PawsAndLoot.Audio;
 using PawsAndLoot.Companions;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
@@ -149,6 +150,7 @@ namespace PawsAndLoot.Editor
 
             var rooftops = new List<Transform>();
             var ladders = new List<Transform>();
+            var pendingLadderClimbs = new List<LadderTraversal>();
             CreateStore(
                 "Supermarket",
                 new Vector3(-9f, 0f, 6f),
@@ -160,6 +162,7 @@ namespace PawsAndLoot.Editor
                 LadderSide.West,
                 rooftops,
                 ladders,
+                pendingLadderClimbs,
                 "building_supermarket");
             CreateStore(
                 "Bookstore",
@@ -172,6 +175,7 @@ namespace PawsAndLoot.Editor
                 LadderSide.East,
                 rooftops,
                 ladders,
+                pendingLadderClimbs,
                 "building_bookstore");
             CreateStore(
                 "Jewelry Store",
@@ -183,7 +187,8 @@ namespace PawsAndLoot.Editor
                 featuresRoot,
                 LadderSide.East,
                 rooftops,
-                ladders);
+                ladders,
+                pendingLadderClimbs);
             CreateRaccoonMarket(
                 buildingsRoot,
                 MarketGold,
@@ -222,6 +227,20 @@ namespace PawsAndLoot.Editor
                 ThiefRed);
             MatchRuntimeState matchRuntime =
                 CreatePrototypeMatchRuntime(villageRoot.transform);
+
+            // MAP-003 ladders need the match runtime, which only exists now.
+            foreach (LadderTraversal climb in pendingLadderClimbs)
+            {
+                climb.Configure(
+                    climb.GetComponent<Collider>(),
+                    climb.transform.Find("Bottom"),
+                    climb.transform.Find("Top"),
+                    matchRuntime);
+            }
+
+            Debug.Log(
+                $"[MAP-003] {pendingLadderClimbs.Count} climbable ladders "
+                + "configured.");
             PlayerConfig playerConfig = LoadPlayerConfig();
             var controlBindings = new List<PlayerRoleControlBinding>
             {
@@ -285,6 +304,13 @@ namespace PawsAndLoot.Editor
                 roleSelector,
                 matchRuntime,
                 companionDispatcher);
+
+            CreateAudio(
+                villageRoot.transform,
+                companionDispatcher,
+                controlBindings,
+                matchRuntime,
+                matchEndController);
 
             // ART-005 probe, inert unless -perfProbe is passed.
             var perfObject = new GameObject("Scene Performance Probe");
@@ -792,6 +818,115 @@ namespace PawsAndLoot.Editor
         }
 
         /// <summary>
+        /// AUDIO-002. Creates the sound sink and the observer that listens to
+        /// the rule layer. Rules never reference either one.
+        /// </summary>
+        private static void CreateAudio(
+            Transform parent,
+            CompanionCommandDispatcher dispatcher,
+            IReadOnlyList<PlayerRoleControlBinding> bindings,
+            MatchRuntimeState matchRuntime,
+            MatchEndController matchEndController)
+        {
+            PlayerRoleControlBinding police =
+                FindBinding(bindings, PlayerRole.Police);
+            PlayerRoleControlBinding thief =
+                FindBinding(bindings, PlayerRole.Thief);
+
+            var audioObject = new GameObject("Game Audio");
+            audioObject.transform.SetParent(parent);
+            AudioSource oneShot =
+                audioObject.AddComponent<AudioSource>();
+            oneShot.playOnAwake = false;
+            oneShot.spatialBlend = 0f;
+            AudioSource music = audioObject.AddComponent<AudioSource>();
+            music.playOnAwake = false;
+            music.loop = true;
+            music.spatialBlend = 0f;
+
+            GameSoundService service =
+                audioObject.AddComponent<GameSoundService>();
+            service.Configure(LoadOrCreateSoundBank(), oneShot, music);
+
+            GameSoundObserver observer =
+                audioObject.AddComponent<GameSoundObserver>();
+            observer.Configure(
+                dispatcher,
+                thief.Identity.GetComponent<LootCarrier>(),
+                thief.Identity.GetComponent<ThiefLootWallet>(),
+                police.Identity.GetComponent<ArrestProgressController>(),
+                police.Identity.GetComponent<ArrestCompletionController>(),
+                matchEndController,
+                UnityEngine.Object.FindFirstObjectByType<
+                    DistractionBoard>());
+        }
+
+        private const string SoundBankPath =
+            "Assets/_Project/Settings/Audio/GameSoundBank.asset";
+
+        /// <summary>
+        /// Creates the bank on first run so every sound id shows up in the
+        /// Inspector waiting for a clip.
+        /// </summary>
+        private static GameSoundBank LoadOrCreateSoundBank()
+        {
+            GameSoundBank bank =
+                AssetDatabase.LoadAssetAtPath<GameSoundBank>(SoundBankPath);
+            if (bank == null)
+            {
+                string directory =
+                    Path.GetDirectoryName(SoundBankPath)?
+                        .Replace('\\', '/');
+                if (!string.IsNullOrEmpty(directory)
+                    && !AssetDatabase.IsValidFolder(directory))
+                {
+                    Directory.CreateDirectory(
+                        Path.GetFullPath(directory));
+                    AssetDatabase.Refresh();
+                }
+
+                bank = ScriptableObject.CreateInstance<GameSoundBank>();
+                AssetDatabase.CreateAsset(bank, SoundBankPath);
+            }
+
+            bank.EnsureAllSoundIds();
+            EditorUtility.SetDirty(bank);
+            Debug.Log(
+                $"[AUDIO-001] Sound bank has {bank.EntryCount} entries, "
+                + $"{bank.CountMissingClips()} without a clip yet.");
+            return bank;
+        }
+
+        /// <summary>
+        /// MAP-003. A climbable ladder. Collected rather than configured here
+        /// because the match runtime does not exist yet when stores are built.
+        /// </summary>
+        private static void CreateLadderTraversal(
+            string name,
+            Vector3 groundPosition,
+            Vector3 rooftopPosition,
+            Transform parent,
+            ICollection<LadderTraversal> pending)
+        {
+            var target = new GameObject(name);
+            target.transform.SetParent(parent);
+            target.transform.position =
+                groundPosition + new Vector3(0f, 1f, 0f);
+            BoxCollider trigger = target.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.size = new Vector3(1.6f, 2f, 1.6f);
+
+            Transform bottom = CreateChild("Bottom", target.transform);
+            bottom.position = groundPosition + new Vector3(0f, 1f, 0f);
+            Transform top = CreateChild("Top", target.transform);
+            top.position = rooftopPosition;
+
+            LadderTraversal ladder =
+                target.AddComponent<LadderTraversal>();
+            pending.Add(ladder);
+        }
+
+        /// <summary>
         /// MAP-002. A dressing building plus one Box collider derived from the
         /// model's measured bounds. The visual mesh is never used for collision.
         /// </summary>
@@ -854,6 +989,7 @@ namespace PawsAndLoot.Editor
             LadderSide ladderSide,
             ICollection<Transform> rooftops,
             ICollection<Transform> ladders,
+            ICollection<LadderTraversal> pendingLadderClimbs,
             string buildingModelStem = null)
         {
             Transform root = CreateChild(name, buildingsRoot);
@@ -912,6 +1048,19 @@ namespace PawsAndLoot.Editor
                 featuresRoot,
                 roofHeight);
             ladders.Add(ladder);
+
+            // MAP-003. The rooftop landing sits inboard of the parapet so the
+            // player lands on the roof rather than on its edge.
+            float inboard = ladderSide == LadderSide.West ? 2.2f : -2.2f;
+            CreateLadderTraversal(
+                $"{name} Ladder Climb",
+                ladderPosition,
+                new Vector3(
+                    ladderPosition.x + inboard,
+                    roofHeight + 1f,
+                    ladderPosition.z),
+                ladder,
+                pendingLadderClimbs);
 
             Vector3 labelPosition =
                 center + new Vector3(0f, 4.8f, -4.55f);
@@ -1661,13 +1810,9 @@ namespace PawsAndLoot.Editor
                 MarketGold,
                 root,
                 matchRuntime);
-            CreatePrototypeInteractionTarget(
-                "Prototype Ladder Point",
-                ladders[0].position + new Vector3(0f, 0.5f, -1.25f),
-                PlayerInteractionType.Traversal,
-                "Use ladder",
-                new Color(0.2f, 0.75f, 0.95f),
-                root);
+            // The old ladder marker was a PrototypeInteractable that only
+            // counted presses, which read as a broken ladder. Real climbing now
+            // lives on LadderTraversal beside each store ladder.
             // LOOT-005. Two stashes so the thief has a choice, placed at the
             // trash bin corners the concept map uses as hiding places.
             CreateLootHidingSpot(
@@ -2577,6 +2722,28 @@ namespace PawsAndLoot.Editor
             CreateDistractionAlert(
                 canvasObject.transform,
                 roleSelector);
+
+            // UX-001. One live instruction, retiring on its own.
+            Text guideLabel = CreateHudLabel(
+                "First Play Guide",
+                canvasObject.transform,
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(-330f, 96f),
+                new Vector2(660f, 34f),
+                TextAnchor.MiddleCenter,
+                22);
+            guideLabel.color = new Color(0.85f, 0.93f, 1f);
+            FirstPlayGuidePresenter guide =
+                guideLabel.gameObject.AddComponent<
+                    FirstPlayGuidePresenter>();
+            guide.Configure(
+                roleSelector,
+                matchRuntime,
+                thiefPlayer.GetComponent<LootCarrier>(),
+                thiefPlayer.GetComponent<ThiefLootWallet>(),
+                companionDispatcher,
+                guideLabel);
 
             var eventSystem = new GameObject(
                 "EventSystem",

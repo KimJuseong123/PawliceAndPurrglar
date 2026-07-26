@@ -118,18 +118,27 @@ namespace PawsAndLoot.UI
 
             if (commandLabel != null)
             {
-                commandLabel.text = CompanionCommandCatalog.GetDisplayName(
-                    ResolvePrimaryCommand());
+                // UX-002. Icon plus name plus key, so the command reads without
+                // relying on the role colour.
+                CompanionCommandId primary = ResolvePrimaryCommand();
+                bool isPolice = roleSelector != null
+                    && roleSelector.ActiveRole == PlayerRole.Police;
+                commandLabel.text =
+                    $"{(isPolice ? "🐕" : "🐈")}  "
+                    + $"{CompanionCommandCatalog.GetDisplayName(primary)}"
+                    + $"  [{(isPolice ? "1" : "2")}]";
             }
 
+            // UX-003. Cooldown as a filled bar plus a number, and the animal's
+            // current behaviour, so the player can see why a key does nothing.
             if (cooldownLabel != null)
             {
                 float remaining = _boundAgent != null
                     ? _boundAgent.CooldownRemainingSeconds
                     : 0f;
                 cooldownLabel.text = remaining > 0.05f
-                    ? $"COOLDOWN {remaining:0.0}s"
-                    : "READY";
+                    ? $"{BuildBar(remaining)}  {remaining:0.0}s"
+                    : $"✔ READY   {DescribeAgentState()}";
             }
 
             if (commandButton != null)
@@ -148,6 +157,49 @@ namespace PawsAndLoot.UI
                     feedbackLabel.text = string.Empty;
                 }
             }
+        }
+
+        /// <summary>
+        /// UX-003. Cooldown drawn with characters so it reads at a glance even
+        /// on a small HUD, without needing a second Image component.
+        /// </summary>
+        private string BuildBar(float remainingSeconds)
+        {
+            const int segments = 8;
+            float total = _boundAgent != null
+                    && _boundAgent.CooldownRemainingSeconds > 0f
+                ? Mathf.Max(remainingSeconds, 0.01f)
+                : 1f;
+            int filled = Mathf.Clamp(
+                Mathf.CeilToInt(remainingSeconds / total * segments),
+                0,
+                segments);
+            return "[" + new string('|', filled)
+                + new string('.', segments - filled) + "]";
+        }
+
+        /// <summary>
+        /// UX-003. What the animal is doing right now, so a refused command is
+        /// explainable rather than mysterious.
+        /// </summary>
+        private string DescribeAgentState()
+        {
+            if (_boundAgent == null)
+            {
+                return "동료 없음";
+            }
+
+            return _boundAgent.CurrentState switch
+            {
+                CompanionState.Idle => "대기 중",
+                CompanionState.Follow => "따라오는 중",
+                CompanionState.MoveToTarget => "이동 중",
+                CompanionState.ExecuteCommand => "수행 중",
+                CompanionState.ReturnToOwner => "복귀 중",
+                CompanionState.Cooldown => "쉬는 중",
+                CompanionState.Disabled => "정지",
+                _ => string.Empty
+            };
         }
 
         private void Bind()
