@@ -256,6 +256,11 @@ UI는 이벤트를 구독해 표시하며 UI 텍스트가 게임 값을 소유�
 
 외부 패키지 타입을 Core 규칙에 직접 노출하지 않는다.
 
+핵심 2개 음성 수직 슬라이스는 `IVoiceCommandGateway` 뒤에서 로컬 HTTP
+중계 서버를 호출한다. Unity 클라이언트는 OpenAI API 키나 OpenAI SDK 타입을
+참조하지 않는다. 중계 서버는 음성을 텍스트와 제한 명령 ID로 변환할 뿐 게임
+명령을 직접 실행하지 않는다.
+
 ## 4. 주요 이벤트
 
 - `MatchStarted`
@@ -414,6 +419,34 @@ Keyboard / UI / Future Voice
 -> Gameplay Events
 -> UI / Animation / Audio
 ```
+
+현재 구현 대상:
+
+```text
+Keyboard 1 / Voice TRACK
+-> Police Dog
+-> Thief last-known position snapshot
+-> Return to owner
+
+Keyboard 2 / Voice DISTRACT
+-> Thief Cat
+-> Navigable point near Police
+-> Visual distraction
+-> Return to owner
+```
+
+`TRACK`은 명령 접수 순간의 위치만 사용하고 실시간 Transform을 따라가지 않는다.
+`DISTRACT`는 플레이어 입력이나 승패 규칙을 강제로 변경하지 않는다.
+
+로컬 중계 서버 계약:
+
+```text
+POST /v1/voice-command
+request: requestId, role, locale, audioWavBase64
+response: requestId, transcript, commandId, reasonCode
+```
+
+API 키는 중계 서버 프로세스의 `OPENAI_API_KEY` 환경 변수에서만 읽는다.
 
 ## 7. 네트워크 경계
 

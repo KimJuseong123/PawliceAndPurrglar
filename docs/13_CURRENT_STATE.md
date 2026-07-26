@@ -6,12 +6,13 @@
 
 ## 현재 목표
 
-그레이박스 마을에서 경찰의 체포 감지·진행·중단·완료와 역할별 UI를 검증한다.
+그레이박스 마을에서 역할별 핵심 동물 명령과 OpenAI 음성 입력 수직
+슬라이스를 검증한다.
 
 ## 현재 단계
 
 ```text
-단계 5: 체포 시스템
+단계 6: 핵심 동물 명령과 제한 음성 수직 슬라이스
 ```
 
 ## 확정된 제품 방향
@@ -23,8 +24,8 @@
 - 원근감 있는 3D 기울어진 탑다운
 - 경찰과 강아지, 도둑과 고양이
 - 도둑의 판매 NPC는 너구리 상인
-- 동물 명령은 숫자키 `1`~`4`로 먼저 구현
-- 실제 음성 입력과 자연어 분류는 핵심 루프 검증 후 적용
+- 동물 명령은 숫자키와 공통 `CompanionCommandId` 경로로 구현
+- `DEC-027` 예외로 경찰 `TRACK`, 도둑 `DISTRACT`만 실제 음성 분류 연결
 - 대부분의 모델은 그레이박스 이후 Blender에서 제작
 - 기존 경찰 모델만 리깅과 애니메이션 테스트에 사용
 
@@ -138,6 +139,25 @@ Builds/TechnicalValidation/Windows/PawsAndLootVoiceTech.exe
 - Unity 내장 `DictationRecognizer` 생성은 `0x80004003`으로 실패
 - 실제 발화 텍스트 출력은 미검증이며 TECH-003은 `BLOCKED`
 
+- VOICE-008 제한 음성 수직 슬라이스 소스:
+
+```text
+Assets/_Project/Scripts/Companions/
+Assets/_Project/Scripts/Voice/
+Assets/_Project/Scripts/UI/VoiceCommandHudPresenter.cs
+Tools/VoiceGateway/
+```
+
+- 경찰 숫자키 `1`과 음성 `TRACK`은 강아지를 명령 접수 순간 도둑 위치로 이동
+- 도둑 숫자키 `2`와 음성 `DISTRACT`는 고양이를 경찰 근처로 이동시켜 시각 펄스 표시
+- 두 명령 모두 `NavMeshAgent`, 실행 가능 여부, 역할, 쿨타임, 경로를 공통 검사
+- `V` Push-to-Talk는 최대 5초 WAV를 localhost 중계 서버로 전송
+- 중계 서버는 `gpt-4o-mini-transcribe`와 제한 Structured Output을 사용
+- API 키는 `OPENAI_API_KEY` 환경 변수에만 두며 Unity 에셋에 저장하지 않음
+- Node 중계 서버 단위 테스트 5/5 통과
+- 지정 Unity `6000.5.4f1`이 현재 PC에 설치되어 있지 않아 Game 씬 재생성,
+  Unity 컴파일, Edit Mode·Play Mode, 실제 마이크·OpenAI 호출은 아직 `NOT RUN`
+
 - NET-001 로컬 접속 검증 씬과 빌드:
 
 ```text
@@ -243,7 +263,7 @@ ArtSource/Police/Police_LowPoly.blend
 Assets/CatCops/Models/Police_LowPoly.fbx
 ```
 
-- 신규 캐릭터 원본 FBX 4종 추가:
+- 신규 캐릭터 원본 FBX 4종과 기술 검증 소스:
 
 ```text
 ArtSource/Blender/Characters/police+officer+3d+model/
@@ -270,6 +290,7 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
   - 캐릭터 4종을 한 씬에 배치
   - 애니메이션 클립이 있으면 기본 클립 재생, `Idle`/`Walk`가 함께 있으면 이동 연동
   - 결과 JSON과 스크린샷 저장
+- 고정 Unity 버전이 없어 실제 배치 실행은 아직 미검증
 
 ## 아직 존재하지 않는 목표 결과
 
@@ -277,7 +298,7 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
 - 경찰 Armature와 Avatar
 - `Idle`, `Run`, `ComedyRun`
 - 너구리 상인의 출현·이동·판매 피드백
-- 숫자키 동물 명령 상태 머신
+- 생성 스크립트로 갱신된 Game 씬의 Unity 런타임 검증
 - 도둑의 판매 승리를 가능하게 하는 보물 배치 또는 목표 금액
 - 신규 4종 캐릭터 FBX의 실제 애니메이션 클립 유무와 개수에 대한 런타임 검증 결과
 
@@ -304,9 +325,8 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
 ## 현재 알려진 환경 상태
 
 - 실행 중인 Unity 프로세스는 확인되지 않았다.
-- 현재 작업 환경에서는 Unity `6000.5.4f1` 실행 파일 경로를 확인하지 못했다.
-  `C:\Program Files\Unity\Hub\Editor\2022.3.6f1\Editor\Unity.exe`만 확인되어
-  CHAR-001 배치 실행은 아직 미검증이다.
+- 현재 PC에는 프로젝트 고정 버전 Unity `6000.5.4f1` 실행 파일이 없고
+  `2022.3.62f1`, `2022.3.75f1`만 확인됐다.
 - 실행 중인 프로세스 없이 남아 있던 `Temp/UnityLockfile`을 제거했다.
 - Unity `6000.5.4f1` 배치 모드에서 새 폴더 임포트와 `.meta` 생성을 검증했다.
 - 불필요한 2D 편집, Collaborate, Rider, Visual Scripting, Multiplayer Center 패키지를 제거했다.
@@ -317,20 +337,19 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
 
 ## 현재 작업
 
-- 작업 ID: `CHAR-001`
-- 작업: 신규 캐릭터 FBX 실행 검증 장면
+- 작업 ID: `VOICE-008`
+- 작업: OpenAI 기반 `TRACK`·`DISTRACT` 음성 수직 슬라이스
 - 상태: `IN_PROGRESS`
-- 결과: Unity 프로젝트 안에서 바로 실행 가능한 신규 캐릭터 기술 검증 장면
-  생성 스크립트와 런타임 프리뷰를 추가했다. 현재 로컬 환경에는 프로젝트 요구
-  버전인 Unity `6000.5.4f1` 실행 파일 경로가 확인되지 않아 자동 실행과 빌드는
-  미검증 상태다.
+- 결과: 명령 모델, NavMesh 동물 에이전트, 숫자키, `V` Push-to-Talk,
+  localhost OpenAI 중계 서버, 피드백 HUD와 자동 테스트 소스를 구현했다.
+  Node 테스트는 통과했으며 Unity 고정 버전 부재로 씬 생성과 런타임 검증이 남았다.
 
 ## 바로 다음 작업
 
-1. CHAR-001을 Unity `6000.5.4f1`에서 실제 실행
-2. 신규 4종 캐릭터의 애니메이션 클립 유무와 기본 재생 확인
-3. `ISSUE-011`: 도둑 판매 승리 경로 확보
-4. 관문 B 플레이테스트
+1. Unity `6000.5.4f1`에서 Game 씬 재생성, 컴파일과 Edit/Play Mode 테스트
+2. 실제 한국어 `TRACK`·`DISTRACT` 발화와 실패 복구 검증
+3. CHAR-001 신규 4종 캐릭터 런타임 검증
+4. `ISSUE-011`: 도둑 판매 승리 경로 확보
 
 ## 차단 요소
 
@@ -338,8 +357,8 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
 - 로컬 1인 조작만 가능해 실제 경찰 대 도둑 추격 미검증
 - 네트워크 서비스와 최종 권한 구조 미정
 - 현재 개발 PC에서 Unity 내장 Windows 받아쓰기 생성 실패
-- 실제 음성 입력 기술 미정
-- Unity `6000.5.4f1` 실행 파일 경로 미확인으로 CHAR-001 자동 실행 미검증
+- 제출 빌드용 음성 중계 서버 배포 방식 미정
+- Unity `6000.5.4f1` 미설치로 VOICE-008·CHAR-001 자동 실행 미검증
 
 TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 단축키 핵심
 프로토타입은 음성 통합과 분리해 진행하며 실제 STT를 구현한 것으로 표현하지 않는다.
@@ -359,6 +378,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-07-26 | VOICE-008 Node 중계 서버 단위 테스트 | 5/5 통과 |
+| 2026-07-26 | VOICE-008 Unity 컴파일·씬·런타임 | 고정 Unity 버전 미설치로 미실행 |
 | 2026-07-24 | 문서 파일과 현재 경로 조사 | 완료 |
 | 2026-07-24 | Unity 버전 확인 | `6000.5.4f1` |
 | 2026-07-24 | BASE-001 목표 폴더와 Git 경계 검사 | 완료 |

@@ -14,3 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PawsAndLoot.Config.CompanionConfig
   moveSpeed: 4.5
   commandCooldownSeconds: 2
+  followDistance: 1.5
+  arrivalTolerance: 0.35
+  commandTimeoutSeconds: 8
+  commandExecuteSeconds: 0.25
+  distractionDistance: 2
+  distractionDurationSeconds: 1
+  targetSampleRadius: 2

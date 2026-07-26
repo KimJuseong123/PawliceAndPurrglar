@@ -18,11 +18,31 @@ Keyboard 1~4
 -> Feedback UI
 ```
 
-현재는 마이크, STT, 자연어 분류를 구현하지 않는다.
+기본 명령 검증은 계속 숫자키로 유지한다. 2026-07-26 승인된 음성 수직
+슬라이스에서는 경찰 `TRACK`과 도둑 `DISTRACT`만 다음 경로를 추가한다.
+
+```text
+Hold V
+-> Microphone WAV
+-> Local Voice Gateway
+-> OpenAI Speech To Text
+-> OpenAI Structured Intent
+-> CompanionCommandId
+-> Existing Command Validator
+-> Companion State Machine
+-> Feedback UI
+```
+
+음성 분류 결과는 `TRACK`, `DISTRACT`, `NONE` 중 하나다. 애매하거나 다른
+진영의 명령은 `NONE`이며, LLM이 게임 상태나 이동 목표를 직접 변경하지 않는다.
 
 예외적으로 `TECH-003`은 Windows 음성 입력이 텍스트를 반환하는지 확인하는
 격리된 기술 검증이다. 인식 결과를 `CompanionCommandId`로 바꾸거나 AI 대화를
 호출하지 않으며, 프로토타입 입력은 계속 숫자키를 사용한다.
+
+TECH-003의 Windows `DictationRecognizer`는 현재 PC에서 실패했으므로 본게임
+음성 입력에는 사용하지 않는다. 본게임은 Unity `Microphone`으로 WAV를 녹음하고
+로컬 중계 서버를 통해 외부 STT를 호출한다.
 
 ### 향후 음성 단계
 
@@ -257,6 +277,24 @@ CompanionCommandRequest
 - 낮은 신뢰도: 실행하지 않고 재입력 안내
 
 신뢰도 기준은 STT 기술 선택 후 정한다.
+
+핵심 2개 음성 수직 슬라이스에서는 모델이 임의 수치 신뢰도를 생성하지 않는다.
+역할과 허용 명령을 프롬프트와 JSON Schema로 제한하고, 확신할 수 없는 문장은
+`NONE`으로 반환한다.
+
+## 9.1 음성 수직 슬라이스 고정값
+
+- 입력 방식: `V` Push-to-Talk
+- 언어: `ko-KR`
+- 최소 발화: 0.25초
+- 최대 발화: 5초
+- 중계 서버: `http://127.0.0.1:8787`
+- STT 기본 모델: `gpt-4o-mini-transcribe`
+- 명령 분류 기본 모델: `gpt-5.6-luna`
+- 동시 처리: 플레이어당 한 요청
+- 자동 재시도: 없음
+- 음성 및 전사문 저장: 없음
+- 키보드 대체 입력: 항상 활성
 
 ## 10. 귀여운 돌발 행동
 

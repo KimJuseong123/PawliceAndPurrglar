@@ -33,6 +33,9 @@ catcops-build*.log
 Thumbs.db
 sysinfo.txt
 crashlytics-build.properties
+.env
+.env.*
+!.env.example
 
 /Assets/AssetStoreTools*
 

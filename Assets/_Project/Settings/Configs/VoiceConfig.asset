@@ -12,6 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70c4e6f215b3b63428d8513c007a16a2, type: 3}
   m_Name: VoiceConfig
   m_EditorClassIdentifier: Assembly-CSharp::PawsAndLoot.Config.VoiceConfig
-  voiceInputEnabled: 0
+  voiceInputEnabled: 1
   keyboardFallbackEnabled: 1
   maximumUtteranceSeconds: 5
+  minimumUtteranceSeconds: 0.25
+  requestTimeoutSeconds: 15
+  gatewayEndpoint: http://127.0.0.1:8787/v1/voice-command

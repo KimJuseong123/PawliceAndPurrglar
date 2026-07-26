@@ -3,6 +3,7 @@
   "rootNamespace": "PawsAndLoot.Tests.EditMode",
   "references": [
     "PawsAndLoot.Runtime",
+    "Unity.AI.Navigation",
     "Unity.Netcode.Runtime"
   ],
   "includePlatforms": [

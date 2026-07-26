@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using PawsAndLoot.Companions;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Arrest;
@@ -9,11 +10,14 @@ using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Match;
 using PawsAndLoot.UI;
+using PawsAndLoot.Voice;
+using Unity.AI.Navigation;
 using Unity.Netcode;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
@@ -36,6 +40,12 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Settings/Configs/ArrestConfig.asset";
         private const string LootConfigPath =
             "Assets/_Project/Settings/Configs/LootConfig.asset";
+        private const string CompanionConfigPath =
+            "Assets/_Project/Settings/Configs/CompanionConfig.asset";
+        private const string VoiceConfigPath =
+            "Assets/_Project/Settings/Configs/VoiceConfig.asset";
+        private const string CompanionNavMeshPath =
+            "Assets/_Project/Scenes/Game-CompanionNavMesh.asset";
         private const string CommonLootDefinitionPath =
             "Assets/_Project/Data/Loot/common-trinket.asset";
 
@@ -199,6 +209,7 @@ namespace PawsAndLoot.Editor
                 rooftops,
                 ladders,
                 trashBins);
+            CreateAndBakeNavigation(villageRoot.transform);
             Dictionary<PlayerRole, GameObject> roleMarkers =
                 CreateRolePreviewMarkers(
                 map,
@@ -234,6 +245,12 @@ namespace PawsAndLoot.Editor
                 villageRoot.transform,
                 controlBindings,
                 followCamera);
+            VoiceCommandController voiceController =
+                ConfigureCompanionCommandSystems(
+                    villageRoot.transform,
+                    roleMarkers,
+                    matchRuntime,
+                    roleSelector);
             MatchEndController matchEndController =
                 ConfigureMatchEndController(
                 controlBindings,
@@ -257,7 +274,10 @@ namespace PawsAndLoot.Editor
                 LoadPlayerMoveSpeed(),
                 traversalProbe,
                 villageRoot.transform);
-            CreateSceneInterface(roleSelector, matchRuntime);
+            CreateSceneInterface(
+                roleSelector,
+                matchRuntime,
+                voiceController);
 
             string scenePath = GameSceneCatalog.GetPath(GameSceneId.Game);
             if (!EditorSceneManager.SaveScene(scene, scenePath))
@@ -302,6 +322,12 @@ namespace PawsAndLoot.Editor
             EventSystem eventSystem = FindInScene<EventSystem>(scene);
             MatchResultFlowController resultFlow =
                 FindInScene<MatchResultFlowController>(scene);
+            NavMeshSurface navMeshSurface =
+                FindInScene<NavMeshSurface>(scene);
+            CompanionCommandDispatcher commandDispatcher =
+                FindInScene<CompanionCommandDispatcher>(scene);
+            VoiceCommandController voiceController =
+                FindInScene<VoiceCommandController>(scene);
 
             if (map == null
                 || probe == null
@@ -309,10 +335,17 @@ namespace PawsAndLoot.Editor
                 || camera.orthographic
                 || canvas == null
                 || eventSystem == null
-                || resultFlow == null)
+                || resultFlow == null
+                || navMeshSurface == null
+                || navMeshSurface.navMeshData == null
+                || AssetDatabase.GetAssetPath(
+                    navMeshSurface.navMeshData)
+                != CompanionNavMeshPath
+                || commandDispatcher == null
+                || voiceController == null)
             {
                 throw new InvalidOperationException(
-                    "MAP-001 scene requires its map, traversal probe, perspective camera, UI, and result flow.");
+                    "MAP-001 scene requires its map, traversal probe, perspective camera, baked navigation, companion command systems, voice controller, UI, and result flow.");
             }
 
             map.ValidateOrThrow();
@@ -1182,6 +1215,194 @@ namespace PawsAndLoot.Editor
             return selector;
         }
 
+        private static void CreateAndBakeNavigation(Transform parent)
+        {
+            Transform navigationRoot = CreateChild(
+                "Companion Navigation",
+                parent);
+            navigationRoot.localPosition = Vector3.zero;
+            navigationRoot.localRotation = Quaternion.identity;
+            NavMeshSurface surface =
+                navigationRoot.gameObject.AddComponent<NavMeshSurface>();
+            surface.collectObjects = CollectObjects.Volume;
+            surface.center = new Vector3(0f, 1.5f, 0f);
+            surface.size = new Vector3(56f, 5f, 44f);
+            surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
+            surface.layerMask = Physics.AllLayers;
+            surface.BuildNavMesh();
+            if (surface.navMeshData == null)
+            {
+                throw new InvalidOperationException(
+                    "Companion navigation could not bake a NavMesh.");
+            }
+
+            surface.RemoveData();
+            surface.navMeshData.name = "Game Companion NavMesh";
+            AssetDatabase.CreateAsset(
+                surface.navMeshData,
+                CompanionNavMeshPath);
+            surface.AddData();
+        }
+
+        private static VoiceCommandController
+            ConfigureCompanionCommandSystems(
+            Transform parent,
+            IReadOnlyDictionary<PlayerRole, GameObject> roleMarkers,
+            MatchRuntimeState matchRuntime,
+            LocalPlayerRoleSelector roleSelector)
+        {
+            CompanionConfig companionConfig = LoadCompanionConfig();
+            VoiceConfig voiceConfig = LoadVoiceConfig();
+            PlayerRoleIdentity police =
+                roleMarkers[PlayerRole.Police]
+                    .GetComponent<PlayerRoleIdentity>();
+            PlayerRoleIdentity thief =
+                roleMarkers[PlayerRole.Thief]
+                    .GetComponent<PlayerRoleIdentity>();
+
+            Transform companionRoot = CreateChild(
+                "COMPANION-001 Agents",
+                parent);
+            CompanionAgent dog = CreateCompanionAgent(
+                "Police Dog",
+                CompanionKind.Dog,
+                police.transform,
+                PoliceBlue,
+                new Vector3(-1.2f, 0f, -0.8f),
+                companionConfig,
+                matchRuntime,
+                companionRoot);
+            CompanionAgent cat = CreateCompanionAgent(
+                "Thief Cat",
+                CompanionKind.Cat,
+                thief.transform,
+                ThiefRed,
+                new Vector3(1.2f, 0f, -0.8f),
+                companionConfig,
+                matchRuntime,
+                companionRoot);
+
+            Transform commandRoot = CreateChild(
+                "VOICE-008 Companion Commands",
+                parent);
+            CompanionCommandDispatcher dispatcher =
+                commandRoot.gameObject.AddComponent<
+                    CompanionCommandDispatcher>();
+            dispatcher.Configure(
+                matchRuntime,
+                roleSelector,
+                police,
+                thief,
+                dog,
+                cat,
+                companionConfig);
+            CompanionKeyboardInput keyboard =
+                commandRoot.gameObject.AddComponent<
+                    CompanionKeyboardInput>();
+            keyboard.Configure(roleSelector, dispatcher);
+            VoiceCommandGatewayClient gateway =
+                commandRoot.gameObject.AddComponent<
+                    VoiceCommandGatewayClient>();
+            gateway.Configure(voiceConfig);
+            VoiceCommandController controller =
+                commandRoot.gameObject.AddComponent<
+                    VoiceCommandController>();
+            controller.Configure(
+                voiceConfig,
+                matchRuntime,
+                roleSelector,
+                dispatcher,
+                gateway);
+            return controller;
+        }
+
+        private static CompanionAgent CreateCompanionAgent(
+            string name,
+            CompanionKind kind,
+            Transform owner,
+            Color color,
+            Vector3 ownerOffset,
+            CompanionConfig config,
+            MatchRuntimeState matchRuntime,
+            Transform parent)
+        {
+            var companionObject = new GameObject(name);
+            companionObject.transform.SetParent(parent);
+            Vector3 requestedPosition = owner.position + ownerOffset;
+            if (!NavMesh.SamplePosition(
+                    requestedPosition,
+                    out NavMeshHit spawnHit,
+                    config.TargetSampleRadius,
+                    NavMesh.AllAreas))
+            {
+                throw new InvalidOperationException(
+                    $"{name} could not find a NavMesh spawn point.");
+            }
+
+            companionObject.transform.position = spawnHit.position;
+            NavMeshAgent navigationAgent =
+                companionObject.AddComponent<NavMeshAgent>();
+            navigationAgent.speed = config.MoveSpeed;
+            navigationAgent.acceleration = 20f;
+            navigationAgent.angularSpeed = 720f;
+            navigationAgent.radius = 0.3f;
+            navigationAgent.height = 0.9f;
+            navigationAgent.stoppingDistance =
+                config.ArrivalTolerance;
+            navigationAgent.avoidancePriority =
+                kind == CompanionKind.Dog ? 40 : 50;
+
+            GameObject visual = GameObject.CreatePrimitive(
+                kind == CompanionKind.Dog
+                    ? PrimitiveType.Capsule
+                    : PrimitiveType.Sphere);
+            visual.name = "PlaceholderModel";
+            visual.transform.SetParent(companionObject.transform, false);
+            visual.transform.localPosition = new Vector3(0f, 0.42f, 0f);
+            visual.transform.localScale =
+                kind == CompanionKind.Dog
+                    ? new Vector3(0.55f, 0.42f, 0.75f)
+                    : new Vector3(0.68f, 0.68f, 0.68f);
+            visual.GetComponent<Renderer>().sharedMaterial =
+                LoadOrCreateMaterial($"Companion_{kind}", color);
+            UnityEngine.Object.DestroyImmediate(
+                visual.GetComponent<Collider>());
+
+            GameObject distractionVisual = null;
+            if (kind == CompanionKind.Cat)
+            {
+                distractionVisual = GameObject.CreatePrimitive(
+                    PrimitiveType.Cylinder);
+                distractionVisual.name = "Distraction Pulse";
+                distractionVisual.transform.SetParent(
+                    companionObject.transform,
+                    false);
+                distractionVisual.transform.localPosition =
+                    new Vector3(0f, 0.04f, 0f);
+                distractionVisual.transform.localScale =
+                    new Vector3(2f, 0.025f, 2f);
+                distractionVisual.GetComponent<Renderer>().sharedMaterial =
+                    LoadOrCreateMaterial(
+                        "Companion_Distraction",
+                        new Color(1f, 0.75f, 0.12f),
+                        "Universal Render Pipeline/Unlit");
+                UnityEngine.Object.DestroyImmediate(
+                    distractionVisual.GetComponent<Collider>());
+                distractionVisual.SetActive(false);
+            }
+
+            CompanionAgent companion =
+                companionObject.AddComponent<CompanionAgent>();
+            companion.Configure(
+                kind,
+                owner,
+                navigationAgent,
+                config,
+                matchRuntime,
+                distractionVisual);
+            return companion;
+        }
+
         private static MatchEndController ConfigureMatchEndController(
             IReadOnlyList<PlayerRoleControlBinding> bindings,
             MatchRuntimeState matchRuntime,
@@ -1535,7 +1756,8 @@ namespace PawsAndLoot.Editor
 
         private static void CreateSceneInterface(
             LocalPlayerRoleSelector roleSelector,
-            MatchRuntimeState matchRuntime)
+            MatchRuntimeState matchRuntime,
+            VoiceCommandController voiceController)
         {
             var canvasObject = new GameObject(
                 "Scene UI",
@@ -1586,6 +1808,37 @@ namespace PawsAndLoot.Editor
                 new Vector2(220f, 68f),
                 TextAnchor.MiddleCenter,
                 40);
+
+            RectTransform voiceHudRect = CreateRect(
+                "Voice Command HUD",
+                hudRoot);
+            voiceHudRect.anchorMin = Vector2.zero;
+            voiceHudRect.anchorMax = Vector2.zero;
+            voiceHudRect.pivot = Vector2.zero;
+            voiceHudRect.anchoredPosition = new Vector2(28f, 28f);
+            voiceHudRect.sizeDelta = new Vector2(560f, 112f);
+            Image voiceHudBackground =
+                voiceHudRect.gameObject.AddComponent<Image>();
+            voiceHudBackground.color =
+                new Color(0.03f, 0.05f, 0.09f, 0.9f);
+            Text voiceStatusLabel = CreateHudLabel(
+                "Voice Status",
+                voiceHudRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(16f, -8f),
+                new Vector2(528f, 60f),
+                TextAnchor.UpperLeft,
+                18);
+            Text voiceTranscriptLabel = CreateHudLabel(
+                "Voice Transcript",
+                voiceHudRect,
+                new Vector2(0f, 0f),
+                new Vector2(0f, 0f),
+                new Vector2(16f, 10f),
+                new Vector2(528f, 32f),
+                TextAnchor.MiddleLeft,
+                17);
 
             RectTransform arrestHudRect = CreateRect(
                 "Arrest HUD",
@@ -1952,6 +2205,15 @@ namespace PawsAndLoot.Editor
                 policeArrestLabel,
                 policeTheftAlertLabel,
                 policeGoalLabel);
+            VoiceCommandHudPresenter voiceHudPresenter =
+                hudRoot.gameObject.AddComponent<
+                    VoiceCommandHudPresenter>();
+            voiceHudPresenter.Configure(
+                voiceController,
+                voiceController.GetComponent<
+                    CompanionCommandDispatcher>(),
+                voiceStatusLabel,
+                voiceTranscriptLabel);
 
             var eventSystem = new GameObject(
                 "EventSystem",
@@ -2038,6 +2300,38 @@ namespace PawsAndLoot.Editor
                 throw new GameConfigurationException(
                     $"Game scene requires ArrestConfig at "
                     + $"'{ArrestConfigPath}'.");
+            }
+
+            config.ValidateOrThrow();
+            return config;
+        }
+
+        private static CompanionConfig LoadCompanionConfig()
+        {
+            CompanionConfig config =
+                AssetDatabase.LoadAssetAtPath<CompanionConfig>(
+                    CompanionConfigPath);
+            if (config == null)
+            {
+                throw new GameConfigurationException(
+                    $"Game scene requires CompanionConfig at "
+                    + $"'{CompanionConfigPath}'.");
+            }
+
+            config.ValidateOrThrow();
+            return config;
+        }
+
+        private static VoiceConfig LoadVoiceConfig()
+        {
+            VoiceConfig config =
+                AssetDatabase.LoadAssetAtPath<VoiceConfig>(
+                    VoiceConfigPath);
+            if (config == null)
+            {
+                throw new GameConfigurationException(
+                    $"Game scene requires VoiceConfig at "
+                    + $"'{VoiceConfigPath}'.");
             }
 
             config.ValidateOrThrow();
