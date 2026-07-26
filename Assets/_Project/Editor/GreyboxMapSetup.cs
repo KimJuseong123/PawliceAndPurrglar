@@ -10,6 +10,7 @@ using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Input;
+using PawsAndLoot.Integration.Network;
 using PawsAndLoot.Match;
 using PawsAndLoot.UI;
 using Unity.Netcode;
@@ -311,6 +312,10 @@ namespace PawsAndLoot.Editor
                 controlBindings,
                 matchRuntime,
                 matchEndController);
+            CreateNetworkSync(
+                villageRoot.transform,
+                controlBindings,
+                matchRuntime);
 
             // ART-005 probe, inert unless -perfProbe is passed.
             var perfObject = new GameObject("Scene Performance Probe");
@@ -815,6 +820,68 @@ namespace PawsAndLoot.Editor
 
             throw new InvalidOperationException(
                 $"MAP-001 requires a control binding for '{role}'.");
+        }
+
+        /// <summary>
+        /// NET-003 and NET-004 scene wiring.
+        ///
+        /// Every synchronised object is an in-scene NetworkObject, which is why
+        /// the session turns NGO scene management on: the server loads the match
+        /// scene for everyone and both machines resolve the same objects.
+        ///
+        /// All of it is inert offline. Without a session the links never spawn,
+        /// the local motors keep running and the playtest build behaves exactly
+        /// as before.
+        /// </summary>
+        private static void CreateNetworkSync(
+            Transform parent,
+            IReadOnlyList<PlayerRoleControlBinding> bindings,
+            MatchRuntimeState matchRuntime)
+        {
+            var links = new List<NetworkPlayerLink>();
+            foreach (PlayerRoleControlBinding binding in bindings)
+            {
+                GameObject player = binding.Identity.gameObject;
+                if (player.GetComponent<Unity.Netcode.NetworkObject>()
+                    == null)
+                {
+                    player.AddComponent<Unity.Netcode.NetworkObject>();
+                }
+
+                NetworkPlayerLink link =
+                    player.AddComponent<NetworkPlayerLink>();
+                link.Configure(
+                    binding.Identity,
+                    player.GetComponent<PlayerMovementMotor>(),
+                    binding.KeyboardInput,
+                    player.GetComponent<CharacterController>());
+                links.Add(link);
+            }
+
+            var syncObject = new GameObject("Network Sync");
+            syncObject.transform.SetParent(parent);
+            syncObject.AddComponent<Unity.Netcode.NetworkObject>();
+            NetworkMatchMirror mirror =
+                syncObject.AddComponent<NetworkMatchMirror>();
+            mirror.Configure(matchRuntime);
+
+            var bridgeObject = new GameObject("Network Input Bridge");
+            bridgeObject.transform.SetParent(parent);
+            NetworkInputBridge bridge =
+                bridgeObject.AddComponent<NetworkInputBridge>();
+            // The manager only exists at runtime in a session, so the bridge
+            // resolves the singleton itself.
+            bridge.Configure(null, links);
+
+            // Verifies NET-003 and NET-004 once the match scene is live.
+            var matchProbe = new GameObject("Network Match Probe");
+            matchProbe.transform.SetParent(parent);
+            matchProbe.AddComponent<
+                PawsAndLoot.TechnicalValidation.NetworkMatchProbe>();
+
+            Debug.Log(
+                $"[NET-003] {links.Count} player links and the match mirror "
+                + "wired into the Game scene.");
         }
 
         /// <summary>

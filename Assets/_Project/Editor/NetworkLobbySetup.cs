@@ -49,6 +49,13 @@ namespace PawsAndLoot.Editor
                     .AddComponent<NetworkSessionController>();
             session.Configure(manager, boardPrefab);
 
+            // Routes match scene loads through NGO while a session runs, so
+            // both machines resolve the same in-scene NetworkObjects.
+            NetworkSceneCoordinator coordinator =
+                manager.gameObject
+                    .AddComponent<NetworkSceneCoordinator>();
+            coordinator.Configure(manager);
+
             // Command-line driven verification, inert without -netLobby.
             var probeObject = new GameObject("Network Lobby Probe");
             probeObject.AddComponent<
@@ -105,7 +112,10 @@ namespace PawsAndLoot.Editor
                 // The host installs the callback, the client just carries the
                 // same flag.
                 ConnectionApproval = true,
-                EnableSceneManagement = false,
+                // NET-003 and NET-004 keep the players, loot and arrest objects
+                // in the scene, so the server has to drive scene loads for
+                // clients to resolve them at all.
+                EnableSceneManagement = true,
                 ForceSamePrefabs = true,
                 EnableNetworkLogs = true
             };

@@ -21,6 +21,16 @@ namespace PawsAndLoot.Core
             GameLogger.Info(
                 GameLogCategory.Match,
                 $"Loading scene '{sceneName}' from '{SceneManager.GetActiveScene().name}'.");
+
+            // In a session the server drives the load so both machines end up
+            // in the same scene and NGO can match the in-scene NetworkObjects.
+            // A client must never load on its own: doing so desynchronises the
+            // object lists and the connection is dropped.
+            if (NetworkSceneBridge.TryLoad(sceneName))
+            {
+                return;
+            }
+
             SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
         }
     }

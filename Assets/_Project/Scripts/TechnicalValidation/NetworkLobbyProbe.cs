@@ -28,6 +28,7 @@ namespace PawsAndLoot.TechnicalValidation
         private const string AddressArgument = "-netAddress";
         private const string PortArgument = "-netPort";
         private const string SwapArgument = "-netSwapRoles";
+        private const string MatchArgument = "-netMatchSeconds";
 
         [SerializeField]
         private NetworkSessionController session;
@@ -48,6 +49,7 @@ namespace PawsAndLoot.TechnicalValidation
         private string _address = string.Empty;
         private bool _startRequested;
         private bool _everReady;
+        private bool _continueIntoMatch;
         private string _observedRole = "Unassigned";
         private ulong _observedPoliceId;
 
@@ -64,6 +66,10 @@ namespace PawsAndLoot.TechnicalValidation
             }
 
             _requestSwap = HasFlag(args, SwapArgument);
+            // With a match duration requested, the lobby hands over to the
+            // match probe instead of quitting here.
+            _continueIntoMatch =
+                ReadValue(args, MatchArgument) != null;
             _port = ReadValue(args, PortArgument)
                 ?? NetworkSessionController.DefaultPort.ToString();
             _address = ReadValue(args, AddressArgument)
@@ -165,6 +171,22 @@ namespace PawsAndLoot.TechnicalValidation
 
                 if (_readyFor >= settleSeconds)
                 {
+                    if (_continueIntoMatch)
+                    {
+                        // Only the host may start, so the client simply waits
+                        // to be brought along by the server's scene load.
+                        if (_mode == "host")
+                        {
+                            LocalPlayerRoleSelector.OverrideRole(
+                                board.LocalRole);
+                            Core.GameSceneLoader.Load(
+                                Core.GameSceneId.Game);
+                        }
+
+                        enabled = false;
+                        return;
+                    }
+
                     Write(true, "Session ready and roles assigned.");
                     return;
                 }

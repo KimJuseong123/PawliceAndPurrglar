@@ -73,8 +73,71 @@ namespace PawsAndLoot.Match
             return true;
         }
 
+        /// <summary>
+        /// True when another machine owns this match. A remote-controlled state
+        /// stops simulating so two clocks cannot drift apart; it only reflects
+        /// what the authority sends.
+        /// </summary>
+        public bool IsRemoteControlled { get; private set; }
+
+        public void SetRemoteControlled(bool remoteControlled)
+        {
+            IsRemoteControlled = remoteControlled;
+        }
+
+        /// <summary>
+        /// Applies authority state. Transitions go through the state machine so
+        /// the legal-transition rules still hold, and a skipped step is walked
+        /// rather than jumped, because the machine rejects jumps.
+        /// </summary>
+        public void ApplyRemoteState(
+            MatchState state,
+            float remainingSeconds,
+            float countdownSeconds)
+        {
+            RemainingMatchSeconds = Mathf.Max(0f, remainingSeconds);
+            ReadyCountdownRemainingSeconds =
+                Mathf.Max(0f, countdownSeconds);
+            _countdownActive = state == MatchState.Ready
+                && countdownSeconds > 0f;
+
+            // Walk forward one legal step at a time until the authority state
+            // is reached, so no listener misses a transition.
+            for (int guard = 0;
+                guard < 8 && CurrentState != state;
+                guard++)
+            {
+                if (!_stateMachine.TryTransitionTo(state)
+                    && !TryAdvanceTowards(state))
+                {
+                    break;
+                }
+            }
+        }
+
+        private bool TryAdvanceTowards(MatchState target)
+        {
+            MatchState next = CurrentState switch
+            {
+                MatchState.Lobby => MatchState.Ready,
+                MatchState.Ready => MatchState.Playing,
+                MatchState.Playing => MatchState.Ending,
+                MatchState.Ending => MatchState.Result,
+                _ => CurrentState
+            };
+
+            return next != CurrentState
+                && (int)next <= (int)target
+                && _stateMachine.TryTransitionTo(next);
+        }
+
         public void Tick(float deltaTime)
         {
+            if (IsRemoteControlled)
+            {
+                return;
+            }
+
             float safeDeltaTime = Mathf.Max(0f, deltaTime);
             if (_countdownActive && CurrentState == MatchState.Ready)
             {

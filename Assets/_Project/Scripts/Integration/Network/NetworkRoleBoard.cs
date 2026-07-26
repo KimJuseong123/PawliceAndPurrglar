@@ -55,6 +55,12 @@ namespace PawsAndLoot.Integration.Network
             _policeClientId.OnValueChanged += HandlePoliceChanged;
             _assigned.OnValueChanged += HandleAssignedChanged;
 
+            // Both sides must survive the lobby-to-match load. The server marks
+            // its own copy, but a client's replica lives in the client's active
+            // scene and a Single-mode load would take it with it, leaving that
+            // machine with no role.
+            DontDestroyOnLoad(gameObject);
+
             if (!IsServer)
             {
                 return;

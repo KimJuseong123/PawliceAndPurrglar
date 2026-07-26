@@ -240,7 +240,12 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
-            _spawnedRoleBoard.Spawn();
+            // The board has to outlive the lobby scene: the match scene reads
+            // the role from it, and a Single-mode load would otherwise destroy
+            // it and leave the client with no role at all.
+            _spawnedRoleBoard.Spawn(false);
+            _spawnedRoleBoard.DestroyWithScene = false;
+            DontDestroyOnLoad(instance);
         }
 
         private void DespawnRoleBoard()
