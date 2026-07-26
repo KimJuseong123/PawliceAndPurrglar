@@ -247,7 +247,7 @@ Blender 모델 자체는 작업자가 제작한다. 이 저장소의 작업은 U
 | ART-002 | P1 | DONE | 임포트 규격 검사 도구 (`Validate Authored Models`) |
 | ART-003 | P1 | DONE | Animator 6개 상태와 파라미터 분리 |
 | ART-004 | P1 | DONE | 대표 모델 게임 적용 (Collider·속도·체포 거리 유지) |
-| ART-005 | P1 | DONE | 성능 측정 (드로우 콜 제외, 아래 결과) |
+| ART-005 | P1 | DONE | 성능 측정 + WebGL 용량 33.9MB (드로우 콜만 미측정) |
 | MODEL-003 | P2 | DONE | 경찰 모델 — **확정** (메시·텍스처, 클립 없음) |
 | MODEL-004 | P2 | DONE | 도둑 모델 — **확정** (메시·텍스처, 클립 없음) |
 | MODEL-005 | P2 | DONE | 강아지 모델 — **확정** (메시·텍스처, 클립 없음) |
