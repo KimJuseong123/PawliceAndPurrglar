@@ -1,6 +1,6 @@
 # 현재 상태
 
-마지막 갱신: 2026-07-25
+마지막 갱신: 2026-07-26
 
 이 문서는 작업 시작 시 가장 먼저 확인하는 현재 저장소 상태다.
 
@@ -243,6 +243,34 @@ ArtSource/Police/Police_LowPoly.blend
 Assets/CatCops/Models/Police_LowPoly.fbx
 ```
 
+- 신규 캐릭터 원본 FBX 4종 추가:
+
+```text
+ArtSource/Blender/Characters/police+officer+3d+model/
+ArtSource/Blender/Characters/theif+3d+model/
+ArtSource/Blender/Animals/dog/
+ArtSource/Blender/Animals/cat/
+```
+
+- `Assets/CatCops/Models/*.fbx`는 현재 Git LFS 포인터 상태이며, 새 CHAR-001 검증은
+  위 `ArtSource/Blender/...` 원본을 `Assets/_Project/Art/Characters/`로 복사해
+  임포트하는 방식으로 진행
+
+- 신규 캐릭터 검증용 에디터 스크립트와 런타임 프리뷰 추가:
+
+```text
+Assets/_Project/Editor/CharacterTechnicalValidationSetup.cs
+Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalPreview.cs
+Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter.cs
+```
+
+- CHAR-001 검증은 다음 흐름을 자동화:
+  - 신규 경찰, 도둑, 강아지, 고양이 FBX를 `Assets/_Project/Art/Characters/`로 동기화
+  - `CharacterTechnicalTest.unity` 장면 생성
+  - 캐릭터 4종을 한 씬에 배치
+  - 애니메이션 클립이 있으면 기본 클립 재생, `Idle`/`Walk`가 함께 있으면 이동 연동
+  - 결과 JSON과 스크린샷 저장
+
 ## 아직 존재하지 않는 목표 결과
 
 - 새 구조의 경찰 프리팹
@@ -251,6 +279,7 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 - 너구리 상인의 출현·이동·판매 피드백
 - 숫자키 동물 명령 상태 머신
 - 도둑의 판매 승리를 가능하게 하는 보물 배치 또는 목표 금액
+- 신규 4종 캐릭터 FBX의 실제 애니메이션 클립 유무와 개수에 대한 런타임 검증 결과
 
 ## 레거시 실험물 처리
 
@@ -275,6 +304,9 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 ## 현재 알려진 환경 상태
 
 - 실행 중인 Unity 프로세스는 확인되지 않았다.
+- 현재 작업 환경에서는 Unity `6000.5.4f1` 실행 파일 경로를 확인하지 못했다.
+  `C:\Program Files\Unity\Hub\Editor\2022.3.6f1\Editor\Unity.exe`만 확인되어
+  CHAR-001 배치 실행은 아직 미검증이다.
 - 실행 중인 프로세스 없이 남아 있던 `Temp/UnityLockfile`을 제거했다.
 - Unity `6000.5.4f1` 배치 모드에서 새 폴더 임포트와 `.meta` 생성을 검증했다.
 - 불필요한 2D 편집, Collaborate, Rider, Visual Scripting, Multiplayer Center 패키지를 제거했다.
@@ -285,19 +317,20 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 
 ## 현재 작업
 
-- 작업 ID: `MATCH-007`
-- 작업: 재경기 초기화
-- 상태: `DONE`
-- 결과: Game 씬 재진입으로 타이머·점수·보물·플레이어 위치·체포 상태가
-  초기화되고 두 번째 경기도 정상 종료되는 것을 검증. 런타임 코드 변경 없이
-  기존 씬 재로드 구조가 7개 완료 조건을 모두 만족함을 테스트로 고정
+- 작업 ID: `CHAR-001`
+- 작업: 신규 캐릭터 FBX 실행 검증 장면
+- 상태: `IN_PROGRESS`
+- 결과: Unity 프로젝트 안에서 바로 실행 가능한 신규 캐릭터 기술 검증 장면
+  생성 스크립트와 런타임 프리뷰를 추가했다. 현재 로컬 환경에는 프로젝트 요구
+  버전인 Unity `6000.5.4f1` 실행 파일 경로가 확인되지 않아 자동 실행과 빌드는
+  미검증 상태다.
 
 ## 바로 다음 작업
 
-1. `ISSUE-011`: 도둑 판매 승리 경로 확보
-2. 관문 B 플레이테스트
-3. `COMP-001`: 공통 명령 요청과 검증
-4. `COMP-002`: 숫자키 `1`~`4` 입력 어댑터
+1. CHAR-001을 Unity `6000.5.4f1`에서 실제 실행
+2. 신규 4종 캐릭터의 애니메이션 클립 유무와 기본 재생 확인
+3. `ISSUE-011`: 도둑 판매 승리 경로 확보
+4. 관문 B 플레이테스트
 
 ## 차단 요소
 
@@ -306,6 +339,7 @@ Assets/CatCops/Models/Police_LowPoly.fbx
 - 네트워크 서비스와 최종 권한 구조 미정
 - 현재 개발 PC에서 Unity 내장 Windows 받아쓰기 생성 실패
 - 실제 음성 입력 기술 미정
+- Unity `6000.5.4f1` 실행 파일 경로 미확인으로 CHAR-001 자동 실행 미검증
 
 TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 단축키 핵심
 프로토타입은 음성 통합과 분리해 진행하며 실제 STT를 구현한 것으로 표현하지 않는다.
