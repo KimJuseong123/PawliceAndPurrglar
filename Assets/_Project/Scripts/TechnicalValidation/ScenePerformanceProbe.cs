@@ -71,7 +71,14 @@ namespace PawsAndLoot.TechnicalValidation
             if (!_enabled)
             {
                 enabled = false;
+                return;
             }
+
+            // With VSync on, every frame lands on the refresh interval and an
+            // optimisation cannot be observed at all. Uncapping is the only way
+            // to see real headroom.
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = -1;
         }
 
         private void Update()

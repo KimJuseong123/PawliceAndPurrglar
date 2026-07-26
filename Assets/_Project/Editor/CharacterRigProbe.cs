@@ -14,7 +14,13 @@ namespace PawsAndLoot.Editor
         private static readonly string[] HumanoidCandidates =
         {
             "Assets/_Project/Art/Characters/police.fbx",
-            "Assets/_Project/Art/Characters/thief.fbx"
+            "Assets/_Project/Art/Characters/thief.fbx",
+            // The cat and raccoon arrived on a biped skeleton, so they may
+            // retarget the same humanoid clips despite being animals.
+            "Assets/_Project/Art/Characters/cat.fbx",
+            "Assets/_Project/Art/Characters/raccoon.fbx",
+            // The dog is a genuine quadruped and is expected to fail here.
+            "Assets/_Project/Art/Characters/dog.fbx"
         };
 
         [MenuItem("Paws & Loot/Setup/Probe Character Humanoid Rigs")]

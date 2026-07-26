@@ -114,6 +114,33 @@ namespace PawsAndLoot.Gameplay.Loot
             return true;
         }
 
+        /// <summary>
+        /// LOOT-005. Hands the carried loot to a hiding spot's stash.
+        /// Rejected outside a match, for the wrong role, or with empty hands.
+        /// </summary>
+        public bool TryHide(LootItem loot, Transform stashRoot)
+        {
+            ValidateOrThrow();
+            if (identity.Role != PlayerRole.Thief
+                || !IsGameplayActive()
+                || HeldLoot == null
+                || loot != HeldLoot
+                || stashRoot == null)
+            {
+                return false;
+            }
+
+            LootItem previous = HeldLoot;
+            if (!previous.TryHide(this, stashRoot))
+            {
+                return false;
+            }
+
+            HeldLoot = null;
+            HeldLootChanged?.Invoke(previous, null);
+            return true;
+        }
+
         public bool TrySell(
             ThiefLootWallet wallet,
             LootConfig lootConfig)

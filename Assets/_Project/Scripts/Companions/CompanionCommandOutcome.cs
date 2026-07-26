@@ -27,7 +27,40 @@ namespace PawsAndLoot.Companions
         Completed = 6,
 
         /// <summary>Command was abandoned by the recovery path.</summary>
-        Abandoned = 7
+        Abandoned = 7,
+
+        /// <summary>DOG-004. Dog is sweeping the requested area.</summary>
+        SearchStarted = 8,
+
+        /// <summary>DOG-005. Dog is holding the requested spot.</summary>
+        GuardStarted = 9,
+
+        /// <summary>DOG-006. Dog barked and the thief was close enough.</summary>
+        BarkRevealedThief = 10,
+
+        /// <summary>DOG-006. Dog barked at nothing.</summary>
+        BarkFoundNobody = 11,
+
+        /// <summary>CAT-003. Cat reported nearby loot or police.</summary>
+        ScoutReported = 12,
+
+        /// <summary>CAT-003. Cat found nothing worth reporting.</summary>
+        ScoutFoundNothing = 13,
+
+        /// <summary>CAT-005. Cat is fetching nearby loot.</summary>
+        StealStarted = 14,
+
+        /// <summary>CAT-005. No reachable loot to fetch.</summary>
+        StealNoLoot = 15,
+
+        /// <summary>CAT-005. The thief's hands are already full.</summary>
+        StealOwnerBusy = 16,
+
+        /// <summary>CAT-006. Loot was hidden at a stash.</summary>
+        HideStored = 17,
+
+        /// <summary>CAT-006. No stash within reach, or nothing to hide.</summary>
+        HideUnavailable = 18
     }
 
     public static class CompanionCommandOutcomeText
@@ -57,6 +90,28 @@ namespace PawsAndLoot.Companions
                     "명령을 마쳤습니다.",
                 CompanionCommandOutcome.Abandoned =>
                     "명령을 포기하고 돌아왔습니다.",
+                CompanionCommandOutcome.SearchStarted =>
+                    "주변을 수색합니다.",
+                CompanionCommandOutcome.GuardStarted =>
+                    "이 자리를 지킵니다.",
+                CompanionCommandOutcome.BarkRevealedThief =>
+                    "짖었습니다! 도둑이 근처에 있습니다.",
+                CompanionCommandOutcome.BarkFoundNobody =>
+                    "짖었지만 아무도 없습니다.",
+                CompanionCommandOutcome.ScoutReported =>
+                    "주변 정보를 알려왔습니다.",
+                CompanionCommandOutcome.ScoutFoundNothing =>
+                    "알릴 만한 것이 없습니다.",
+                CompanionCommandOutcome.StealStarted =>
+                    "보물을 가져오러 갑니다.",
+                CompanionCommandOutcome.StealNoLoot =>
+                    "가져올 보물이 없습니다.",
+                CompanionCommandOutcome.StealOwnerBusy =>
+                    "이미 보물을 들고 있습니다.",
+                CompanionCommandOutcome.HideStored =>
+                    "보물을 숨겼습니다.",
+                CompanionCommandOutcome.HideUnavailable =>
+                    "숨길 곳이 없습니다.",
                 _ => string.Empty
             };
 

@@ -85,6 +85,7 @@ namespace PawsAndLoot.Companions
         public CompanionKind CompanionKind => companionKind;
         public CompanionState CurrentState => _stateMachine.CurrentState;
         public bool IsActive => _stateMachine.IsActive;
+        public bool IsBusyWithCommand => _stateMachine.IsBusyWithCommand;
         public float CooldownRemainingSeconds => _cooldownRemainingSeconds;
         public CompanionCommandId ActiveCommand =>
             _stateMachine.IsBusyWithCommand

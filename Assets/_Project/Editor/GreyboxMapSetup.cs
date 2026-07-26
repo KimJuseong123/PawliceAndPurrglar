@@ -292,6 +292,9 @@ namespace PawsAndLoot.Editor
             perfObject.AddComponent<
                 PawsAndLoot.TechnicalValidation.ScenePerformanceProbe>();
 
+            // ART-012 runs last so it sees every generated object.
+            SceneOptimizationPass.Run(villageRoot);
+
             string scenePath = GameSceneCatalog.GetPath(GameSceneId.Game);
             if (!EditorSceneManager.SaveScene(scene, scenePath))
             {
@@ -658,7 +661,8 @@ namespace PawsAndLoot.Editor
                     scentTrail,
                     distractionBoard,
                     policeBinding.Identity.transform,
-                    26f);
+                    26f,
+                    thiefBinding.Identity.transform);
 
                 CompanionAgent agent =
                     agentObject.AddComponent<CompanionAgent>();
@@ -677,6 +681,30 @@ namespace PawsAndLoot.Editor
                         PawsAndLoot.Animation.
                             CompanionProceduralAnimator>();
                 hop.Configure(agent, visualRoot);
+
+                // Real leg bones are swung so the animals walk rather than
+                // slide. Reported so a rig without recognisable legs is
+                // obvious in the rebuild log.
+                PawsAndLoot.Animation.CompanionLegAnimator legs =
+                    agentObject.AddComponent<
+                        PawsAndLoot.Animation.CompanionLegAnimator>();
+                legs.Configure(visualRoot);
+                if (legs.LegCount == 0)
+                {
+                    Debug.LogWarning(
+                        $"[Placeholder] {kind} has no recognisable leg bones, "
+                        + "so only the body hop will play.");
+                }
+                else
+                {
+                    Debug.Log(
+                        $"[Placeholder] {kind} leg bones driven: "
+                        + $"{legs.LegCount}.");
+                }
+
+                CompanionIdleBehaviour idle =
+                    agentObject.AddComponent<CompanionIdleBehaviour>();
+                idle.Configure(agent, visualRoot);
 
                 agents.Add(agent);
             }
@@ -1571,6 +1599,18 @@ namespace PawsAndLoot.Editor
                 "Use ladder",
                 new Color(0.2f, 0.75f, 0.95f),
                 root);
+            // LOOT-005. Two stashes so the thief has a choice, placed at the
+            // trash bin corners the concept map uses as hiding places.
+            CreateLootHidingSpot(
+                "Hiding Spot West",
+                new Vector3(-20f, 0.5f, 8f) + new Vector3(1.6f, 0f, 0f),
+                root,
+                matchRuntime);
+            CreateLootHidingSpot(
+                "Hiding Spot East",
+                new Vector3(20f, 0.5f, -8f) + new Vector3(-1.6f, 0f, 0f),
+                root,
+                matchRuntime);
             CreatePrototypeInteractionTarget(
                 "Prototype Plaza Point",
                 locations[GreyboxLocationId.CentralPlaza].position
@@ -1602,6 +1642,59 @@ namespace PawsAndLoot.Editor
             PrototypeInteractable interactable =
                 target.AddComponent<PrototypeInteractable>();
             interactable.Configure(interactionType, prompt);
+        }
+
+        /// <summary>
+        /// LOOT-005. A stash the thief can hide carried loot in. The cardboard
+        /// box model marks it, and the trigger is a simple box so MAP-002 stays
+        /// satisfied.
+        /// </summary>
+        private static void CreateLootHidingSpot(
+            string name,
+            Vector3 position,
+            Transform parent,
+            MatchRuntimeState matchRuntime)
+        {
+            var target = new GameObject(name);
+            target.transform.SetParent(parent);
+            target.transform.position = position;
+            BoxCollider trigger = target.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.size = new Vector3(2.4f, 2f, 2.4f);
+
+            if (PlaceholderModelLibrary.TryInstantiateProp(
+                    "object_cardboard_box",
+                    target.transform,
+                    new Vector3(0f, -0.5f, 0f),
+                    Vector3.zero,
+                    1f,
+                    LoadOrCreateMaterial(
+                        "Interaction_Hide",
+                        new Color(0.72f, 0.55f, 0.32f))) == null)
+            {
+                GameObject fallback = GameObject.CreatePrimitive(
+                    PrimitiveType.Cube);
+                fallback.name = "HidingSpotMarker";
+                fallback.transform.SetParent(target.transform, false);
+                fallback.transform.localPosition =
+                    new Vector3(0f, -0.2f, 0f);
+                fallback.transform.localScale = Vector3.one * 0.9f;
+                fallback.GetComponent<Renderer>().sharedMaterial =
+                    LoadOrCreateMaterial(
+                        "Interaction_Hide",
+                        new Color(0.72f, 0.55f, 0.32f));
+                UnityEngine.Object.DestroyImmediate(
+                    fallback.GetComponent<Collider>());
+            }
+
+            Transform storedRoot = CreateChild(
+                "StoredLoot",
+                target.transform);
+            storedRoot.localPosition = Vector3.zero;
+            storedRoot.localRotation = Quaternion.identity;
+
+            LootHidingSpot spot = target.AddComponent<LootHidingSpot>();
+            spot.Configure(trigger, storedRoot, matchRuntime);
         }
 
         private static void CreateLootTarget(
@@ -1924,6 +2017,67 @@ namespace PawsAndLoot.Editor
                 cooldownLabel,
                 feedbackLabel,
                 button);
+        }
+
+        /// <summary>
+        /// CAT-004 police side. A screen marker and a banner that only appear
+        /// for the police while a distraction is running.
+        /// </summary>
+        private static void CreateDistractionAlert(
+            Transform canvasRoot,
+            LocalPlayerRoleSelector roleSelector)
+        {
+            DistractionBoard board =
+                UnityEngine.Object.FindFirstObjectByType<
+                    DistractionBoard>();
+            if (board == null)
+            {
+                return;
+            }
+
+            Text banner = CreateHudLabel(
+                "Distraction Banner",
+                canvasRoot,
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(-240f, -190f),
+                new Vector2(480f, 40f),
+                TextAnchor.MiddleCenter,
+                26);
+            banner.color = new Color(0.98f, 0.78f, 0.28f);
+
+            RectTransform marker = CreateRect(
+                "Distraction Marker",
+                canvasRoot);
+            marker.anchorMin = new Vector2(0.5f, 0.5f);
+            marker.anchorMax = new Vector2(0.5f, 0.5f);
+            marker.pivot = new Vector2(0.5f, 0.5f);
+            marker.sizeDelta = new Vector2(56f, 56f);
+            Image markerImage = marker.gameObject.AddComponent<Image>();
+            markerImage.color = new Color(0.98f, 0.78f, 0.28f, 0.85f);
+            markerImage.raycastTarget = false;
+            Text markerLabel = CreateHudLabel(
+                "Marker Label",
+                marker,
+                new Vector2(0f, 0f),
+                new Vector2(1f, 1f),
+                Vector2.zero,
+                Vector2.zero,
+                TextAnchor.MiddleCenter,
+                30);
+            markerLabel.color = new Color(0.1f, 0.08f, 0.02f);
+            marker.gameObject.SetActive(false);
+
+            DistractionAlertPresenter presenter =
+                marker.gameObject.AddComponent<
+                    DistractionAlertPresenter>();
+            presenter.Configure(
+                board,
+                roleSelector,
+                Camera.main,
+                marker,
+                banner,
+                markerLabel);
         }
 
         private static void CreateSceneInterface(
@@ -2350,6 +2504,9 @@ namespace PawsAndLoot.Editor
             CreateCompanionCommandHud(
                 canvasObject.transform,
                 companionDispatcher,
+                roleSelector);
+            CreateDistractionAlert(
+                canvasObject.transform,
                 roleSelector);
 
             var eventSystem = new GameObject(

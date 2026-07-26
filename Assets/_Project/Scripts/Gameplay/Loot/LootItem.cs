@@ -133,6 +133,39 @@ namespace PawsAndLoot.Gameplay.Loot
             return true;
         }
 
+        /// <summary>
+        /// LOOT-005. Moves carried loot into a hiding spot's stash.
+        ///
+        /// The presentation is parented to the stash rather than left in the
+        /// world, so a hidden item is not visible lying on the ground, and the
+        /// state machine records HIDDEN so it can be recovered later. Sold loot
+        /// is terminal and is rejected by the state machine.
+        /// </summary>
+        internal bool TryHide(
+            LootCarrier carrier,
+            Transform stashRoot)
+        {
+            if (carrier == null
+                || stashRoot == null
+                || CurrentCarrier != carrier
+                || CurrentState != LootState.Carried)
+            {
+                return false;
+            }
+
+            if (!EnsureStateMachine().TryTransitionTo(LootState.Hidden))
+            {
+                return false;
+            }
+
+            CurrentCarrier = null;
+            presentationRoot.SetParent(stashRoot, false);
+            presentationRoot.localPosition = Vector3.zero;
+            presentationRoot.localRotation = Quaternion.identity;
+            presentationRoot.gameObject.SetActive(false);
+            return true;
+        }
+
         internal bool TrySell(LootCarrier carrier)
         {
             if (carrier == null

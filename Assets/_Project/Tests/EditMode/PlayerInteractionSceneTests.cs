@@ -95,15 +95,27 @@ namespace PawsAndLoot.Tests.EditMode
                 .ToArray();
 
             Assert.That(scanners, Has.Length.EqualTo(2));
+
+            // One prototype loot plus the two LOOT-005 hiding spots all use the
+            // Loot type, which keeps them thief only.
             Assert.That(
                 targets.Select(target => target.InteractionType),
                 Is.EquivalentTo(new[]
                 {
                     PlayerInteractionType.Loot,
+                    PlayerInteractionType.Loot,
+                    PlayerInteractionType.Loot,
                     PlayerInteractionType.Sale,
                     PlayerInteractionType.Traversal,
                     PlayerInteractionType.Generic
                 }));
+            Assert.That(
+                scene.GetRootGameObjects()
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<
+                            LootHidingSpot>(true))
+                    .ToArray(),
+                Has.Length.EqualTo(2));
             Assert.That(presenters, Has.Length.EqualTo(1));
             Assert.That(thiefPresenters, Has.Length.EqualTo(1));
             Assert.DoesNotThrow(

@@ -1,3 +1,4 @@
+using PawsAndLoot.Gameplay.Loot;
 using UnityEngine;
 
 namespace PawsAndLoot.Companions
@@ -23,8 +24,30 @@ namespace PawsAndLoot.Companions
         [SerializeField]
         private Transform policeTransform;
 
+        [SerializeField]
+        private Transform thiefTransform;
+
         [SerializeField, Min(1f)]
         private float distractionMaximumRange = 26f;
+
+        [Header("Stage 10 ranges")]
+        [SerializeField, Min(1f)]
+        private float barkRevealRange = 9f;
+
+        [SerializeField, Min(1f)]
+        private float scoutRange = 16f;
+
+        [SerializeField, Min(1f)]
+        private float stealSearchRange = 14f;
+
+        [SerializeField, Min(1f)]
+        private float hideSearchRange = 12f;
+
+        /// <summary>
+        /// CAT-003 and CAT-005 report what the cat noticed so the HUD can name
+        /// it. Set on the last resolve.
+        /// </summary>
+        public string LastScoutReport { get; private set; } = string.Empty;
 
         public readonly struct Resolution
         {
@@ -47,13 +70,16 @@ namespace PawsAndLoot.Companions
             ThiefScentTrail configuredTrail,
             DistractionBoard configuredBoard,
             Transform configuredPolice,
-            float configuredDistractionRange)
+            float configuredDistractionRange,
+            Transform configuredThief = null)
         {
             scentTrail = configuredTrail;
             distractionBoard = configuredBoard;
             policeTransform = configuredPolice;
+            thiefTransform = configuredThief;
             distractionMaximumRange =
                 Mathf.Max(1f, configuredDistractionRange);
+            LastScoutReport = string.Empty;
         }
 
         /// <summary>
@@ -72,6 +98,22 @@ namespace PawsAndLoot.Companions
                     return ResolveTrack(nowSeconds);
                 case CompanionCommandId.Distract:
                     return ResolveDistract(request, nowSeconds);
+                case CompanionCommandId.Search:
+                    return ResolveSimpleMove(
+                        request,
+                        CompanionCommandOutcome.SearchStarted);
+                case CompanionCommandId.Guard:
+                    return ResolveSimpleMove(
+                        request,
+                        CompanionCommandOutcome.GuardStarted);
+                case CompanionCommandId.Bark:
+                    return ResolveBark(companionPosition);
+                case CompanionCommandId.Scout:
+                    return ResolveScout(companionPosition);
+                case CompanionCommandId.Steal:
+                    return ResolveSteal(companionPosition);
+                case CompanionCommandId.Hide:
+                    return ResolveHide(companionPosition);
                 default:
                     request.TryGetDestination(out Vector3 fallback);
                     return new Resolution(
@@ -79,6 +121,197 @@ namespace PawsAndLoot.Companions
                         CompanionCommandOutcome.Completed,
                         request.HasTarget ? fallback : null);
             }
+        }
+
+        private static Resolution ResolveSimpleMove(
+            in CompanionCommandRequest request,
+            CompanionCommandOutcome outcome)
+        {
+            return request.TryGetDestination(out Vector3 destination)
+                ? new Resolution(true, outcome, destination)
+                : new Resolution(
+                    false,
+                    CompanionCommandOutcome.Abandoned,
+                    null);
+        }
+
+        /// <summary>
+        /// DOG-006. Barking is a proximity check performed where the dog
+        /// already stands, so it costs a turn and reveals nothing when the
+        /// thief is elsewhere.
+        /// </summary>
+        private Resolution ResolveBark(Vector3 companionPosition)
+        {
+            bool near = thiefTransform != null
+                && PlanarDistance(
+                    companionPosition,
+                    thiefTransform.position) <= barkRevealRange;
+            return new Resolution(
+                true,
+                near
+                    ? CompanionCommandOutcome.BarkRevealedThief
+                    : CompanionCommandOutcome.BarkFoundNobody,
+                null);
+        }
+
+        /// <summary>
+        /// CAT-003. Reports what is nearby without changing anything. The cat
+        /// walks to whatever it noticed so the thief can see where it went.
+        /// </summary>
+        private Resolution ResolveScout(Vector3 companionPosition)
+        {
+            LootItem loot = FindNearestAvailableLoot(
+                companionPosition,
+                scoutRange);
+            bool policeNear = policeTransform != null
+                && PlanarDistance(
+                    companionPosition,
+                    policeTransform.position) <= scoutRange;
+
+            if (loot == null && !policeNear)
+            {
+                LastScoutReport = string.Empty;
+                return new Resolution(
+                    true,
+                    CompanionCommandOutcome.ScoutFoundNothing,
+                    null);
+            }
+
+            LastScoutReport = loot != null && policeNear
+                ? "보물과 경찰"
+                : loot != null
+                    ? "보물"
+                    : "경찰";
+            Vector3? destination = loot != null
+                ? loot.transform.position
+                : null;
+            return new Resolution(
+                true,
+                CompanionCommandOutcome.ScoutReported,
+                destination);
+        }
+
+        /// <summary>
+        /// CAT-005. The cat fetches loot toward the thief but never sells it.
+        /// Selling stays a player action, so the cat only shortens the walk.
+        /// </summary>
+        private Resolution ResolveSteal(Vector3 companionPosition)
+        {
+            if (thiefTransform != null)
+            {
+                LootCarrier carrier =
+                    thiefTransform.GetComponent<LootCarrier>();
+                if (carrier != null && carrier.HasLoot)
+                {
+                    return new Resolution(
+                        false,
+                        CompanionCommandOutcome.StealOwnerBusy,
+                        null);
+                }
+            }
+
+            LootItem loot = FindNearestAvailableLoot(
+                companionPosition,
+                stealSearchRange);
+            if (loot == null)
+            {
+                return new Resolution(
+                    false,
+                    CompanionCommandOutcome.StealNoLoot,
+                    null);
+            }
+
+            return new Resolution(
+                true,
+                CompanionCommandOutcome.StealStarted,
+                loot.transform.position);
+        }
+
+        /// <summary>
+        /// CAT-006. Sends the cat to the nearest hiding spot when the thief is
+        /// carrying something worth stashing.
+        /// </summary>
+        private Resolution ResolveHide(Vector3 companionPosition)
+        {
+            LootCarrier carrier = thiefTransform != null
+                ? thiefTransform.GetComponent<LootCarrier>()
+                : null;
+            if (carrier == null || !carrier.HasLoot)
+            {
+                return new Resolution(
+                    false,
+                    CompanionCommandOutcome.HideUnavailable,
+                    null);
+            }
+
+            LootHidingSpot best = null;
+            float bestDistance = float.PositiveInfinity;
+            foreach (LootHidingSpot spot in
+                Object.FindObjectsByType<LootHidingSpot>(
+                    FindObjectsSortMode.None))
+            {
+                if (spot.HasStoredLoot || !spot.IsAvailable)
+                {
+                    continue;
+                }
+
+                float distance = PlanarDistance(
+                    companionPosition,
+                    spot.transform.position);
+                if (distance < bestDistance && distance <= hideSearchRange)
+                {
+                    bestDistance = distance;
+                    best = spot;
+                }
+            }
+
+            if (best == null)
+            {
+                return new Resolution(
+                    false,
+                    CompanionCommandOutcome.HideUnavailable,
+                    null);
+            }
+
+            return new Resolution(
+                true,
+                CompanionCommandOutcome.HideStored,
+                best.transform.position);
+        }
+
+        private static LootItem FindNearestAvailableLoot(
+            Vector3 origin,
+            float range)
+        {
+            LootItem best = null;
+            float bestDistance = float.PositiveInfinity;
+            foreach (LootItem loot in
+                Object.FindObjectsByType<LootItem>(
+                    FindObjectsSortMode.None))
+            {
+                if (!loot.IsAvailable)
+                {
+                    continue;
+                }
+
+                float distance = PlanarDistance(
+                    origin,
+                    loot.transform.position);
+                if (distance < bestDistance && distance <= range)
+                {
+                    bestDistance = distance;
+                    best = loot;
+                }
+            }
+
+            return best;
+        }
+
+        private static float PlanarDistance(Vector3 a, Vector3 b)
+        {
+            a.y = 0f;
+            b.y = 0f;
+            return Vector3.Distance(a, b);
         }
 
         private Resolution ResolveTrack(float nowSeconds)

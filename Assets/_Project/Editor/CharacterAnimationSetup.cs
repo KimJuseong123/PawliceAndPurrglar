@@ -47,10 +47,23 @@ namespace PawsAndLoot.Editor
             + "LoftSuit@Running.fbx"
         };
 
+        /// <summary>
+        /// The animals must stay Generic. Unity will happily build a Humanoid
+        /// Avatar for them, but retargeting a human walk would stand the dog up
+        /// on its hind legs, so their legs are driven procedurally instead.
+        /// </summary>
+        private static readonly string[] GenericRigTargets =
+        {
+            "Assets/_Project/Art/Characters/dog.fbx",
+            "Assets/_Project/Art/Characters/cat.fbx",
+            "Assets/_Project/Art/Characters/raccoon.fbx"
+        };
+
         [MenuItem("Paws & Loot/Setup/Rebuild Character Locomotion Animator")]
         public static void Rebuild()
         {
             EnsureHumanoidRigs();
+            EnsureGenericAnimalRigs();
 
             AnimationClip idle = FindHumanoidClip(IdleClipCandidates);
             AnimationClip run = FindHumanoidClip(RunClipCandidates);
@@ -132,6 +145,27 @@ namespace PawsAndLoot.Editor
                         $"[Animation] {path} produced no valid Humanoid "
                         + "Avatar, reverted to Generic.");
                 }
+            }
+        }
+
+        public static void EnsureGenericAnimalRigs()
+        {
+            foreach (string path in GenericRigTargets)
+            {
+                var importer = AssetImporter.GetAtPath(path) as ModelImporter;
+                if (importer == null
+                    || importer.animationType
+                        == ModelImporterAnimationType.Generic)
+                {
+                    continue;
+                }
+
+                importer.animationType =
+                    ModelImporterAnimationType.Generic;
+                importer.SaveAndReimport();
+                Debug.Log(
+                    $"[Animation] {path} forced back to Generic so its legs "
+                    + "can be driven directly.");
             }
         }
 
