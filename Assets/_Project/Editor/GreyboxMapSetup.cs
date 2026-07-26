@@ -544,20 +544,22 @@ namespace PawsAndLoot.Editor
             Transform root = CreateChild("Authored Dressing", parent);
             root.localPosition = Vector3.zero;
 
-            PlaceholderModelLibrary.TryInstantiateBuilding(
+            // MAP-002. Each dressing building gets a simple box collider sized
+            // from its measured height, never its visual mesh.
+            CreateDressingBuilding(
                 "building_police_station",
                 root,
                 locations[GreyboxLocationId.PoliceSpawn].position
                     + new Vector3(-1f, 0f, 7f),
                 12f,
                 8f);
-            PlaceholderModelLibrary.TryInstantiateBuilding(
+            CreateDressingBuilding(
                 "building_house_1f",
                 root,
                 new Vector3(-15f, 0f, 17f),
                 10f,
                 8f);
-            PlaceholderModelLibrary.TryInstantiateBuilding(
+            CreateDressingBuilding(
                 "building_house_1f_with_interior",
                 root,
                 new Vector3(15f, 0f, 17f),
@@ -664,6 +666,24 @@ namespace PawsAndLoot.Editor
                     26f,
                     thiefBinding.Identity.transform);
 
+                // CAT-005. Only the cat couriers loot, and it hands over to the
+                // thief's own carrier so the one-item limit still applies.
+                CompanionLootCourier courier = null;
+                if (kind == CompanionKind.Cat)
+                {
+                    Transform catCarryPoint = CreateChild(
+                        "CarryPoint",
+                        agentObject.transform);
+                    catCarryPoint.localPosition =
+                        new Vector3(0f, height * 0.75f, height * 0.5f);
+                    courier = agentObject.AddComponent<
+                        CompanionLootCourier>();
+                    courier.Configure(
+                        catCarryPoint,
+                        thiefBinding.Identity
+                            .GetComponent<LootCarrier>());
+                }
+
                 CompanionAgent agent =
                     agentObject.AddComponent<CompanionAgent>();
                 agent.Configure(
@@ -672,7 +692,8 @@ namespace PawsAndLoot.Editor
                     config,
                     matchRuntime,
                     controller,
-                    resolver);
+                    resolver,
+                    courier);
 
                 // Quadrupeds have no clips, so movement is faked on the visual
                 // child only, never on the collider root.
@@ -733,6 +754,22 @@ namespace PawsAndLoot.Editor
                     binding.Identity.transform,
                     binding.KeyboardInput != null
                     && binding.KeyboardInput.IsLocallyControlled);
+
+                // ART-003. Reflects the decided result and accepted commands.
+                Animator playerAnimator = binding.Identity
+                    .GetComponentInChildren<Animator>(true);
+                if (playerAnimator != null)
+                {
+                    PawsAndLoot.Animation.CharacterOutcomeAnimator outcome =
+                        binding.Identity.gameObject.AddComponent<
+                            PawsAndLoot.Animation.
+                                CharacterOutcomeAnimator>();
+                    outcome.Configure(
+                        playerAnimator,
+                        binding.Identity,
+                        matchEndController,
+                        dispatcher);
+                }
             }
 
             return dispatcher;
@@ -752,6 +789,38 @@ namespace PawsAndLoot.Editor
 
             throw new InvalidOperationException(
                 $"MAP-001 requires a control binding for '{role}'.");
+        }
+
+        /// <summary>
+        /// MAP-002. A dressing building plus one Box collider derived from the
+        /// model's measured bounds. The visual mesh is never used for collision.
+        /// </summary>
+        private static void CreateDressingBuilding(
+            string stem,
+            Transform parent,
+            Vector3 groundCenter,
+            float footprintX,
+            float footprintZ)
+        {
+            Transform anchor = CreateChild($"{stem} Anchor", parent);
+            anchor.position = groundCenter;
+            anchor.localRotation = Quaternion.identity;
+
+            float height = PlaceholderModelLibrary.TryInstantiateBuilding(
+                stem,
+                anchor,
+                groundCenter,
+                footprintX,
+                footprintZ);
+            if (height <= 0f)
+            {
+                UnityEngine.Object.DestroyImmediate(anchor.gameObject);
+                return;
+            }
+
+            BoxCollider box = anchor.gameObject.AddComponent<BoxCollider>();
+            box.center = new Vector3(0f, height * 0.5f, 0f);
+            box.size = new Vector3(footprintX, height, footprintZ);
         }
 
         private static void CreateAuthoredAnimal(

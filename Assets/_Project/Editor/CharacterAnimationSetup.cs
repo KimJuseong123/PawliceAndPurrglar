@@ -20,9 +20,33 @@ namespace PawsAndLoot.Editor
         public const string ControllerPath =
             "Assets/_Project/Art/Characters/CharacterLocomotion.controller";
 
-        private const string IdleStateName = "Idle";
-        private const string RunStateName = "Run";
-        private const float RunThreshold = 0.15f;
+        private static readonly string[] WalkClipCandidates =
+        {
+            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Tie/"
+            + "LoftTie@Walking.fbx",
+            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Suit/"
+            + "LoftSuit@Walking.fbx"
+        };
+
+        private static readonly string[] CommandClipCandidates =
+        {
+            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Suit/"
+            + "LoftSuit@StandingMeleeKick.fbx",
+            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Tie/"
+            + "LoftTie@Jump.fbx"
+        };
+
+        private static readonly string[] WinClipCandidates =
+        {
+            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Suit/"
+            + "LoftSuit@StandingIdle2.fbx"
+        };
+
+        private static readonly string[] LoseClipCandidates =
+        {
+            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Suit/"
+            + "LoftSuit@CrouchingIdle.fbx"
+        };
 
         private static readonly string[] HumanoidRigTargets =
         {
@@ -76,45 +100,172 @@ namespace PawsAndLoot.Editor
                 return;
             }
 
+            AnimationClip walk = FindHumanoidClip(WalkClipCandidates);
+            AnimationClip command =
+                FindHumanoidClip(CommandClipCandidates);
+            AnimationClip win = FindHumanoidClip(WinClipCandidates);
+            AnimationClip lose = FindHumanoidClip(LoseClipCandidates);
+
             var controller =
                 AnimatorController.CreateAnimatorControllerAtPath(
                     ControllerPath);
             controller.AddParameter(
-                PlayerLocomotionAnimator.SpeedParameter,
+                CharacterAnimatorParameters.Speed,
                 AnimatorControllerParameterType.Float);
 
             AnimatorStateMachine machine =
                 controller.layers[0].stateMachine;
-            AnimatorState idleState = machine.AddState(IdleStateName);
+
+            AnimatorState idleState = machine.AddState(
+                CharacterAnimatorParameters.IdleState);
             idleState.motion = idle != null ? idle : run;
             idleState.speed = idle != null ? 1f : 0f;
-            AnimatorState runState = machine.AddState(RunStateName);
-            runState.motion = run;
             machine.defaultState = idleState;
 
-            AnimatorStateTransition toRun =
-                idleState.AddTransition(runState);
-            toRun.hasExitTime = false;
-            toRun.duration = 0.1f;
-            toRun.AddCondition(
-                AnimatorConditionMode.Greater,
-                RunThreshold,
-                PlayerLocomotionAnimator.SpeedParameter);
+            AnimatorState runState = machine.AddState(
+                CharacterAnimatorParameters.RunState);
+            runState.motion = run;
 
-            AnimatorStateTransition toIdle =
-                runState.AddTransition(idleState);
-            toIdle.hasExitTime = false;
-            toIdle.duration = 0.15f;
-            toIdle.AddCondition(
-                AnimatorConditionMode.Less,
-                RunThreshold,
-                PlayerLocomotionAnimator.SpeedParameter);
+            // Walk only exists as its own state when a walk clip is available,
+            // otherwise speed blends straight from idle into run.
+            AnimatorState walkState = null;
+            if (walk != null)
+            {
+                walkState = machine.AddState(
+                    CharacterAnimatorParameters.WalkState);
+                walkState.motion = walk;
+                AddSpeedTransition(
+                    idleState,
+                    walkState,
+                    AnimatorConditionMode.Greater,
+                    CharacterAnimatorParameters.WalkThreshold);
+                AddSpeedTransition(
+                    walkState,
+                    idleState,
+                    AnimatorConditionMode.Less,
+                    CharacterAnimatorParameters.WalkThreshold);
+                AddSpeedTransition(
+                    walkState,
+                    runState,
+                    AnimatorConditionMode.Greater,
+                    CharacterAnimatorParameters.RunThreshold);
+                AddSpeedTransition(
+                    runState,
+                    walkState,
+                    AnimatorConditionMode.Less,
+                    CharacterAnimatorParameters.RunThreshold);
+            }
+            else
+            {
+                AddSpeedTransition(
+                    idleState,
+                    runState,
+                    AnimatorConditionMode.Greater,
+                    CharacterAnimatorParameters.WalkThreshold);
+                AddSpeedTransition(
+                    runState,
+                    idleState,
+                    AnimatorConditionMode.Less,
+                    CharacterAnimatorParameters.WalkThreshold);
+            }
+
+            AnimatorState locomotionReturn = walkState ?? idleState;
+
+            if (command != null)
+            {
+                controller.AddParameter(
+                    CharacterAnimatorParameters.Command,
+                    AnimatorControllerParameterType.Trigger);
+                AnimatorState commandState = machine.AddState(
+                    CharacterAnimatorParameters.CommandState);
+                commandState.motion = command;
+                AnimatorStateTransition enter =
+                    machine.AddAnyStateTransition(commandState);
+                enter.hasExitTime = false;
+                enter.duration = 0.06f;
+                enter.canTransitionToSelf = false;
+                enter.AddCondition(
+                    AnimatorConditionMode.If,
+                    0f,
+                    CharacterAnimatorParameters.Command);
+                AnimatorStateTransition exit =
+                    commandState.AddTransition(locomotionReturn);
+                exit.hasExitTime = true;
+                exit.exitTime = 0.85f;
+                exit.duration = 0.12f;
+            }
+
+            AddResultState(
+                controller,
+                machine,
+                win,
+                CharacterAnimatorParameters.WinState,
+                CharacterAnimatorParameters.Win);
+            AddResultState(
+                controller,
+                machine,
+                lose,
+                CharacterAnimatorParameters.LoseState,
+                CharacterAnimatorParameters.Lose);
 
             AssetDatabase.SaveAssets();
             Debug.Log(
-                $"[Animation] Locomotion controller built. "
-                + $"idle={(idle == null ? "none (run frozen)" : idle.name)} "
-                + $"run={run.name}");
+                "[Animation] Locomotion controller built. "
+                + $"idle={Describe(idle)} walk={Describe(walk)} "
+                + $"run={Describe(run)} command={Describe(command)} "
+                + $"win={Describe(win)} lose={Describe(lose)}");
+        }
+
+        private static string Describe(AnimationClip clip)
+        {
+            return clip == null ? "none" : clip.name;
+        }
+
+        private static void AddSpeedTransition(
+            AnimatorState from,
+            AnimatorState to,
+            AnimatorConditionMode mode,
+            float threshold)
+        {
+            AnimatorStateTransition transition = from.AddTransition(to);
+            transition.hasExitTime = false;
+            transition.duration = 0.12f;
+            transition.AddCondition(
+                mode,
+                threshold,
+                CharacterAnimatorParameters.Speed);
+        }
+
+        /// <summary>
+        /// Win and Lose are terminal poses: entered from anywhere by a bool and
+        /// never left, because the match is over.
+        /// </summary>
+        private static void AddResultState(
+            AnimatorController controller,
+            AnimatorStateMachine machine,
+            AnimationClip clip,
+            string stateName,
+            string parameterName)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            controller.AddParameter(
+                parameterName,
+                AnimatorControllerParameterType.Bool);
+            AnimatorState state = machine.AddState(stateName);
+            state.motion = clip;
+            AnimatorStateTransition enter =
+                machine.AddAnyStateTransition(state);
+            enter.hasExitTime = false;
+            enter.duration = 0.2f;
+            enter.canTransitionToSelf = false;
+            enter.AddCondition(
+                AnimatorConditionMode.If,
+                0f,
+                parameterName);
         }
 
         /// <summary>

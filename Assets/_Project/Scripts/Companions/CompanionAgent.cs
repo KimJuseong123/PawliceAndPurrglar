@@ -1,5 +1,6 @@
 using System;
 using PawsAndLoot.Config;
+using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Logging;
 using PawsAndLoot.Match;
@@ -69,6 +70,9 @@ namespace PawsAndLoot.Companions
         [SerializeField]
         private CompanionCommandResolver commandResolver;
 
+        [SerializeField]
+        private CompanionLootCourier lootCourier;
+
         public event Action<CompanionStateChanged> StateChanged;
         public event Action<CompanionCommandId> CommandCompleted;
         public event Action<CompanionCommandId, CompanionCommandRejection>
@@ -99,12 +103,14 @@ namespace PawsAndLoot.Companions
             CompanionConfig config,
             IMatchStateReader matchStateReader,
             CharacterController configuredController = null,
-            CompanionCommandResolver configuredResolver = null)
+            CompanionCommandResolver configuredResolver = null,
+            CompanionLootCourier configuredCourier = null)
         {
             characterController = configuredController != null
                 ? configuredController
                 : GetComponent<CharacterController>();
             commandResolver = configuredResolver;
+            lootCourier = configuredCourier;
             LastOutcome = CompanionCommandOutcome.None;
             companionKind = kind;
             owner = configuredOwner;
@@ -235,6 +241,11 @@ namespace PawsAndLoot.Companions
         public void HandleMatchEnded()
         {
             _hasCommandDestination = false;
+            if (lootCourier != null)
+            {
+                lootCourier.AbandonEscort();
+            }
+
             _stateMachine.TryTransitionTo(CompanionState.Disabled);
         }
 
@@ -352,6 +363,13 @@ namespace PawsAndLoot.Companions
             if (PlanarDistance(transform.position, _commandDestination)
                 <= arriveDistance)
             {
+                // CAT-005. Arriving at loot means picking it up, then walking
+                // it home; the command is not finished until it is handed over.
+                if (TryBeginLootEscort())
+                {
+                    return;
+                }
+
                 _stateMachine.TryTransitionTo(
                     CompanionState.ExecuteCommand);
                 _commandElapsedSeconds = 0f;
@@ -368,9 +386,79 @@ namespace PawsAndLoot.Companions
             }
         }
 
+        /// <summary>
+        /// CAT-005. Picks up the loot the STEAL order pointed at and retargets
+        /// the companion at its owner so the trip home is the rest of the
+        /// command. Returns false for every other command.
+        /// </summary>
+        private bool TryBeginLootEscort()
+        {
+            if (lootCourier == null
+                || _activeRequest.CommandId != CompanionCommandId.Steal
+                || lootCourier.HasLoot)
+            {
+                return false;
+            }
+
+            LootItem nearest = FindLootWithinPickupRange();
+            if (nearest == null || !lootCourier.TryPickUp(nearest))
+            {
+                return false;
+            }
+
+            ReportOutcome(CompanionCommandOutcome.StealCarrying);
+            _commandDestination = owner.position;
+            _hasCommandDestination = true;
+            _commandElapsedSeconds = 0f;
+            _stuckElapsedSeconds = 0f;
+            return true;
+        }
+
+        private LootItem FindLootWithinPickupRange()
+        {
+            LootItem best = null;
+            float bestDistance = float.PositiveInfinity;
+            foreach (LootItem loot in
+                UnityEngine.Object.FindObjectsByType<LootItem>(
+                    FindObjectsSortMode.None))
+            {
+                if (!loot.IsAvailable)
+                {
+                    continue;
+                }
+
+                float distance = PlanarDistance(
+                    transform.position,
+                    loot.transform.position);
+                if (distance < bestDistance && distance <= arriveDistance * 2f)
+                {
+                    bestDistance = distance;
+                    best = loot;
+                }
+            }
+
+            return best;
+        }
+
         private void TickExecuteCommand(float deltaTime)
         {
             _commandElapsedSeconds += deltaTime;
+
+            // A courier finishes by handing the item over, not by waiting.
+            if (lootCourier != null && lootCourier.HasLoot)
+            {
+                if (!lootCourier.TryDeliver())
+                {
+                    _commandDestination = owner.position;
+                    _hasCommandDestination = true;
+                    _stateMachine.TryTransitionTo(
+                        CompanionState.MoveToTarget);
+                    return;
+                }
+
+                ReportOutcome(CompanionCommandOutcome.StealDelivered);
+            }
+
             if (_commandElapsedSeconds < companionConfig.CommandCooldownSeconds)
             {
                 return;

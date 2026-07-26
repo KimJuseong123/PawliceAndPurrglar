@@ -24,14 +24,17 @@ namespace PawsAndLoot.Animation
         [SerializeField]
         private Transform visual;
 
+        // Once the legs carry the stride, the body only needs a slight vertical
+        // settle. The earlier large hop is what made the animals look like they
+        // were bouncing rather than walking.
         [SerializeField, Min(0f)]
-        private float hopHeight = 0.12f;
+        private float hopHeight = 0.03f;
 
         [SerializeField, Min(0.1f)]
-        private float hopsPerSecond = 3.4f;
+        private float hopsPerSecond = 3.8f;
 
         [SerializeField, Min(0f)]
-        private float leanDegrees = 9f;
+        private float leanDegrees = 2f;
 
         private Vector3 _visualRestPosition;
         private Vector3 _lastPosition;

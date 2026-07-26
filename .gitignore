@@ -36,6 +36,13 @@ crashlytics-build.properties
 
 /Assets/AssetStoreTools*
 
+# Written by the Performance Testing Extension on every test run and full of
+# this machine's hardware details.
+/Assets/Resources/PerformanceTestRunInfo.json*
+/Assets/Resources/PerformanceTestRunSettings.json*
+/Assets/Resources/
+/Assets/Resources.meta
+
 # Paid Asset Store content must not be redistributed. Its own license.txt
 # states "You can't redistribute the code or any of the content of the asset",
 # so each developer imports TopDown Engine from their own Asset Store account.

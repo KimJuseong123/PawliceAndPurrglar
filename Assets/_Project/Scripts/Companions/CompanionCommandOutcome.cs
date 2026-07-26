@@ -60,7 +60,13 @@ namespace PawsAndLoot.Companions
         HideStored = 17,
 
         /// <summary>CAT-006. No stash within reach, or nothing to hide.</summary>
-        HideUnavailable = 18
+        HideUnavailable = 18,
+
+        /// <summary>CAT-005. Cat has the loot and is bringing it back.</summary>
+        StealCarrying = 19,
+
+        /// <summary>CAT-005. Cat handed the loot to its owner.</summary>
+        StealDelivered = 20
     }
 
     public static class CompanionCommandOutcomeText
@@ -112,6 +118,10 @@ namespace PawsAndLoot.Companions
                     "보물을 숨겼습니다.",
                 CompanionCommandOutcome.HideUnavailable =>
                     "숨길 곳이 없습니다.",
+                CompanionCommandOutcome.StealCarrying =>
+                    "보물을 물고 돌아옵니다.",
+                CompanionCommandOutcome.StealDelivered =>
+                    "보물을 건네주었습니다.",
                 _ => string.Empty
             };
 

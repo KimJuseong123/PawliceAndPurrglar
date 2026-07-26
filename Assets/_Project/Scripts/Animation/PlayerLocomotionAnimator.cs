@@ -15,7 +15,8 @@ namespace PawsAndLoot.Animation
     [DisallowMultipleComponent]
     public sealed class PlayerLocomotionAnimator : MonoBehaviour
     {
-        public const string SpeedParameter = "Speed";
+        public const string SpeedParameter =
+            CharacterAnimatorParameters.Speed;
 
         [SerializeField]
         private PlayerMovementMotor movementMotor;

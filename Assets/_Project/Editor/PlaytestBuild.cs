@@ -19,6 +19,56 @@ namespace PawsAndLoot.Editor
         private const string WindowsBuildPath =
             "Builds/Playtest/Windows/PawsAndLoot.exe";
 
+        private const string WebGlBuildPath = "Builds/Playtest/WebGL";
+
+        /// <summary>
+        /// ART-005 asks for the WebGL payload size. WebGL is not the target
+        /// platform (ISSUE-008), so this exists purely to measure, not to ship.
+        /// </summary>
+        [MenuItem("Paws & Loot/Build/Measure WebGL Build Size")]
+        public static void BuildWebGl()
+        {
+            string[] scenePaths = ResolveScenePaths();
+            string absolute = Path.GetFullPath(WebGlBuildPath);
+            Directory.CreateDirectory(absolute);
+
+            BuildReport report = BuildPipeline.BuildPlayer(
+                new BuildPlayerOptions
+                {
+                    scenes = scenePaths,
+                    locationPathName = absolute,
+                    target = BuildTarget.WebGL,
+                    options = BuildOptions.None
+                });
+
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"WebGL build failed with "
+                    + $"{report.summary.totalErrors} errors.");
+            }
+
+            long totalBytes = 0;
+            long buildFolderBytes = 0;
+            foreach (string file in Directory.GetFiles(
+                         absolute,
+                         "*",
+                         SearchOption.AllDirectories))
+            {
+                var info = new FileInfo(file);
+                totalBytes += info.Length;
+                if (file.Replace('\\', '/').Contains("/Build/"))
+                {
+                    buildFolderBytes += info.Length;
+                }
+            }
+
+            Debug.Log(
+                $"[ART-005] WebGL total {totalBytes / (1024f * 1024f):0.00}MB, "
+                + $"payload {buildFolderBytes / (1024f * 1024f):0.00}MB at "
+                + $"'{absolute}'.");
+        }
+
         [MenuItem("Paws & Loot/Build/Build Windows Playtest")]
         public static void BuildWindows()
         {
