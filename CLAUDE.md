@@ -55,6 +55,18 @@ Claude Code 전용 작업 지침서다.
 > `GraphicsSettings`가 더러워진다. 도구가 원복하지만, 실행 후
 > `git status -- ProjectSettings/`가 비어 있는지 확인한다.
 
+> **씬 오브젝트를 런타임에 움직이려면 두 가지를 확인한다.** 둘 다 실패해도
+> 예외도 로그도 남지 않아서, 눈으로 볼 때까지 모른다 (`ART-013`에서 뚜껑이
+> 안 열린 원인이 정확히 이 두 개였다).
+>
+> 1. **프리팹 인스턴스는 자식 재부모화가 거부된다.** 모델은
+>    `PrefabUtility.InstantiatePrefab`으로 들어오므로 `SetParent`가 그냥
+>    무시된다. `PrefabUtility.UnpackPrefabInstance`로 먼저 푼다.
+> 2. **`SceneOptimizationPass`가 `BatchingStatic`으로 굽는다.** 구워진
+>    렌더러는 transform을 돌려도 화면에서 안 움직인다. 스킨드 메시와
+>    `DynamicRootNames`, 그리고 `RaccoonBinGreeter`가 참조하는 transform만
+>    제외된다. 새로 움직이는 것을 추가하면 제외 규칙도 함께 넣는다.
+
 
 `Game` 씬의 마을, 상호작용 지점, HUD, 시스템 배선은 `.unity` 파일을 손으로
 편집해서 만든 것이 아니라 **에디터 스크립트가 코드로 생성**한다.

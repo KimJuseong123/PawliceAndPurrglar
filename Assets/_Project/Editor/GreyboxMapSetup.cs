@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using PawsAndLoot.Animation;
 using PawsAndLoot.Audio;
 using PawsAndLoot.Companions;
 using PawsAndLoot.Config;
@@ -145,9 +146,26 @@ namespace PawsAndLoot.Editor
         /// larger, and the animals are sized against them.
         /// </summary>
         private const float AuthoredCharacterHeight = 1.7f;
-        private const float AuthoredDogHeight = 0.75f;
-        private const float AuthoredCatHeight = 0.45f;
-        private const float AuthoredRaccoonHeight = 0.7f;
+
+        /// <summary>
+        /// The companions read as roughly half a player. Realistic pet sizes
+        /// made them hard to pick out from the greybox at the fixed camera
+        /// distance, and the animals are half the game.
+        ///
+        /// The cat stays a little under the dog so the two silhouettes are still
+        /// distinguishable at a glance.
+        /// </summary>
+        private const float AuthoredDogHeight = 1.36f;
+        private const float AuthoredCatHeight = 1.2f;
+
+        /// <summary>
+        /// The merchant is a character the player deals with, not scenery, so it
+        /// is nearly player-sized. The bin is taller than the raccoon on
+        /// purpose: it has to read as something the raccoon is hiding *inside*,
+        /// which it cannot do if the two are the same height.
+        /// </summary>
+        private const float AuthoredRaccoonHeight = 1.35f;
+        private const float TrashBinHeight = 2.08f;
 
         [MenuItem("Paws & Loot/Setup/Rebuild MAP-001 Greybox Village")]
         public static void CreateGameScene()
@@ -700,13 +718,13 @@ namespace PawsAndLoot.Editor
                 9f,
                 8f);
 
-            CreateAuthoredAnimal(
-                "raccoon",
+            // Inside the trading yard (x -15..-4, z -9.5..-2.5), not beside it.
+            // The previous spot put the bin on the southern alley, and once the
+            // bin grew it blocked the PoliceToJewelry_SouthLoop route outright.
+            CreateRaccoonInBin(
                 root,
                 locations[GreyboxLocationId.RaccoonMarket].position
-                    + new Vector3(-9f, 0f, -6f),
-                AuthoredRaccoonHeight,
-                180f);
+                    + new Vector3(-3.5f, 0f, 5f));
 
             CreateExpansionDistricts(root);
         }
@@ -1302,25 +1320,291 @@ namespace PawsAndLoot.Editor
             box.size = new Vector3(footprintX, height, footprintZ);
         }
 
-        private static void CreateAuthoredAnimal(
-            string stem,
-            Transform parent,
-            Vector3 groundPosition,
-            float targetHeight,
-            float yaw)
+        /// <summary>
+        /// The raccoon merchant and the bin it hides in.
+        ///
+        /// The merchant is the one NPC the thief has to find, and on a greybox
+        /// map a stationary model beside a stall reads as scenery. Having it
+        /// rise and wave when a player comes near is what marks it as the place
+        /// to sell without adding a HUD marker.
+        ///
+        /// The bin's own collider is kept and the raccoon is parented inside it
+        /// with no collider of its own, so the merchant can never be walked
+        /// into or pushed off its spot.
+        /// </summary>
+        /// <summary>
+        /// Drops a trash can model into a bin volume and scales it to
+        /// <paramref name="targetHeight"/> metres.
+        ///
+        /// The height is measured from the instance rather than assumed: the
+        /// authored can is not one unit tall, so passing a scale of 1 produced a
+        /// 2.18 m bin against a 1.70 m player. Anything that has to match a
+        /// character's height has to be measured, not guessed from the file.
+        ///
+        /// Returns false when the model is missing, leaving the greybox cube
+        /// visible.
+        /// </summary>
+        /// <summary>
+        /// Builds a hinge at the bin's back rim and moves the lid meshes under
+        /// it, so rotating one transform swings the real lid open.
+        ///
+        /// The authored can keeps its lid as separate nodes
+        /// (<c>FN_TrashCan_Lid</c> and its handle) with their pivots at the
+        /// model origin, so rotating them directly would spin the lid about the
+        /// bin's centre instead of its edge. The empty pivot placed on the rim
+        /// is what turns that into a hinge.
+        ///
+        /// Returns null when the model has no lid node, in which case the
+        /// greeting still works and only the lid stays shut.
+        /// </summary>
+        private static Transform TryCreateLidHinge(GameObject canModel)
         {
-            Transform anchor = CreateChild($"{stem} Visual", parent);
-            anchor.position = groundPosition;
-            anchor.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            if (PlaceholderModelLibrary.TryInstantiateAuthoredCharacter(
-                    stem,
-                    anchor,
-                    targetHeight,
-                    0f) == null)
+            // The can arrives as a linked prefab instance, and Unity refuses to
+            // reparent a prefab instance's children — SetParent simply does
+            // nothing, with no exception and no return value to check. That is
+            // why the lid stayed welded to the can and never opened. Unpacking
+            // first turns it into plain objects that can be restructured.
+            if (PrefabUtility.IsPartOfPrefabInstance(canModel))
             {
-                UnityEngine.Object.DestroyImmediate(anchor.gameObject);
+                PrefabUtility.UnpackPrefabInstance(
+                    canModel,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.AutomatedAction);
             }
+
+            Transform lid = FindBone(canModel.transform, "FN_TrashCan_Lid");
+            if (lid == null)
+            {
+                return null;
+            }
+
+            var lidRenderer = lid.GetComponent<Renderer>();
+            if (lidRenderer == null)
+            {
+                return null;
+            }
+
+            Bounds lidBounds = lidRenderer.bounds;
+            var pivotObject = new GameObject("Lid Hinge");
+            Transform pivot = pivotObject.transform;
+            pivot.SetParent(canModel.transform.parent, false);
+            // Back rim: the lid tips up and away from a player walking in from
+            // the front, rather than swinging through them.
+            pivot.position = new Vector3(
+                lidBounds.center.x,
+                lidBounds.min.y,
+                lidBounds.max.z);
+            pivot.rotation = Quaternion.identity;
+
+            lid.SetParent(pivot, true);
+
+            Transform handle =
+                FindBone(canModel.transform, "FN_TrashCan_LidHandle");
+            if (handle != null)
+            {
+                handle.SetParent(pivot, true);
+            }
+
+            if (pivot.childCount == 0)
+            {
+                // Reparenting is silent when it fails, so the one thing that
+                // makes this whole animation work is asserted rather than
+                // assumed.
+                Debug.LogError(
+                    "[MAP-007] The trash can lid could not be moved onto its "
+                    + "hinge, so it will not open.");
+            }
+
+            return pivot;
         }
+
+        private static GameObject TryFitTrashCanModel(
+            Transform bin,
+            float targetHeight,
+            Material material)
+        {
+            GameObject model =
+                PlaceholderModelLibrary.TryInstantiateProp(
+                    "object_trash_can",
+                    bin,
+                    Vector3.zero,
+                    Vector3.zero,
+                    1f,
+                    material);
+            if (model == null)
+            {
+                return null;
+            }
+
+            bool measured = false;
+            var bounds = new Bounds();
+            foreach (Renderer renderer in
+                model.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!measured)
+                {
+                    bounds = renderer.bounds;
+                    measured = true;
+                    continue;
+                }
+
+                bounds.Encapsulate(renderer.bounds);
+            }
+
+            if (!measured || bounds.size.y <= 0.001f)
+            {
+                UnityEngine.Object.DestroyImmediate(model);
+                return null;
+            }
+
+            float correction = targetHeight / bounds.size.y;
+            model.transform.localScale *= correction;
+
+            // Re-measured after scaling so the base lands exactly on the
+            // ground; the model's pivot is not necessarily at its feet.
+            measured = false;
+            foreach (Renderer renderer in
+                model.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!measured)
+                {
+                    bounds = renderer.bounds;
+                    measured = true;
+                    continue;
+                }
+
+                bounds.Encapsulate(renderer.bounds);
+            }
+
+            float groundY = bin.position.y
+                - bin.lossyScale.y * 0.5f;
+            model.transform.position += Vector3.up
+                * (groundY - bounds.min.y);
+            return model;
+        }
+
+        private static void CreateRaccoonInBin(
+            Transform parent,
+            Vector3 groundPosition)
+        {
+            // Double sided so the open lid reveals the inside of the bin
+            // rather than a see-through hole.
+            Material binMaterial = LoadOrCreateDoubleSidedMaterial(
+                "Greybox_TrashBin",
+                new Color(0.32f, 0.34f, 0.36f));
+
+            GameObject bin = CreateCube(
+                "Raccoon Merchant Bin",
+                groundPosition
+                    + Vector3.up * (TrashBinHeight * 0.5f),
+                new Vector3(
+                    TrashBinHeight * 0.77f,
+                    TrashBinHeight,
+                    TrashBinHeight * 0.77f),
+                binMaterial,
+                parent,
+                true);
+
+            GameObject canModel = TryFitTrashCanModel(
+                bin.transform,
+                TrashBinHeight,
+                binMaterial);
+            Transform lidHinge = null;
+            if (canModel != null)
+            {
+                bin.GetComponent<Renderer>().enabled = false;
+                lidHinge = TryCreateLidHinge(canModel);
+            }
+
+            // Outside the bin's non-uniform scale, so the raccoon is not
+            // squashed by the bin's 0.77 width.
+            // Nudged north of the bin's centre. The raccoon's rest pose is not
+            // centred on its own origin, so sharing the bin's exact position
+            // left it sitting visibly toward the south wall.
+            Transform pivot = CreateChild("Raccoon Pivot", parent);
+            pivot.position = groundPosition + new Vector3(0f, 0f, 0.18f);
+            pivot.localRotation = Quaternion.Euler(0f, 180f, 0f);
+
+            Transform anchor = CreateChild("raccoon Visual", pivot);
+            anchor.localPosition = Vector3.zero;
+            anchor.localRotation = Quaternion.identity;
+
+            GameObject model =
+                PlaceholderModelLibrary.TryInstantiateAuthoredCharacter(
+                    "raccoon",
+                    anchor,
+                    AuthoredRaccoonHeight,
+                    0f);
+            if (model == null)
+            {
+                UnityEngine.Object.DestroyImmediate(pivot.gameObject);
+                return;
+            }
+
+            RaccoonBinGreeter greeter =
+                pivot.gameObject.AddComponent<RaccoonBinGreeter>();
+            greeter.Configure(
+                anchor,
+                lidHinge,
+                // The left arm, not the right. On this rig the two arms mirror,
+                // so the same rotation that swung the right arm down lifts the
+                // left one — and a wave has to come from a raised hand.
+                FindBone(model.transform, "L_Upperarm"),
+                FindBone(model.transform, "L_Forearm"),
+                // Measured against the rig, not guessed: this raccoon is
+                // hunched, with its shoulder 0.58 m and its head 0.70 m above
+                // its own feet on a 1.35 m model, and its full bounds reach the
+                // whole 1.35 m because of the ears and tail.
+                //
+                // Hidden sits it high inside the bin rather than below the
+                // floor. The bin tapers, so up there the spread arms fit within
+                // the walls instead of poking through them, and the raccoon's
+                // highest point still clears the 1.89 m rim by a margin.
+                //
+                // Raised puts the shoulder about a quarter metre proud of the
+                // rim, which is what gets the waving hand clear of it.
+                TrashBinHeight * 0.26f,
+                TrashBinHeight * 0.84f,
+                6f);
+
+            Debug.Log(
+                "[MAP-007] Raccoon merchant placed in its bin with a "
+                + "proximity greeting.");
+        }
+
+        /// <summary>
+        /// Exact name first, then a case-insensitive contains, because the
+        /// authored rigs are not guaranteed to keep the same capitalisation
+        /// when they are re-exported.
+        /// </summary>
+        private static Transform FindBone(Transform root, string boneName)
+        {
+            foreach (Transform bone in
+                root.GetComponentsInChildren<Transform>(true))
+            {
+                if (bone.name == boneName)
+                {
+                    return bone;
+                }
+            }
+
+            foreach (Transform bone in
+                root.GetComponentsInChildren<Transform>(true))
+            {
+                if (bone.name.IndexOf(
+                        boneName,
+                        System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return bone;
+                }
+            }
+
+            Debug.LogWarning(
+                $"[MAP-007] Bone '{boneName}' is missing, so that part of "
+                + "the raccoon greeting will not animate.");
+            return null;
+        }
+
 
         private static void CreateStore(
             string name,
@@ -1504,20 +1788,26 @@ namespace PawsAndLoot.Editor
             {
                 GameObject bin = CreateCube(
                     $"Trash Bin {index + 1}",
-                    positions[index] + Vector3.up * 0.65f,
-                    new Vector3(1f, 1.3f, 1f),
+                    positions[index]
+                        + Vector3.up * (TrashBinHeight * 0.5f),
+                    new Vector3(
+                        TrashBinHeight * 0.77f,
+                        TrashBinHeight,
+                        TrashBinHeight * 0.77f),
                     material,
                     parent,
                     true);
 
                 // The cube stays as the simple collider volume (MAP-005) and
                 // only its renderer is hidden once the model is available.
-                if (PlaceholderModelLibrary.TryInstantiateProp(
-                        "object_trash_can",
+                //
+                // The child's scale multiplies the cube's, so a uniform 1 leaves
+                // the model exactly as tall as the cube. The -0.5 local offset
+                // is half the cube in its own space, which drops the model's
+                // base onto the ground whatever the height is.
+                if (TryFitTrashCanModel(
                         bin.transform,
-                        new Vector3(0f, -0.5f, 0f),
-                        Vector3.zero,
-                        1f / 1.3f,
+                        TrashBinHeight,
                         material) != null)
                 {
                     bin.GetComponent<Renderer>().enabled = false;
@@ -3321,6 +3611,28 @@ namespace PawsAndLoot.Editor
 
             material.SetColor("_BaseColor", color);
             material.SetColor("_Color", color);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        /// <summary>
+        /// Same as <see cref="LoadOrCreateMaterial"/> but rendered from both
+        /// sides.
+        ///
+        /// A bin is a single-skinned mesh, so with the default back-face
+        /// culling an open lid shows straight through the far wall to whatever
+        /// is behind it. Drawing both faces is what makes the inside of the can
+        /// read as the inside of a can.
+        /// </summary>
+        private static Material LoadOrCreateDoubleSidedMaterial(
+            string assetName,
+            Color color)
+        {
+            Material material = LoadOrCreateMaterial(assetName, color);
+            // 0 = Off. URP reads both the property and the render state, so
+            // the keyword has to be set alongside it.
+            material.SetFloat("_Cull", 0f);
+            material.doubleSidedGI = true;
             EditorUtility.SetDirty(material);
             return material;
         }

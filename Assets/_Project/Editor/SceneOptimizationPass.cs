@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PawsAndLoot.Animation;
 using UnityEditor;
 using UnityEngine;
 
@@ -247,6 +248,36 @@ namespace PawsAndLoot.Editor
                     {
                         return true;
                     }
+                }
+
+                if (IsAnimatedByGreeter(current))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// True for anything the raccoon greeter moves.
+        ///
+        /// Asked of the component rather than matched by name, because a name
+        /// list fails silently: the lid was batched into the static mesh and
+        /// simply stopped opening, with nothing in any log or test to say why.
+        /// Whatever the greeter holds a reference to is excluded by
+        /// construction, so renaming the objects cannot break it again.
+        /// </summary>
+        private static bool IsAnimatedByGreeter(Transform candidate)
+        {
+            foreach (RaccoonBinGreeter greeter in
+                Object.FindObjectsByType<RaccoonBinGreeter>(
+                    FindObjectsSortMode.None))
+            {
+                if (greeter.RaccoonRoot == candidate
+                    || greeter.LidPivot == candidate)
+                {
+                    return true;
                 }
             }
 
