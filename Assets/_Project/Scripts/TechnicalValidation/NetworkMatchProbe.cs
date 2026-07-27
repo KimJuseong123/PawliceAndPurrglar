@@ -34,6 +34,7 @@ namespace PawsAndLoot.TechnicalValidation
         private bool _written;
         private float _driveTimer;
         private Vector2 _driveInput = Vector2.right;
+        private bool _bridgeDisabled;
 
         private void Awake()
         {
@@ -81,11 +82,32 @@ namespace PawsAndLoot.TechnicalValidation
         /// </summary>
         private void DriveMovement()
         {
-            NetworkRoleBoard board =
-                FindFirstObjectByType<NetworkRoleBoard>();
-            if (board == null || !board.IsAssigned)
+            PlayerRole? assigned =
+                LocalPlayerRoleSelector.OverriddenRole;
+            if (!assigned.HasValue)
             {
                 return;
+            }
+
+            // The bridge reads real keys, and in an automated run no key is
+            // pressed, so it would overwrite the synthetic input with zero
+            // every frame. The probe takes its place instead of fighting it.
+            if (!_bridgeDisabled)
+            {
+                _bridgeDisabled = true;
+                foreach (NetworkInputBridge bridge in
+                    FindObjectsByType<NetworkInputBridge>(
+                        FindObjectsSortMode.None))
+                {
+                    bridge.enabled = false;
+                }
+
+                foreach (PlayerKeyboardInput input in
+                    FindObjectsByType<PlayerKeyboardInput>(
+                        FindObjectsSortMode.None))
+                {
+                    input.IsLocallyControlled = false;
+                }
             }
 
             _driveTimer += Time.unscaledDeltaTime;
@@ -101,7 +123,7 @@ namespace PawsAndLoot.TechnicalValidation
                 FindObjectsByType<NetworkPlayerLink>(
                     FindObjectsSortMode.None))
             {
-                if (link.Role == board.LocalRole && link.IsSpawned)
+                if (link.Role == assigned.Value && link.IsSpawned)
                 {
                     link.SubmitInputRpc(_driveInput, false);
                 }
@@ -119,11 +141,22 @@ namespace PawsAndLoot.TechnicalValidation
             Vector3 police = Vector3.zero;
             Vector3 thief = Vector3.zero;
             int linkCount = 0;
+            int spawnedLinks = 0;
+            int remoteDriven = 0;
             foreach (NetworkPlayerLink link in
                 FindObjectsByType<NetworkPlayerLink>(
                     FindObjectsSortMode.None))
             {
                 linkCount++;
+                if (link.IsSpawned)
+                {
+                    spawnedLinks++;
+                }
+
+                if (link.IsRemoteDriven)
+                {
+                    remoteDriven++;
+                }
                 if (link.Role == PlayerRole.Police)
                 {
                     police = link.transform.position;
@@ -155,10 +188,28 @@ namespace PawsAndLoot.TechnicalValidation
             Append(
                 json,
                 "localRole",
-                board != null && board.IsAssigned
-                    ? board.LocalRole.ToString()
+                LocalPlayerRoleSelector.OverriddenRole.HasValue
+                    ? LocalPlayerRoleSelector.OverriddenRole.Value
+                        .ToString()
                     : "Unassigned");
+            // Split so a missing board is distinguishable from a board that is
+            // present but reports no assignment. The two need different fixes.
+            AppendBool(json, "boardExists", board != null);
+            AppendBool(
+                json,
+                "boardAssigned",
+                board != null && board.IsAssigned);
+            AppendBool(
+                json,
+                "boardSpawned",
+                board != null && board.IsSpawned);
+            AppendNumber(
+                json,
+                "boardPoliceClientId",
+                board != null ? board.PoliceClientId : 999);
             AppendNumber(json, "playerLinks", linkCount);
+            AppendNumber(json, "spawnedLinks", spawnedLinks);
+            AppendNumber(json, "remoteDrivenLinks", remoteDriven);
             Append(json, "policePosition", Format(police));
             Append(json, "thiefPosition", Format(thief));
             AppendBool(

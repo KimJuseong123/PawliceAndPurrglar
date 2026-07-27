@@ -26,7 +26,7 @@
 ### ISSUE-016 경기 씬에서 클라이언트가 자기 역할을 읽지 못한다
 
 - 종류: 버그
-- 상태: OPEN
+- 상태: RESOLVED
 - 심각도: High
 - 발견 날짜: 2026-07-27
 - 발생 환경: 실제 Windows 빌드 2프로세스, `-netLobby` 프로브
@@ -42,12 +42,25 @@
 - 관련 작업: NET-003
 - 해결 기록:
 
-`NetworkRoleBoard`를 동적 스폰 프리팹으로 만들고 `Spawn(false)`,
-`DestroyWithScene = false`, 양쪽 `DontDestroyOnLoad`까지 적용했으나 클라이언트의
-`IsAssigned`가 경기 씬에서 참으로 유지되지 않았다. NGO 씬 관리가 켜진 상태에서
-지속 오브젝트가 클라이언트 씬 전환을 어떻게 통과하는지 다시 확인해야 한다.
-역할을 오브젝트가 아니라 접속 승인 시점의 페이로드나 세션 컨트롤러의 일반
-변수로 옮기는 방법도 후보다.
+진단으로 원인을 확정했다. 프로브에 `boardExists`를 분리해 출력하니 클라이언트는
+`boardExists: false`였다. 즉 미배정이 아니라 **오브젝트 자체가 사라진 것**이었다.
+NGO 씬 관리가 켜진 상태에서 서버가 Single 모드로 씬을 로드하면 NGO는 자기 장부의
+씬 소유 관계로 클라이언트 복제본을 정리한다. `DontDestroyOnLoad`는 Unity 씬만
+바꾸고 그 장부를 바꾸지 않으며 `DestroyWithScene = false`는 서버 자신의
+인스턴스만 보호한다.
+
+해결: **역할을 지속 복제 상태가 아니라 1회 통보로 바꿨다.** 역할은 한 경기 동안
+고정된 값이므로 계속 복제할 이유가 없다. 호스트가 경기 씬을 로드하기 직전, 아직
+로비에 살아 있는 보드가 `CommitRolesRpc`로 전원에게 경찰 클라이언트 id를 보내고,
+각 기계가 자기 id와 비교해 `LocalPlayerRoleSelector.OverrideRole`에 저장한다.
+평범한 static이라 씬 전환을 그대로 넘어간다. 보드는 로비와 함께 사라져도 되므로
+`DontDestroyOnLoad`와 `DestroyWithScene` 처리를 모두 제거했다.
+
+검증: 클라이언트가 `boardExists: false`인 상태에서도 `localRole: Thief`를 읽고,
+입력이 호스트를 거쳐 도둑을 실제로 이동시켰다.
+
+프로브의 `boardExists`·`spawnedLinks` 분리 출력은 남겨뒀다. 다음에 비슷한 증상이
+나오면 "없음"과 "미배정"을 바로 갈라낼 수 있다.
 
 ### ISSUE-015 사다리 상호작용이 아무 일도 하지 않았다
 

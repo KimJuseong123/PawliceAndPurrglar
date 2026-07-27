@@ -201,7 +201,9 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            LocalPlayerRoleSelector.OverrideRole(board.LocalRole);
+            // Hand every machine its role before the scene changes: the board
+            // will not exist on a client once the match scene loads.
+            board.TryCommitRoles();
             GameSceneLoader.Load(GameSceneId.Game);
         }
 

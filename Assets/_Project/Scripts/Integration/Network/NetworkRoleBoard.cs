@@ -55,12 +55,6 @@ namespace PawsAndLoot.Integration.Network
             _policeClientId.OnValueChanged += HandlePoliceChanged;
             _assigned.OnValueChanged += HandleAssignedChanged;
 
-            // Both sides must survive the lobby-to-match load. The server marks
-            // its own copy, but a client's replica lives in the client's active
-            // scene and a Single-mode load would take it with it, leaving that
-            // machine with no role.
-            DontDestroyOnLoad(gameObject);
-
             if (!IsServer)
             {
                 return;
@@ -90,6 +84,44 @@ namespace PawsAndLoot.Integration.Network
                 HandleClientConnected;
             NetworkManager.OnClientDisconnectCallback -=
                 HandleClientDisconnected;
+        }
+
+        /// <summary>
+        /// Hands each machine its role for the coming match.
+        ///
+        /// Called by the server while the board is still alive in the lobby.
+        /// Every machine stores the answer in a plain local value, which is what
+        /// carries it across the scene load: a spawned NetworkObject does not
+        /// survive a server-driven Single-mode load on the client side, and
+        /// relying on one left the client with no role at all (`ISSUE-016`).
+        /// </summary>
+        [Rpc(SendTo.Everyone)]
+        public void CommitRolesRpc(ulong policeClientId)
+        {
+            PlayerRole role =
+                NetworkManager != null
+                && NetworkManager.LocalClientId == policeClientId
+                    ? PlayerRole.Police
+                    : PlayerRole.Thief;
+            LocalPlayerRoleSelector.OverrideRole(role);
+            GameLogger.Info(
+                GameLogCategory.Network,
+                $"Committed local role '{role}' for the match.",
+                this);
+        }
+
+        /// <summary>
+        /// Server entry point used just before the match scene loads.
+        /// </summary>
+        public bool TryCommitRoles()
+        {
+            if (!IsServer || !IsAssigned)
+            {
+                return false;
+            }
+
+            CommitRolesRpc(_policeClientId.Value);
+            return true;
         }
 
         /// <summary>

@@ -177,8 +177,7 @@ namespace PawsAndLoot.TechnicalValidation
                         // to be brought along by the server's scene load.
                         if (_mode == "host")
                         {
-                            LocalPlayerRoleSelector.OverrideRole(
-                                board.LocalRole);
+                            board.TryCommitRoles();
                             Core.GameSceneLoader.Load(
                                 Core.GameSceneId.Game);
                         }

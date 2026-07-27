@@ -102,14 +102,19 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
-            NetworkRoleBoard board = ResolveRoleBoard();
-            if (board == null || !board.IsAssigned)
+            // Read the role from the local value the server committed before
+            // the scene load. The board itself does not exist in the match
+            // scene on a client, which is exactly why the role is stored
+            // locally rather than looked up here.
+            PlayerRole? assigned =
+                LocalPlayerRoleSelector.OverriddenRole;
+            if (!assigned.HasValue)
             {
                 return;
             }
 
             EnsureLocalControlDisabled();
-            LocalRole = board.LocalRole;
+            LocalRole = assigned.Value;
             HasLocalRole = true;
 
             NetworkPlayerLink link = FindLink(LocalRole);
