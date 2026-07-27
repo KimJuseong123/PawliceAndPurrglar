@@ -17,6 +17,12 @@ namespace PawsAndLoot.Editor
     /// </summary>
     internal static class NetworkLobbySetup
     {
+        /// <summary>
+        /// Room rows in the lobby. A LAN playtest has one or two hosts; four is
+        /// headroom, not a target.
+        /// </summary>
+        private const int RoomSlotCount = 4;
+
         private const string NetworkPrefabsListPath =
             "Assets/DefaultNetworkPrefabs.asset";
 
@@ -68,6 +74,12 @@ namespace PawsAndLoot.Editor
             manager.gameObject
                 .AddComponent<NetworkDisconnectHandler>()
                 .Configure(manager, session);
+
+            // Announces this host on the LAN and lists the ones it hears, so the
+            // two players can meet without reading an IP to each other.
+            manager.gameObject
+                .AddComponent<LanRoomDirectory>()
+                .Configure(session);
 
             // NET-008 verification. On the persistent object because the press
             // happens on the result screen and the restart lands in the match
@@ -192,14 +204,45 @@ namespace PawsAndLoot.Editor
                 "Lobby Panel",
                 canvasObject.transform,
                 new Vector2(0.5f, 0.5f),
-                new Vector2(760f, 330f),
-                new Vector2(0f, -300f));
+                new Vector2(760f, 540f),
+                new Vector2(0f, -170f));
             panel.gameObject.AddComponent<Image>().color = Panel;
+
+            // The room list sits at the top because it is the path most players
+            // will take. Typing an IP stays below it, unchanged, for networks
+            // that drop broadcast traffic.
+            Text roomListLabel = CreateLabel(
+                "Room List Label",
+                panel,
+                new Vector2(0f, 236f),
+                new Vector2(720f, 26f),
+                17,
+                TextAnchor.MiddleCenter);
+            roomListLabel.color = new Color(0.75f, 0.9f, 1f);
+
+            var roomButtons = new Button[RoomSlotCount];
+            var roomLabels = new Text[RoomSlotCount];
+            for (int index = 0; index < RoomSlotCount; index++)
+            {
+                Button roomButton = CreateButton(
+                    $"Room Slot {index}",
+                    panel,
+                    new Vector2(0f, 202f - index * 38f),
+                    new Vector2(700f, 34f),
+                    string.Empty,
+                    JoinColor);
+                roomButtons[index] = roomButton;
+                roomLabels[index] =
+                    roomButton.GetComponentInChildren<Text>();
+                // Hidden until a room is found, so an empty LAN shows nothing
+                // rather than four blank buttons.
+                roomButton.gameObject.SetActive(false);
+            }
 
             Text myAddress = CreateLabel(
                 "My Address",
                 panel,
-                new Vector2(0f, 118f),
+                new Vector2(0f, 34f),
                 new Vector2(720f, 30f),
                 20,
                 TextAnchor.MiddleCenter);
@@ -208,7 +251,7 @@ namespace PawsAndLoot.Editor
             Text status = CreateLabel(
                 "Status",
                 panel,
-                new Vector2(0f, 86f),
+                new Vector2(0f, 4f),
                 new Vector2(720f, 28f),
                 18,
                 TextAnchor.MiddleCenter);
@@ -217,34 +260,34 @@ namespace PawsAndLoot.Editor
             InputField joinAddress = CreateField(
                 "Join Address",
                 panel,
-                new Vector2(-150f, 44f),
+                new Vector2(-150f, -34f),
                 new Vector2(300f, 34f),
                 "접속할 IP");
             InputField port = CreateField(
                 "Port",
                 panel,
-                new Vector2(170f, 44f),
+                new Vector2(170f, -34f),
                 new Vector2(140f, 34f),
                 "포트");
 
             Button host = CreateButton(
                 "Host Button",
                 panel,
-                new Vector2(-230f, 2f),
+                new Vector2(-230f, -78f),
                 new Vector2(200f, 36f),
-                "호스트로 시작",
+                "방 만들기 (호스트)",
                 HostColor);
             Button join = CreateButton(
                 "Join Button",
                 panel,
-                new Vector2(0f, 2f),
+                new Vector2(0f, -78f),
                 new Vector2(200f, 36f),
                 "이 IP로 접속",
                 JoinColor);
             Button leave = CreateButton(
                 "Leave Button",
                 panel,
-                new Vector2(230f, 2f),
+                new Vector2(230f, -78f),
                 new Vector2(200f, 36f),
                 "세션 종료",
                 LeaveColor);
@@ -252,7 +295,7 @@ namespace PawsAndLoot.Editor
             Text role = CreateLabel(
                 "Role",
                 panel,
-                new Vector2(0f, -42f),
+                new Vector2(0f, -122f),
                 new Vector2(720f, 30f),
                 20,
                 TextAnchor.MiddleCenter);
@@ -261,14 +304,14 @@ namespace PawsAndLoot.Editor
             Button swap = CreateButton(
                 "Swap Role Button",
                 panel,
-                new Vector2(-115f, -86f),
+                new Vector2(-115f, -166f),
                 new Vector2(220f, 36f),
                 "역할 바꾸기",
                 SwapColor);
             Button start = CreateButton(
                 "Start Match Button",
                 panel,
-                new Vector2(115f, -86f),
+                new Vector2(115f, -166f),
                 new Vector2(220f, 36f),
                 "경기 시작",
                 StartColor);
@@ -276,13 +319,13 @@ namespace PawsAndLoot.Editor
             Text hint = CreateLabel(
                 "Hint",
                 panel,
-                new Vector2(0f, -126f),
+                new Vector2(0f, -212f),
                 new Vector2(720f, 26f),
                 15,
                 TextAnchor.MiddleCenter);
             hint.color = new Color(0.6f, 0.65f, 0.72f);
             hint.text =
-                "같은 PC에서 둘을 띄우려면 127.0.0.1 · 경기 시작은 호스트만";
+                "한 명이 방 만들기 · 같은 PC면 127.0.0.1 · 경기 시작은 호스트만";
 
             NetworkLobbyPresenter presenter =
                 panel.gameObject.AddComponent<NetworkLobbyPresenter>();
@@ -298,12 +341,18 @@ namespace PawsAndLoot.Editor
                 swap,
                 start,
                 leave);
+            presenter.ConfigureRoomList(
+                UnityEngine.Object.FindFirstObjectByType<
+                    LanRoomDirectory>(),
+                roomListLabel,
+                roomButtons,
+                roomLabels);
 
-            host.onClick.AddListener(presenter.OnHostPressed);
-            join.onClick.AddListener(presenter.OnJoinPressed);
-            swap.onClick.AddListener(presenter.OnSwapRolePressed);
-            start.onClick.AddListener(presenter.OnStartMatchPressed);
-            leave.onClick.AddListener(presenter.OnLeavePressed);
+            // No onClick.AddListener here on purpose. From an editor script it
+            // registers a non-persistent listener that is discarded when the
+            // scene is saved, so the built lobby's buttons did nothing and no
+            // session could ever start. The presenter binds them in OnEnable
+            // instead, which survives into the build.
         }
 
         private static RectTransform CreateRect(

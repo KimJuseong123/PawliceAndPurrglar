@@ -67,8 +67,46 @@ namespace PawsAndLoot.Editor
         /// example (-11f, 16f, -11f) for a 45 degree yaw; the camera and the
         /// movement basis both follow this single offset.
         /// </summary>
+        /// <summary>
+        /// Pulled 15% closer than the original (0, 16, -14), which magnifies
+        /// everything on screen by about 17%. The village was small enough in
+        /// frame that the characters and animals were hard to read.
+        ///
+        /// The angle is unchanged: both components are scaled by the same
+        /// factor, so the camera moves along the same line and the fixed
+        /// rotation derived from this offset stays identical.
+        /// </summary>
         private static readonly Vector3 FixedCameraOffset =
-            new(0f, 16f, -14f);
+            new(0f, 13.6f, -11.9f);
+
+        /// <summary>
+        /// Village extents. The original 56x44 block is kept exactly where it
+        /// was and the map grows only north and east, so every existing route,
+        /// spawn point, building and ladder keeps its coordinates. Rescaling
+        /// around the origin instead would have moved all of them and
+        /// invalidated the MAP-001 route validation.
+        ///
+        /// Two rows north and two columns east, at the 12 m block pitch the
+        /// original grid already uses.
+        /// </summary>
+        private const float MapMinX = -28f;
+        private const float MapMaxX = 52f;
+        private const float MapMinZ = -22f;
+        private const float MapMaxZ = 46f;
+
+        private const float MapWidth = MapMaxX - MapMinX;
+        private const float MapDepth = MapMaxZ - MapMinZ;
+        private const float MapCenterX = (MapMinX + MapMaxX) * 0.5f;
+        private const float MapCenterZ = (MapMinZ + MapMaxZ) * 0.5f;
+
+        /// <summary>
+        /// Through-roads stop short of the wall by this much, matching the
+        /// original layout where the loop roads were inset from the ground edge.
+        /// </summary>
+        private const float RoadInset = 2f;
+
+        private const float RoadSpanX = MapWidth - RoadInset * 2f;
+        private const float RoadSpanZ = MapDepth - RoadInset * 2f;
 
         /// <summary>
         /// Authored characters arrive normalised to a roughly one-unit box, so
@@ -213,8 +251,8 @@ namespace PawsAndLoot.Editor
             GreyboxMapDefinition map =
                 mapObject.AddComponent<GreyboxMapDefinition>();
             map.Configure(
-                56f,
-                44f,
+                MapWidth,
+                MapDepth,
                 CreateLocationReferences(locations),
                 routes,
                 rooftops,
@@ -469,37 +507,37 @@ namespace PawsAndLoot.Editor
         {
             CreateCube(
                 "Ground",
-                new Vector3(0f, -0.15f, 0f),
-                new Vector3(56f, 0.3f, 44f),
+                new Vector3(MapCenterX, -0.15f, MapCenterZ),
+                new Vector3(MapWidth, 0.3f, MapDepth),
                 ground,
                 parent,
                 false);
 
             CreateCube(
                 "North Boundary",
-                new Vector3(0f, 1f, 22f),
-                new Vector3(56f, 2f, 1f),
+                new Vector3(MapCenterX, 1f, MapMaxZ),
+                new Vector3(MapWidth, 2f, 1f),
                 boundary,
                 parent,
                 true);
             CreateCube(
                 "South Boundary",
-                new Vector3(0f, 1f, -22f),
-                new Vector3(56f, 2f, 1f),
+                new Vector3(MapCenterX, 1f, MapMinZ),
+                new Vector3(MapWidth, 2f, 1f),
                 boundary,
                 parent,
                 true);
             CreateCube(
                 "West Boundary",
-                new Vector3(-28f, 1f, 0f),
-                new Vector3(1f, 2f, 44f),
+                new Vector3(MapMinX, 1f, MapCenterZ),
+                new Vector3(1f, 2f, MapDepth),
                 boundary,
                 parent,
                 true);
             CreateCube(
                 "East Boundary",
-                new Vector3(28f, 1f, 0f),
-                new Vector3(1f, 2f, 44f),
+                new Vector3(MapMaxX, 1f, MapCenterZ),
+                new Vector3(1f, 2f, MapDepth),
                 boundary,
                 parent,
                 true);
@@ -510,43 +548,70 @@ namespace PawsAndLoot.Editor
             Material road,
             Material plaza)
         {
+            // Every through-road now spans the widened map. Leaving the old
+            // lengths would have left the new district reachable only by
+            // walking off the end of a road.
             CreateFlatTile(
                 "Central East-West Road",
-                new Vector3(0f, 0.02f, 0f),
-                new Vector3(56f, 0.04f, 4f),
+                new Vector3(MapCenterX, 0.02f, 0f),
+                new Vector3(MapWidth, 0.04f, 4f),
                 road,
                 parent);
             CreateFlatTile(
                 "North Loop Road",
-                new Vector3(0f, 0.025f, 12f),
-                new Vector3(50f, 0.05f, 4f),
+                new Vector3(MapCenterX, 0.025f, 12f),
+                new Vector3(RoadSpanX, 0.05f, 4f),
                 road,
                 parent);
             CreateFlatTile(
                 "South Loop Road",
-                new Vector3(0f, 0.025f, -12f),
-                new Vector3(50f, 0.05f, 4f),
+                new Vector3(MapCenterX, 0.025f, -12f),
+                new Vector3(RoadSpanX, 0.05f, 4f),
                 road,
                 parent);
             CreateFlatTile(
                 "North Outer Alley",
-                new Vector3(0f, 0.03f, 18f),
-                new Vector3(50f, 0.06f, 3f),
+                new Vector3(MapCenterX, 0.03f, 18f),
+                new Vector3(RoadSpanX, 0.06f, 3f),
                 road,
                 parent);
             CreateFlatTile(
                 "South Outer Alley",
-                new Vector3(0f, 0.03f, -18f),
-                new Vector3(50f, 0.06f, 3f),
+                new Vector3(MapCenterX, 0.03f, -18f),
+                new Vector3(RoadSpanX, 0.06f, 3f),
                 road,
                 parent);
 
-            foreach (float x in new[] { -24f, -18f, 0f, 18f, 24f })
+            // The two new east-west roads that open the northern rows.
+            CreateFlatTile(
+                "North District Road",
+                new Vector3(MapCenterX, 0.025f, 22f),
+                new Vector3(RoadSpanX, 0.05f, 4f),
+                road,
+                parent);
+            CreateFlatTile(
+                "North Ridge Road",
+                new Vector3(MapCenterX, 0.025f, 36f),
+                new Vector3(RoadSpanX, 0.05f, 4f),
+                road,
+                parent);
+
+            // Existing verticals reach the new northern rows; x = 30 and 42 are
+            // the two new columns that open the eastern district.
+            foreach (float x in
+                new[] { -24f, -18f, 0f, 18f, 24f, 30f, 42f })
             {
+                bool wide = x == 0f
+                    || Mathf.Abs(x) == 18f
+                    || x == 30f
+                    || x == 42f;
                 CreateFlatTile(
                     $"Vertical Route {x:0}",
-                    new Vector3(x, 0.035f, 0f),
-                    new Vector3(x == 0f || Mathf.Abs(x) == 18f ? 4f : 3f, 0.07f, 40f),
+                    new Vector3(x, 0.035f, MapCenterZ),
+                    new Vector3(
+                        wide ? 4f : 3f,
+                        0.07f,
+                        RoadSpanZ),
                     road,
                     parent);
             }
@@ -604,6 +669,82 @@ namespace PawsAndLoot.Editor
                     + new Vector3(-9f, 0f, -6f),
                 AuthoredRaccoonHeight,
                 180f);
+
+            CreateExpansionDistricts(root);
+        }
+
+        /// <summary>
+        /// Fills the two northern rows and two eastern columns added to the map.
+        ///
+        /// Every footprint below sits in a gap between road tiles, not on one:
+        /// the verticals occupy x = -24, -18, 0, 18, 24, 30, 42 and the
+        /// horizontals z = -18, -12, 0, 12, 18, 22, 36. Buildings are sized to
+        /// leave those lanes clear, because a box collider dropped onto a road
+        /// would silently close a route the MAP-001 validation assumes is open.
+        ///
+        /// Only two house models exist, so they alternate. They are the same
+        /// dressing buildings used elsewhere: a real collider sized from the
+        /// measured model height, and no gameplay behaviour of their own.
+        /// </summary>
+        private static void CreateExpansionDistricts(Transform root)
+        {
+            // North rows. x = -9 and 9 are the 14 m gaps between the verticals
+            // at -18/0 and 0/18, so a 12 m wide house leaves a metre each side.
+            var northRow = new[]
+            {
+                new Vector3(-9f, 0f, 29f),
+                new Vector3(9f, 0f, 29f),
+                new Vector3(-9f, 0f, 42f),
+                new Vector3(9f, 0f, 42f)
+            };
+
+            // East columns. x = 36 and 48 are the gaps between the verticals at
+            // 30/42 and 42/wall, which are 8 m wide, so these are narrower.
+            var eastColumn = new[]
+            {
+                new Vector3(36f, 0f, -6f),
+                new Vector3(36f, 0f, 6f),
+                new Vector3(36f, 0f, 29f),
+                new Vector3(36f, 0f, 42f),
+                new Vector3(48f, 0f, -6f),
+                new Vector3(48f, 0f, 6f),
+                new Vector3(48f, 0f, 29f),
+                new Vector3(48f, 0f, 42f)
+            };
+
+            int placed = 0;
+            placed += PlaceHouseRow(root, northRow, 12f, 6f, placed);
+            placed += PlaceHouseRow(root, eastColumn, 7f, 6f, placed);
+
+            Debug.Log(
+                $"[MAP-006] {placed} houses placed in the north and east "
+                + "expansion districts.");
+        }
+
+        private static int PlaceHouseRow(
+            Transform root,
+            IReadOnlyList<Vector3> centers,
+            float footprintX,
+            float footprintZ,
+            int startIndex)
+        {
+            string[] stems =
+            {
+                "building_house_1f",
+                "building_house_1f_with_interior"
+            };
+
+            for (int index = 0; index < centers.Count; index++)
+            {
+                CreateDressingBuilding(
+                    stems[(startIndex + index) % stems.Length],
+                    root,
+                    centers[index],
+                    footprintX,
+                    footprintZ);
+            }
+
+            return centers.Count;
         }
 
         /// <summary>

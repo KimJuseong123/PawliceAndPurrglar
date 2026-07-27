@@ -6,7 +6,9 @@ using System.Text;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Integration.Network;
 using PawsAndLoot.Logging;
+using PawsAndLoot.UI;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace PawsAndLoot.TechnicalValidation
 {
@@ -30,6 +32,20 @@ namespace PawsAndLoot.TechnicalValidation
         private const string SwapArgument = "-netSwapRoles";
         private const string MatchArgument = "-netMatchSeconds";
 
+        /// <summary>
+        /// How the session is started.
+        ///
+        /// <c>api</c> calls the session controller directly, which is what every
+        /// earlier run did. That is exactly why a lobby whose buttons were wired
+        /// to nothing passed every automated check and still failed for a real
+        /// player: no probe had ever pressed a button.
+        ///
+        /// <c>ui</c> presses the host and join buttons. <c>room</c> presses host
+        /// on one side and, on the other, the LAN room entry that appears once
+        /// the host starts advertising.
+        /// </summary>
+        private const string JoinModeArgument = "-netJoinMode";
+
         [SerializeField]
         private NetworkSessionController session;
 
@@ -52,6 +68,9 @@ namespace PawsAndLoot.TechnicalValidation
         private bool _continueIntoMatch;
         private string _observedRole = "Unassigned";
         private ulong _observedPoliceId;
+        private string _joinMode = "api";
+        private string _pressedControl = string.Empty;
+        private bool _sawRoomEntry;
 
         private void Awake()
         {
@@ -74,6 +93,116 @@ namespace PawsAndLoot.TechnicalValidation
                 ?? NetworkSessionController.DefaultPort.ToString();
             _address = ReadValue(args, AddressArgument)
                 ?? LocalAddressProvider.LoopbackAddress;
+            _joinMode =
+                ReadValue(args, JoinModeArgument)?.ToLowerInvariant()
+                ?? "api";
+        }
+
+        /// <summary>
+        /// Starts through the lobby's own buttons, so the wiring a player
+        /// depends on is the wiring under test.
+        ///
+        /// Returns false while the probe is still waiting — for a room press
+        /// that means the host's advert has not arrived yet — so the caller
+        /// simply tries again next frame until the timeout.
+        /// </summary>
+        private bool TryBeginThroughInterface()
+        {
+            NetworkLobbyPresenter presenter =
+                FindFirstObjectByType<NetworkLobbyPresenter>();
+            if (presenter == null)
+            {
+                Write(false, "No NetworkLobbyPresenter in the lobby scene.");
+                return false;
+            }
+
+            if (_mode == "host")
+            {
+                Button hostButton = FindButton("Host Button");
+                if (hostButton == null)
+                {
+                    Write(false, "Lobby has no reachable host button.");
+                    return false;
+                }
+
+                _pressedControl = "Host Button";
+                hostButton.onClick.Invoke();
+                return true;
+            }
+
+            if (_joinMode == "room")
+            {
+                // The first active room slot is the host's advert. Waiting for
+                // it to appear is the property under test.
+                for (int index = 0; index < 4; index++)
+                {
+                    Button slot = FindButton($"Room Slot {index}");
+                    if (slot == null
+                        || !slot.gameObject.activeInHierarchy
+                        || !slot.interactable)
+                    {
+                        continue;
+                    }
+
+                    _pressedControl = $"Room Slot {index}";
+                    _sawRoomEntry = true;
+                    slot.onClick.Invoke();
+                    return true;
+                }
+
+                return false;
+            }
+
+            InputField addressField = FindField("Join Address");
+            InputField portField = FindField("Port");
+            if (addressField != null)
+            {
+                addressField.text = _address;
+            }
+
+            if (portField != null)
+            {
+                portField.text = _port;
+            }
+
+            Button joinButton = FindButton("Join Button");
+            if (joinButton == null)
+            {
+                Write(false, "Lobby has no reachable join button.");
+                return false;
+            }
+
+            _pressedControl = "Join Button";
+            joinButton.onClick.Invoke();
+            return true;
+        }
+
+        private static Button FindButton(string objectName)
+        {
+            foreach (Button button in
+                FindObjectsByType<Button>(FindObjectsSortMode.None))
+            {
+                if (button.name == objectName)
+                {
+                    return button;
+                }
+            }
+
+            return null;
+        }
+
+        private static InputField FindField(string objectName)
+        {
+            foreach (InputField field in
+                FindObjectsByType<InputField>(FindObjectsSortMode.None))
+            {
+                if (field.name == objectName)
+                {
+                    return field;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -98,6 +227,23 @@ namespace PawsAndLoot.TechnicalValidation
             if (Unity.Netcode.NetworkManager.Singleton == null)
             {
                 return false;
+            }
+
+            if (_joinMode != "api")
+            {
+                if (!TryBeginThroughInterface())
+                {
+                    // Not an error yet: a room press waits for the advert.
+                    return false;
+                }
+
+                _startRequested = true;
+                GameLogger.Info(
+                    GameLogCategory.Network,
+                    $"Lobby probe '{_mode}' pressed "
+                    + $"'{_pressedControl}'.",
+                    this);
+                return true;
             }
 
             _startRequested = true;
@@ -227,6 +373,11 @@ namespace PawsAndLoot.TechnicalValidation
                 "connectedPlayers",
                 session != null ? session.ConnectedPlayerCount : 0);
             AppendBool(json, "rolesAssigned", _everReady);
+            // Which path started the session, and what it actually pressed.
+            // "api" here means the interface was never exercised.
+            Append(json, "joinMode", _joinMode);
+            Append(json, "pressedControl", _pressedControl);
+            AppendBool(json, "sawRoomEntry", _sawRoomEntry);
             Append(json, "localRole", _observedRole);
             AppendNumber(json, "policeClientId", _observedPoliceId);
             Append(
