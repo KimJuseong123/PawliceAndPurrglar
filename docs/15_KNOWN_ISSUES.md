@@ -23,6 +23,39 @@
 
 ## 현재 항목
 
+### ISSUE-019 TopDownEngine 없는 클론에서 컴파일 실패와 캐릭터 매몰
+
+- 종류: 버그
+- 상태: RESOLVED
+- 심각도: Critical
+- 발견 날짜: 2026-07-27
+- 발생 환경: TopDownEngine이 없는 모든 클론. `Assets/TopDownEngine/`은
+  라이선스가 재배포를 금지해 gitignore 대상이다
+- 확인 절차: TDE 없이 클론 → 임포트 → 빌드 → 경기 씬 진입
+- 예상: 애니메이션만 없고 나머지는 정상
+- 실제: 두 단계로 깨졌다.
+  1. `Assets/CatCops/Scripts/CatCopsTopDownEngineBridge.cs`가 `MoreMountains`를
+     참조해 **프로젝트 전체 컴파일이 실패**했다. 레거시 프로토타입의 의존성이
+     모두의 빌드 오류가 됐다
+  2. 컴파일을 넘겨도 `CharacterLocomotion.controller`가 참조하는 클립 6개가
+     전부 TDE 파일이라 참조가 끊기고, 휴머노이드 Animator가 리타게팅으로
+     캐릭터를 주저앉혔다. 실측: 경찰 힙 0.45m → **0.07m**, 발 0.13m →
+     **-0.14m**(지면 아래)
+- 영향: 저장소를 클론한 팀원 전원. 개발 PC에는 TDE가 로컬로 있어 드러나지 않았다
+- 임시 해결: TDE 보유자는 로컬 임포트
+- 관련 작업: MODEL-002
+- 해결 기록: 2026-07-27.
+  1. 브리지를 `CATCOPS_TOPDOWNENGINE` 정의로 감쌌다. TDE 없이 컴파일된다
+  2. `AnimatorClipGuard`가 쓸 수 있는 클립이 없으면 Animator를 끈다. 바인드
+     포즈는 `NormaliseToHeight`가 높이를 측정한 그 포즈라 정확히 서 있다.
+     실측: 발 0.195m, 힙 0.483m로 TDE 보유 환경(0.130m / 0.449m)과 3~7cm 차이
+
+`MODEL-002`(캐릭터별 클립 6종)가 들어오면 이 의존성 자체가 사라진다.
+
+**측정 방법에 관한 교훈**: 처음에 `Renderer.bounds`로 쟀는데 가드 유무에 상관없이
+같은 값이 나왔다. `SkinnedMeshRenderer.bounds`는 루트 본 기준 사전 계산 박스라
+애니메이션된 포즈를 반영하지 않는다. 뼈의 world Y를 재야 보인다.
+
 ### ISSUE-018 SSAFY Wi-Fi에서는 두 PC가 서로 접속하지 못할 수 있다
 
 - 종류: 환경 제약

@@ -55,6 +55,21 @@ Claude Code 전용 작업 지침서다.
 > `GraphicsSettings`가 더러워진다. 도구가 원복하지만, 실행 후
 > `git status -- ProjectSettings/`가 비어 있는지 확인한다.
 
+> **TopDownEngine은 저장소에 없다. 이걸 전제로 확인한다.** 라이선스가 재배포를
+> 금지해서 제외돼 있고, 이 개발 PC에만 로컬로 있다. 두 가지가 걸린다
+> (`ISSUE-019`).
+>
+> 1. **컴파일**: `Assets/CatCops/`의 레거시 브리지가 TDE를 참조한다.
+>    `CATCOPS_TOPDOWNENGINE` 정의로 감싸져 있으니 그 안의 코드를 되살리지 않는다.
+> 2. **애니메이션**: `CharacterLocomotion.controller`의 클립 6개가 TDE 파일이다.
+>    TDE 없는 환경에서는 참조가 끊기고, `AnimatorClipGuard`가 Animator를 끈다.
+>    이 가드를 없애면 캐릭터가 땅에 묻힌다 (힙 0.45m → 0.07m로 주저앉음).
+>
+> **스킨드 캐릭터의 위치는 `Renderer.bounds`로 재지 않는다.** 루트 본 기준
+> 사전 계산 박스라 애니메이션된 실제 포즈를 반영하지 않는다. 주저앉은 캐릭터도
+> 정상으로 보고한다. 뼈(`Hip`, `L_Foot`)의 world Y를 재야 한다.
+> `NetworkMatchProbe`가 그 값을 기록한다.
+
 > **씬 오브젝트를 런타임에 움직이려면 두 가지를 확인한다.** 둘 다 실패해도
 > 예외도 로그도 남지 않아서, 눈으로 볼 때까지 모른다 (`ART-013`에서 뚜껑이
 > 안 열린 원인이 정확히 이 두 개였다).

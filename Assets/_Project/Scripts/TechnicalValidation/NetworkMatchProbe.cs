@@ -496,6 +496,51 @@ namespace PawsAndLoot.TechnicalValidation
             link.transform.position = position;
         }
 
+        /// <summary>
+        /// World height of a named bone on a character, or 999 when it is not
+        /// found so "absent" cannot read as "correctly placed".
+        ///
+        /// Bones, not <c>Renderer.bounds</c>. A SkinnedMeshRenderer's bounds are
+        /// derived from its root bone and a precomputed local box, so they do not
+        /// track the animated pose: the mesh can be sunk to the waist while the
+        /// bounds report it standing. Measuring the skeleton is the only way to
+        /// see where the character actually is.
+        /// </summary>
+        private float MeasureBoneHeight(PlayerRole role, string boneName)
+        {
+            NetworkPlayerLink link = FindLink(role);
+            if (link == null)
+            {
+                return 999f;
+            }
+
+            foreach (Transform bone in
+                link.GetComponentsInChildren<Transform>(true))
+            {
+                if (bone.name == boneName)
+                {
+                    return bone.position.y;
+                }
+            }
+
+            return 999f;
+        }
+
+        private static int CountEnabledAnimators()
+        {
+            int enabled = 0;
+            foreach (Animator animator in
+                FindObjectsByType<Animator>(FindObjectsSortMode.None))
+            {
+                if (animator.enabled)
+                {
+                    enabled++;
+                }
+            }
+
+            return enabled;
+        }
+
         private NetworkPlayerLink FindLink(PlayerRole role)
         {
             foreach (NetworkPlayerLink link in
@@ -602,6 +647,31 @@ namespace PawsAndLoot.TechnicalValidation
                 _peakRemoteDrivenLinks);
             Append(json, "policePosition", Format(police));
             Append(json, "thiefPosition", Format(thief));
+
+            // How far each character's drawn mesh sits above or below the point
+            // its transform stands on. Near zero means it is on the ground; a
+            // negative number means the model is sunk into it.
+            //
+            // Worth reporting because nothing else catches this: the transform
+            // is correct either way, so positions and tests all pass while the
+            // player sees a character buried to the waist.
+            AppendNumber(
+                json,
+                "policeFootY",
+                MeasureBoneHeight(PlayerRole.Police, "L_Foot"));
+            AppendNumber(
+                json,
+                "policeHipY",
+                MeasureBoneHeight(PlayerRole.Police, "Hip"));
+            AppendNumber(
+                json,
+                "thiefFootY",
+                MeasureBoneHeight(PlayerRole.Thief, "L_Foot"));
+            AppendNumber(
+                json,
+                "thiefHipY",
+                MeasureBoneHeight(PlayerRole.Thief, "Hip"));
+            AppendNumber(json, "animatorsEnabled", CountEnabledAnimators());
 
             // NET-005
             AppendNumber(json, "lootLinks", lootLinks);

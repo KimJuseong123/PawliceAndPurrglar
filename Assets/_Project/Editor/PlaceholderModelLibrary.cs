@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PawsAndLoot.Animation;
 using PawsAndLoot.Gameplay.Players;
 using UnityEditor;
 using UnityEngine;
@@ -134,6 +135,17 @@ namespace PawsAndLoot.Editor
             animator.runtimeAnimatorController = controller;
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+            // The clips this controller points at live in TopDownEngine, which
+            // cannot be committed. Height and foot placement were measured just
+            // above in the bind pose, before any controller existed, so a
+            // checkout without those clips must not let the Animator retarget
+            // the rig to a different rest pose — that is what sank the
+            // characters into the ground.
+            AnimatorClipGuard guard =
+                instance.GetComponent<AnimatorClipGuard>()
+                ?? instance.AddComponent<AnimatorClipGuard>();
+            guard.Configure(animator);
         }
 
         /// <summary>
@@ -390,6 +402,15 @@ namespace PawsAndLoot.Editor
             animator.runtimeAnimatorController = controller;
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+            // The clips live in TopDownEngine, which cannot be committed. In a
+            // checkout without it this guard switches the Animator off so the
+            // character keeps the bind pose the height offsets were measured
+            // from, instead of sinking into the ground.
+            AnimatorClipGuard guard =
+                instance.GetComponent<AnimatorClipGuard>()
+                ?? instance.AddComponent<AnimatorClipGuard>();
+            guard.Configure(animator);
         }
 
         private static void ApplyRoleMaterials(
