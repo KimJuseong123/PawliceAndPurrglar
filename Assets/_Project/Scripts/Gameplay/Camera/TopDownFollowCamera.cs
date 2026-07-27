@@ -8,7 +8,7 @@ namespace PawsAndLoot.Gameplay.Camera
         private Transform target;
 
         [SerializeField]
-        private Vector3 offset = new(0f, 13.6f, -11.9f);
+        private Vector3 offset = new(0f, 12.36f, -10.82f);
 
         [SerializeField, Min(0.01f)]
         private float smoothTimeSeconds = 0.12f;

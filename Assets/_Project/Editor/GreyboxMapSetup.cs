@@ -68,16 +68,17 @@ namespace PawsAndLoot.Editor
         /// movement basis both follow this single offset.
         /// </summary>
         /// <summary>
-        /// Pulled 15% closer than the original (0, 16, -14), which magnifies
-        /// everything on screen by about 17%. The village was small enough in
-        /// frame that the characters and animals were hard to read.
+        /// Pulled in from the original (0, 16, -14) in two steps: 15% then a
+        /// further 10%, so everything on screen is about 29% larger than it
+        /// started. The village read as too small in frame to follow the
+        /// characters and animals.
         ///
         /// The angle is unchanged: both components are scaled by the same
         /// factor, so the camera moves along the same line and the fixed
         /// rotation derived from this offset stays identical.
         /// </summary>
         private static readonly Vector3 FixedCameraOffset =
-            new(0f, 13.6f, -11.9f);
+            new(0f, 12.36f, -10.82f);
 
         /// <summary>
         /// Village extents. The original 56x44 block is kept exactly where it
@@ -107,6 +108,35 @@ namespace PawsAndLoot.Editor
 
         private const float RoadSpanX = MapWidth - RoadInset * 2f;
         private const float RoadSpanZ = MapDepth - RoadInset * 2f;
+
+        /// <summary>
+        /// The expansion street grid.
+        ///
+        /// Every value is chosen against the lanes the original grid already
+        /// occupies — verticals at x = -24, -18, 0, 18, 24 and horizontals at
+        /// z = -18, -12, 0, 12, 18 — so a new street never lands on top of one
+        /// or a metre away from it. The house rows below sit in the gaps these
+        /// leave, which is what makes the district read as blocks.
+        /// </summary>
+        private const float NorthStreetNear = 26f;
+        private const float NorthStreetFar = 39f;
+        private const float EastStreet = 40f;
+
+        /// <summary>
+        /// The band freed by dropping the old north outer alley at z = 18.
+        ///
+        /// That alley was 4 m from the first district street, leaving a sliver
+        /// of bare ground no block could use, and the two authored houses were
+        /// already sitting on top of it and blocking it. No route referenced it
+        /// — the eight waypoints on z = -18 are all the southern alley — so the
+        /// district street replaces it and this band becomes buildable.
+        /// </summary>
+        private const float NorthBandRow = 19f;
+
+        private const float NorthRowNear = 32.5f;
+        private const float NorthRowFar = 43.4f;
+        private const float EastColumnNear = 32f;
+        private const float EastColumnFar = 47f;
 
         /// <summary>
         /// Authored characters arrive normalised to a roughly one-unit box, so
@@ -569,12 +599,10 @@ namespace PawsAndLoot.Editor
                 new Vector3(RoadSpanX, 0.05f, 4f),
                 road,
                 parent);
-            CreateFlatTile(
-                "North Outer Alley",
-                new Vector3(MapCenterX, 0.03f, 18f),
-                new Vector3(RoadSpanX, 0.06f, 3f),
-                road,
-                parent);
+            // The north outer alley that used to run along z = 18 is gone; the
+            // district street at z = 26 does its job without stranding a
+            // 0.5 m strip between the two. The southern alley stays: eight
+            // route waypoints run along it.
             CreateFlatTile(
                 "South Outer Alley",
                 new Vector3(MapCenterX, 0.03f, -18f),
@@ -582,29 +610,32 @@ namespace PawsAndLoot.Editor
                 road,
                 parent);
 
-            // The two new east-west roads that open the northern rows.
+            // Expansion streets. Placed so the new districts read as city
+            // blocks rather than two stripes across an empty field: each street
+            // bounds a block that is actually filled with houses, and the
+            // spacing matches the block depth the original grid already uses.
             CreateFlatTile(
                 "North District Road",
-                new Vector3(MapCenterX, 0.025f, 22f),
+                new Vector3(MapCenterX, 0.025f, NorthStreetNear),
                 new Vector3(RoadSpanX, 0.05f, 4f),
                 road,
                 parent);
             CreateFlatTile(
                 "North Ridge Road",
-                new Vector3(MapCenterX, 0.025f, 36f),
+                new Vector3(MapCenterX, 0.025f, NorthStreetFar),
                 new Vector3(RoadSpanX, 0.05f, 4f),
                 road,
                 parent);
 
-            // Existing verticals reach the new northern rows; x = 30 and 42 are
-            // the two new columns that open the eastern district.
+            // One new vertical, not two. A second would have landed within a
+            // metre of the existing x = 24 alley and left a sliver of bare
+            // ground between them instead of a block.
             foreach (float x in
-                new[] { -24f, -18f, 0f, 18f, 24f, 30f, 42f })
+                new[] { -24f, -18f, 0f, 18f, 24f, EastStreet })
             {
                 bool wide = x == 0f
                     || Mathf.Abs(x) == 18f
-                    || x == 30f
-                    || x == 42f;
+                    || x == EastStreet;
                 CreateFlatTile(
                     $"Vertical Route {x:0}",
                     new Vector3(x, 0.035f, MapCenterZ),
@@ -642,24 +673,31 @@ namespace PawsAndLoot.Editor
 
             // MAP-002. Each dressing building gets a simple box collider sized
             // from its measured height, never its visual mesh.
+            // All three sit in the band between the north loop road and the
+            // first district street, on the block grid rather than across it.
+            //
+            // Their old positions were both wrong and only visible from above:
+            // the station was centred at x = -25 with a 12 m footprint, so a
+            // third of it stood outside the west wall, and the two houses were
+            // laid across the z = 18 alley, blocking a road the player could
+            // otherwise run down.
             CreateDressingBuilding(
                 "building_police_station",
                 root,
-                locations[GreyboxLocationId.PoliceSpawn].position
-                    + new Vector3(-1f, 0f, 7f),
+                new Vector3(-9f, 0f, NorthBandRow),
                 12f,
                 8f);
             CreateDressingBuilding(
                 "building_house_1f",
                 root,
-                new Vector3(-15f, 0f, 17f),
-                10f,
+                new Vector3(9f, 0f, NorthBandRow),
+                12f,
                 8f);
             CreateDressingBuilding(
                 "building_house_1f_with_interior",
                 root,
-                new Vector3(15f, 0f, 17f),
-                10f,
+                new Vector3(EastColumnNear, 0f, NorthBandRow),
+                9f,
                 8f);
 
             CreateAuthoredAnimal(
@@ -688,33 +726,79 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static void CreateExpansionDistricts(Transform root)
         {
-            // North rows. x = -9 and 9 are the 14 m gaps between the verticals
-            // at -18/0 and 0/18, so a 12 m wide house leaves a metre each side.
-            var northRow = new[]
-            {
-                new Vector3(-9f, 0f, 29f),
-                new Vector3(9f, 0f, 29f),
-                new Vector3(-9f, 0f, 42f),
-                new Vector3(9f, 0f, 42f)
-            };
-
-            // East columns. x = 36 and 48 are the gaps between the verticals at
-            // 30/42 and 42/wall, which are 8 m wide, so these are narrower.
-            var eastColumn = new[]
-            {
-                new Vector3(36f, 0f, -6f),
-                new Vector3(36f, 0f, 6f),
-                new Vector3(36f, 0f, 29f),
-                new Vector3(36f, 0f, 42f),
-                new Vector3(48f, 0f, -6f),
-                new Vector3(48f, 0f, 6f),
-                new Vector3(48f, 0f, 29f),
-                new Vector3(48f, 0f, 42f)
-            };
-
             int placed = 0;
-            placed += PlaceHouseRow(root, northRow, 12f, 6f, placed);
-            placed += PlaceHouseRow(root, eastColumn, 7f, 6f, placed);
+
+            // Two houses per block rather than one. A single house in a 14 m
+            // block left the district reading as empty ground with a building
+            // dropped in it; a pair with an alley between them reads as a
+            // street of houses, which is what the concept map shows.
+            // One more house in the band the removed alley freed, so that band
+            // reads as a block like the rest instead of leftover ground.
+            placed += PlaceHouseRow(
+                root,
+                new[] { new Vector3(EastColumnFar, 0f, NorthBandRow) },
+                8f,
+                8f,
+                placed);
+
+            float[] narrowX = { -12.5f, -5.5f, 5.5f, 12.5f };
+            foreach (float rowZ in
+                new[] { NorthRowNear, NorthRowFar })
+            {
+                float depth = rowZ == NorthRowNear ? 8f : 4.5f;
+                var row = new List<Vector3>();
+                foreach (float x in narrowX)
+                {
+                    row.Add(new Vector3(x, 0f, rowZ));
+                }
+
+                placed += PlaceHouseRow(root, row, 6f, depth, placed);
+
+                // The same row continued into the eastern district, where the
+                // blocks are wider so the houses are too.
+                placed += PlaceHouseRow(
+                    root,
+                    new[]
+                    {
+                        new Vector3(EastColumnNear, 0f, rowZ)
+                    },
+                    9f,
+                    depth,
+                    placed);
+                placed += PlaceHouseRow(
+                    root,
+                    new[]
+                    {
+                        new Vector3(EastColumnFar, 0f, rowZ)
+                    },
+                    8f,
+                    depth,
+                    placed);
+            }
+
+            // The eastern columns also run south, alongside the original core,
+            // filling the blocks the widened map opened up beside it.
+            foreach (float columnZ in new[] { -6f, 6f })
+            {
+                placed += PlaceHouseRow(
+                    root,
+                    new[]
+                    {
+                        new Vector3(EastColumnNear, 0f, columnZ)
+                    },
+                    9f,
+                    6f,
+                    placed);
+                placed += PlaceHouseRow(
+                    root,
+                    new[]
+                    {
+                        new Vector3(EastColumnFar, 0f, columnZ)
+                    },
+                    8f,
+                    6f,
+                    placed);
+            }
 
             Debug.Log(
                 $"[MAP-006] {placed} houses placed in the north and east "

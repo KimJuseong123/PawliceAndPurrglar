@@ -81,6 +81,20 @@ namespace PawsAndLoot.Gameplay.Players
                 return;
             }
 
+            // A disabled controller means this character is driven from
+            // somewhere else — in a session the host owns it and the transform
+            // arrives by replication. Moving it here is meaningless, and
+            // CharacterController logs an error per frame if asked, which
+            // buries every other message in the console.
+            //
+            // The companion agent already guards the same way.
+            if (characterController == null
+                || !characterController.enabled)
+            {
+                LastPlanarVelocity = Vector3.zero;
+                return;
+            }
+
             _dashCooldownRemainingSeconds = Mathf.Max(
                 0f,
                 _dashCooldownRemainingSeconds - deltaTime);

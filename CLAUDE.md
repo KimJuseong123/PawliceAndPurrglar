@@ -46,6 +46,15 @@ Claude Code 전용 작업 지침서다.
 > 저장된 씬에서 확인하는 법: `.unity` 파일의 `m_OnClick:` 밑이
 > `m_Calls: []`이면 연결이 없는 것이다.
 
+> **맵 배치를 바꿨으면 `Capture Map Overview`로 평면도를 본다.** 건물이 도로
+> 위에 얹혀 있거나 벽 밖으로 나가 있어도 테스트·검증기·플레이 카메라 중 어느
+> 것도 잡지 못한다. 실제로 주택 2채가 골목을 막고 경찰서가 벽을 3m 뚫고 나간
+> 채로 오래 남아 있었고, 평면도를 찍고 나서야 발견했다.
+>
+> 이 도구는 그래픽 모드 배치로 도는데 그 부작용으로 `QualitySettings`와
+> `GraphicsSettings`가 더러워진다. 도구가 원복하지만, 실행 후
+> `git status -- ProjectSettings/`가 비어 있는지 확인한다.
+
 
 `Game` 씬의 마을, 상호작용 지점, HUD, 시스템 배선은 `.unity` 파일을 손으로
 편집해서 만든 것이 아니라 **에디터 스크립트가 코드로 생성**한다.
@@ -73,6 +82,7 @@ Validate Basic Scenes             씬 계약과 빌드 순서 검사
 Ensure Bootstrap Services         Bootstrap 서비스 오브젝트 보장
 Rebuild MAP-001 Greybox Village   Game 씬 마을 재생성
 Validate MAP-001 Greybox Village  장소·경로·폭·충돌 검사
+Capture Map Overview              Game 씬 상공 평면도 → Logs/map-overview.png
 Create Default Config Assets      Settings/Configs 7개 에셋 생성
 Validate Default Config Assets    설정값과 필수 참조 검사
 Create Default Log Config         로그 설정 생성
