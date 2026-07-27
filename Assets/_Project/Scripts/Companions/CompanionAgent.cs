@@ -92,7 +92,7 @@ namespace PawsAndLoot.Companions
                     config.ArrivalTolerance;
             }
 
-            distractionVisual?.SetActive(false);
+            SetDistractionVisualActive(false);
         }
 
         public bool TryBeginCommand(CompanionCommandRequest request)
@@ -108,7 +108,7 @@ namespace PawsAndLoot.Companions
             _hasActiveRequest = true;
             _commandElapsed = 0f;
             _executeRemaining = 0f;
-            distractionVisual?.SetActive(false);
+            SetDistractionVisualActive(false);
             ChangeState(CompanionState.MoveToTarget);
             if (navigationAgent.SetDestination(
                     request.TargetPosition))
@@ -127,7 +127,7 @@ namespace PawsAndLoot.Companions
             _commandElapsed = 0f;
             _executeRemaining = 0f;
             _cooldownRemaining = 0f;
-            distractionVisual?.SetActive(false);
+            SetDistractionVisualActive(false);
             if (navigationAgent != null
                 && navigationAgent.enabled
                 && navigationAgent.isOnNavMesh)
@@ -157,7 +157,7 @@ namespace PawsAndLoot.Companions
                     config.ArrivalTolerance;
             }
 
-            distractionVisual?.SetActive(false);
+            SetDistractionVisualActive(false);
         }
 
         private void Update()
@@ -246,7 +246,7 @@ namespace PawsAndLoot.Companions
             if (_activeRequest.CommandId
                 == CompanionCommandId.Distract)
             {
-                distractionVisual?.SetActive(true);
+                SetDistractionVisualActive(true);
             }
 
             ChangeState(CompanionState.ExecuteCommand);
@@ -262,7 +262,7 @@ namespace PawsAndLoot.Companions
                 return;
             }
 
-            distractionVisual?.SetActive(false);
+            SetDistractionVisualActive(false);
             CompanionCommandRequest completed = _activeRequest;
             _hasActiveRequest = false;
             _cooldownRemaining = config.CommandCooldownSeconds;
@@ -364,7 +364,7 @@ namespace PawsAndLoot.Companions
             CompanionCommandRequest failed = _activeRequest;
             _hasActiveRequest = false;
             _commandElapsed = 0f;
-            distractionVisual?.SetActive(false);
+            SetDistractionVisualActive(false);
             if (navigationAgent.isOnNavMesh)
             {
                 navigationAgent.ResetPath();
@@ -376,6 +376,14 @@ namespace PawsAndLoot.Companions
                 this);
             CommandFailed?.Invoke(failed, failure);
             ChangeState(CompanionState.ReturnToOwner);
+        }
+
+        private void SetDistractionVisualActive(bool isActive)
+        {
+            if (distractionVisual != null)
+            {
+                distractionVisual.SetActive(isActive);
+            }
         }
 
         private void ChangeState(CompanionState next)

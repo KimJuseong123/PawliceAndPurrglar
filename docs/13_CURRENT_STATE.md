@@ -155,8 +155,9 @@ Tools/VoiceGateway/
 - 중계 서버는 `gpt-4o-mini-transcribe`와 제한 Structured Output을 사용
 - API 키는 `OPENAI_API_KEY` 환경 변수에만 두며 Unity 에셋에 저장하지 않음
 - Node 중계 서버 단위 테스트 5/5 통과
-- 지정 Unity `6000.5.4f1`이 현재 PC에 설치되어 있지 않아 Game 씬 재생성,
-  Unity 컴파일, Edit Mode·Play Mode, 실제 마이크·OpenAI 호출은 아직 `NOT RUN`
+- Unity `6000.5.4f1`에서 Game 씬 생성·검증, Edit Mode 87/87,
+  Play Mode 51/51, Windows 플레이테스트 빌드와 15초 Player 스모크 테스트 통과
+- `OPENAI_API_KEY`가 설정되지 않아 실제 마이크·OpenAI 호출은 아직 `NOT RUN`
 
 - NET-001 로컬 접속 검증 씬과 빌드:
 
@@ -290,7 +291,7 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
   - 캐릭터 4종을 한 씬에 배치
   - 애니메이션 클립이 있으면 기본 클립 재생, `Idle`/`Walk`가 함께 있으면 이동 연동
   - 결과 JSON과 스크린샷 저장
-- 고정 Unity 버전이 없어 실제 배치 실행은 아직 미검증
+- Unity `6000.5.4f1`은 설치됐지만 CHAR-001 배치 검증은 이번 작업에서 미실행
 
 ## 아직 존재하지 않는 목표 결과
 
@@ -298,7 +299,6 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
 - 경찰 Armature와 Avatar
 - `Idle`, `Run`, `ComedyRun`
 - 너구리 상인의 출현·이동·판매 피드백
-- 생성 스크립트로 갱신된 Game 씬의 Unity 런타임 검증
 - 도둑의 판매 승리를 가능하게 하는 보물 배치 또는 목표 금액
 - 신규 4종 캐릭터 FBX의 실제 애니메이션 클립 유무와 개수에 대한 런타임 검증 결과
 
@@ -342,14 +342,14 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
 - 상태: `IN_PROGRESS`
 - 결과: 명령 모델, NavMesh 동물 에이전트, 숫자키, `V` Push-to-Talk,
   localhost OpenAI 중계 서버, 피드백 HUD와 자동 테스트 소스를 구현했다.
-  Node 테스트는 통과했으며 Unity 고정 버전 부재로 씬 생성과 런타임 검증이 남았다.
+  Node 테스트와 Unity 씬 생성, Edit/Play Mode, Windows 빌드·스모크 테스트를
+  통과했으며 실제 한국어 발화와 OpenAI 호출 검증이 남았다.
 
 ## 바로 다음 작업
 
-1. Unity `6000.5.4f1`에서 Game 씬 재생성, 컴파일과 Edit/Play Mode 테스트
-2. 실제 한국어 `TRACK`·`DISTRACT` 발화와 실패 복구 검증
-3. CHAR-001 신규 4종 캐릭터 런타임 검증
-4. `ISSUE-011`: 도둑 판매 승리 경로 확보
+1. 실제 한국어 `TRACK`·`DISTRACT` 발화와 실패 복구 검증
+2. CHAR-001 신규 4종 캐릭터 런타임 검증
+3. `ISSUE-011`: 도둑 판매 승리 경로 확보
 
 ## 차단 요소
 
@@ -358,7 +358,8 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
 - 네트워크 서비스와 최종 권한 구조 미정
 - 현재 개발 PC에서 Unity 내장 Windows 받아쓰기 생성 실패
 - 제출 빌드용 음성 중계 서버 배포 방식 미정
-- Unity `6000.5.4f1` 미설치로 VOICE-008·CHAR-001 자동 실행 미검증
+- `OPENAI_API_KEY` 미설정으로 VOICE-008 실제 발화·OpenAI 호출 미검증
+- CHAR-001 자동 배치 검증 미실행
 
 TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 단축키 핵심
 프로토타입은 음성 통합과 분리해 진행하며 실제 STT를 구현한 것으로 표현하지 않는다.
@@ -378,8 +379,11 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-07-27 | VOICE-008 Unity 씬 생성·정적 검증 | `MAP-001 greybox village created and validated`, 통과 |
+| 2026-07-27 | VOICE-008 Edit Mode 테스트 | 87/87 통과 |
+| 2026-07-27 | VOICE-008 Play Mode 테스트 | 51/51 통과 |
+| 2026-07-27 | Windows 플레이테스트 빌드·Player 스모크 테스트 | 3개 씬 빌드 성공, 15초 실행 중 시작 예외 없음 |
 | 2026-07-26 | VOICE-008 Node 중계 서버 단위 테스트 | 5/5 통과 |
-| 2026-07-26 | VOICE-008 Unity 컴파일·씬·런타임 | 고정 Unity 버전 미설치로 미실행 |
 | 2026-07-24 | 문서 파일과 현재 경로 조사 | 완료 |
 | 2026-07-24 | Unity 버전 확인 | `6000.5.4f1` |
 | 2026-07-24 | BASE-001 목표 폴더와 Git 경계 검사 | 완료 |

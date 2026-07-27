@@ -98,7 +98,7 @@ namespace PawsAndLoot.Companions
                     : companion.name,
                 target == null
                     ? string.Empty
-                    : target.GetInstanceID().ToString(),
+                    : target.GetEntityId().ToString(),
                 targetPosition,
                 Time.unscaledTimeAsDouble,
                 source);
