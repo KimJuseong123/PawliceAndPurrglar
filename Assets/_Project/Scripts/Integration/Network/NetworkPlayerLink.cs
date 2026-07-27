@@ -1,4 +1,7 @@
+using PawsAndLoot.Gameplay.Arrest;
+using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
+using PawsAndLoot.Input;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -43,6 +46,42 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
 
+        /// <summary>
+        /// NET-006. The thief's running total, written only by the host.
+        /// </summary>
+        private readonly NetworkVariable<int> _soldAmount =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        /// <summary>
+        /// NET-007. The police's arrest progress and its outcome.
+        /// </summary>
+        private readonly NetworkVariable<float> _arrestSeconds =
+            new(
+                0f,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<bool> _arrestCompleted =
+            new(
+                false,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<int> _arrestInterruptions =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<int> _arrestInterruptReason =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
         [SerializeField]
         private PlayerRoleIdentity identity;
 
@@ -54,6 +93,27 @@ namespace PawsAndLoot.Integration.Network
 
         [SerializeField]
         private CharacterController characterController;
+
+        [SerializeField]
+        private PlayerInteractionScanner scanner;
+
+        [SerializeField]
+        private PlayerInteractionInput interactionInput;
+
+        [SerializeField]
+        private LootCarrier carrier;
+
+        [SerializeField]
+        private LootDropInput dropInput;
+
+        [SerializeField]
+        private CompanionCommandKeyboardInput companionInput;
+
+        [SerializeField]
+        private ThiefLootWallet wallet;
+
+        [SerializeField]
+        private ArrestProgressController arrestProgress;
 
         [SerializeField, Min(1f)]
         private float catchUpSpeed = 14f;
@@ -74,6 +134,9 @@ namespace PawsAndLoot.Integration.Network
         public Vector3 ReplicatedPosition => _position.Value;
         public float ReplicatedNormalizedSpeed => _normalizedSpeed.Value;
         public bool IsRemoteDriven => _remoteDriven;
+        public int ReplicatedSoldAmount => _soldAmount.Value;
+        public float ReplicatedArrestSeconds => _arrestSeconds.Value;
+        public bool ReplicatedArrestCompleted => _arrestCompleted.Value;
 
         public void Configure(
             PlayerRoleIdentity configuredIdentity,
@@ -85,6 +148,29 @@ namespace PawsAndLoot.Integration.Network
             motor = configuredMotor;
             keyboardInput = configuredInput;
             characterController = configuredController;
+        }
+
+        /// <summary>
+        /// NET-005 to NET-007. Supplies the gameplay components this link routes
+        /// requests into and replicates results from. Kept separate from
+        /// <see cref="Configure"/> so movement stays usable on its own.
+        /// </summary>
+        public void ConfigureGameplay(
+            PlayerInteractionScanner configuredScanner,
+            PlayerInteractionInput configuredInteractionInput,
+            LootCarrier configuredCarrier,
+            LootDropInput configuredDropInput,
+            CompanionCommandKeyboardInput configuredCompanionInput,
+            ThiefLootWallet configuredWallet,
+            ArrestProgressController configuredArrestProgress)
+        {
+            scanner = configuredScanner;
+            interactionInput = configuredInteractionInput;
+            carrier = configuredCarrier;
+            dropInput = configuredDropInput;
+            companionInput = configuredCompanionInput;
+            wallet = configuredWallet;
+            arrestProgress = configuredArrestProgress;
         }
 
         public override void OnNetworkSpawn()
@@ -106,10 +192,67 @@ namespace PawsAndLoot.Integration.Network
                 }
             }
 
+            // NET-005/007. The same rule as movement: only the host runs the
+            // rules. A client's loot and arrest components become displays.
+            if (arrestProgress != null)
+            {
+                arrestProgress.SetRemoteControlled(_remoteDriven);
+            }
+
             if (IsServer)
             {
                 _position.Value = transform.position;
                 _yaw.Value = transform.eulerAngles.y;
+            }
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            if (arrestProgress != null)
+            {
+                arrestProgress.SetRemoteControlled(false);
+            }
+        }
+
+        /// <summary>
+        /// NET-005. Asks the host to run this player's interact key.
+        ///
+        /// The host re-scans on its own simulation, so it — not the requester —
+        /// decides what is in range and whether the loot is still free. Two
+        /// players pressing at once produce two server calls in some order, and
+        /// the second finds the item already carried.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitInteractRpc()
+        {
+            if (scanner != null)
+            {
+                scanner.TryInteractCurrent();
+            }
+        }
+
+        /// <summary>
+        /// NET-005. Asks the host to drop whatever this player carries.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitDropRpc()
+        {
+            if (carrier != null)
+            {
+                carrier.TryDrop();
+            }
+        }
+
+        /// <summary>
+        /// Companion commands take the same route, so a client's dog obeys the
+        /// host's single simulation rather than a local copy that would drift.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitCompanionCommandRpc(int numberKey)
+        {
+            if (companionInput != null)
+            {
+                companionInput.TryIssue(numberKey, Time.time);
             }
         }
 
@@ -167,10 +310,55 @@ namespace PawsAndLoot.Integration.Network
                             motor.LastPlanarVelocity.magnitude
                             / motor.EffectiveMoveSpeed)
                         : 0f;
+                PublishGameplayState();
                 return;
             }
 
             ApplyReplicatedTransform(Time.deltaTime);
+            ApplyReplicatedGameplayState();
+        }
+
+        private void PublishGameplayState()
+        {
+            if (wallet != null)
+            {
+                _soldAmount.Value = wallet.SoldAmount;
+            }
+
+            if (arrestProgress == null)
+            {
+                return;
+            }
+
+            _arrestSeconds.Value = arrestProgress.ProgressSeconds;
+            _arrestCompleted.Value = arrestProgress.IsCompleted;
+            _arrestInterruptions.Value =
+                arrestProgress.InterruptionCount;
+            _arrestInterruptReason.Value =
+                (int)arrestProgress.LastInterruptionReason;
+        }
+
+        private void ApplyReplicatedGameplayState()
+        {
+            if (wallet != null)
+            {
+                wallet.ApplyRemoteSale(_soldAmount.Value);
+            }
+
+            if (arrestProgress == null)
+            {
+                return;
+            }
+
+            // Interruption first, so a same-frame reset then re-progress does
+            // not read as progress being wiped.
+            arrestProgress.ApplyRemoteInterruption(
+                _arrestInterruptions.Value,
+                (ArrestInterruptionReason)
+                    _arrestInterruptReason.Value);
+            arrestProgress.ApplyRemoteProgress(
+                _arrestSeconds.Value,
+                _arrestCompleted.Value);
         }
 
         private void ApplyReplicatedTransform(float deltaTime)

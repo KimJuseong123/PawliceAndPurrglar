@@ -823,6 +823,40 @@ namespace PawsAndLoot.Editor
         }
 
         /// <summary>
+        /// NET-005 scene wiring. Gives every loot item its own network link.
+        ///
+        /// Found by type rather than passed in, so loot added to the map later is
+        /// picked up without touching this method.
+        /// </summary>
+        private static void CreateLootNetworkLinks()
+        {
+            int wired = 0;
+            foreach (LootItem loot in
+                UnityEngine.Object.FindObjectsByType<LootItem>(
+                    FindObjectsSortMode.None))
+            {
+                if (loot.GetComponent<NetworkLootLink>() != null)
+                {
+                    continue;
+                }
+
+                if (loot.GetComponent<Unity.Netcode.NetworkObject>()
+                    == null)
+                {
+                    loot.gameObject.AddComponent<
+                        Unity.Netcode.NetworkObject>();
+                }
+
+                loot.gameObject
+                    .AddComponent<NetworkLootLink>()
+                    .Configure(loot);
+                wired++;
+            }
+
+            Debug.Log($"[NET-005] {wired} loot links wired.");
+        }
+
+        /// <summary>
         /// NET-003 and NET-004 scene wiring.
         ///
         /// Every synchronised object is an in-scene NetworkObject, which is why
@@ -855,8 +889,22 @@ namespace PawsAndLoot.Editor
                     player.GetComponent<PlayerMovementMotor>(),
                     binding.KeyboardInput,
                     player.GetComponent<CharacterController>());
+                // NET-005 to NET-007. Interact, drop, companion commands, the
+                // wallet and the arrest bar all travel on the same link, so a
+                // client has one route to the host and none around it.
+                link.ConfigureGameplay(
+                    player.GetComponent<PlayerInteractionScanner>(),
+                    player.GetComponent<PlayerInteractionInput>(),
+                    player.GetComponent<LootCarrier>(),
+                    player.GetComponent<LootDropInput>(),
+                    player.GetComponent<
+                        PawsAndLoot.Input.CompanionCommandKeyboardInput>(),
+                    player.GetComponent<ThiefLootWallet>(),
+                    player.GetComponent<ArrestProgressController>());
                 links.Add(link);
             }
+
+            CreateLootNetworkLinks();
 
             var syncObject = new GameObject("Network Sync");
             syncObject.transform.SetParent(parent);
@@ -879,6 +927,10 @@ namespace PawsAndLoot.Editor
             matchProbe.AddComponent<
                 PawsAndLoot.TechnicalValidation.NetworkMatchProbe>();
 
+            // Disconnect handling deliberately lives on the persistent
+            // NetworkManager object in Bootstrap, not here: one handler for the
+            // whole session, so a peer loss tears down once instead of once per
+            // scene.
             Debug.Log(
                 $"[NET-003] {links.Count} player links and the match mirror "
                 + "wired into the Game scene.");

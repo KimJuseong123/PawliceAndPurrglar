@@ -95,7 +95,7 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 - 결과 XML의 실제 테스트 수와 실패 목록
 - **테스트 0개 발견은 성공이 아니다**
 
-현재 기준선: Edit Mode 78개, Play Mode 48개 (`MATCH-006` 시점).
+현재 기준선: Edit Mode 123개, Play Mode 77개 (`NET-010` 시점).
 테스트를 추가하면 `13_CURRENT_STATE.md`의 `최근 검증` 표에 실제 수치를 기록한다.
 
 ### 런타임 검증 (자체 보고 프로브 패턴)
@@ -107,11 +107,39 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 %USERPROFILE%\AppData\LocalLow\PawsAndLoot\PawsAndLoot\
   tech-001-result.json / tech-002-result.json / tech-003-result.json
   net-001-{host,client}-result.json / map-001-result.json
+  net-lobby-{host,client}-result.json
+  net-match-{host,client}-result.json
+  net-rematch-{host,client}-result.json
 ```
 
 새 기능의 런타임 검증이 필요하면 이 패턴을 따른다. 명시적 인자
 (`-mapAutoQuit`, `-netMode`, `-playerRole` 등)로만 활성화해서 일반 실행을
 방해하지 않는다.
+
+### 두 프로세스 네트워크 검증 (`NET-003`~`NET-010`)
+
+빌드를 두 번 띄우고 결과 JSON을 비교한다. 호스트를 1초 먼저 띄운다.
+
+```bash
+"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby host   -netScenario full -netMatchSeconds 16
+"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby client -netScenario full -netMatchSeconds 16
+```
+
+`-netScenario` 3종:
+
+| 값 | 검증 대상 | 권장 `-netMatchSeconds` |
+|---|---|---|
+| `full` | NET-005·006·007. 획득 → 판매 연타 → 체포 → 승자 비교 | 16 |
+| `rematch` | NET-008. 클라이언트만 재경기를 눌러 양쪽 복귀 확인 | 40 |
+| `disconnect` | NET-009. 클라이언트가 먼저 나가고 호스트 처리 1회 확인 | 20 |
+
+`full`은 호스트가 캐릭터를 보물·판매처·상대 옆으로 **배치**한다. 이동 경로는
+`MAP-001`이 담당하고 여기서 검증하는 것은 요청이 호스트에 도달하는지와 결과가
+클라이언트로 돌아오는지다.
+
+프로브는 경기가 `Playing`에서 벗어나면 즉시 기록한다. 승패가 정해지면 경기 씬이
+언로드되어 프로브가 사라지기 때문이다. 같은 이유로 스폰 수와 원격 제어 여부는
+경기 중에 래치한 값을 쓴다. 종료 시점에 읽으면 전부 0으로 나온다.
 
 ### Unity 실행 전 확인
 
@@ -136,19 +164,34 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 - 중복 실행 방지가 필요한 요청은 `LootRequestId` 같은 명시적 ID를 사용한다.
 - Unity 에셋을 추가·이동할 때 `.meta` 파일을 함께 유지한다.
 
-## 7. 아직 비어 있는 영역
+## 7. 네트워크 계층 구조
 
-다음 폴더는 존재하지만 코드가 없다. 다음 큰 작업 대상이다.
+`Assets/_Project/Scripts/Integration/Network/`가 세션 전체를 담당한다. 규칙
+계층은 이 폴더를 참조하지 않는다.
 
-```text
-Assets/_Project/Scripts/Companions/   강아지·고양이 상태 머신 (COMP/DOG/CAT)
-Assets/_Project/Scripts/Input/        명령 입력 어댑터 (현재 입력은 Gameplay/Players에 흩어져 있음)
-Assets/_Project/Scripts/Animation/    애니메이터 파라미터 계층
-Assets/_Project/Scripts/Integration/  외부 에셋·네트워크 어댑터
-```
+| 파일 | 역할 |
+|---|---|
+| `NetworkSessionController` | 호스트/접속 시작, 2인 제한, 역할 보드 스폰 |
+| `NetworkRoleBoard` | 역할 배정. 씬 전환 전에 **1회 통보**로 넘긴다 |
+| `NetworkSceneCoordinator` | 세션 중 씬 로드를 서버만 실행 |
+| `NetworkMatchMirror` | 경기 상태·타이머 복제 (NET-004) |
+| `NetworkPlayerLink` | 플레이어 1명. 이동 입력 RPC, 행동 RPC, 지갑·체포 복제 |
+| `NetworkLootLink` | 보물 1개. 상태·위치·소유자 복제 (NET-005) |
+| `NetworkInputBridge` | 로컬 키를 자기 역할의 링크로만 전송 |
+| `NetworkRematchCoordinator` | 재경기 명명 메시지 (NET-008) |
+| `NetworkDisconnectHandler` | 상대 이탈 시 1회 정리 (NET-009) |
 
-`CompanionConfig.cs`와 `CompanionConfig.asset`은 이미 있다. 설정만 선행 생성된
-상태이며 런타임 코드는 없다.
+세 가지 함정을 기억한다.
+
+1. **씬에 배치된 `NetworkObject`는 씬 전환을 넘기지 못한다** (`ISSUE-016`).
+   씬을 넘겨야 하는 값은 1회 RPC + 로컬 정적 값으로, 씬을 넘겨야 하는 요청은
+   `CustomMessagingManager` 명명 메시지로 보낸다.
+2. **`ConnectedClientsIds`는 서버 전용이다.** 클라이언트에서 항상 비어 있다.
+3. **`NetworkConfig`는 양쪽이 같아야 한다.** 런타임에 한쪽만 플래그를 바꾸면
+   해시 불일치로 접속이 끊긴다. 씬 설정에서 양쪽 동일하게 켠다.
+
+`Assets/_Project/Scripts/Integration/`의 외부 에셋 어댑터 자리는 아직 비어
+있다. `Assets/_Project/UI/`도 비어 있고 HUD는 전부 코드로 조립한다.
 
 ## 8. 프로토타입 단계 대체 수단
 

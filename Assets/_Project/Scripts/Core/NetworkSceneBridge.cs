@@ -33,5 +33,29 @@ namespace PawsAndLoot.Core
         {
             return _handler != null && _handler(sceneName);
         }
+
+        /// <summary>
+        /// NET-008. Rematch is not an ordinary load: a client may not load at
+        /// all, it has to ask the host. Kept as its own handler so the plain
+        /// load path stays unchanged.
+        /// </summary>
+        private static Func<bool> _rematchHandler;
+
+        public static bool HasRematchHandler => _rematchHandler != null;
+
+        public static void SetRematchHandler(Func<bool> handler)
+        {
+            _rematchHandler = handler;
+        }
+
+        public static void ClearRematchHandler()
+        {
+            _rematchHandler = null;
+        }
+
+        public static bool TryRequestRematch()
+        {
+            return _rematchHandler != null && _rematchHandler();
+        }
     }
 }

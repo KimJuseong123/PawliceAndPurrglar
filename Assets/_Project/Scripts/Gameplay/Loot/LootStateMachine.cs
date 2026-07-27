@@ -48,6 +48,27 @@ namespace PawsAndLoot.Gameplay.Loot
             };
         }
 
+        /// <summary>
+        /// Forces the state without checking the transition table.
+        ///
+        /// Reserved for a non-authority machine catching up to what the
+        /// authority already decided. Local gameplay must always use
+        /// <see cref="TryTransitionTo"/> so the rules stay enforced.
+        /// </summary>
+        public void ResetTo(LootState state)
+        {
+            if (!Enum.IsDefined(typeof(LootState), state)
+                || state == _currentState)
+            {
+                return;
+            }
+
+            LootState previous = _currentState;
+            _currentState = state;
+            StateChanged?.Invoke(
+                new LootStateChanged(previous, state));
+        }
+
         public bool TryTransitionTo(LootState nextState)
         {
             if (!CanTransitionTo(nextState))

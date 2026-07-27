@@ -50,9 +50,44 @@ namespace PawsAndLoot.Gameplay.Arrest
             SubscribeToSensor();
         }
 
+        /// <summary>
+        /// True when the host owns the arrest judgement for this match.
+        /// </summary>
+        public bool IsRemoteControlled { get; private set; }
+
+        public void SetRemoteControlled(bool remoteControlled)
+        {
+            IsRemoteControlled = remoteControlled;
+        }
+
+        /// <summary>
+        /// NET-007. Adopts the host's arrest progress.
+        ///
+        /// Distance and interruption are judged only where the simulation runs,
+        /// so latency cannot make one machine complete an arrest the other
+        /// rejects. A completed arrest is one-way here for the same reason
+        /// <see cref="TryMarkCompleted"/> is: it must not be undone by a
+        /// late packet.
+        /// </summary>
+        public void ApplyRemoteProgress(
+            float progressSeconds,
+            bool completed)
+        {
+            ProgressSeconds = arrestConfig != null
+                ? Mathf.Clamp(
+                    progressSeconds,
+                    0f,
+                    arrestConfig.ArrestDurationSeconds)
+                : Mathf.Max(0f, progressSeconds);
+            if (completed)
+            {
+                IsCompleted = true;
+            }
+        }
+
         public void Tick(float deltaTime)
         {
-            if (IsCompleted)
+            if (IsCompleted || IsRemoteControlled)
             {
                 return;
             }
@@ -152,11 +187,47 @@ namespace PawsAndLoot.Gameplay.Arrest
 
         private void Interrupt(ArrestInterruptionReason reason)
         {
-            if (IsCompleted || ProgressSeconds <= 0f)
+            // A non-authority machine must not zero progress on its own: its
+            // sensor can lag the host's by a packet, and clearing the bar here
+            // would fight the replicated value. The host replicates both the
+            // reset and the reason instead.
+            if (IsCompleted || IsRemoteControlled || ProgressSeconds <= 0f)
             {
                 return;
             }
 
+            ProgressSeconds = 0f;
+            InterruptionCount++;
+            LastInterruptionReason = reason;
+            ProgressInterrupted?.Invoke(reason);
+        }
+
+        /// <summary>
+        /// Counts interruptions so the replicated view can tell a fresh
+        /// interruption from a value that merely happens to be zero again.
+        /// </summary>
+        public int InterruptionCount { get; private set; }
+        public ArrestInterruptionReason LastInterruptionReason
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Replays one host interruption locally so the client's bar and sound
+        /// react the same way the host's did.
+        /// </summary>
+        public void ApplyRemoteInterruption(
+            int interruptionCount,
+            ArrestInterruptionReason reason)
+        {
+            if (interruptionCount <= InterruptionCount)
+            {
+                return;
+            }
+
+            InterruptionCount = interruptionCount;
+            LastInterruptionReason = reason;
             ProgressSeconds = 0f;
             ProgressInterrupted?.Invoke(reason);
         }

@@ -56,6 +56,25 @@ namespace PawsAndLoot.Editor
                     .AddComponent<NetworkSceneCoordinator>();
             coordinator.Configure(manager);
 
+            // NET-008. On the NetworkManager object so it survives the scene
+            // change: rematch is pressed on the result screen, and a scene
+            // NetworkObject would already be gone by then (ISSUE-016).
+            manager.gameObject
+                .AddComponent<NetworkRematchCoordinator>()
+                .Configure(manager);
+
+            // NET-009. One handler for the whole session, in the one place that
+            // outlives every scene load.
+            manager.gameObject
+                .AddComponent<NetworkDisconnectHandler>()
+                .Configure(manager, session);
+
+            // NET-008 verification. On the persistent object because the press
+            // happens on the result screen and the restart lands in the match
+            // scene; no single scene sees both ends.
+            manager.gameObject.AddComponent<
+                PawsAndLoot.TechnicalValidation.NetworkRematchProbe>();
+
             // Command-line driven verification, inert without -netLobby.
             var probeObject = new GameObject("Network Lobby Probe");
             probeObject.AddComponent<

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using PawsAndLoot.Gameplay.Loot;
 
@@ -70,6 +71,51 @@ namespace PawsAndLoot.Tests.EditMode
                 machine.TryTransitionTo(LootState.Reserved),
                 Is.False);
             Assert.That(notifications, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// NET-005. A non-authority machine can miss the intermediate packet and
+        /// see only the destination, so it needs a way to land there.
+        /// </summary>
+        [Test]
+        public void ResetToForcesAnIllegalDestinationAndNotifiesOnce()
+        {
+            var machine = new LootStateMachine();
+            var changes = new List<LootStateChanged>();
+            machine.StateChanged += changes.Add;
+
+            // AVAILABLE -> CARRIED is refused by the rules on purpose.
+            Assert.That(
+                machine.CanTransitionTo(LootState.Carried),
+                Is.False);
+
+            machine.ResetTo(LootState.Carried);
+
+            Assert.That(machine.CurrentState, Is.EqualTo(LootState.Carried));
+            Assert.That(changes.Count, Is.EqualTo(1));
+            Assert.That(
+                changes[0].PreviousState,
+                Is.EqualTo(LootState.Available));
+            Assert.That(
+                changes[0].CurrentState,
+                Is.EqualTo(LootState.Carried));
+
+            // Already there: nothing to announce.
+            machine.ResetTo(LootState.Carried);
+            Assert.That(changes.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ResetToLeavesTheRulesInPlaceForLocalPlay()
+        {
+            var machine = new LootStateMachine();
+            machine.ResetTo(LootState.Sold);
+
+            Assert.That(machine.IsTerminal, Is.True);
+            Assert.That(
+                machine.TryTransitionTo(LootState.Reserved),
+                Is.False,
+                "Forcing a state must not turn the transition table off.");
         }
     }
 }

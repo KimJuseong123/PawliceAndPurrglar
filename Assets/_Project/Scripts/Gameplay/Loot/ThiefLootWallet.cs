@@ -50,6 +50,28 @@ namespace PawsAndLoot.Gameplay.Loot
             _creditedLoot.Clear();
         }
 
+        /// <summary>
+        /// NET-006. Adopts the host's score.
+        ///
+        /// The duplicate-sale guard stays on the host, where the sale actually
+        /// happens; a client only ever sees the resulting total, so it cannot
+        /// double-credit. <see cref="VictoryCheckRequested"/> is deliberately
+        /// not raised here — victory is the host's decision and reaches the
+        /// client through the replicated match state instead.
+        /// </summary>
+        public void ApplyRemoteSale(int soldAmount)
+        {
+            int clamped = Mathf.Max(0, soldAmount);
+            if (clamped == SoldAmount)
+            {
+                return;
+            }
+
+            int previousAmount = SoldAmount;
+            SoldAmount = clamped;
+            SaleAmountChanged?.Invoke(previousAmount, SoldAmount);
+        }
+
         public void ValidateOrThrow()
         {
             if (identity == null || identity.Role != PlayerRole.Thief)

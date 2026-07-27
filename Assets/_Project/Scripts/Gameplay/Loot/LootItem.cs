@@ -49,9 +49,65 @@ namespace PawsAndLoot.Gameplay.Loot
             _stateMachine = null;
         }
 
+        /// <summary>
+        /// True when another machine owns this item's state. A remote-controlled
+        /// item never runs its own transitions; it only reflects the authority,
+        /// which is what stops two machines disagreeing about who holds it.
+        /// </summary>
+        public bool IsRemoteControlled { get; private set; }
+
+        public void SetRemoteControlled(bool remoteControlled)
+        {
+            IsRemoteControlled = remoteControlled;
+        }
+
+        /// <summary>
+        /// NET-005. Applies the authority's view of this item.
+        ///
+        /// Transitions still pass through the state machine so the legal-move
+        /// rules hold, and the presentation is re-parented to match the carrier
+        /// so a client sees the loot in the right hands.
+        /// </summary>
+        public void ApplyRemoteState(
+            LootState state,
+            Vector3 worldPosition,
+            LootCarrier carrier)
+        {
+            LootStateMachine machine = EnsureStateMachine();
+            if (machine.CurrentState != state)
+            {
+                // A rejected transition means the authority took a path this
+                // machine has not seen; force it rather than drift apart.
+                if (!machine.TryTransitionTo(state))
+                {
+                    machine.ResetTo(state);
+                }
+            }
+
+            CurrentCarrier = carrier;
+            if (presentationRoot == null)
+            {
+                return;
+            }
+
+            if (carrier != null && carrier.CarryPoint != null)
+            {
+                presentationRoot.SetParent(carrier.CarryPoint, false);
+                presentationRoot.localPosition = Vector3.zero;
+                presentationRoot.localRotation = Quaternion.identity;
+                presentationRoot.gameObject.SetActive(true);
+                return;
+            }
+
+            presentationRoot.SetParent(transform, false);
+            presentationRoot.position = worldPosition;
+            presentationRoot.gameObject.SetActive(
+                state != LootState.Sold && state != LootState.Hidden);
+        }
+
         public bool TryInteract(PlayerInteractionContext context)
         {
-            if (context.Player == null)
+            if (context.Player == null || IsRemoteControlled)
             {
                 return false;
             }

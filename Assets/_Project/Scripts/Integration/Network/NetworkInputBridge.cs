@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
+using PawsAndLoot.Input;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -85,6 +87,30 @@ namespace PawsAndLoot.Integration.Network
             {
                 input.IsLocallyControlled = false;
             }
+
+            // NET-005/006. The action keys are switched off for the same reason
+            // movement is: a machine must have no local path that bypasses the
+            // host, or the two sides can disagree about who picked up what.
+            foreach (PlayerInteractionInput input in
+                Object.FindObjectsByType<PlayerInteractionInput>(
+                    FindObjectsSortMode.None))
+            {
+                input.IsLocallyControlled = false;
+            }
+
+            foreach (LootDropInput input in
+                Object.FindObjectsByType<LootDropInput>(
+                    FindObjectsSortMode.None))
+            {
+                input.IsLocallyControlled = false;
+            }
+
+            foreach (CompanionCommandKeyboardInput input in
+                Object.FindObjectsByType<CompanionCommandKeyboardInput>(
+                    FindObjectsSortMode.None))
+            {
+                input.IsLocallyControlled = false;
+            }
         }
 
         private void Update()
@@ -133,6 +159,58 @@ namespace PawsAndLoot.Integration.Network
                 && keyboard.spaceKey.wasPressedThisFrame;
 
             link.SubmitInputRpc(move, dash);
+            SubmitActions(link, keyboard);
+        }
+
+        /// <summary>
+        /// Actions are edge-triggered, so they are sent only on the frame the key
+        /// goes down. Sending them continuously would let one press be applied
+        /// many times on the host.
+        /// </summary>
+        private static void SubmitActions(
+            NetworkPlayerLink link,
+            Keyboard keyboard)
+        {
+            if (keyboard == null)
+            {
+                return;
+            }
+
+            if (keyboard.eKey.wasPressedThisFrame)
+            {
+                link.SubmitInteractRpc();
+            }
+
+            if (keyboard.qKey.wasPressedThisFrame)
+            {
+                link.SubmitDropRpc();
+            }
+
+            int command = ReadCompanionCommandKey(keyboard);
+            if (command > 0)
+            {
+                link.SubmitCompanionCommandRpc(command);
+            }
+        }
+
+        private static int ReadCompanionCommandKey(Keyboard keyboard)
+        {
+            if (keyboard.digit1Key.wasPressedThisFrame)
+            {
+                return 1;
+            }
+
+            if (keyboard.digit2Key.wasPressedThisFrame)
+            {
+                return 2;
+            }
+
+            if (keyboard.digit3Key.wasPressedThisFrame)
+            {
+                return 3;
+            }
+
+            return keyboard.digit4Key.wasPressedThisFrame ? 4 : 0;
         }
 
         private static float ReadAxis(

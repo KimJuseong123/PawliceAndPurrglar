@@ -35,6 +35,16 @@ namespace PawsAndLoot.UI
 
         public void LoadTargetScene()
         {
+            // NET-008. Going from the result screen back into the match is a
+            // rematch. In a session a client cannot load it itself, so the press
+            // becomes a request to the host; offline the bridge declines and the
+            // ordinary load runs.
+            if (targetScene == GameSceneId.Game
+                && NetworkSceneBridge.TryRequestRematch())
+            {
+                return;
+            }
+
             GameSceneLoader.Load(targetScene);
         }
     }
