@@ -13,10 +13,13 @@ namespace PawsAndLoot.UI
     /// officer is looking at their own character, not at a caption.
     ///
     /// Concentric arcs rotated toward the sensor, with <b>how many</b> of them
-    /// lit standing in for how close it is: four at the far edge of the map, one
-    /// more per band as it gets nearer. Reading a count is faster than judging a
-    /// size, which is why signal meters have used bars rather than one growing
-    /// blob for forty years.
+    /// lit standing in for how far away it is: one arc when it is right in front,
+    /// one more per five metres. Reading a count is faster than judging a size.
+    ///
+    /// Deliberately the opposite way round to a phone's signal meter. These arcs
+    /// are the distance the signal had to cross, not its strength — standing on
+    /// top of the sensor needs no fan at all, and a trip across the map should
+    /// look like a long way off.
     ///
     /// The first version scaled one shape built from plain rects. At a size big
     /// enough to notice, three rectangles read as three fat bars rather than a
@@ -39,18 +42,19 @@ namespace PawsAndLoot.UI
         private LocalPlayerRoleSelector roleSelector;
 
         /// <summary>
-        /// Distance at which only the base arcs light. Beyond the torch's own
-        /// reach, so a distant trip still reads as distant.
+        /// Metres per arc.
+        ///
+        /// Distance is read as a count, and the count grows with distance: one arc
+        /// when the sensor is right in front, more the further away it is. That is
+        /// the opposite of a phone's signal meter and it is the right way round
+        /// here — the arcs are the distance the signal had to travel, not its
+        /// strength. Right on top of it needs no fan at all.
+        ///
+        /// Five metres per arc puts a sensor two blocks away at three or four,
+        /// and one at arm's length at one.
         /// </summary>
         [SerializeField, Min(1f)]
-        private float farDistance = 30f;
-
-        /// <summary>
-        /// Arcs lit at that far edge. Fewer than four does not read as a signal
-        /// meter; the extras above it are what closeness adds.
-        /// </summary>
-        [SerializeField, Min(1)]
-        private int farBarCount = 4;
+        private float metresPerBar = 5f;
 
         private readonly List<SensorArcGraphic> _bars = new();
         private FlashlightVisibility _visibility;
@@ -75,14 +79,25 @@ namespace PawsAndLoot.UI
         }
 
         /// <summary>
-        /// Registers the arcs the scene builder created, innermost first.
+        /// Finds the arcs, innermost first.
+        ///
+        /// Collected here rather than handed over by the scene builder. A list
+        /// filled at edit time is not serialised, so in the built game it was
+        /// empty: nothing was ever switched on or off and the count did nothing at
+        /// all. That is the same trap that killed the lobby buttons and the leg
+        /// animator, and the third time it has cost a playtest.
         /// </summary>
-        public void AddBar(SensorArcGraphic bar)
+        private void CollectBars()
         {
-            if (bar != null)
+            if (_bars.Count > 0 || root == null)
             {
-                _bars.Add(bar);
+                return;
             }
+
+            _bars.AddRange(
+                root.GetComponentsInChildren<SensorArcGraphic>(true));
+            _bars.Sort((left, right) =>
+                left.InnerRadius.CompareTo(right.InnerRadius));
         }
 
         private bool ViewerIsPolice()
@@ -136,6 +151,7 @@ namespace PawsAndLoot.UI
                 return;
             }
 
+            CollectBars();
             FlashlightVisibility visibility = ResolveVisibility();
             PlayerRoleIdentity officer = ResolveOfficer();
             bool showing = ViewerIsPolice()
@@ -171,13 +187,10 @@ namespace PawsAndLoot.UI
             root.localRotation =
                 Quaternion.Euler(0f, 0f, CurrentAngle);
 
-            // Closeness as a count.
-            float closeness =
-                1f - Mathf.Clamp01(distance / farDistance);
+            // Distance as a count: one arc per five metres, at least one.
             LitBarCount = Mathf.Clamp(
-                farBarCount + Mathf.FloorToInt(
-                    closeness * (_bars.Count - farBarCount + 1)),
-                farBarCount,
+                1 + Mathf.RoundToInt(distance / metresPerBar),
+                1,
                 _bars.Count);
 
             // A wave travelling outward from the middle, one arc at a time, so it

@@ -3962,9 +3962,10 @@ namespace PawsAndLoot.Editor
                 hudRoot.gameObject.AddComponent<SensorRadarPresenter>();
             radar.Configure(radarRoot, roleSelector);
 
-            // Seven concentric arcs, all built. How many of them light is what
-            // says how close the sensor is, so the presenter switches them on
-            // rather than the builder deciding a count.
+            // Seven concentric arcs, all built. How many light is what says how
+            // far the sensor is, and the presenter finds them itself at runtime —
+            // a list handed over here would not survive being serialised, which
+            // is exactly why the count did nothing in the built game.
             //
             // Red: the torch, the stun stars and the ground wedge are all yellow,
             // and a fourth yellow thing on a night screen is one more yellow
@@ -3984,7 +3985,6 @@ namespace PawsAndLoot.Editor
                 arc.Configure(26f + band * 17f, 8f, 96f);
                 arc.color = new Color(0.95f, 0.16f, 0.16f, 1f);
                 arc.raycastTarget = false;
-                radar.AddBar(arc);
             }
 
             radarRoot.gameObject.SetActive(false);

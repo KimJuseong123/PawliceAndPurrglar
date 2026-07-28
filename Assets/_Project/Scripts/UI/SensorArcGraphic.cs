@@ -35,6 +35,12 @@ namespace PawsAndLoot.UI
         [SerializeField, Min(2)]
         private int segments = 24;
 
+        /// <summary>
+        /// Serialised, so the presenter can sort its arcs innermost-first after
+        /// finding them at runtime.
+        /// </summary>
+        public float InnerRadius => innerRadius;
+
         public void Configure(
             float configuredInnerRadius,
             float configuredThickness,

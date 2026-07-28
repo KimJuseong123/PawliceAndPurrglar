@@ -108,26 +108,38 @@ namespace PawsAndLoot.Tests.PlayMode
                 $"A sensor due east should read as -90°, not "
                 + $"{radar.CurrentAngle:0.#}°.");
 
-            // Closeness is read as a count of arcs, so nearer has to light more.
-            // Eight metres away is close.
+            // Distance is read as a count of arcs, and more arcs means further
+            // away: the arcs are the distance the signal crossed, not its
+            // strength. Eight metres is a couple of arcs.
             int nearBars = radar.LitBarCount;
-            Assert.That(
-                nearBars,
-                Is.GreaterThanOrEqualTo(4),
-                "Four arcs is the floor; fewer does not read as a signal.");
 
-            // Now trip one from across the map and check it reads weaker.
+            // Right on top of it: a single arc, no fan.
             visibility.RevealFor(
                 ThrowableCatalog.RevealSeconds,
-                police.transform.position + new Vector3(0f, 0f, 40f));
+                police.transform.position + new Vector3(0f, 0f, 0.5f));
+            radar.Refresh(0.02f);
+            int touchingBars = radar.LitBarCount;
+            Assert.That(
+                touchingBars,
+                Is.EqualTo(1),
+                "Standing on the sensor needs no fan at all.");
+
+            // Across the map: many.
+            visibility.RevealFor(
+                ThrowableCatalog.RevealSeconds,
+                police.transform.position + new Vector3(0f, 0f, 34f));
             radar.Refresh(0.02f);
 
             Assert.That(
                 radar.LitBarCount,
-                Is.LessThan(nearBars),
-                $"A sensor 40 m away lit {radar.LitBarCount} arcs and one 8 m "
-                + $"away lit {nearBars}. Distance has to read as a count, or "
-                + "the officer cannot tell near from far.");
+                Is.GreaterThan(nearBars),
+                $"A sensor 34 m away lit {radar.LitBarCount} arcs and one 8 m "
+                + $"away lit {nearBars}. Further has to mean more arcs.");
+            Assert.That(
+                radar.LitBarCount,
+                Is.GreaterThan(touchingBars * 2),
+                "And a long way off has to be unmistakably more than "
+                + "underfoot, not one extra arc.");
             Assert.That(
                 Mathf.DeltaAngle(radar.CurrentAngle, 0f),
                 Is.EqualTo(0f).Within(5f),

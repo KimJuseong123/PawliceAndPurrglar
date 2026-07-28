@@ -39,18 +39,68 @@ namespace PawsAndLoot.Animation
         [SerializeField, Min(0.1f)]
         private float flashSeconds = ThrowableCatalog.RevealSeconds;
 
+        /// <summary>
+        /// Who placed it. Only used to decide who may see a covert prop.
+        /// </summary>
+        [SerializeField]
+        private PawsAndLoot.Gameplay.Players.PlayerRole placedBy =
+            PawsAndLoot.Gameplay.Players.PlayerRole.Police;
+
         private Light _lamp;
         private float _flashUntil;
         private bool _built;
+        private bool _hiddenFromOpponent;
 
         public bool IsFlashing => Time.time < _flashUntil;
 
+        /// <summary>
+        /// A sensor light is only drawn on its owner's screen.
+        ///
+        /// The whole point of a detector is that the other side walks into it
+        /// without knowing. A visible one is just a worse trap — it warns the
+        /// person it is meant to catch, and there is nothing they can do with the
+        /// warning except walk around it, which makes it useless.
+        ///
+        /// The things underfoot are the opposite: a banana or a glue patch you
+        /// cannot see is bad luck rather than a trap, so those stay visible to
+        /// everybody.
+        /// </summary>
+        public bool IsCovert =>
+            ThrowableCatalog.GetEffect(kind) == TrapEffect.Reveal;
+
         public void Configure(
             ThrowableKind configuredKind,
-            Material configuredMaterial)
+            Material configuredMaterial,
+            PawsAndLoot.Gameplay.Players.PlayerRole configuredPlacedBy =
+                PawsAndLoot.Gameplay.Players.PlayerRole.Police)
         {
             kind = configuredKind;
             material = configuredMaterial;
+            placedBy = configuredPlacedBy;
+        }
+
+        /// <summary>
+        /// True on the machine playing the side that placed this prop.
+        ///
+        /// Read every frame rather than cached: the role is handed out by the host
+        /// after the lobby, and a cached answer taken during the scene load would
+        /// be whatever the default was.
+        /// </summary>
+        private bool ViewerOwnsThis()
+        {
+            PawsAndLoot.Gameplay.Players.PlayerRole? assigned =
+                PawsAndLoot.Gameplay.Players.LocalPlayerRoleSelector
+                    .OverriddenRole;
+            if (assigned.HasValue)
+            {
+                return assigned.Value == placedBy;
+            }
+
+            PawsAndLoot.Gameplay.Players.LocalPlayerRoleSelector selector =
+                FindFirstObjectByType<
+                    PawsAndLoot.Gameplay.Players
+                        .LocalPlayerRoleSelector>();
+            return selector != null && selector.ActiveRole == placedBy;
         }
 
         /// <summary>
@@ -141,9 +191,24 @@ namespace PawsAndLoot.Animation
         private void LateUpdate()
         {
             Build();
+
+            // A covert prop is hidden from the other side, lamp included. The
+            // thief must not be told they are about to walk into a sensor, and
+            // must not see the flash that gives their position away either.
+            bool hide = IsCovert && !ViewerOwnsThis();
+            if (hide != _hiddenFromOpponent)
+            {
+                _hiddenFromOpponent = hide;
+                foreach (Renderer renderer in
+                    GetComponentsInChildren<Renderer>(true))
+                {
+                    renderer.enabled = !hide;
+                }
+            }
+
             if (_lamp != null)
             {
-                _lamp.enabled = IsFlashing;
+                _lamp.enabled = IsFlashing && !hide;
             }
         }
     }

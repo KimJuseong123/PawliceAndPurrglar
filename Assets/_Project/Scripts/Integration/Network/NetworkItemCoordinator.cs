@@ -164,7 +164,7 @@ namespace PawsAndLoot.Integration.Network
             // the first banana anybody put down would have been invisible, and a
             // trap you cannot see is not a trap.
             trapObject.AddComponent<PawsAndLoot.Animation.PlacedTrapView>()
-                .Configure(kind, ResolveTrapMaterial(kind));
+                .Configure(kind, ResolveTrapMaterial(kind), placedBy);
             _traps[id] = trap;
         }
 

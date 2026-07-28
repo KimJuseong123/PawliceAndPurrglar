@@ -212,6 +212,18 @@ namespace PawsAndLoot.Integration.Network
         [SerializeField, Min(1f)]
         private float snapDistance = 4f;
 
+        /// <summary>
+        /// Time constant for following the replicated position.
+        ///
+        /// Small enough that the character is never visibly behind, large enough
+        /// that a late packet is absorbed instead of producing a lurch. This is
+        /// the number that decides whether a guest's characters glide or judder.
+        /// </summary>
+        [SerializeField, Range(0.02f, 0.4f)]
+        private float followSmoothSeconds = 0.09f;
+
+        private Vector3 _followVelocity;
+
         private Vector2 _submittedMove;
         private bool _submittedDash;
         private bool _remoteDriven;
@@ -612,12 +624,36 @@ namespace PawsAndLoot.Integration.Network
         {
             Vector3 target = _position.Value;
             float distance = Vector3.Distance(transform.position, target);
-            transform.position = distance > snapDistance
-                ? target
-                : Vector3.MoveTowards(
+            if (distance > snapDistance)
+            {
+                // A long stall would otherwise show the character sliding
+                // across the map.
+                transform.position = target;
+                _followVelocity = Vector3.zero;
+            }
+            else
+            {
+                // Smoothed rather than raced.
+                //
+                // MoveTowards at 14 m/s covers the gap to a target that only
+                // updates a few times a second, so the character sprinted, sat
+                // still, sprinted, sat still — which is the juddering reported on
+                // whichever machine was the guest. Both characters are
+                // remote-driven on a client, so both shook; the one the camera
+                // follows was simply the one anybody noticed.
+                //
+                // An exponential approach never arrives and never stalls, so the
+                // motion is continuous and averages out to the true speed with a
+                // fraction of a second of lag. Cheaper than a full interpolation
+                // buffer and enough for two players on a LAN.
+                transform.position = Vector3.SmoothDamp(
                     transform.position,
                     target,
-                    Mathf.Max(catchUpSpeed, distance) * deltaTime);
+                    ref _followVelocity,
+                    followSmoothSeconds,
+                    catchUpSpeed,
+                    deltaTime);
+            }
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 Quaternion.Euler(0f, _yaw.Value, 0f),
