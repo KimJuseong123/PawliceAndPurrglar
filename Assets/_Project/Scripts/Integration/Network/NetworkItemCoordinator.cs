@@ -10,31 +10,41 @@ using UnityEngine;
 namespace PawsAndLoot.Integration.Network
 {
     /// <summary>
-    /// THROW-007. Keeps placed props in step across both machines.
+    /// THROW-005/007. Keeps the world's props in step across both machines:
+    /// traps that were placed, and pickups that were taken.
     ///
     /// Named messages rather than a spawned NetworkObject per banana. Dynamic
     /// NetworkObjects are what went wrong in ISSUE-016, and a trap is only three
     /// numbers — an id, a kind and a position — so replicating the fact is
-    /// cheaper and simpler than replicating an object.
+    /// cheaper and simpler than replicating an object. A pickup is one number and
+    /// a flag.
     ///
-    /// The host owns triggering. Each machine draws the trap; only the host
+    /// The host owns both decisions. Each machine draws the trap; only the host
     /// decides who stepped on it, then tells everyone it is gone. A client
     /// judging its own traps would slip the runner on one screen and not the
-    /// other.
+    /// other, and a client running its own respawn clock would show a rock lying
+    /// in the road that the host had already given away.
     ///
-    /// Offline it still works: with no session running it places and triggers
-    /// locally, so the single-player playtest is unaffected.
+    /// Pickups are here because they had no replication at all, and the result
+    /// looked exactly like the feature not working: the press reached the host,
+    /// the host took the rock, and on the other screen the rock stayed on the
+    /// ground and the HUD kept saying the player was holding nothing.
+    ///
+    /// Offline it still works: with no session running it decides locally, so the
+    /// single-player playtest is unaffected.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class NetworkTrapCoordinator : MonoBehaviour
+    public sealed class NetworkItemCoordinator : MonoBehaviour
     {
         public const string PlaceMessageName = "PawsAndLoot.TrapPlaced";
         public const string ClearMessageName = "PawsAndLoot.TrapCleared";
+        public const string PickupMessageName = "PawsAndLoot.PickupTaken";
 
-        private static NetworkTrapCoordinator _instance;
+        private static NetworkItemCoordinator _instance;
 
         private readonly Dictionary<int, PlacedTrap> _traps = new();
         private readonly HashSet<ToolUseAction> _watched = new();
+        private readonly HashSet<ThrowablePickup> _watchedPickups = new();
 
         [SerializeField]
         private MonoBehaviour matchStateSource;
@@ -235,6 +245,9 @@ namespace PawsAndLoot.Integration.Network
             manager.CustomMessagingManager.RegisterNamedMessageHandler(
                 ClearMessageName,
                 HandleCleared);
+            manager.CustomMessagingManager.RegisterNamedMessageHandler(
+                PickupMessageName,
+                HandlePickupTaken);
             GameLogger.Debug(
                 GameLogCategory.Network,
                 "Trap messages registered.",
@@ -260,6 +273,75 @@ namespace PawsAndLoot.Integration.Network
             }
 
             return _matchState;
+        }
+
+        /// <summary>
+        /// Subscribes to every pickup so the machine that decides can announce
+        /// it.
+        ///
+        /// Done here for the same reason placements are: the gameplay layer must
+        /// not name the network layer, so the adapter listens instead.
+        /// </summary>
+        private void SubscribeToPickups()
+        {
+            foreach (ThrowablePickup pickup in
+                FindObjectsByType<ThrowablePickup>(
+                    FindObjectsSortMode.None))
+            {
+                if (_watchedPickups.Contains(pickup))
+                {
+                    continue;
+                }
+
+                _watchedPickups.Add(pickup);
+                pickup.TakenChanged += HandlePickupChanged;
+            }
+        }
+
+        private void HandlePickupChanged(int id, bool taken)
+        {
+            NetworkManager manager = ResolveManager();
+            if (manager == null
+                || !manager.IsListening
+                || !manager.IsServer)
+            {
+                return;
+            }
+
+            using var writer = new FastBufferWriter(
+                sizeof(int) + sizeof(byte),
+                Allocator.Temp);
+            writer.WriteValueSafe(id);
+            writer.WriteValueSafe(taken);
+            manager.CustomMessagingManager.SendNamedMessageToAll(
+                PickupMessageName,
+                writer);
+        }
+
+        private void HandlePickupTaken(
+            ulong sender,
+            FastBufferReader reader)
+        {
+            reader.ReadValueSafe(out int id);
+            reader.ReadValueSafe(out bool taken);
+
+            NetworkManager manager = ResolveManager();
+            if (manager != null && manager.IsServer)
+            {
+                // The host already applied it when it decided.
+                return;
+            }
+
+            foreach (ThrowablePickup pickup in
+                FindObjectsByType<ThrowablePickup>(
+                    FindObjectsSortMode.None))
+            {
+                if (pickup.PickupId == id)
+                {
+                    pickup.ApplyReplicatedTaken(taken);
+                    return;
+                }
+            }
         }
 
         /// <summary>
@@ -331,6 +413,7 @@ namespace PawsAndLoot.Integration.Network
             }
 
             SubscribeToPlacements();
+            SubscribeToPickups();
             TickTraps();
         }
     }

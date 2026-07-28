@@ -40,9 +40,26 @@ namespace PawsAndLoot.Gameplay.Items
         [SerializeField]
         private Transform presentationRoot;
 
+        /// <summary>
+        /// Stable id, assigned by the scene builder. Used to name this pickup
+        /// across machines: the pickups are scene objects, so the id is the same
+        /// number on both without anything having to be spawned.
+        /// </summary>
+        [SerializeField]
+        private int pickupId;
+
         private float _hiddenFor;
         private bool _taken;
+        private bool _remoteDriven;
 
+        /// <summary>
+        /// Raised on the machine that decided, so the network layer can tell the
+        /// other one. The pickup itself knows nothing about sessions.
+        /// </summary>
+        public event System.Action<int, bool> TakenChanged;
+
+        public int PickupId => pickupId;
+        public bool IsTaken => _taken;
         public ThrowableKind Kind => kind;
         public bool IsAvailable => !_taken && isActiveAndEnabled;
         public Transform InteractionTransform => transform;
@@ -69,8 +86,10 @@ namespace PawsAndLoot.Gameplay.Items
             Transform configuredPresentationRoot,
             bool configuredRoleRestricted = false,
             PlayerRole configuredRestrictedTo = PlayerRole.Thief,
-            float configuredRespawnSeconds = 0f)
+            float configuredRespawnSeconds = 0f,
+            int configuredPickupId = 0)
         {
+            pickupId = configuredPickupId;
             kind = configuredKind;
             presentationRoot = configuredPresentationRoot;
             roleRestricted = configuredRoleRestricted;
@@ -98,10 +117,36 @@ namespace PawsAndLoot.Gameplay.Items
                 return false;
             }
 
-            _taken = true;
-            _hiddenFor = 0f;
-            SetVisible(false);
+            SetTaken(true);
             return true;
+        }
+
+        /// <summary>
+        /// Applies what the host says, on a machine that does not decide.
+        ///
+        /// A client that kept its own respawn clock would put the rock back at a
+        /// slightly different moment and show one lying there that the host had
+        /// already given away.
+        /// </summary>
+        public void ApplyReplicatedTaken(bool taken)
+        {
+            _remoteDriven = true;
+            if (_taken == taken)
+            {
+                return;
+            }
+
+            _taken = taken;
+            _hiddenFor = 0f;
+            SetVisible(!taken);
+        }
+
+        private void SetTaken(bool taken)
+        {
+            _taken = taken;
+            _hiddenFor = 0f;
+            SetVisible(!taken);
+            TakenChanged?.Invoke(pickupId, taken);
         }
 
         private void SetVisible(bool visible)
@@ -114,7 +159,9 @@ namespace PawsAndLoot.Gameplay.Items
 
         private void Update()
         {
-            if (!_taken || respawnSeconds <= 0f)
+            // The respawn clock belongs to whoever decides. On a client the
+            // rock comes back when the host says so.
+            if (_remoteDriven || !_taken || respawnSeconds <= 0f)
             {
                 return;
             }
@@ -125,8 +172,7 @@ namespace PawsAndLoot.Gameplay.Items
                 return;
             }
 
-            _taken = false;
-            SetVisible(true);
+            SetTaken(false);
         }
     }
 }

@@ -89,6 +89,13 @@ namespace PawsAndLoot.TechnicalValidation
         private bool _requestedThrow;
 
         /// <summary>
+        /// THROW-005. Latched on both machines: a rock in hand is momentary
+        /// because the throw spends it.
+        /// </summary>
+        private bool _sawPickedUpRock;
+        private bool _sawRockTaken;
+
+        /// <summary>
         /// THROW-007. Latched, because a stun expires — reading it at write time
         /// would report a clean miss for a throw that landed perfectly.
         /// </summary>
@@ -378,6 +385,30 @@ namespace PawsAndLoot.TechnicalValidation
                 _observedRole = role.Value.ToString();
             }
 
+            // THROW-005. Recorded on both machines: the whole bug was that only
+            // one of them ever knew.
+            foreach (PawsAndLoot.Gameplay.Items.ToolCarrier carrier in
+                FindObjectsByType<
+                    PawsAndLoot.Gameplay.Items.ToolCarrier>(
+                    FindObjectsSortMode.None))
+            {
+                if (carrier.HasTool)
+                {
+                    _sawPickedUpRock = true;
+                }
+            }
+
+            foreach (PawsAndLoot.Gameplay.Items.ThrowablePickup pickup in
+                FindObjectsByType<
+                    PawsAndLoot.Gameplay.Items.ThrowablePickup>(
+                    FindObjectsSortMode.None))
+            {
+                if (pickup.IsTaken)
+                {
+                    _sawRockTaken = true;
+                }
+            }
+
             // THROW-007. Recorded on both machines, because the point is that the
             // host's decision reached the other screen. A host that stuns the
             // thief while the client shows them still running is the exact
@@ -556,13 +587,33 @@ namespace PawsAndLoot.TechnicalValidation
                 PlayerRole.Police,
                 thief.transform.position + new Vector3(0f, 0f, -5f));
 
-            PawsAndLoot.Gameplay.Items.ToolCarrier carrier =
-                thief.GetComponent<
-                    PawsAndLoot.Gameplay.Items.ToolCarrier>();
-            if (carrier != null)
+            // Taken from a real pickup, not fabricated. That is what makes the
+            // rock disappear from the ground and puts the fact on the wire — the
+            // two things the other machine was never told.
+            //
+            // Called on the pickup directly rather than through the scanner: the
+            // scanner picks the nearest interactable, and the thief is standing
+            // at the sale point mid-sale at this moment. Whether the scanner
+            // finds a rock underfoot is covered by
+            // RockPickupScenePlayModeTests against the real scene.
+            PawsAndLoot.Gameplay.Items.ThrowablePickup rock = null;
+            foreach (PawsAndLoot.Gameplay.Items.ThrowablePickup candidate in
+                FindObjectsByType<
+                    PawsAndLoot.Gameplay.Items.ThrowablePickup>(
+                    FindObjectsSortMode.None))
             {
-                carrier.TryPickUp(
-                    PawsAndLoot.Gameplay.Items.ThrowableKind.Rock);
+                if (candidate.IsAvailable)
+                {
+                    rock = candidate;
+                    break;
+                }
+            }
+
+            if (rock != null)
+            {
+                rock.TryInteract(
+                    new PlayerInteractionContext(
+                        thief.GetComponent<PlayerRoleIdentity>()));
             }
         }
 
@@ -832,6 +883,8 @@ namespace PawsAndLoot.TechnicalValidation
 
             // THROW-007. Both files have to agree, or the two players are in
             // different chases.
+            AppendBool(json, "sawPickedUpRock", _sawPickedUpRock);
+            AppendBool(json, "sawRockTaken", _sawRockTaken);
             AppendBool(json, "sawStun", _sawStun);
             AppendNumber(json, "peakStunSeconds", _peakStunSeconds);
             AppendBool(json, "requestedThrow", _requestedThrow);
@@ -854,7 +907,13 @@ namespace PawsAndLoot.TechnicalValidation
             // would pass the case where the throw works and nobody else sees it.
             bool scenarioPassed = _scenario == "disconnect"
                 ? _mode != "host" || _disconnectCount == 1
-                : _sawCarried && _decidedWinner != "None" && _sawStun;
+                : _sawCarried
+                    && _decidedWinner != "None"
+                    && _sawStun
+                    // THROW-005. Both machines have to have seen the rock in
+                    // hand and gone from the ground.
+                    && _sawPickedUpRock
+                    && _sawRockTaken;
             AppendBool(json, "passed", sessionHealthy && scenarioPassed);
             json.AppendLine("  \"end\": true");
             json.AppendLine("}");

@@ -91,6 +91,31 @@ namespace PawsAndLoot.Gameplay.Items
         }
 
         /// <summary>
+        /// Sets the slot to what the host says it is, on a machine that does not
+        /// decide.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately skips the match-state gate that <see cref="TryPickUp"/>
+        /// applies. This is not a request and cannot be refused — the host has
+        /// already decided, and a client that quietly declined would show an
+        /// empty hand for a rock it is really holding. That was the bug: picking
+        /// a rock up worked on the host and the other player's HUD kept saying
+        /// they had nothing, which is indistinguishable from the pickup being
+        /// broken.
+        /// </remarks>
+        public void ApplyReplicated(bool hasTool, ThrowableKind kind)
+        {
+            if (_hasTool == hasTool && _kind == kind)
+            {
+                return;
+            }
+
+            _hasTool = hasTool;
+            _kind = kind;
+            HeldToolChanged?.Invoke(hasTool);
+        }
+
+        /// <summary>
         /// Drops the prop without using it, for match end and restarts.
         /// </summary>
         public void Clear()

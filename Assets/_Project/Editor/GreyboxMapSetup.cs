@@ -1317,7 +1317,9 @@ namespace PawsAndLoot.Editor
                         PawsAndLoot.Gameplay.Items.ToolUseInput>(),
                     player.GetComponent<StunState>(),
                     player.GetComponent<
-                        PawsAndLoot.Animation.ThrowPresenter>());
+                        PawsAndLoot.Animation.ThrowPresenter>(),
+                    player.GetComponent<
+                        PawsAndLoot.Gameplay.Items.ToolCarrier>());
                 links.Add(link);
             }
 
@@ -1349,7 +1351,7 @@ namespace PawsAndLoot.Editor
             var trapObject = new GameObject("Trap Coordinator");
             trapObject.transform.SetParent(parent);
             trapObject
-                .AddComponent<NetworkTrapCoordinator>()
+                .AddComponent<NetworkItemCoordinator>()
                 .Configure(matchRuntime);
 
             // Disconnect handling deliberately lives on the persistent
@@ -2938,7 +2940,11 @@ namespace PawsAndLoot.Editor
                     presentation,
                     false,
                     PlayerRole.Thief,
-                    12f);
+                    12f,
+                    // Stable id. The pickups are scene objects, so the same
+                    // number identifies the same rock on both machines without
+                    // anything being spawned.
+                    index + 1);
 
                 CheckSpotIsClear(pickup.transform, spots[index]);
             }

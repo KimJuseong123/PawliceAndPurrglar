@@ -131,6 +131,26 @@ namespace PawsAndLoot.Integration.Network
         [SerializeField]
         private PawsAndLoot.Animation.ThrowPresenter throwPresenter;
 
+        [SerializeField]
+        private PawsAndLoot.Gameplay.Items.ToolCarrier toolCarrier;
+
+        /// <summary>
+        /// THROW-005. What this player is holding: -1 for nothing, otherwise the
+        /// <c>ThrowableKind</c>.
+        ///
+        /// Replicated because the tool slot had no replication at all, and the
+        /// result was reported as "the rock won't pick up". The press did reach
+        /// the host and the host did take the rock — the other machine simply
+        /// never heard, so its HUD kept saying the hand was empty and the rock
+        /// stayed lying in the road. Nothing about the pickup was broken except
+        /// that only one of the two players could see it.
+        /// </summary>
+        private readonly NetworkVariable<int> _heldTool =
+            new(
+                -1,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
         /// <summary>
         /// THROW-007. Seconds of stun left, written only by the host.
         ///
@@ -209,9 +229,12 @@ namespace PawsAndLoot.Integration.Network
             PawsAndLoot.Gameplay.Items.ToolUseInput configuredToolInput = null,
             StunState configuredStun = null,
             PawsAndLoot.Animation.ThrowPresenter configuredThrowPresenter =
+                null,
+            PawsAndLoot.Gameplay.Items.ToolCarrier configuredToolCarrier =
                 null)
         {
             throwPresenter = configuredThrowPresenter;
+            toolCarrier = configuredToolCarrier;
             scanner = configuredScanner;
             interactionInput = configuredInteractionInput;
             carrier = configuredCarrier;
@@ -476,6 +499,13 @@ namespace PawsAndLoot.Integration.Network
                 _stunSeconds.Value = stun.RemainingSeconds;
             }
 
+            if (toolCarrier != null)
+            {
+                _heldTool.Value = toolCarrier.HasTool
+                    ? (int)toolCarrier.HeldKind
+                    : -1;
+            }
+
             if (wallet != null)
             {
                 _soldAmount.Value = wallet.SoldAmount;
@@ -503,6 +533,18 @@ namespace PawsAndLoot.Integration.Network
             {
                 _appliedStunCount = _stunCount.Value;
                 stun.TryApply(_stunSeconds.Value);
+            }
+
+            // What is in hand, so the HUD on this screen matches the hand the
+            // host is actually simulating.
+            if (toolCarrier != null)
+            {
+                int held = _heldTool.Value;
+                toolCarrier.ApplyReplicated(
+                    held >= 0,
+                    held >= 0
+                        ? (PawsAndLoot.Gameplay.Items.ThrowableKind)held
+                        : PawsAndLoot.Gameplay.Items.ThrowableKind.Rock);
             }
 
             if (wallet != null)
