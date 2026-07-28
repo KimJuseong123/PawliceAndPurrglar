@@ -123,8 +123,19 @@ namespace PawsAndLoot.Gameplay.Items
                 // A refused stun still spends the prop. The alternative is
                 // giving the rock back, which lets a player hold one press
                 // against an opponent who is briefly immune.
-                stun?.TryApply(
-                    ThrowableCatalog.GetStunSeconds(kind));
+                bool landed = stun?.TryApply(
+                    ThrowableCatalog.GetStunSeconds(kind)) == true;
+
+                // Money moves only on a hit that actually stunned, so the
+                // re-stun gap is also the limit on how often the officer can
+                // take money. Without that an officer with a rock empties the
+                // thief in a few seconds.
+                if (landed)
+                {
+                    PawsAndLoot.Gameplay.Loot.LootConfiscationRule.Apply(
+                        result.Hit,
+                        identity);
+                }
             }
 
             GameLogger.Info(

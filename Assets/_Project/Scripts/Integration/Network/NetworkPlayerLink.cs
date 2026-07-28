@@ -134,6 +134,23 @@ namespace PawsAndLoot.Integration.Network
         [SerializeField]
         private PawsAndLoot.Gameplay.Items.ToolCarrier toolCarrier;
 
+        [SerializeField]
+        private PoliceWallet policeWallet;
+
+        /// <summary>
+        /// THROW-011. The officer's purse, written only by the host.
+        ///
+        /// Replicated for the same reason the tool slot is: the officer decides
+        /// what to buy on their own screen, and a purse that only the host knew
+        /// about would tell them they cannot afford something the host would
+        /// happily sell them.
+        /// </summary>
+        private readonly NetworkVariable<int> _policeAmount =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
         /// <summary>
         /// THROW-005. What this player is holding: -1 for nothing, otherwise the
         /// <c>ThrowableKind</c>.
@@ -231,8 +248,10 @@ namespace PawsAndLoot.Integration.Network
             PawsAndLoot.Animation.ThrowPresenter configuredThrowPresenter =
                 null,
             PawsAndLoot.Gameplay.Items.ToolCarrier configuredToolCarrier =
-                null)
+                null,
+            PoliceWallet configuredPoliceWallet = null)
         {
+            policeWallet = configuredPoliceWallet;
             throwPresenter = configuredThrowPresenter;
             toolCarrier = configuredToolCarrier;
             scanner = configuredScanner;
@@ -506,6 +525,11 @@ namespace PawsAndLoot.Integration.Network
                     : -1;
             }
 
+            if (policeWallet != null)
+            {
+                _policeAmount.Value = policeWallet.Amount;
+            }
+
             if (wallet != null)
             {
                 _soldAmount.Value = wallet.SoldAmount;
@@ -533,6 +557,11 @@ namespace PawsAndLoot.Integration.Network
             {
                 _appliedStunCount = _stunCount.Value;
                 stun.TryApply(_stunSeconds.Value);
+            }
+
+            if (policeWallet != null)
+            {
+                policeWallet.ApplyReplicated(_policeAmount.Value);
             }
 
             // What is in hand, so the HUD on this screen matches the hand the

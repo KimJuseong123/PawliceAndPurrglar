@@ -75,6 +75,15 @@ namespace PawsAndLoot.TechnicalValidation
         /// </summary>
         private const float PlaceTrapAt = 9.6f;
 
+        /// <summary>
+        /// THROW-011. The officer buys a prop at the shop.
+        ///
+        /// The purse is replicated and the purchase is decided by the host, so
+        /// both halves need two-process coverage: a client shown the wrong figure
+        /// would be told it cannot afford what the host would sell it.
+        /// </summary>
+        private const float BuyAt = 10.6f;
+
         private const float PlaceForArrestAt = 11f;
 
         [SerializeField, Min(1f)]
@@ -102,6 +111,24 @@ namespace PawsAndLoot.TechnicalValidation
         private bool _armedForThrow;
         private bool _requestedThrow;
         private bool _placedTrap;
+        private bool _boughtProp;
+
+        /// <summary>
+        /// THROW-011. Latched: the purse changes again as soon as money is
+        /// recovered or spent.
+        /// </summary>
+        private int _peakPoliceAmount;
+        private int _policeSpentTotal;
+
+        /// <summary>
+        /// THROW-011. The purse as this machine last saw it.
+        ///
+        /// This is the figure worth comparing, not the spent total: the total is
+        /// a host-side counter and is not replicated, so demanding it of a client
+        /// asked for something a client cannot know. What has to cross is the
+        /// balance falling when the host spends.
+        /// </summary>
+        private int _lastPoliceAmount = -1;
 
         /// <summary>
         /// THROW-009. Peak trap count seen on this machine. Latched, because the
@@ -369,6 +396,12 @@ namespace PawsAndLoot.TechnicalValidation
                 PlaceTrapAwayFromEverybody();
             }
 
+            if (!_boughtProp && _elapsed >= BuyAt)
+            {
+                _boughtProp = true;
+                BuyPolicePropOnHost();
+            }
+
             if (!_placedForArrest && _elapsed >= PlaceForArrestAt)
             {
                 _placedForArrest = true;
@@ -410,6 +443,21 @@ namespace PawsAndLoot.TechnicalValidation
             if (role.HasValue)
             {
                 _observedRole = role.Value.ToString();
+            }
+
+            // THROW-011. The officer's purse, on both machines.
+            foreach (PawsAndLoot.Gameplay.Players.PoliceWallet purse in
+                FindObjectsByType<
+                    PawsAndLoot.Gameplay.Players.PoliceWallet>(
+                    FindObjectsSortMode.None))
+            {
+                _peakPoliceAmount = Mathf.Max(
+                    _peakPoliceAmount,
+                    purse.Amount);
+                _policeSpentTotal = Mathf.Max(
+                    _policeSpentTotal,
+                    purse.SpentTotal);
+                _lastPoliceAmount = purse.Amount;
             }
 
             // THROW-009. Both machines have to end up with the same trap. A
@@ -594,6 +642,52 @@ namespace PawsAndLoot.TechnicalValidation
             PlaceRole(
                 PlayerRole.Police,
                 thief.transform.position + new Vector3(0.8f, 0f, 0f));
+        }
+
+        /// <summary>
+        /// THROW-011 setup, host only. Buys from the counter directly.
+        ///
+        /// Called on the counter rather than through the scanner because the
+        /// officer is standing next to the thief for the arrest at this point,
+        /// not outside the shop. Whether the scanner finds a counter underfoot is
+        /// the same question the pickup tests already answer against the real
+        /// scene.
+        /// </summary>
+        private void BuyPolicePropOnHost()
+        {
+            if (_mode != "host")
+            {
+                return;
+            }
+
+            NetworkPlayerLink police = FindLink(PlayerRole.Police);
+            if (police == null)
+            {
+                return;
+            }
+
+            PawsAndLoot.Gameplay.Players.PlayerRoleIdentity identity =
+                police.GetComponent<
+                    PawsAndLoot.Gameplay.Players.PlayerRoleIdentity>();
+            PawsAndLoot.Gameplay.Items.ToolCarrier carrier =
+                police.GetComponent<
+                    PawsAndLoot.Gameplay.Items.ToolCarrier>();
+            // Empty the hand first: the counter refuses a full one, which is
+            // correct behaviour and would make this step measure nothing.
+            carrier?.Clear();
+
+            foreach (PawsAndLoot.Gameplay.Items.PoliceSupplyCounter counter in
+                FindObjectsByType<
+                    PawsAndLoot.Gameplay.Items.PoliceSupplyCounter>(
+                    FindObjectsSortMode.None))
+            {
+                if (counter.TryInteract(
+                        new PawsAndLoot.Gameplay.Players
+                            .PlayerInteractionContext(identity)))
+                {
+                    return;
+                }
+            }
         }
 
         /// <summary>
@@ -948,6 +1042,9 @@ namespace PawsAndLoot.TechnicalValidation
             // THROW-007. Both files have to agree, or the two players are in
             // different chases.
             AppendNumber(json, "peakTrapCount", _peakTrapCount);
+            AppendNumber(json, "peakPoliceAmount", _peakPoliceAmount);
+            AppendNumber(json, "policeSpentTotal", _policeSpentTotal);
+            AppendNumber(json, "lastPoliceAmount", _lastPoliceAmount);
             AppendBool(json, "sawPickedUpRock", _sawPickedUpRock);
             AppendBool(json, "sawRockTaken", _sawRockTaken);
             AppendBool(json, "sawStun", _sawStun);
@@ -980,7 +1077,16 @@ namespace PawsAndLoot.TechnicalValidation
                     && _sawPickedUpRock
                     && _sawRockTaken
                     // THROW-009. The placed-trap message reached this machine.
-                    && _peakTrapCount >= 1;
+                    && _peakTrapCount >= 1
+                    // THROW-011. The purse replicated and a purchase went
+                    // through. Zero on the client means the figure never
+                    // crossed.
+                    && _peakPoliceAmount > 0
+                    // The balance fell after the purchase, on both machines.
+                    // That is the half that has to cross the wire; the spent
+                    // total is a host-side counter.
+                    && _lastPoliceAmount >= 0
+                    && _lastPoliceAmount < _peakPoliceAmount;
             AppendBool(json, "passed", sessionHealthy && scenarioPassed);
             json.AppendLine("  \"end\": true");
             json.AppendLine("}");

@@ -254,8 +254,38 @@ namespace PawsAndLoot.Integration.Network
             }
 
             StunState stun = victim.GetComponent<StunState>();
-            stun?.TryApply(
-                ThrowableCatalog.GetStunSeconds(trap.Kind));
+            bool held = stun?.TryApply(
+                ThrowableCatalog.GetStunSeconds(trap.Kind)) == true;
+
+            // A glue trap that catches the thief takes money too, on the same
+            // terms as a thrown rock — the officer's props should not be worth
+            // less than their arm. A banana does not: the thief taking money off
+            // the officer would mean the officer's equipment funds itself out of
+            // its own failures.
+            if (held && trap.PlacedBy == PlayerRole.Police)
+            {
+                PawsAndLoot.Gameplay.Loot.LootConfiscationRule.Apply(
+                    victim,
+                    FindPolice());
+            }
+        }
+
+        /// <summary>
+        /// The officer, for crediting a trap they placed but are not standing on.
+        /// </summary>
+        private static PlayerRoleIdentity FindPolice()
+        {
+            foreach (PlayerRoleIdentity candidate in
+                FindObjectsByType<PlayerRoleIdentity>(
+                    FindObjectsSortMode.None))
+            {
+                if (candidate.Role == PlayerRole.Police)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

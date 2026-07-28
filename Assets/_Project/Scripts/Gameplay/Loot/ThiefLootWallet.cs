@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Players;
+using PawsAndLoot.Logging;
 using UnityEngine;
 
 namespace PawsAndLoot.Gameplay.Loot
@@ -70,6 +71,54 @@ namespace PawsAndLoot.Gameplay.Loot
             int previousAmount = SoldAmount;
             SoldAmount = clamped;
             SaleAmountChanged?.Invoke(previousAmount, SoldAmount);
+        }
+
+        /// <summary>
+        /// Host side. Takes a share of the thief's money off them and reports how
+        /// much of it the officer gets to keep.
+        ///
+        /// This is what makes a thrown rock worth throwing. Without it the police
+        /// can stun the thief all night and the number that decides the match
+        /// never moves, so the officer's only real play is the arrest — and the
+        /// props exist to give them others.
+        ///
+        /// Taken off the sold total on purpose, because that is the only money in
+        /// the game. Two fractions rather than one: the loss is bigger than the
+        /// recovery, so money leaves the match. A police economy funded pound for
+        /// pound out of the thief's takings would make hitting them a transfer
+        /// rather than a setback.
+        /// </summary>
+        public int Confiscate(float lostFraction, float recoveredFraction)
+        {
+            ValidateOrThrow();
+            if (SoldAmount <= 0 || lostFraction <= 0f)
+            {
+                return 0;
+            }
+
+            int lost = Mathf.Clamp(
+                Mathf.RoundToInt(SoldAmount * lostFraction),
+                0,
+                SoldAmount);
+            if (lost <= 0)
+            {
+                return 0;
+            }
+
+            int recovered = Mathf.Clamp(
+                Mathf.RoundToInt(SoldAmount * recoveredFraction),
+                0,
+                lost);
+
+            int previousAmount = SoldAmount;
+            SoldAmount -= lost;
+            GameLogger.Info(
+                GameLogCategory.Loot,
+                $"Thief lost {lost} of {previousAmount}; police recovered "
+                + $"{recovered}.",
+                this);
+            SaleAmountChanged?.Invoke(previousAmount, SoldAmount);
+            return recovered;
         }
 
         public void ValidateOrThrow()

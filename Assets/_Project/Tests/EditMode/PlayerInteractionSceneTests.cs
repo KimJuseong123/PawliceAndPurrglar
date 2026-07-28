@@ -120,9 +120,9 @@ namespace PawsAndLoot.Tests.EditMode
                     PlayerInteractionType.Traversal,
                     PlayerInteractionType.Traversal,
                     // The plaza marker, five THROW-005 rock pickups and the
-                    // four THROW-009 police prop pickups.
-                    PlayerInteractionType.Generic,
-                    PlayerInteractionType.Generic,
+                    // two THROW-011 supply counters. The police prop pickups are
+                    // gone on purpose — the shop is their only source now, and
+                    // free copies on the map would undercut it.
                     PlayerInteractionType.Generic,
                     PlayerInteractionType.Generic,
                     PlayerInteractionType.Generic,
@@ -180,15 +180,13 @@ namespace PawsAndLoot.Tests.EditMode
                 }
             }
 
-            // THROW-009. The officer has both of their props on the map.
+            // THROW-011. The officer's props come from the shop, so none of
+            // them lie about as free pickups.
             Assert.That(
-                pickups.Count(pickup =>
-                    pickup.Kind == ThrowableKind.GlueTrap),
-                Is.GreaterThan(0));
-            Assert.That(
-                pickups.Count(pickup =>
-                    pickup.Kind == ThrowableKind.SensorLight),
-                Is.GreaterThan(0));
+                pickups.Where(pickup =>
+                    ThrowableCatalog.GetOwner(pickup.Kind)
+                    == PlayerRole.Police),
+                Is.Empty);
             Assert.That(
                 scene.GetRootGameObjects()
                     .SelectMany(root =>

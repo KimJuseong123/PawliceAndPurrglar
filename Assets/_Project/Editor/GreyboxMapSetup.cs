@@ -1328,7 +1328,8 @@ namespace PawsAndLoot.Editor
                     player.GetComponent<
                         PawsAndLoot.Animation.ThrowPresenter>(),
                     player.GetComponent<
-                        PawsAndLoot.Gameplay.Items.ToolCarrier>());
+                        PawsAndLoot.Gameplay.Items.ToolCarrier>(),
+                    player.GetComponent<PoliceWallet>());
                 links.Add(link);
             }
 
@@ -2583,6 +2584,13 @@ namespace PawsAndLoot.Editor
                             "Greybox_ScentMark",
                             new Color(1f, 0.78f, 0.32f)));
             }
+            if (role == PlayerRole.Police)
+            {
+                // THROW-011. The officer's purse. Never read by the win
+                // condition — it buys equipment and nothing else.
+                player.AddComponent<PoliceWallet>().Configure();
+            }
+
             if (role == PlayerRole.Thief)
             {
                 ThiefLootWallet wallet =
@@ -2999,77 +3007,71 @@ namespace PawsAndLoot.Editor
 
             Debug.Log($"[THROW-005] {spots.Length} rock pickups placed.");
 
-            CreatePolicePropPickups(parent, spots.Length);
+            CreatePoliceSupplyCounters(parent, matchRuntime);
         }
 
         /// <summary>
-        /// The officer's two props, on the same road intersections the rocks use.
+        /// The supermarket counter where the officer buys their props.
         ///
-        /// Role-restricted, which is what the flag on the pickup exists for: an
-        /// officer's glue trap is no use to the thief, and letting either side
-        /// take either would collapse the two kits into one.
+        /// This replaces the temporary free pickups those props had. Leaving them
+        /// on the map would have left the police purse with nothing to buy, and a
+        /// currency with nothing to spend it on is not an economy — it is a
+        /// number in the corner of the screen.
         ///
-        /// Temporary, like the rocks. The intended source is the shop, which
-        /// waits on the police economy.
+        /// Two counters rather than one that cycles: the officer reads two prices
+        /// and presses once, instead of pressing to browse while being chased.
+        ///
+        /// Placed on the pavement outside the supermarket rather than inside it,
+        /// because the interior is not walkable in the greybox and the shop being
+        /// a detour is the whole cost of restocking.
         /// </summary>
-        private static void CreatePolicePropPickups(
+        private static void CreatePoliceSupplyCounters(
             Transform parent,
-            int firstId)
+            MatchRuntimeState matchRuntime)
         {
-            (Vector3 spot, ThrowableKind kind)[] props =
+            Vector3 shopFront = new Vector3(-14.5f, 0.5f, -9f);
+            (ThrowableKind kind, int price, Vector3 offset)[] counters =
             {
-                (new Vector3(-18f, 0.35f, -12f), ThrowableKind.GlueTrap),
-                (new Vector3(18f, 0.35f, 12f), ThrowableKind.GlueTrap),
-                (new Vector3(0f, 0.35f, -18f), ThrowableKind.SensorLight),
-                (new Vector3(24f, 0.35f, 26f), ThrowableKind.SensorLight)
+                (ThrowableKind.GlueTrap, 60, new Vector3(0f, 0f, 0f)),
+                (ThrowableKind.SensorLight, 90, new Vector3(2.2f, 0f, 0f))
             };
 
-            for (int index = 0; index < props.Length; index++)
+            foreach ((ThrowableKind kind, int price, Vector3 offset)
+                in counters)
             {
-                (Vector3 spot, ThrowableKind kind) = props[index];
-                var pickup = new GameObject(
-                    $"{kind} Pickup {index + 1}");
-                pickup.transform.SetParent(parent);
-                pickup.transform.position = spot;
+                Vector3 spot = shopFront + offset;
+                var counter = new GameObject($"{kind} Counter");
+                counter.transform.SetParent(parent);
+                counter.transform.position = spot;
 
-                var trigger = pickup.AddComponent<SphereCollider>();
-                trigger.radius = 0.5f;
+                var trigger = counter.AddComponent<SphereCollider>();
+                trigger.radius = 0.6f;
                 trigger.isTrigger = true;
 
-                Transform presentation = CreateChild(
-                    "PresentationRoot",
-                    pickup.transform);
-                presentation.localPosition = Vector3.zero;
-                Material propMaterial = LoadOrCreateMaterial(
+                Material counterMaterial = LoadOrCreateMaterial(
                     $"Greybox_{kind}",
                     kind == ThrowableKind.GlueTrap
                         ? new Color(0.24f, 0.2f, 0.16f)
                         : new Color(0.86f, 0.88f, 0.9f));
                 GameObject marker = CreateCube(
-                    $"{kind} Marker",
-                    spot,
-                    kind == ThrowableKind.GlueTrap
-                        ? new Vector3(0.6f, 0.12f, 0.6f)
-                        : new Vector3(0.3f, 0.5f, 0.3f),
-                    propMaterial,
-                    presentation,
+                    $"{kind} Counter Marker",
+                    spot + Vector3.up * 0.2f,
+                    new Vector3(0.7f, 0.9f, 0.7f),
+                    counterMaterial,
+                    counter.transform,
                     false);
                 UnityEngine.Object.DestroyImmediate(
                     marker.GetComponent<Collider>());
 
-                pickup.AddComponent<ThrowablePickup>().Configure(
-                    kind,
-                    presentation,
-                    true,
-                    PlayerRole.Police,
-                    14f,
-                    firstId + index + 1);
+                counter.AddComponent<PoliceSupplyCounter>()
+                    .Configure(kind, price, matchRuntime);
 
-                CheckSpotIsClear(pickup.transform, spot);
+                CheckSpotIsClear(counter.transform, spot);
             }
 
             Debug.Log(
-                $"[THROW-009] {props.Length} police prop pickups placed.");
+                $"[THROW-011] {counters.Length} police supply counters "
+                + "placed.");
         }
 
         /// <summary>

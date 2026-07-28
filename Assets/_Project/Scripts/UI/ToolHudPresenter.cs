@@ -25,6 +25,9 @@ namespace PawsAndLoot.UI
         private StunState stun;
 
         [SerializeField]
+        private PoliceWallet policeWallet;
+
+        [SerializeField]
         private Text slotLabel;
 
         public string SlotText =>
@@ -80,6 +83,7 @@ namespace PawsAndLoot.UI
 
                 carrier = candidate;
                 stun = candidate.GetComponent<StunState>();
+                policeWallet = candidate.GetComponent<PoliceWallet>();
                 return;
             }
         }
@@ -104,7 +108,12 @@ namespace PawsAndLoot.UI
 
             if (carrier == null || !carrier.HasTool)
             {
-                slotLabel.text = "손에 든 것 없음";
+                // The officer's purse belongs on the empty-handed line, because
+                // that is exactly when they need to know whether a trip to the
+                // shop is worth it.
+                slotLabel.text = policeWallet != null
+                    ? $"손에 든 것 없음  ·  {policeWallet.Amount}골드"
+                    : "손에 든 것 없음";
                 slotLabel.color = new Color(0.55f, 0.6f, 0.68f);
                 return;
             }
@@ -117,9 +126,12 @@ namespace PawsAndLoot.UI
             // The mouse is named first for a throw, because aiming is the half a
             // player will not discover on their own: F alone worked, so nothing
             // ever told them the cursor mattered.
+            string purse = policeWallet != null
+                ? $"  ·  {policeWallet.Amount}골드"
+                : string.Empty;
             slotLabel.text = placed
-                ? $"{what}  [F] 설치"
-                : $"{what}  [좌클릭] 커서 방향으로 던지기";
+                ? $"{what}  [F] 설치{purse}"
+                : $"{what}  [좌클릭] 커서 방향으로 던지기{purse}";
             slotLabel.color = new Color(1f, 0.92f, 0.72f);
         }
 
