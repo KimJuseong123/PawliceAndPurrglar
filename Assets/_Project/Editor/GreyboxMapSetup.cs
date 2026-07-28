@@ -686,7 +686,8 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static Material LoadOrCreateGlowMaterial(
             string assetName,
-            Color color)
+            Color color,
+            bool doubleSided = false)
         {
             Material material = LoadOrCreateMaterial(
                 assetName,
@@ -706,6 +707,14 @@ namespace PawsAndLoot.Editor
             material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             material.renderQueue =
                 (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            if (doubleSided)
+            {
+                // 0 = Off. URP reads the property and the render state, so both
+                // have to be set.
+                material.SetFloat("_Cull", 0f);
+                material.doubleSidedGI = true;
+            }
+
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -2502,7 +2511,15 @@ namespace PawsAndLoot.Editor
                     // nothing else in the town uses.
                     LoadOrCreateGlowMaterial(
                         "Greybox_StunStar",
-                        new Color(1f, 0.85f, 0.05f, 1f)));
+                        new Color(1f, 0.85f, 0.05f, 1f),
+                        // Drawn from both sides. A flat cutout star has no
+                        // meaningful back, and single-sided is what made these
+                        // invisible for their whole existence — the mesh was
+                        // wound backwards and culling discarded all of it. The
+                        // winding is fixed and tested; this makes a future
+                        // orientation change unable to silently delete them
+                        // again.
+                        true));
 
             // Per-screen night adaptation. The thief's is brighter — they are the
             // one being hunted in the dark, and this is the cheapest

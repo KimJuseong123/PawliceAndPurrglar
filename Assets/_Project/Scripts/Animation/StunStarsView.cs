@@ -97,11 +97,28 @@ namespace PawsAndLoot.Animation
                     0f);
             }
 
+            // Wound so the front face ends up pointing at the camera once the
+            // star is turned to face it.
+            //
+            // This was backwards, and it is why the stars were invisible for
+            // their entire existence. Everything else was right — four meshes,
+            // built, active, enabled, bright yellow, correctly placed above the
+            // head, inside the frustum — and backface culling threw away every
+            // triangle because the one visible side pointed away from the
+            // camera. Measured at a dot product of -0.997, i.e. almost exactly
+            // backwards.
+            //
+            // The rim runs counter-clockwise in the local XY plane, so the
+            // second and third indices are swapped relative to the obvious
+            // order. The torch wedge does not need this because it is built in
+            // the XZ plane and viewed from above; the plane and the viewing
+            // direction together decide the winding, which is why this cannot be
+            // reasoned about once and applied everywhere.
             for (int i = 0; i < rim; i++)
             {
                 triangles[i * 3] = 0;
-                triangles[i * 3 + 1] = i + 1;
-                triangles[i * 3 + 2] = i + 1 < rim ? i + 2 : 1;
+                triangles[i * 3 + 1] = i + 1 < rim ? i + 2 : 1;
+                triangles[i * 3 + 2] = i + 1;
             }
 
             var mesh = new Mesh { name = "Stun Star" };
