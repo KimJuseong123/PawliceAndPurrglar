@@ -141,6 +141,51 @@ namespace PawsAndLoot.Tests.PlayMode
                     $"{role}'s '{thigh.name}' is not part of any skinned "
                     + "mesh's skeleton.");
 
+                // Arms swing, but far less than legs.
+                //
+                // At parity the upper body dominated, and on the thief — whose
+                // legs barely deform — it was the only motion on screen. It read
+                // as flailing rather than walking: "눈이 아프다" was the report.
+                // A walking person's arms travel roughly a third of their legs.
+                Transform upperArm = player
+                    .GetComponentsInChildren<Transform>(true)
+                    .First(bone =>
+                        bone.name.Contains("Upperarm")
+                        && !bone.name.Contains("Twist"));
+                Quaternion armBefore = upperArm.localRotation;
+                float armPeak = 0f;
+
+                Time.captureDeltaTime = 0.05f;
+                try
+                {
+                    for (int tick = 0; tick < 40; tick++)
+                    {
+                        player.transform.position +=
+                            player.transform.forward * 0.25f;
+                        yield return null;
+                        armPeak = Mathf.Max(
+                            armPeak,
+                            Quaternion.Angle(
+                                armBefore,
+                                upperArm.localRotation));
+                    }
+                }
+                finally
+                {
+                    Time.captureDeltaTime = 0f;
+                }
+
+                Assert.That(
+                    armPeak,
+                    Is.GreaterThan(2f),
+                    $"{role}'s arms have to move at all.");
+                Assert.That(
+                    armPeak,
+                    Is.LessThan(peak * 0.6f),
+                    $"{role} swings its arms {armPeak:0.0}° against "
+                    + $"{peak:0.0}° at the leg. Arms matching legs is what "
+                    + "read as vibration.");
+
                 Assert.That(
                     peak,
                     Is.GreaterThan(12f),

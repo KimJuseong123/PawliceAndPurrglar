@@ -143,6 +143,25 @@ namespace PawsAndLoot.TechnicalValidation
         private readonly Dictionary<PlayerRole, float> _thighPeak = new();
 
         /// <summary>
+        /// Vertical motion per role: how far the character bobs and how often it
+        /// changes direction.
+        ///
+        /// Measured because "the thief vibrates" survived removing the only thing
+        /// that deliberately bobbed a player, so something else is moving it and
+        /// guessing has already cost three attempts.
+        /// </summary>
+        private readonly Dictionary<PlayerRole, float> _yLow = new();
+        private readonly Dictionary<PlayerRole, float> _yHigh = new();
+        private readonly Dictionary<PlayerRole, float> _yPrevious =
+            new();
+        private readonly Dictionary<PlayerRole, int> _ySign = new();
+        private readonly Dictionary<PlayerRole, int> _yFlips = new();
+        private readonly Dictionary<PlayerRole, float> _visualLow =
+            new();
+        private readonly Dictionary<PlayerRole, float> _visualHigh =
+            new();
+
+        /// <summary>
         /// THROW-009. Peak trap count seen on this machine. Latched, because the
         /// host clears a trap the moment it fires.
         /// </summary>
@@ -489,6 +508,70 @@ namespace PawsAndLoot.TechnicalValidation
                     Quaternion.Angle(
                         _thighRest[identity.Role],
                         thigh.localRotation));
+            }
+
+            // Vertical motion per role, during the movement phase only.
+            //
+            // Restricted to before the first placement on purpose: the scenario
+            // teleports characters to set up loot, sales and arrests, and a
+            // teleport plus the fall that follows it swamps the bob being
+            // measured. Nothing is placed before MoveUntil.
+            //
+            // The model is measured separately from the character, because "the
+            // body vibrates" could be either the whole capsule moving or the mesh
+            // moving inside it, and those have completely different causes.
+            foreach (PlayerRoleIdentity identity in
+                _elapsed < MoveUntil
+                    ? FindObjectsByType<PlayerRoleIdentity>(
+                        FindObjectsSortMode.None)
+                    : System.Array.Empty<PlayerRoleIdentity>())
+            {
+                Transform visual =
+                    identity.transform.Find("VisualRoot");
+                if (visual != null)
+                {
+                    float vy = visual.position.y
+                        - identity.transform.position.y;
+                    if (!_visualLow.ContainsKey(identity.Role))
+                    {
+                        _visualLow[identity.Role] = vy;
+                        _visualHigh[identity.Role] = vy;
+                    }
+
+                    _visualLow[identity.Role] = Mathf.Min(
+                        _visualLow[identity.Role],
+                        vy);
+                    _visualHigh[identity.Role] = Mathf.Max(
+                        _visualHigh[identity.Role],
+                        vy);
+                }
+
+                float y = identity.transform.position.y;
+                if (!_yLow.ContainsKey(identity.Role))
+                {
+                    _yLow[identity.Role] = y;
+                    _yHigh[identity.Role] = y;
+                    _yPrevious[identity.Role] = y;
+                    _ySign[identity.Role] = 0;
+                    _yFlips[identity.Role] = 0;
+                }
+
+                _yLow[identity.Role] = Mathf.Min(_yLow[identity.Role], y);
+                _yHigh[identity.Role] = Mathf.Max(_yHigh[identity.Role], y);
+
+                float step = y - _yPrevious[identity.Role];
+                if (Mathf.Abs(step) > 0.0005f)
+                {
+                    int sign = step > 0f ? 1 : -1;
+                    if (_ySign[identity.Role] != 0
+                        && sign != _ySign[identity.Role])
+                    {
+                        _yFlips[identity.Role]++;
+                    }
+
+                    _ySign[identity.Role] = sign;
+                    _yPrevious[identity.Role] = y;
+                }
             }
 
             // THROW-011. The officer's purse, on both machines.
@@ -1097,6 +1180,42 @@ namespace PawsAndLoot.TechnicalValidation
                 _thighPeak.TryGetValue(PlayerRole.Police, out float pv)
                     ? pv
                     : -1f);
+            AppendNumber(
+                json,
+                "policeVisualRange",
+                _visualHigh.TryGetValue(PlayerRole.Police, out float pv2)
+                    ? pv2 - _visualLow[PlayerRole.Police]
+                    : -1f);
+            AppendNumber(
+                json,
+                "thiefVisualRange",
+                _visualHigh.TryGetValue(PlayerRole.Thief, out float tv2)
+                    ? tv2 - _visualLow[PlayerRole.Thief]
+                    : -1f);
+            AppendNumber(
+                json,
+                "policeYRange",
+                _yHigh.TryGetValue(PlayerRole.Police, out float ph)
+                    ? ph - _yLow[PlayerRole.Police]
+                    : -1f);
+            AppendNumber(
+                json,
+                "thiefYRange",
+                _yHigh.TryGetValue(PlayerRole.Thief, out float th)
+                    ? th - _yLow[PlayerRole.Thief]
+                    : -1f);
+            AppendNumber(
+                json,
+                "policeYFlips",
+                _yFlips.TryGetValue(PlayerRole.Police, out int pf)
+                    ? pf
+                    : -1);
+            AppendNumber(
+                json,
+                "thiefYFlips",
+                _yFlips.TryGetValue(PlayerRole.Thief, out int tf)
+                    ? tf
+                    : -1);
             AppendNumber(
                 json,
                 "thiefThighSwing",

@@ -3956,30 +3956,33 @@ namespace PawsAndLoot.Editor
             radarRoot.anchorMax = new Vector2(0.5f, 0.5f);
             radarRoot.pivot = new Vector2(0.5f, 0.5f);
             radarRoot.anchoredPosition = Vector2.zero;
-            radarRoot.sizeDelta = new Vector2(360f, 360f);
+            // Smaller than the first attempt, which was reported as too big.
+            radarRoot.sizeDelta = new Vector2(240f, 240f);
             SensorRadarPresenter radar =
                 hudRoot.gameObject.AddComponent<SensorRadarPresenter>();
             radar.Configure(radarRoot, roleSelector);
 
-            // Three arcs like signal bars, growing outward from the officer.
-            // Built from the same wedge sprite rotated about the centre, so the
-            // whole thing turns as one rect.
-            for (int band = 0; band < 3; band++)
+            // Seven concentric arcs, all built. How many of them light is what
+            // says how close the sensor is, so the presenter switches them on
+            // rather than the builder deciding a count.
+            //
+            // Red: the torch, the stun stars and the ground wedge are all yellow,
+            // and a fourth yellow thing on a night screen is one more yellow
+            // thing. An alarm should not share a colour with the lighting.
+            for (int band = 0; band < 7; band++)
             {
                 RectTransform bar = CreateRect(
                     $"Signal Arc {band + 1}",
                     radarRoot);
-                float size = 110f + band * 74f;
                 bar.anchorMin = new Vector2(0.5f, 0.5f);
                 bar.anchorMax = new Vector2(0.5f, 0.5f);
                 bar.pivot = new Vector2(0.5f, 0.5f);
-                // Pushed forward so the arcs sit ahead of the officer rather
-                // than ringing them; a ring says "near you", a fan says "that
-                // way".
-                bar.anchoredPosition = new Vector2(0f, size * 0.42f);
-                bar.sizeDelta = new Vector2(size, size * 0.36f);
-                Image arc = bar.gameObject.AddComponent<Image>();
-                arc.color = new Color(1f, 0.78f, 0.1f, 1f);
+                bar.anchoredPosition = Vector2.zero;
+                bar.sizeDelta = new Vector2(320f, 320f);
+                SensorArcGraphic arc =
+                    bar.gameObject.AddComponent<SensorArcGraphic>();
+                arc.Configure(26f + band * 17f, 8f, 96f);
+                arc.color = new Color(0.95f, 0.16f, 0.16f, 1f);
                 arc.raycastTarget = false;
                 radar.AddBar(arc);
             }

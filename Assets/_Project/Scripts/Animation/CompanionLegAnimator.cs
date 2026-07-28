@@ -46,6 +46,17 @@ namespace PawsAndLoot.Animation
             public float PhaseOffset;
 
             /// <summary>
+            /// Fraction of the profile's amplitude this limb uses.
+            ///
+            /// Arms are not legs. A walking person's arms swing a fraction of
+            /// what their legs do, and giving them the same amplitude produced
+            /// the "휘적휘적" flail — worst on the thief, whose legs barely
+            /// deform, so the arms were the only motion on screen and they were
+            /// swinging as hard as legs.
+            /// </summary>
+            public float Amplitude = 1f;
+
+            /// <summary>
             /// Local axis that swings this limb forwards and backwards, and the
             /// sign that makes a positive angle swing forward.
             ///
@@ -112,6 +123,16 @@ namespace PawsAndLoot.Animation
         /// </summary>
         [SerializeField, Min(0f)]
         private float headSwayDegrees = 9f;
+
+        /// <summary>
+        /// How much of the leg amplitude a biped's arms use.
+        ///
+        /// A walking person's arms travel roughly a third of what their legs do.
+        /// At parity the upper body dominated and read as jitter rather than
+        /// stride, which is exactly what "눈이 아프다" described.
+        /// </summary>
+        [SerializeField, Range(0.05f, 1f)]
+        private float armAmplitude = 0.34f;
 
         private readonly List<Leg> _legs = new();
         private Transform _head;
@@ -254,7 +275,12 @@ namespace PawsAndLoot.Animation
                     LowerAxis = lowerAxis,
                     UpperSign = upperSign,
                     LowerSign = lowerSign,
-                    PhaseOffset = ResolveGaitPhase(side, isFront)
+                    PhaseOffset = ResolveGaitPhase(side, isFront),
+                    // On a biped the front limbs are arms. On a quadruped they
+                    // are front legs and carry weight like the back ones.
+                    Amplitude = gait == GaitMode.Biped && isFront
+                        ? armAmplitude
+                        : 1f
                 });
             }
         }
@@ -628,13 +654,18 @@ namespace PawsAndLoot.Animation
 
                 leg.Upper.localRotation = leg.UpperRest
                     * Quaternion.AngleAxis(
-                        hipDegrees * _movingBlend * leg.UpperSign,
+                        hipDegrees * _movingBlend * leg.UpperSign
+                        * leg.Amplitude,
                         leg.UpperAxis);
                 if (leg.Lower != null)
                 {
+                    // The elbow gets even less than the shoulder. A forearm
+                    // bending as far as a knee is the single most flail-like
+                    // part of the whole thing.
                     leg.Lower.localRotation = leg.LowerRest
                         * Quaternion.AngleAxis(
-                            kneeDegrees * _movingBlend * leg.LowerSign,
+                            kneeDegrees * _movingBlend * leg.LowerSign
+                            * leg.Amplitude * leg.Amplitude,
                             leg.LowerAxis);
                 }
             }

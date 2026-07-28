@@ -108,6 +108,31 @@ namespace PawsAndLoot.Tests.PlayMode
                 $"A sensor due east should read as -90°, not "
                 + $"{radar.CurrentAngle:0.#}°.");
 
+            // Closeness is read as a count of arcs, so nearer has to light more.
+            // Eight metres away is close.
+            int nearBars = radar.LitBarCount;
+            Assert.That(
+                nearBars,
+                Is.GreaterThanOrEqualTo(4),
+                "Four arcs is the floor; fewer does not read as a signal.");
+
+            // Now trip one from across the map and check it reads weaker.
+            visibility.RevealFor(
+                ThrowableCatalog.RevealSeconds,
+                police.transform.position + new Vector3(0f, 0f, 40f));
+            radar.Refresh(0.02f);
+
+            Assert.That(
+                radar.LitBarCount,
+                Is.LessThan(nearBars),
+                $"A sensor 40 m away lit {radar.LitBarCount} arcs and one 8 m "
+                + $"away lit {nearBars}. Distance has to read as a count, or "
+                + "the officer cannot tell near from far.");
+            Assert.That(
+                Mathf.DeltaAngle(radar.CurrentAngle, 0f),
+                Is.EqualTo(0f).Within(5f),
+                "And due north has to read as straight up.");
+
             // And the sensor survives long enough to flash rather than vanishing
             // the instant it fires.
             Assert.That(
