@@ -328,6 +328,15 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.False,
                 "Nothing over the head of somebody who is fine.");
 
+            // The ring has to be big enough to read from the fixed camera. A
+            // halo tucked inside the character's own 0.45 m silhouette is what
+            // made the first version easy to miss.
+            Assert.That(stars.StarCount, Is.EqualTo(4));
+            Assert.That(
+                stars.OrbitRadius,
+                Is.GreaterThan(0.45f),
+                "The ring has to sit outside the character's own width.");
+
             Assert.That(stun.TryApply(0.4f), Is.True);
             yield return null;
             Assert.That(stars.IsShowing, Is.True);

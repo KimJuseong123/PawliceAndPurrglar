@@ -32,29 +32,37 @@ namespace PawsAndLoot.Animation
         private Material starMaterial;
 
         [SerializeField, Min(1)]
-        private int starCount = 3;
+        private int starCount = 4;
 
         /// <summary>
-        /// Height above the character's own origin. Above the head of a 1.8 m
-        /// character with room to spare, so the ring never intersects the face.
+        /// Height above the character's own origin. Clear above the head of a
+        /// 1.8 m character, with room for the wider ring below it — the stars
+        /// must not cut through the face as they come round the front.
         /// </summary>
         [SerializeField, Min(0.5f)]
-        private float height = 2.15f;
+        private float height = 2.35f;
+
+        /// <summary>
+        /// Wider than the character's own 0.45 m radius, so the ring reads as a
+        /// halo around them rather than something stuck to their head. This is
+        /// what makes a stun legible from the fixed camera at a distance.
+        /// </summary>
+        [SerializeField, Min(0.05f)]
+        private float orbitRadius = 0.8f;
 
         [SerializeField, Min(0.05f)]
-        private float orbitRadius = 0.42f;
-
-        [SerializeField, Min(0.05f)]
-        private float starSize = 0.42f;
+        private float starSize = 0.62f;
 
         [SerializeField]
-        private float revolutionsPerSecond = 1.15f;
+        private float revolutionsPerSecond = 1.1f;
 
         private Transform _ring;
         private Transform[] _stars;
         private float _phase;
 
         public bool IsShowing { get; private set; }
+        public int StarCount => Mathf.Max(1, starCount);
+        public float OrbitRadius => orbitRadius;
 
         public void Configure(
             StunState configuredStun,

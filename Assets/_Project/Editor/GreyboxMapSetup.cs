@@ -2496,9 +2496,13 @@ namespace PawsAndLoot.Editor
                 .Configure(
                     player.GetComponent<
                         PawsAndLoot.Gameplay.Players.StunState>(),
+                    // Flat, saturated yellow at full alpha. Unlit, so it stays
+                    // this bright at night — a stun read as "the game froze"
+                    // when it was subtle, and the fix for that is a colour
+                    // nothing else in the town uses.
                     LoadOrCreateGlowMaterial(
                         "Greybox_StunStar",
-                        new Color(1f, 0.87f, 0.25f, 0.95f)));
+                        new Color(1f, 0.85f, 0.05f, 1f)));
 
             // Per-screen night adaptation. The thief's is brighter — they are the
             // one being hunted in the dark, and this is the cheapest

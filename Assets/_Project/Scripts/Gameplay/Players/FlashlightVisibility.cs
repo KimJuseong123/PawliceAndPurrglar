@@ -123,6 +123,21 @@ namespace PawsAndLoot.Gameplay.Players
                     continue;
                 }
 
+                // The stun stars stay up even on somebody outside the beam.
+                //
+                // A deliberate exception, not an oversight. Stars only appear on
+                // a player who was just hit, so the thrower already knew roughly
+                // where they were — and hiding the one confirmation that a throw
+                // in the dark landed would make throwing at night pointless. It
+                // is also stated here rather than left to chance: the stars are
+                // built at runtime, so whether they ended up in this cached list
+                // was previously a matter of which component ran first.
+                if (renderer.GetComponentInParent<
+                        PawsAndLoot.Animation.StunStarsView>() != null)
+                {
+                    continue;
+                }
+
                 renderer.enabled = visible;
             }
         }
