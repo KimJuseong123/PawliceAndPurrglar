@@ -47,6 +47,20 @@ namespace PawsAndLoot.TechnicalValidation
         private const float PlaceForSaleAt = 7.5f;
         private const float MashSaleFrom = 8.5f;
         private const float MashSaleUntil = 10.5f;
+
+        /// <summary>
+        /// THROW-007. The officer throws a rock at the thief.
+        ///
+        /// Here because the stun's whole route — a client's key, a request to the
+        /// host, the host's own hit test, the result replicated back — had no
+        /// two-process coverage at all. It was reported as "I threw and nothing
+        /// happened", and the local tests could not have found that.
+        ///
+        /// Before the arrest window and long enough before it that a 1.2 s stun
+        /// has expired by the time the arrest is measured.
+        /// </summary>
+        private const float ThrowAt = 9f;
+
         private const float PlaceForArrestAt = 11f;
 
         [SerializeField, Min(1f)]
@@ -71,6 +85,15 @@ namespace PawsAndLoot.TechnicalValidation
         private bool _placedForPickup;
         private bool _placedForSale;
         private bool _placedForArrest;
+        private bool _armedForThrow;
+        private bool _requestedThrow;
+
+        /// <summary>
+        /// THROW-007. Latched, because a stun expires — reading it at write time
+        /// would report a clean miss for a throw that landed perfectly.
+        /// </summary>
+        private bool _sawStun;
+        private float _peakStunSeconds;
         private bool _sawPlaying;
         // Latched during the match. Reading these at write time is wrong: a
         // decided match despawns the links, so a late read reports zero spawned
@@ -290,6 +313,28 @@ namespace PawsAndLoot.TechnicalValidation
                 PlaceThiefBesideSaleZone();
             }
 
+            // THROW-007. The host puts a rock in the officer's hand and stands
+            // them off at throwing distance; the machine playing the officer then
+            // asks to throw it. Split that way on purpose — the request has to
+            // travel the same road a real player's click does.
+            if (!_armedForThrow && _elapsed >= ThrowAt - 0.5f)
+            {
+                _armedForThrow = true;
+                ArmThiefWithRock();
+            }
+
+            // The thief throws, not the officer. The host takes police by
+            // default, so making the officer the thrower would resolve the whole
+            // thing inside one process and never send the request over the wire
+            // at all — which is the half most likely to be broken.
+            if (!_requestedThrow
+                && _elapsed >= ThrowAt
+                && role == PlayerRole.Thief)
+            {
+                _requestedThrow = true;
+                RequestThrowAtOpponent(link, PlayerRole.Police);
+            }
+
             if (!_placedForArrest && _elapsed >= PlaceForArrestAt)
             {
                 _placedForArrest = true;
@@ -331,6 +376,24 @@ namespace PawsAndLoot.TechnicalValidation
             if (role.HasValue)
             {
                 _observedRole = role.Value.ToString();
+            }
+
+            // THROW-007. Recorded on both machines, because the point is that the
+            // host's decision reached the other screen. A host that stuns the
+            // thief while the client shows them still running is the exact
+            // failure this exists to catch.
+            foreach (StunState stun in
+                FindObjectsByType<StunState>(FindObjectsSortMode.None))
+            {
+                if (!stun.IsStunned)
+                {
+                    continue;
+                }
+
+                _sawStun = true;
+                _peakStunSeconds = Mathf.Max(
+                    _peakStunSeconds,
+                    stun.RemainingSeconds);
             }
 
             // NET-009. Measured rather than inferred: the handler is the thing
@@ -462,6 +525,68 @@ namespace PawsAndLoot.TechnicalValidation
             PlaceRole(
                 PlayerRole.Police,
                 thief.transform.position + new Vector3(0.8f, 0f, 0f));
+        }
+
+        /// <summary>
+        /// THROW-007 setup, host only. Puts a rock in the thief's hand and stands
+        /// the officer a few metres off, across open ground.
+        ///
+        /// Deliberately not adjacent: a throw resolved at arm's length would pass
+        /// even if the flight were broken entirely. Five metres is also far
+        /// enough that a throw stopping on the nearest invisible trigger — the
+        /// bug this covers — would fall short and fail the run.
+        ///
+        /// The rock goes in the tool slot, which is separate from the loot slot,
+        /// so this does not disturb the sale the thief is in the middle of.
+        /// </summary>
+        private void ArmThiefWithRock()
+        {
+            if (_mode != "host")
+            {
+                return;
+            }
+
+            NetworkPlayerLink thief = FindLink(PlayerRole.Thief);
+            if (thief == null)
+            {
+                return;
+            }
+
+            PlaceRole(
+                PlayerRole.Police,
+                thief.transform.position + new Vector3(0f, 0f, -5f));
+
+            PawsAndLoot.Gameplay.Items.ToolCarrier carrier =
+                thief.GetComponent<
+                    PawsAndLoot.Gameplay.Items.ToolCarrier>();
+            if (carrier != null)
+            {
+                carrier.TryPickUp(
+                    PawsAndLoot.Gameplay.Items.ThrowableKind.Rock);
+            }
+        }
+
+        /// <summary>
+        /// Asks the host to throw at wherever the opponent currently is.
+        ///
+        /// Stands in for the cursor: a batch-mode run has no mouse, and the aim
+        /// is the one value a real client computes locally and sends, so it has to
+        /// be supplied here too.
+        /// </summary>
+        private void RequestThrowAtOpponent(
+            NetworkPlayerLink thrower,
+            PlayerRole target)
+        {
+            NetworkPlayerLink victim = FindLink(target);
+            if (victim == null)
+            {
+                return;
+            }
+
+            Vector3 aim = victim.ReplicatedPosition
+                - thrower.transform.position;
+            aim.y = 0f;
+            thrower.SubmitUseToolRpc(aim);
         }
 
         /// <summary>
@@ -705,6 +830,12 @@ namespace PawsAndLoot.TechnicalValidation
             Append(json, "decidedWinner", _decidedWinner);
             Append(json, "decidedReason", _decidedReason);
 
+            // THROW-007. Both files have to agree, or the two players are in
+            // different chases.
+            AppendBool(json, "sawStun", _sawStun);
+            AppendNumber(json, "peakStunSeconds", _peakStunSeconds);
+            AppendBool(json, "requestedThrow", _requestedThrow);
+
             // NET-009. More than one teardown would be the repeating-error bug.
             AppendNumber(json, "disconnectHandledCount", _disconnectCount);
             Append(json, "disconnectReason", _disconnectReason);
@@ -717,9 +848,13 @@ namespace PawsAndLoot.TechnicalValidation
             // The disconnect run deliberately never reaches a result: what it
             // has to show is that the survivor noticed exactly once. The client
             // is the one that leaves, so only the host is judged on that.
+            // THROW-007 joins the full run's verdict. Both machines are judged on
+            // it: the officer's client has to be able to ask, and the thief's
+            // machine has to see the stun the host applied. Judging only the host
+            // would pass the case where the throw works and nobody else sees it.
             bool scenarioPassed = _scenario == "disconnect"
                 ? _mode != "host" || _disconnectCount == 1
-                : _sawCarried && _decidedWinner != "None";
+                : _sawCarried && _decidedWinner != "None" && _sawStun;
             AppendBool(json, "passed", sessionHealthy && scenarioPassed);
             json.AppendLine("  \"end\": true");
             json.AppendLine("}");

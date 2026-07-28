@@ -160,6 +160,51 @@ namespace PawsAndLoot.Tests.EditMode
                 + "black.");
         }
 
+        /// <summary>
+        /// Nothing a player has to walk up to may be sealed inside geometry.
+        ///
+        /// This is the test that was missing. Four of the five rocks were placed
+        /// inside buildings — two in shop bodies, two inside houses — and every
+        /// existing check passed: the scene built, MAP-001 validated, and the log
+        /// cheerfully reported five pickups placed. It took playing the game to
+        /// find out only one of them could be picked up.
+        ///
+        /// Asserted for every pickup rather than the rocks specifically, so the
+        /// banana off the shop shelf inherits the guard for free.
+        /// </summary>
+        [Test]
+        public void NoPickupIsSealedInsideGeometry()
+        {
+            Scene scene = OpenGameScene();
+            Physics.SyncTransforms();
+
+            foreach (PawsAndLoot.Gameplay.Items.ThrowablePickup pickup in
+                FindAll<PawsAndLoot.Gameplay.Items.ThrowablePickup>(scene))
+            {
+                // Above the road surface and below waist height: the ground and
+                // the road tiles are not obstacles, a wall or a shop body is.
+                Collider[] blockers = Physics
+                    .OverlapSphere(
+                        pickup.transform.position + Vector3.up * 0.05f,
+                        0.25f,
+                        Physics.AllLayers,
+                        QueryTriggerInteraction.Collide)
+                    .Where(collider =>
+                        collider != null
+                        && !collider.transform.IsChildOf(
+                            pickup.transform))
+                    .ToArray();
+
+                Assert.That(
+                    blockers,
+                    Is.Empty,
+                    $"{pickup.name} at {pickup.transform.position} is inside "
+                    + $"'{blockers.FirstOrDefault()?.name}'. A pickup nobody "
+                    + "can reach is indistinguishable from one that does not "
+                    + "work.");
+            }
+        }
+
         private static Scene OpenGameScene()
         {
             return EditorSceneManager.OpenScene(

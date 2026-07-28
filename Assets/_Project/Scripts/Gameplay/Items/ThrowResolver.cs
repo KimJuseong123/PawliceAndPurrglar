@@ -65,19 +65,11 @@ namespace PawsAndLoot.Gameplay.Items
             }
 
             flat.Normalize();
-            float travel = range;
-
-            // A wall between thrower and target shortens the throw.
-            if (Physics.Raycast(
-                    origin,
-                    flat,
-                    out RaycastHit obstacle,
-                    range,
-                    obstacleLayers))
-            {
-                travel = obstacle.distance;
-            }
-
+            float travel = ResolveTravel(
+                origin,
+                flat,
+                range,
+                obstacleLayers);
             Vector3 landing = origin + flat * travel;
 
             // Nearest opposing player within the hit radius of the flight path.
@@ -123,6 +115,57 @@ namespace PawsAndLoot.Gameplay.Items
             }
 
             return new Result(origin, landing, best);
+        }
+
+        /// <summary>
+        /// How far the prop gets before something solid stops it.
+        ///
+        /// Two things had to be excluded, and missing either made throwing feel
+        /// broken rather than difficult.
+        ///
+        /// Triggers are not walls. The map is full of invisible trigger spheres —
+        /// every rock, stash, sale point and ladder is one — and Unity's raycasts
+        /// hit triggers by default, so a throw down a street was stopping a metre
+        /// from the thrower's hand at the nearest pickup with nothing on screen to
+        /// explain it.
+        ///
+        /// Characters are not walls either. Both players and the companions move
+        /// on a <see cref="CharacterController"/>, and the dog runs at the
+        /// officer's heel — treating it as cover means the officer can never
+        /// throw at all. Who a throw actually hits is decided by the corridor
+        /// test below, which is the one place that should be answering it.
+        ///
+        /// Real geometry still stops the throw, which is what makes breaking line
+        /// of sight worth doing.
+        /// </summary>
+        private static float ResolveTravel(
+            Vector3 origin,
+            Vector3 direction,
+            float range,
+            int obstacleLayers)
+        {
+            RaycastHit[] hits = Physics.RaycastAll(
+                origin,
+                direction,
+                range,
+                obstacleLayers,
+                QueryTriggerInteraction.Ignore);
+
+            float travel = range;
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.collider is CharacterController)
+                {
+                    continue;
+                }
+
+                if (hit.distance < travel)
+                {
+                    travel = hit.distance;
+                }
+            }
+
+            return travel;
         }
     }
 }

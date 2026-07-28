@@ -51,16 +51,28 @@ namespace PawsAndLoot.Gameplay.Items
         public const float ThrowRangeMeters = 12f;
 
         /// <summary>
-        /// Half-width of the corridor a throw sweeps. Measured against the rig
-        /// rather than picked: the player capsule's radius is 0.45 m, so a
-        /// corridor this wide clears a character's own width either side of the
-        /// line and the throw connects on a graze.
-        ///
-        /// Generous on purpose. Aiming with the mouse from a fixed tilted camera
-        /// is not precise, and a pinpoint line would make every throw feel
-        /// stolen rather than missed.
+        /// Visual diameter of a thrown prop. The corridor is derived from it, so
+        /// what the player watches fly is the same size as the thing that decides
+        /// the hit.
         /// </summary>
-        public const float ThrowHitRadiusMeters = 1.25f;
+        public const float PropDiameterMeters = 0.34f;
+
+        /// <summary>
+        /// Half-width of the corridor a throw sweeps, measured against the rig
+        /// rather than picked.
+        ///
+        /// The brief was "the rock's edge grazing the victim's edge should
+        /// count". A player capsule is 0.45 m in radius, so edges touching is
+        /// 0.45 + one prop radius = 0.62 m. Two more prop widths of slack on top
+        /// of that is what "generously" comes to.
+        ///
+        /// Worth stating plainly: this was never why throws were missing. The
+        /// corridor was already wider than edge-to-edge, and the real cause was
+        /// the throw stopping dead on invisible trigger volumes before it got
+        /// anywhere near the target.
+        /// </summary>
+        public const float ThrowHitRadiusMeters =
+            0.45f + PropDiameterMeters * 2.5f;
 
         public static ThrowableUse GetUse(ThrowableKind kind)
         {

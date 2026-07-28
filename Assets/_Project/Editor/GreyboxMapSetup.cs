@@ -2870,13 +2870,27 @@ namespace PawsAndLoot.Editor
             Transform parent,
             MatchRuntimeState matchRuntime)
         {
+            // On road intersections, every one of them.
+            //
+            // The first set was picked by eye off the map and all five landed
+            // inside a building: two in shop bodies, two inside houses, one on
+            // top of a loot item. Four were unreachable and the fifth was the
+            // only one that could be picked up, which is exactly what the
+            // playtest reported. Nothing caught it — a pickup sealed in a wall
+            // still builds, still validates and still logs "5 rock pickups
+            // placed".
+            //
+            // So these come off the road grid itself: the horizontals at
+            // z = 12 / -12 / -18 / 26 and the verticals at x = -24 / -18 / 0 /
+            // 18 / 24. An intersection is open ground by construction, and
+            // CheckSpotIsClear below re-measures rather than trusting that.
             Vector3[] spots =
             {
-                new(-13f, 0.35f, 3.5f),
-                new(13f, 0.35f, -3.5f),
-                new(-3f, 0.35f, 20f),
-                new(30f, 0.35f, 20f),
-                new(-21f, 0.35f, -6f)
+                new(-18f, 0.35f, 12f),
+                new(18f, 0.35f, -12f),
+                new(0f, 0.35f, 26f),
+                new(24f, 0.35f, 12f),
+                new(-24f, 0.35f, -18f)
             };
 
             Material rockMaterial = LoadOrCreateMaterial(
@@ -2925,9 +2939,49 @@ namespace PawsAndLoot.Editor
                     false,
                     PlayerRole.Thief,
                     12f);
+
+                CheckSpotIsClear(pickup.transform, spots[index]);
             }
 
             Debug.Log($"[THROW-005] {spots.Length} rock pickups placed.");
+        }
+
+        /// <summary>
+        /// Complains loudly if something is placed inside solid geometry.
+        ///
+        /// Worth the code because the silent version of this bug cost a whole
+        /// playtest: four of five rocks were sealed in buildings and every check
+        /// the project has passed anyway. A pickup nobody can reach is
+        /// indistinguishable from a pickup that does not work.
+        ///
+        /// The probe sphere sits above the road surface and below waist height, so
+        /// the ground and the road tiles are not obstacles but a wall, a shop body
+        /// or another interactable is.
+        /// </summary>
+        private static void CheckSpotIsClear(Transform placed, Vector3 spot)
+        {
+            Physics.SyncTransforms();
+            Collider[] blockers = Physics.OverlapSphere(
+                spot + Vector3.up * 0.05f,
+                0.25f,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Collide);
+
+            foreach (Collider blocker in blockers)
+            {
+                // Its own trigger and its own model are not obstacles.
+                if (blocker == null
+                    || blocker.transform.IsChildOf(placed))
+                {
+                    continue;
+                }
+
+                Debug.LogError(
+                    $"[THROW-005] '{placed.name}' at {spot} is inside "
+                    + $"'{blocker.name}'. Nobody can reach it — a pickup "
+                    + "sealed in geometry still builds and still validates.");
+                return;
+            }
         }
 
         private static void CreateLootTarget(

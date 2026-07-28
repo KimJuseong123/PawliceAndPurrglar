@@ -16,6 +16,52 @@ namespace PawsAndLoot.Tests.PlayMode
     /// </summary>
     public sealed class ThrowAndTrapPlayModeTests
     {
+        private readonly System.Collections.Generic.List<GameObject>
+            _spawned = new();
+
+        /// <summary>
+        /// Clears everything a test put in the world, immediately.
+        ///
+        /// <c>Object.Destroy</c> only takes effect at the end of the frame, and
+        /// the resolver finds its candidates with <c>FindObjectsByType</c> and its
+        /// obstacles with a raycast — so a player or a wall left behind by one
+        /// test is still live in the next one. That cost real time here: three
+        /// tests failed against a neighbouring test's leftover thief and wall,
+        /// which reads exactly like a resolver bug and is not one.
+        ///
+        /// Tracked explicitly rather than swept by type, because the props are
+        /// plain cubes and spheres with nothing to search for.
+        /// </summary>
+        [TearDown]
+        public void DestroyEverythingSpawned()
+        {
+            foreach (GameObject spawned in _spawned)
+            {
+                if (spawned != null)
+                {
+                    Object.DestroyImmediate(spawned);
+                }
+            }
+
+            _spawned.Clear();
+            Physics.SyncTransforms();
+        }
+
+        /// <summary>
+        /// Registers an object for teardown and makes it visible to physics now.
+        ///
+        /// The sync matters: a collider created and moved in the same frame is not
+        /// in the physics scene yet, so a raycast passes straight through the wall
+        /// the test just built. One test was asserting that walls stop throws
+        /// against a wall the query could not see.
+        /// </summary>
+        private GameObject Track(GameObject spawned)
+        {
+            _spawned.Add(spawned);
+            Physics.SyncTransforms();
+            return spawned;
+        }
+
         [UnityTest]
         public IEnumerator ThrowHitsAnOpponentInFrontOfIt()
         {
@@ -36,8 +82,6 @@ namespace PawsAndLoot.Tests.PlayMode
             Assert.That(result.Connected, Is.True);
             Assert.That(result.Hit, Is.SameAs(police));
 
-            Object.Destroy(thief.gameObject);
-            Object.Destroy(police.gameObject);
         }
 
         [UnityTest]
@@ -91,9 +135,7 @@ namespace PawsAndLoot.Tests.PlayMode
                     0).Connected,
                 Is.False,
                 "Range has to matter, or the whole map is in reach.");
-            Object.DestroyImmediate(far.gameObject);
 
-            Object.Destroy(thief.gameObject);
         }
 
         [UnityTest]
@@ -116,15 +158,13 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.False,
                 "Friendly fire would let a player stun themselves by proxy.");
 
-            Object.Destroy(thief.gameObject);
-            Object.Destroy(otherThief.gameObject);
         }
 
         [UnityTest]
         public IEnumerator TrapCatchesTheOtherSideOnlyAndOnlyOnce()
         {
             var state = new MutableMatchState { IsGameplayActive = true };
-            var trapObject = new GameObject("Banana");
+            var trapObject = Track(new GameObject("Banana"));
             trapObject.transform.position = Vector3.zero;
             PlacedTrap trap = trapObject.AddComponent<PlacedTrap>();
             trap.Configure(1, ThrowableKind.Banana, PlayerRole.Thief, state);
@@ -154,15 +194,13 @@ namespace PawsAndLoot.Tests.PlayMode
                 "A spent trap must not fire again while the victim stands on "
                 + "it, or one banana holds somebody forever.");
 
-            Object.Destroy(police.gameObject);
-            Object.Destroy(trapObject);
         }
 
         [UnityTest]
         public IEnumerator TrapDoesNothingOutsideAMatch()
         {
             var state = new MutableMatchState { IsGameplayActive = false };
-            var trapObject = new GameObject("Banana");
+            var trapObject = Track(new GameObject("Banana"));
             PlacedTrap trap = trapObject.AddComponent<PlacedTrap>();
             trap.Configure(2, ThrowableKind.Banana, PlayerRole.Thief, state);
             PlayerRoleIdentity police = CreatePlayer(
@@ -175,8 +213,6 @@ namespace PawsAndLoot.Tests.PlayMode
             state.IsGameplayActive = true;
             Assert.That(trap.FindVictim(), Is.SameAs(police));
 
-            Object.Destroy(police.gameObject);
-            Object.Destroy(trapObject);
         }
 
         /// <summary>
@@ -218,8 +254,6 @@ namespace PawsAndLoot.Tests.PlayMode
                 "And the facing on its own must not hit them, or the aim is "
                 + "decorative.");
 
-            Object.Destroy(thief.gameObject);
-            Object.Destroy(police.gameObject);
         }
 
         /// <summary>
@@ -252,6 +286,8 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.True,
                 "Aiming with a cursor on a tilted camera is not precise. A "
                 + "near miss that does nothing feels stolen.");
+            // Cleared before the next case: a grazing target left standing would
+            // answer the wide-miss question instead of the one placed for it.
             Object.DestroyImmediate(grazed.gameObject);
 
             PlayerRoleIdentity missed = CreatePlayer(
@@ -270,9 +306,7 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.False,
                 "It still has to be a corridor rather than a cone, or aiming "
                 + "stops mattering.");
-            Object.DestroyImmediate(missed.gameObject);
 
-            Object.Destroy(thief.gameObject);
         }
 
         /// <summary>
@@ -282,7 +316,7 @@ namespace PawsAndLoot.Tests.PlayMode
         [UnityTest]
         public IEnumerator StunStarsShowOnlyWhileStunned()
         {
-            var playerObject = new GameObject("Stunned Player");
+            var playerObject = Track(new GameObject("Stunned Player"));
             StunState stun = playerObject.AddComponent<StunState>();
             PawsAndLoot.Animation.StunStarsView stars = playerObject
                 .AddComponent<PawsAndLoot.Animation.StunStarsView>();
@@ -306,7 +340,6 @@ namespace PawsAndLoot.Tests.PlayMode
                 "Stars left spinning after the stun ends would tell the "
                 + "thrower to keep pressing on somebody already free.");
 
-            Object.Destroy(playerObject);
         }
 
         /// <summary>
@@ -317,7 +350,7 @@ namespace PawsAndLoot.Tests.PlayMode
         [UnityTest]
         public IEnumerator ThrowArmSwingsBackThenThroughAndReturnsToRest()
         {
-            var playerObject = new GameObject("Thrower");
+            var playerObject = Track(new GameObject("Thrower"));
             PawsAndLoot.Animation.ThrowPresenter presenter = playerObject
                 .AddComponent<PawsAndLoot.Animation.ThrowPresenter>();
             yield return null;
@@ -341,7 +374,161 @@ namespace PawsAndLoot.Tests.PlayMode
                 "Then back to rest exactly, or the arm drifts a little "
                 + "further from the body with every rock.");
 
-            Object.Destroy(playerObject);
+        }
+
+        /// <summary>
+        /// A trigger volume is not a wall.
+        ///
+        /// The map is full of them — every pickup, stash, sale point and ladder
+        /// is an invisible trigger sphere — and stopping a throw at the first one
+        /// it crosses means most throws down a street die a metre from the
+        /// thrower's hand for no visible reason.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ThrowPassesThroughTriggerVolumes()
+        {
+            PlayerRoleIdentity police = CreatePlayer(
+                PlayerRole.Police,
+                Vector3.zero);
+            PlayerRoleIdentity thief = CreatePlayer(
+                PlayerRole.Thief,
+                new Vector3(0f, 0f, 6f));
+
+            var triggerObject = Track(new GameObject("Pickup Trigger"));
+            triggerObject.transform.position = new Vector3(0f, 0.9f, 2f);
+            SphereCollider trigger =
+                triggerObject.AddComponent<SphereCollider>();
+            trigger.isTrigger = true;
+            trigger.radius = 0.6f;
+            Physics.SyncTransforms();
+            yield return null;
+
+            ThrowResolver.Result result = ThrowResolver.Resolve(
+                police,
+                Vector3.forward,
+                ThrowableCatalog.ThrowRangeMeters,
+                Physics.AllLayers);
+
+            Assert.That(
+                result.Hit,
+                Is.SameAs(thief),
+                "A rock lying in the road must not block a throw over it.");
+
+        }
+
+        /// <summary>
+        /// Nor is the thrower's own dog. It runs at their heel, so treating it as
+        /// cover means the officer can never throw anything at all.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ThrowPassesThroughCharactersOnTheWay()
+        {
+            PlayerRoleIdentity police = CreatePlayer(
+                PlayerRole.Police,
+                Vector3.zero);
+            PlayerRoleIdentity thief = CreatePlayer(
+                PlayerRole.Thief,
+                new Vector3(0f, 0f, 7f));
+
+            // A solid body in the way, standing where a heeling companion would.
+            // A CharacterController specifically, because that is what both
+            // players and companions move on and what the resolver looks for.
+            var companion = Track(new GameObject("Companion Body"));
+            companion.transform.position = new Vector3(0f, 0f, 1.6f);
+            CharacterController controller =
+                companion.AddComponent<CharacterController>();
+            controller.height = 1.4f;
+            controller.radius = 0.5f;
+            controller.center = new Vector3(0f, 0.7f, 0f);
+            Physics.SyncTransforms();
+            yield return null;
+
+            Assert.That(
+                ThrowResolver.Resolve(
+                    police,
+                    Vector3.forward,
+                    ThrowableCatalog.ThrowRangeMeters,
+                    Physics.AllLayers).Hit,
+                Is.SameAs(thief),
+                "The officer's own dog must not be cover for the thief.");
+
+        }
+
+        /// <summary>
+        /// A real wall still stops it. That is what makes breaking line of sight
+        /// worth doing, so the trigger fix must not turn every throw into one
+        /// that passes through buildings.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ThrowIsStillStoppedByASolidWall()
+        {
+            PlayerRoleIdentity police = CreatePlayer(
+                PlayerRole.Police,
+                Vector3.zero);
+            PlayerRoleIdentity thief = CreatePlayer(
+                PlayerRole.Thief,
+                new Vector3(0f, 0f, 6f));
+
+            var wall = Track(
+                GameObject.CreatePrimitive(PrimitiveType.Cube));
+            wall.name = "Wall";
+            wall.transform.position = new Vector3(0f, 1f, 3f);
+            wall.transform.localScale = new Vector3(6f, 3f, 0.5f);
+            Physics.SyncTransforms();
+            yield return null;
+
+            Assert.That(
+                ThrowResolver.Resolve(
+                    police,
+                    Vector3.forward,
+                    ThrowableCatalog.ThrowRangeMeters,
+                    Physics.AllLayers).Connected,
+                Is.False,
+                "Breaking line of sight has to work, or the alleys are "
+                + "pointless.");
+
+        }
+
+        /// <summary>
+        /// The stun actually lands. The two halves are resolved separately — the
+        /// resolver finds the victim and the action applies the stun — so a hit
+        /// that stuns nobody is a real possibility worth pinning down.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator AConnectedThrowStunsTheVictim()
+        {
+            var state = new MutableMatchState { IsGameplayActive = true };
+            PlayerRoleIdentity police = CreatePlayer(
+                PlayerRole.Police,
+                Vector3.zero);
+            ToolCarrier carrier =
+                police.gameObject.AddComponent<ToolCarrier>();
+            carrier.Configure(police, state);
+            ToolUseAction action =
+                police.gameObject.AddComponent<ToolUseAction>();
+            action.Configure(police, carrier, Physics.AllLayers);
+
+            PlayerRoleIdentity thief = CreatePlayer(
+                PlayerRole.Thief,
+                new Vector3(4f, 0f, 0f));
+            StunState stun = thief.gameObject.AddComponent<StunState>();
+            yield return null;
+
+            Assert.That(carrier.TryPickUp(ThrowableKind.Rock), Is.True);
+            Assert.That(
+                action.TryUse(Vector3.right),
+                Is.True,
+                "Aimed east at somebody standing east.");
+
+            Assert.That(
+                stun.IsStunned,
+                Is.True,
+                "A throw that connects and stuns nobody is the same as a "
+                + "throw that missed, except the rock is gone.");
+            Assert.That(
+                stun.RemainingSeconds,
+                Is.EqualTo(ThrowableCatalog.RockStunSeconds).Within(0.01f));
+
         }
 
         private sealed class MutableMatchState : IMatchStateReader
@@ -351,7 +538,7 @@ namespace PawsAndLoot.Tests.PlayMode
             public bool IsGameplayActive { get; set; }
         }
 
-        private static PlayerRoleIdentity CreatePlayer(
+        private PlayerRoleIdentity CreatePlayer(
             PlayerRole role,
             Vector3 position)
         {
@@ -362,6 +549,7 @@ namespace PawsAndLoot.Tests.PlayMode
                 player.AddComponent<PlayerRoleIdentity>();
             identity.Configure(role);
             player.SetActive(true);
+            Track(player);
             return identity;
         }
     }

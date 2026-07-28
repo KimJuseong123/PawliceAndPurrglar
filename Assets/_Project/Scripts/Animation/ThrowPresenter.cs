@@ -64,12 +64,13 @@ namespace PawsAndLoot.Animation
         private float propSpeed = 24f;
 
         /// <summary>
-        /// Chunky on purpose. The hit test is a corridor about as thick as a
-        /// character, so a pea-sized pebble would misrepresent what it can hit
-        /// and every graze would look like a miss that counted.
+        /// Taken from the catalog, which derives the hit corridor from the same
+        /// number. A pea-sized pebble sweeping a character-wide corridor would
+        /// make every graze look like a miss that somehow counted.
         /// </summary>
         [SerializeField, Min(0.05f)]
-        private float propDiameter = 0.34f;
+        private float propDiameter =
+            ThrowableCatalog.PropDiameterMeters;
 
         private Transform _upperArm;
         private Transform _forearm;
