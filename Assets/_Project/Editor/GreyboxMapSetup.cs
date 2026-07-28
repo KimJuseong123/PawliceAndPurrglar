@@ -1329,7 +1329,9 @@ namespace PawsAndLoot.Editor
                         PawsAndLoot.Animation.ThrowPresenter>(),
                     player.GetComponent<
                         PawsAndLoot.Gameplay.Items.ToolCarrier>(),
-                    player.GetComponent<PoliceWallet>());
+                    player.GetComponent<PoliceWallet>(),
+                    player.GetComponent<
+                        PawsAndLoot.Animation.CompanionLegAnimator>());
                 links.Add(link);
             }
 
@@ -3008,6 +3010,13 @@ namespace PawsAndLoot.Editor
             Debug.Log($"[THROW-005] {spots.Length} rock pickups placed.");
 
             CreatePoliceSupplyCounters(parent, matchRuntime);
+
+            // Rocks in the air. One tracker for the scene, on the machine that
+            // simulates: the throw is no longer settled at the moment it leaves
+            // the hand, so somebody has to advance it.
+            var flightObject = new GameObject("Throw Flights");
+            flightObject.transform.SetParent(parent);
+            flightObject.AddComponent<ThrowFlightTracker>();
         }
 
         /// <summary>
@@ -3945,6 +3954,45 @@ namespace PawsAndLoot.Editor
             sensorLabel.raycastTarget = false;
             hudRoot.gameObject.AddComponent<SensorAlertPresenter>()
                 .Configure(sensorLabel, roleSelector);
+
+            // The same alert as a shape, pointing the way. The caption says what
+            // happened; this says where, which is the half the officer needs
+            // while looking at their own character rather than at a caption.
+            RectTransform radarRoot =
+                CreateRect("Sensor Radar", canvasObject.transform);
+            radarRoot.anchorMin = new Vector2(0.5f, 0.5f);
+            radarRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            radarRoot.pivot = new Vector2(0.5f, 0.5f);
+            radarRoot.anchoredPosition = Vector2.zero;
+            radarRoot.sizeDelta = new Vector2(260f, 260f);
+            SensorRadarPresenter radar =
+                hudRoot.gameObject.AddComponent<SensorRadarPresenter>();
+            radar.Configure(radarRoot, roleSelector);
+
+            // Three arcs like signal bars, growing outward from the officer.
+            // Built from the same wedge sprite rotated about the centre, so the
+            // whole thing turns as one rect.
+            for (int band = 0; band < 3; band++)
+            {
+                RectTransform bar = CreateRect(
+                    $"Signal Arc {band + 1}",
+                    radarRoot);
+                float size = 70f + band * 58f;
+                bar.anchorMin = new Vector2(0.5f, 0.5f);
+                bar.anchorMax = new Vector2(0.5f, 0.5f);
+                bar.pivot = new Vector2(0.5f, 0.5f);
+                // Pushed forward so the arcs sit ahead of the officer rather
+                // than ringing them; a ring says "near you", a fan says "that
+                // way".
+                bar.anchoredPosition = new Vector2(0f, size * 0.42f);
+                bar.sizeDelta = new Vector2(size, size * 0.36f);
+                Image arc = bar.gameObject.AddComponent<Image>();
+                arc.color = new Color(1f, 0.82f, 0.25f, 0.9f);
+                arc.raycastTarget = false;
+                radar.AddBar(arc);
+            }
+
+            radarRoot.gameObject.SetActive(false);
 
             CommonHudPresenter hudPresenter =
                 hudRoot.gameObject.AddComponent<CommonHudPresenter>();

@@ -131,6 +131,18 @@ namespace PawsAndLoot.TechnicalValidation
         private int _lastPoliceAmount = -1;
 
         /// <summary>
+        /// ART-014. Widest thigh swing seen per role, on this machine.
+        ///
+        /// Here because the walk measures perfectly in the editor scene and the
+        /// thief was reported as vibrating in place in a real session. The only
+        /// thing a session changes is who simulates whom, so the swing has to be
+        /// measured where that difference exists.
+        /// </summary>
+        private readonly Dictionary<PlayerRole, Quaternion> _thighRest =
+            new();
+        private readonly Dictionary<PlayerRole, float> _thighPeak = new();
+
+        /// <summary>
         /// THROW-009. Peak trap count seen on this machine. Latched, because the
         /// host clears a trap the moment it fires.
         /// </summary>
@@ -443,6 +455,40 @@ namespace PawsAndLoot.TechnicalValidation
             if (role.HasValue)
             {
                 _observedRole = role.Value.ToString();
+            }
+
+            // ART-014. Thigh swing per role.
+            foreach (PlayerRoleIdentity identity in
+                FindObjectsByType<PlayerRoleIdentity>(
+                    FindObjectsSortMode.None))
+            {
+                Transform thigh = null;
+                foreach (Transform bone in
+                    identity.GetComponentsInChildren<Transform>(true))
+                {
+                    if (bone.name.Contains("Thigh"))
+                    {
+                        thigh = bone;
+                        break;
+                    }
+                }
+
+                if (thigh == null)
+                {
+                    continue;
+                }
+
+                if (!_thighRest.ContainsKey(identity.Role))
+                {
+                    _thighRest[identity.Role] = thigh.localRotation;
+                    _thighPeak[identity.Role] = 0f;
+                }
+
+                _thighPeak[identity.Role] = Mathf.Max(
+                    _thighPeak[identity.Role],
+                    Quaternion.Angle(
+                        _thighRest[identity.Role],
+                        thigh.localRotation));
             }
 
             // THROW-011. The officer's purse, on both machines.
@@ -1045,6 +1091,18 @@ namespace PawsAndLoot.TechnicalValidation
             AppendNumber(json, "peakPoliceAmount", _peakPoliceAmount);
             AppendNumber(json, "policeSpentTotal", _policeSpentTotal);
             AppendNumber(json, "lastPoliceAmount", _lastPoliceAmount);
+            AppendNumber(
+                json,
+                "policeThighSwing",
+                _thighPeak.TryGetValue(PlayerRole.Police, out float pv)
+                    ? pv
+                    : -1f);
+            AppendNumber(
+                json,
+                "thiefThighSwing",
+                _thighPeak.TryGetValue(PlayerRole.Thief, out float tv)
+                    ? tv
+                    : -1f);
             AppendBool(json, "sawPickedUpRock", _sawPickedUpRock);
             AppendBool(json, "sawRockTaken", _sawRockTaken);
             AppendBool(json, "sawStun", _sawStun);

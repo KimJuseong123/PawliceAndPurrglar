@@ -89,28 +89,32 @@ namespace PawsAndLoot.Tests.PlayMode
                     controller.enabled = false;
                 }
 
-                // Driven at a fixed timestep rather than per frame.
+                // Driven by the game's own LateUpdate, with the clock forced
+                // to a real timestep.
                 //
-                // Batch-mode frames are sub-millisecond, so forty of them is
-                // under a tenth of a second of walking — the gait blends in
-                // from standing and had barely begun, which made a perfectly
-                // good walk measure as 7° and looked like a product bug. Two
-                // seconds at 5 m/s is what a player actually sees.
-                //
-                // Peak over the stretch, not first-versus-last: the stride is a
-                // sine, so two samples can land on the same value and report a
-                // still leg that is really swinging.
-                const float step = 0.05f;
-                const float metresPerStep = 5f * step;
+                // Calling Tick by hand was the flaw in the earlier version of
+                // this test: it exercised the maths and skipped the component
+                // lifecycle entirely, so a walk that never runs in the game
+                // still measured perfectly. Time.captureDeltaTime makes each
+                // frame advance 50 ms, which is what lets the real LateUpdate be
+                // observed in batch mode where frames are sub-millisecond.
+                Time.captureDeltaTime = 0.05f;
                 float peak = 0f;
-                for (int tick = 0; tick < 40; tick++)
+                try
                 {
-                    player.transform.position +=
-                        player.transform.forward * metresPerStep;
-                    stride.Tick(step);
-                    peak = Mathf.Max(
-                        peak,
-                        Quaternion.Angle(before, thigh.localRotation));
+                    for (int tick = 0; tick < 40; tick++)
+                    {
+                        player.transform.position +=
+                            player.transform.forward * 0.25f;
+                        yield return null;
+                        peak = Mathf.Max(
+                            peak,
+                            Quaternion.Angle(before, thigh.localRotation));
+                    }
+                }
+                finally
+                {
+                    Time.captureDeltaTime = 0f;
                 }
 
                 yield return null;

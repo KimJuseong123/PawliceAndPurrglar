@@ -499,9 +499,12 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         /// <summary>
-        /// The stun actually lands. The two halves are resolved separately — the
-        /// resolver finds the victim and the action applies the stun — so a hit
-        /// that stuns nobody is a real possibility worth pinning down.
+        /// The stun actually lands, once the rock has flown.
+        ///
+        /// The press no longer stuns on its own: the throw launches a rock and
+        /// <c>ThrowFlightTracker</c> decides who it reaches, which is what makes
+        /// dodging possible. So this walks the whole path — press, fly, land —
+        /// rather than asserting an outcome at the moment of the press.
         /// </summary>
         [UnityTest]
         public IEnumerator AConnectedThrowStunsTheVictim()
@@ -523,6 +526,11 @@ namespace PawsAndLoot.Tests.PlayMode
             StunState stun = thief.gameObject.AddComponent<StunState>();
             yield return null;
 
+            var trackerObject = Track(new GameObject("Throw Flights"));
+            ThrowFlightTracker tracker =
+                trackerObject.AddComponent<ThrowFlightTracker>();
+            yield return null;
+
             Assert.That(carrier.TryPickUp(ThrowableKind.Rock), Is.True);
             Assert.That(
                 action.TryUse(Vector3.right),
@@ -531,9 +539,21 @@ namespace PawsAndLoot.Tests.PlayMode
 
             Assert.That(
                 stun.IsStunned,
+                Is.False,
+                "The press alone must not stun — the rock has to get there "
+                + "first, which is what gives the thief a chance to move.");
+
+            // Fly it the four metres.
+            for (int step = 0; step < 10; step++)
+            {
+                tracker.Tick(0.05f);
+            }
+
+            Assert.That(
+                stun.IsStunned,
                 Is.True,
-                "A throw that connects and stuns nobody is the same as a "
-                + "throw that missed, except the rock is gone.");
+                "A rock that reaches somebody and stuns nobody is the same as "
+                + "a throw that missed, except the rock is gone.");
             Assert.That(
                 stun.RemainingSeconds,
                 Is.EqualTo(ThrowableCatalog.RockStunSeconds).Within(0.01f));

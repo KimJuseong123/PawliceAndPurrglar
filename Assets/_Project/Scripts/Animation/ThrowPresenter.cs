@@ -60,8 +60,14 @@ namespace PawsAndLoot.Animation
         [SerializeField]
         private float followThroughDegrees = 55f;
 
+        /// <summary>
+        /// The same speed the host resolves at, so what the player watches is
+        /// what can hit them. A visual that outran the rock would show a miss
+        /// landing and a hit passing through.
+        /// </summary>
         [SerializeField, Min(1f)]
-        private float propSpeed = 24f;
+        private float propSpeed =
+            ThrowFlightTracker.SpeedMetresPerSecond;
 
         /// <summary>
         /// Taken from the catalog, which derives the hit corridor from the same

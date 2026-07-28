@@ -99,6 +99,12 @@ namespace PawsAndLoot.Gameplay.Items
             // The aim is flattened and sanity-checked inside the resolver, so a
             // client sending nonsense gets its own facing rather than a throw
             // straight up. The host decides, as always.
+            //
+            // Only the path is worked out here. Who it hits is decided while the
+            // rock is in the air by ThrowFlightTracker — settling it now would
+            // mean the arc the players watch is a replay of a hit that already
+            // happened, and a rock you can see coming but cannot dodge is worse
+            // than no rock at all.
             ThrowResolver.Result result = ThrowResolver.Resolve(
                 identity,
                 aimDirection ?? identity.transform.forward,
@@ -114,34 +120,18 @@ namespace PawsAndLoot.Gameplay.Items
             {
                 identity.transform.rotation =
                     Quaternion.LookRotation(facing.normalized);
-            }
-
-            if (result.Connected)
-            {
-                StunState stun =
-                    result.Hit.GetComponent<StunState>();
-                // A refused stun still spends the prop. The alternative is
-                // giving the rock back, which lets a player hold one press
-                // against an opponent who is briefly immune.
-                bool landed = stun?.TryApply(
-                    ThrowableCatalog.GetStunSeconds(kind)) == true;
-
-                // Money moves only on a hit that actually stunned, so the
-                // re-stun gap is also the limit on how often the officer can
-                // take money. Without that an officer with a rock empties the
-                // thief in a few seconds.
-                if (landed)
-                {
-                    PawsAndLoot.Gameplay.Loot.LootConfiscationRule.Apply(
-                        result.Hit,
-                        identity);
-                }
+                ThrowFlightTracker.Launch(
+                    identity,
+                    kind,
+                    result.Origin,
+                    facing.normalized,
+                    facing.magnitude);
             }
 
             GameLogger.Info(
                 GameLogCategory.Player,
-                $"{identity.Role} threw {kind}, "
-                + $"hit={(result.Connected ? "yes" : "no")}.",
+                $"{identity.Role} threw {kind} "
+                + $"{(result.Landing - result.Origin).magnitude:0.0}m.",
                 this);
             Thrown?.Invoke(kind, result);
             return true;

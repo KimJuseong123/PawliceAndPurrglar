@@ -138,6 +138,14 @@ namespace PawsAndLoot.Integration.Network
         private PoliceWallet policeWallet;
 
         /// <summary>
+        /// The procedural walk. Driven on machines that do not simulate this
+        /// player, because a replicated transform is too stuttery to derive a
+        /// speed from.
+        /// </summary>
+        [SerializeField]
+        private PawsAndLoot.Animation.CompanionLegAnimator legAnimator;
+
+        /// <summary>
         /// THROW-011. The officer's purse, written only by the host.
         ///
         /// Replicated for the same reason the tool slot is: the officer decides
@@ -249,9 +257,12 @@ namespace PawsAndLoot.Integration.Network
                 null,
             PawsAndLoot.Gameplay.Items.ToolCarrier configuredToolCarrier =
                 null,
-            PoliceWallet configuredPoliceWallet = null)
+            PoliceWallet configuredPoliceWallet = null,
+            PawsAndLoot.Animation.CompanionLegAnimator configuredLegAnimator =
+                null)
         {
             policeWallet = configuredPoliceWallet;
+            legAnimator = configuredLegAnimator;
             throwPresenter = configuredThrowPresenter;
             toolCarrier = configuredToolCarrier;
             scanner = configuredScanner;
@@ -611,6 +622,16 @@ namespace PawsAndLoot.Integration.Network
                 transform.rotation,
                 Quaternion.Euler(0f, _yaw.Value, 0f),
                 Mathf.Clamp01(deltaTime * 12f));
+
+            // Hand the walk the host's speed instead of letting it measure this
+            // stuttering transform. The correction above arrives at its target
+            // and then waits for the next packet, so a measured speed reads zero
+            // on most frames and the character slides with still legs.
+            if (legAnimator != null && motor != null)
+            {
+                legAnimator.SetExternalSpeed(
+                    _normalizedSpeed.Value * motor.EffectiveMoveSpeed);
+            }
         }
     }
 }

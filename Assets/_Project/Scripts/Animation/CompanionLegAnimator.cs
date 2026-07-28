@@ -119,6 +119,8 @@ namespace PawsAndLoot.Animation
         private Vector3 _headYawAxis = Vector3.up;
         private float _headYawSign = 1f;
         private Vector3 _lastPosition;
+        private float _externalSpeed;
+        private int _externalSpeedFrame = int.MinValue;
         private float _phase;
         private float _movingBlend;
 
@@ -547,6 +549,23 @@ namespace PawsAndLoot.Animation
             return lower.Contains("0_");
         }
 
+        /// <summary>
+        /// Speed handed in by whoever knows it, in metres per second.
+        ///
+        /// Has to be set every frame it applies. Going stale on purpose means a
+        /// character that stops being remote-driven — a rematch, a host
+        /// migration — falls back to measuring itself without anybody having to
+        /// remember to clear this.
+        /// </summary>
+        public void SetExternalSpeed(float metresPerSecond)
+        {
+            _externalSpeed = Mathf.Max(0f, metresPerSecond);
+            _externalSpeedFrame = Time.frameCount;
+        }
+
+        private bool HasFreshExternalSpeed =>
+            _externalSpeedFrame >= Time.frameCount - 1;
+
         public void Tick(float deltaTime)
         {
             if (_legs.Count == 0 || deltaTime <= 0f)
@@ -566,7 +585,20 @@ namespace PawsAndLoot.Animation
             delta.y = 0f;
             _lastPosition = current;
 
-            float speed = delta.magnitude / deltaTime;
+            // How fast this character is moving, told rather than measured when
+            // somebody knows better.
+            //
+            // Measuring the transform is right for anything this machine
+            // simulates, and wrong for a character whose position arrives over
+            // the network. A replicated position is corrected toward its target
+            // and then sits still until the next packet, so most frames measure
+            // zero and the gait blend keeps being pulled back down: on a client
+            // both characters swung 2.5° while the host showed 24°, and the body
+            // settle was the only motion left. That is precisely the "vibrating
+            // in place" that was reported.
+            float speed = HasFreshExternalSpeed
+                ? _externalSpeed
+                : delta.magnitude / deltaTime;
             float target = speed < 0.15f ? 0f : 1f;
             _movingBlend = Mathf.MoveTowards(
                 _movingBlend,
