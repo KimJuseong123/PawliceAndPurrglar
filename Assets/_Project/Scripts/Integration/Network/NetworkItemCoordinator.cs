@@ -41,6 +41,27 @@ namespace PawsAndLoot.Integration.Network
         public const string PickupMessageName = "PawsAndLoot.PickupTaken";
         public const string RevealMessageName = "PawsAndLoot.ThiefRevealed";
 
+        /// <summary>
+        /// Payload sizes, asked of the serialiser rather than counted.
+        ///
+        /// Public so a test can write each payload into a buffer of exactly this
+        /// size and fail if the two ever disagree again. Hand arithmetic is what
+        /// produced a buffer four bytes short of a Vector3.
+        /// </summary>
+        public static readonly int PlaceMessageBytes =
+            FastBufferWriter.GetWriteSize<int>() * 3
+            + FastBufferWriter.GetWriteSize<Vector3>();
+
+        public static readonly int ClearMessageBytes =
+            FastBufferWriter.GetWriteSize<int>();
+
+        public static readonly int RevealMessageBytes =
+            FastBufferWriter.GetWriteSize<int>() * 2;
+
+        public static readonly int PickupMessageBytes =
+            FastBufferWriter.GetWriteSize<int>()
+            + FastBufferWriter.GetWriteSize<bool>();
+
         private static NetworkItemCoordinator _instance;
 
         private readonly Dictionary<int, PlacedTrap> _traps = new();
@@ -98,8 +119,15 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
+            // Sized from the writes, not counted by hand.
+            //
+            // It was counted by hand and it was wrong: three ints and a Vector3
+            // is 24 bytes and the buffer was 20, so placing anything threw an
+            // overflow after the third int with 8 bytes left and 12 to write.
+            // Nothing had ever been placed before the police got their props,
+            // which is why it surfaced only now.
             using var writer = new FastBufferWriter(
-                sizeof(int) * 2 + sizeof(float) * 3,
+                PlaceMessageBytes,
                 Allocator.Temp);
             writer.WriteValueSafe(id);
             writer.WriteValueSafe((int)kind);
@@ -196,7 +224,7 @@ namespace PawsAndLoot.Integration.Network
                     && manager.IsServer)
                 {
                     using var writer = new FastBufferWriter(
-                        sizeof(int),
+                        ClearMessageBytes,
                         Allocator.Temp);
                     writer.WriteValueSafe(id);
                     manager.CustomMessagingManager
@@ -251,7 +279,7 @@ namespace PawsAndLoot.Integration.Network
             }
 
             using var writer = new FastBufferWriter(
-                sizeof(int) * 2,
+                RevealMessageBytes,
                 Allocator.Temp);
             writer.WriteValueSafe((int)revealed);
             writer.WriteValueSafe(trapId);
@@ -443,7 +471,7 @@ namespace PawsAndLoot.Integration.Network
             }
 
             using var writer = new FastBufferWriter(
-                sizeof(int) + sizeof(byte),
+                PickupMessageBytes,
                 Allocator.Temp);
             writer.WriteValueSafe(id);
             writer.WriteValueSafe(taken);

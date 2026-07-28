@@ -649,6 +649,62 @@ namespace PawsAndLoot.Tests.PlayMode
             Assert.That(visibility.IsRevealed, Is.True);
         }
 
+        /// <summary>
+        /// THROW-009. The officer gets told a sensor tripped; the thief does not.
+        ///
+        /// Both halves matter. Without the line, a thief revealed behind a
+        /// building is a reveal the officer never notices. With it shown to the
+        /// thief as well, the thief would learn they had been spotted, which is
+        /// the one thing they must have to guess at.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator SensorAlertShowsForThePoliceOnly()
+        {
+            var policeObject = Track(new GameObject("Police"));
+            PlayerRoleIdentity police =
+                policeObject.AddComponent<PlayerRoleIdentity>();
+            police.Configure(PlayerRole.Police);
+            FlashlightVisibility visibility =
+                policeObject.AddComponent<FlashlightVisibility>();
+
+            var hud = Track(new GameObject("HUD"));
+            var labelObject = Track(new GameObject("Label"));
+            UnityEngine.UI.Text label =
+                labelObject.AddComponent<UnityEngine.UI.Text>();
+            PawsAndLoot.UI.SensorAlertPresenter presenter =
+                hud.AddComponent<PawsAndLoot.UI.SensorAlertPresenter>();
+            presenter.Configure(label, null);
+
+            LocalPlayerRoleSelector.OverrideRole(PlayerRole.Police);
+            yield return null;
+
+            presenter.Refresh();
+            Assert.That(
+                presenter.IsShowing,
+                Is.False,
+                "Nothing to say before a sensor trips.");
+
+            visibility.RevealFor(ThrowableCatalog.RevealSeconds);
+            presenter.Refresh();
+            Assert.That(presenter.IsShowing, Is.True);
+            Assert.That(
+                presenter.AlertText,
+                Does.Contain("센서등"),
+                "The line has to name what happened, not just flash.");
+
+            // The thief's screen says nothing, even though the same reveal is
+            // running on the same machine's data.
+            LocalPlayerRoleSelector.OverrideRole(PlayerRole.Thief);
+            presenter.Refresh();
+            Assert.That(
+                presenter.IsShowing,
+                Is.False,
+                "Telling the thief they were spotted hands them the one thing "
+                + "they should have to guess at.");
+
+            LocalPlayerRoleSelector.ClearOverriddenRole();
+        }
+
         private sealed class MutableMatchState : IMatchStateReader
         {
             public MatchState CurrentState =>

@@ -61,6 +61,20 @@ namespace PawsAndLoot.TechnicalValidation
         /// </summary>
         private const float ThrowAt = 9f;
 
+        /// <summary>
+        /// THROW-009. The host puts a trap on the ground.
+        ///
+        /// Here because the placed-trap message was four bytes short of its
+        /// payload and threw an overflow on the first placement ever made. The
+        /// throw leg does not cover it — throwing sends a different message — and
+        /// no trap had been placed in a session before the police got props.
+        ///
+        /// Dropped well away from both characters: what is under test is that the
+        /// message crosses and both machines end up with the same trap, not that
+        /// it catches anybody.
+        /// </summary>
+        private const float PlaceTrapAt = 9.6f;
+
         private const float PlaceForArrestAt = 11f;
 
         [SerializeField, Min(1f)]
@@ -87,6 +101,13 @@ namespace PawsAndLoot.TechnicalValidation
         private bool _placedForArrest;
         private bool _armedForThrow;
         private bool _requestedThrow;
+        private bool _placedTrap;
+
+        /// <summary>
+        /// THROW-009. Peak trap count seen on this machine. Latched, because the
+        /// host clears a trap the moment it fires.
+        /// </summary>
+        private int _peakTrapCount;
 
         /// <summary>
         /// THROW-005. Latched on both machines: a rock in hand is momentary
@@ -342,6 +363,12 @@ namespace PawsAndLoot.TechnicalValidation
                 RequestThrowAtOpponent(link, PlayerRole.Police);
             }
 
+            if (!_placedTrap && _elapsed >= PlaceTrapAt)
+            {
+                _placedTrap = true;
+                PlaceTrapAwayFromEverybody();
+            }
+
             if (!_placedForArrest && _elapsed >= PlaceForArrestAt)
             {
                 _placedForArrest = true;
@@ -383,6 +410,17 @@ namespace PawsAndLoot.TechnicalValidation
             if (role.HasValue)
             {
                 _observedRole = role.Value.ToString();
+            }
+
+            // THROW-009. Both machines have to end up with the same trap. A
+            // count of zero on the client means the message never crossed.
+            NetworkItemCoordinator coordinator =
+                FindFirstObjectByType<NetworkItemCoordinator>();
+            if (coordinator != null)
+            {
+                _peakTrapCount = Mathf.Max(
+                    _peakTrapCount,
+                    coordinator.ActiveTrapCount);
             }
 
             // THROW-005. Recorded on both machines: the whole bug was that only
@@ -559,6 +597,24 @@ namespace PawsAndLoot.TechnicalValidation
         }
 
         /// <summary>
+        /// THROW-009 setup, host only. Puts one trap down in an empty corner.
+        /// </summary>
+        private void PlaceTrapAwayFromEverybody()
+        {
+            if (_mode != "host")
+            {
+                return;
+            }
+
+            NetworkItemCoordinator.Place(
+                PawsAndLoot.Gameplay.Items.ThrowableKind.GlueTrap,
+                PlayerRole.Police,
+                // A road intersection nobody is standing on at this point in the
+                // timeline, so it never fires and never disturbs the arrest.
+                new Vector3(-24f, 0f, 26f));
+        }
+
+        /// <summary>
         /// THROW-007 setup, host only. Puts a rock in the thief's hand and stands
         /// the officer a few metres off, across open ground.
         ///
@@ -602,11 +658,19 @@ namespace PawsAndLoot.TechnicalValidation
                     PawsAndLoot.Gameplay.Items.ThrowablePickup>(
                     FindObjectsSortMode.None))
             {
-                if (candidate.IsAvailable)
+                // One the thief may actually take. The scene now holds
+                // police-only props too, and the enumeration order is arbitrary:
+                // taking the first available one handed the thief a glue trap it
+                // was refused, so the throw leg silently had nothing to throw.
+                if (!candidate.IsAvailable
+                    || (candidate.IsRoleRestricted
+                        && candidate.RestrictedTo != PlayerRole.Thief))
                 {
-                    rock = candidate;
-                    break;
+                    continue;
                 }
+
+                rock = candidate;
+                break;
             }
 
             if (rock != null)
@@ -883,6 +947,7 @@ namespace PawsAndLoot.TechnicalValidation
 
             // THROW-007. Both files have to agree, or the two players are in
             // different chases.
+            AppendNumber(json, "peakTrapCount", _peakTrapCount);
             AppendBool(json, "sawPickedUpRock", _sawPickedUpRock);
             AppendBool(json, "sawRockTaken", _sawRockTaken);
             AppendBool(json, "sawStun", _sawStun);
@@ -913,7 +978,9 @@ namespace PawsAndLoot.TechnicalValidation
                     // THROW-005. Both machines have to have seen the rock in
                     // hand and gone from the ground.
                     && _sawPickedUpRock
-                    && _sawRockTaken;
+                    && _sawRockTaken
+                    // THROW-009. The placed-trap message reached this machine.
+                    && _peakTrapCount >= 1;
             AppendBool(json, "passed", sessionHealthy && scenarioPassed);
             json.AppendLine("  \"end\": true");
             json.AppendLine("}");

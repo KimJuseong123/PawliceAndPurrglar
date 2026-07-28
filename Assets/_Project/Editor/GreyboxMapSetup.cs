@@ -2447,6 +2447,33 @@ namespace PawsAndLoot.Editor
                         $"[ART-014] {role} procedural biped walk on "
                         + $"{stride.LegCount} limbs.");
                 }
+
+                // A body settle on top of the leg swing, synced to the footfalls,
+                // and identical for both roles.
+                //
+                // The leg swing alone is hard to read on these models: the legs
+                // are short against the torso and from a tilted overhead camera
+                // at night they are the least visible part of the silhouette. The
+                // body rising and rolling is what makes running legible, which is
+                // the same reason the animals needed it.
+                //
+                // Taller and with more roll than the animals get — a person's
+                // body travels further per step than a short-legged dog's.
+                Transform bobVisual = player.transform.Find("VisualRoot");
+                if (bobVisual != null && stride.LegCount > 0)
+                {
+                    player.AddComponent<
+                            PawsAndLoot.Animation
+                                .CompanionProceduralAnimator>()
+                        .Configure(
+                            // No agent: that argument only exists to stand down
+                            // while a companion is idle.
+                            null,
+                            bobVisual,
+                            stride,
+                            0.085f,
+                            5.5f);
+                }
             }
 
             PlayerRoleIdentity identity =
@@ -3893,6 +3920,29 @@ namespace PawsAndLoot.Editor
             // assigned by the host at runtime and is unknown here.
             hudRoot.gameObject.AddComponent<ToolHudPresenter>()
                 .Configure(toolLabel);
+
+            // THROW-009. A line for the officer while a sensor's reveal runs.
+            //
+            // The reveal itself is the payoff and this does not replace it. But a
+            // thief exposed behind a building is a reveal the officer never
+            // notices, and a lamp flashing off screen is not something they can
+            // act on — this is what turns it into "look now".
+            RectTransform sensorRect =
+                CreateRect("Sensor Alert", canvasObject.transform);
+            sensorRect.anchorMin = new Vector2(0.5f, 1f);
+            sensorRect.anchorMax = new Vector2(0.5f, 1f);
+            sensorRect.pivot = new Vector2(0.5f, 1f);
+            sensorRect.anchoredPosition = new Vector2(0f, -96f);
+            sensorRect.sizeDelta = new Vector2(520f, 34f);
+            Text sensorLabel =
+                sensorRect.gameObject.AddComponent<Text>();
+            sensorLabel.font = Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            sensorLabel.fontSize = 22;
+            sensorLabel.alignment = TextAnchor.MiddleCenter;
+            sensorLabel.raycastTarget = false;
+            hudRoot.gameObject.AddComponent<SensorAlertPresenter>()
+                .Configure(sensorLabel, roleSelector);
 
             CommonHudPresenter hudPresenter =
                 hudRoot.gameObject.AddComponent<CommonHudPresenter>();

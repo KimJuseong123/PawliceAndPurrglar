@@ -68,14 +68,34 @@ namespace PawsAndLoot.Animation
 
         public float MovingBlend => _movingBlend;
 
+        /// <summary>
+        /// <paramref name="configuredAgent"/> may be null. It is only consulted
+        /// to stand down while a companion is inactive, so the players — who use
+        /// this for the same body settle and have no agent — pass nothing.
+        ///
+        /// The tuning arguments default to the animal values, so passing them is
+        /// how a two-legged runner gets a taller bob without retuning the dog.
+        /// </summary>
         public void Configure(
             CompanionAgent configuredAgent,
             Transform configuredVisual,
-            CompanionLegAnimator configuredGaitSource = null)
+            CompanionLegAnimator configuredGaitSource = null,
+            float configuredHopHeight = -1f,
+            float configuredRollDegrees = -1f)
         {
             agent = configuredAgent;
             visual = configuredVisual;
             gaitSource = configuredGaitSource;
+            if (configuredHopHeight >= 0f)
+            {
+                hopHeight = configuredHopHeight;
+            }
+
+            if (configuredRollDegrees >= 0f)
+            {
+                rollDegrees = configuredRollDegrees;
+            }
+
             ValidateOrThrow();
             _visualRestPosition = visual.localPosition;
             _lastPosition = transform.position;
