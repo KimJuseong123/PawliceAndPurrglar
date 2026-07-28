@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PawsAndLoot.Logging;
 using UnityEngine;
 
 namespace PawsAndLoot.Animation
@@ -24,6 +25,18 @@ namespace PawsAndLoot.Animation
             Right
         }
 
+        /// <summary>
+        /// A quadruped walks its four limbs a quarter cycle apart; a biped
+        /// swings each arm against the opposite leg. Set by the caller, not
+        /// guessed from the rig: the cat is a four-legged animal on a biped
+        /// skeleton, so the bone names do not tell you how it should move.
+        /// </summary>
+        public enum GaitMode
+        {
+            Quadruped = 0,
+            Biped = 1
+        }
+
         private sealed class Leg
         {
             public Transform Upper;
@@ -31,6 +44,21 @@ namespace PawsAndLoot.Animation
             public Quaternion UpperRest;
             public Quaternion LowerRest;
             public float PhaseOffset;
+
+            /// <summary>
+            /// Local axis that swings this limb forwards and backwards, and the
+            /// sign that makes a positive angle swing forward.
+            ///
+            /// Measured per bone rather than assumed. The rigs disagree: on the
+            /// dog a rotation about X splays the leg sideways and Z is the
+            /// stride, while on the cat and the players it is the other way
+            /// round. One hardcoded axis is why the dog looked like it was
+            /// paddling rather than walking.
+            /// </summary>
+            public Vector3 UpperAxis;
+            public Vector3 LowerAxis;
+            public float UpperSign;
+            public float LowerSign;
         }
 
         // Upper joint (hip or shoulder) and the joint below it (knee or elbow).
@@ -78,7 +106,18 @@ namespace PawsAndLoot.Animation
         [SerializeField, Range(0.5f, 0.8f)]
         private float stanceFraction = 0.62f;
 
+        /// <summary>
+        /// How far the head turns side to side across a stride. Small: it is a
+        /// weight shift, not the animal looking around.
+        /// </summary>
+        [SerializeField, Min(0f)]
+        private float headSwayDegrees = 9f;
+
         private readonly List<Leg> _legs = new();
+        private Transform _head;
+        private Quaternion _headRest;
+        private Vector3 _headYawAxis = Vector3.up;
+        private float _headYawSign = 1f;
         private Vector3 _lastPosition;
         private float _phase;
         private float _movingBlend;
@@ -86,14 +125,68 @@ namespace PawsAndLoot.Animation
         public int LegCount => _legs.Count;
         public float MovingBlend => _movingBlend;
 
-        public void Configure(Transform configuredSkeletonRoot)
+        /// <summary>
+        /// Whether this component found limbs to drive. The body animator uses
+        /// it to decide whether there is a gait to follow at all.
+        /// </summary>
+        public bool HasGait => _legs.Count > 0;
+
+        /// <summary>
+        /// Position within the stride, 0 to 1. Zero is the moment a leg plants,
+        /// because <see cref="EvaluateStride"/> starts each leg's stance there.
+        /// </summary>
+        public float GaitCycle =>
+            Mathf.Repeat(_phase / (Mathf.PI * 2f), 1f);
+
+        /// <summary>
+        /// Footfalls in one stride. The four limbs land a quarter cycle apart;
+        /// a biped's two legs land half a cycle apart.
+        ///
+        /// This is what the body bob has to match. A bob on its own timer drifts
+        /// against the feet and reads as bouncing rather than walking, which is
+        /// exactly how the animals looked.
+        /// </summary>
+        public int FootfallsPerCycle =>
+            gait == GaitMode.Biped ? 2 : 4;
+
+        [SerializeField]
+        private GaitMode gait = GaitMode.Quadruped;
+
+        /// <summary>
+        /// When set, the limbs are only driven while this Animator is switched
+        /// off. Clips win when they exist; this is the fallback that keeps the
+        /// characters walking in a checkout with no animation assets.
+        /// </summary>
+        [SerializeField]
+        private Animator deferToAnimator;
+
+        public void Configure(
+            Transform configuredSkeletonRoot,
+            GaitMode configuredGait = GaitMode.Quadruped,
+            Animator configuredDeferTo = null)
         {
             skeletonRoot = configuredSkeletonRoot;
+            gait = configuredGait;
+            deferToAnimator = configuredDeferTo;
+
+            if (gait == GaitMode.Quadruped)
+            {
+                // A short-legged dog covers ground with a visibly longer,
+                // slower swing than a person, and that is most of what makes
+                // the walk read as a waddle rather than a trot. The player
+                // values are left alone: a human mincing along at this stride
+                // would look wrong.
+                swingDegrees = 36f;
+                kneeBendDegrees = 42f;
+                stridesPerSecond = 1.55f;
+            }
+
             _legs.Clear();
             _phase = 0f;
             _movingBlend = 0f;
             _lastPosition = transform.position;
             CollectLegs();
+            CollectHead();
         }
 
         /// <summary>
@@ -136,6 +229,17 @@ namespace PawsAndLoot.Animation
                 bool isFront = ResolveIsFront(bone.name);
                 Transform lower = FindLowerJoint(bone);
 
+                MeasureSwingAxis(
+                    bone,
+                    out Vector3 upperAxis,
+                    out float upperSign);
+                Vector3 lowerAxis = upperAxis;
+                float lowerSign = upperSign;
+                if (lower != null)
+                {
+                    MeasureSwingAxis(lower, out lowerAxis, out lowerSign);
+                }
+
                 _legs.Add(new Leg
                 {
                     Upper = bone,
@@ -144,19 +248,230 @@ namespace PawsAndLoot.Animation
                     LowerRest = lower != null
                         ? lower.localRotation
                         : Quaternion.identity,
+                    UpperAxis = upperAxis,
+                    LowerAxis = lowerAxis,
+                    UpperSign = upperSign,
+                    LowerSign = lowerSign,
                     PhaseOffset = ResolveGaitPhase(side, isFront)
                 });
             }
         }
 
         /// <summary>
-        /// Lateral sequence walk, the gait dogs and cats actually use at
-        /// walking speed: rear-left, front-left, rear-right, front-right, each
-        /// a quarter cycle apart. A two-phase diagonal trot is what made the
-        /// previous version read as hopping rather than walking.
+        /// Finds the head and works out which of its local axes turns it left
+        /// and right.
+        ///
+        /// Twist helpers are skipped and the shallowest match wins, so a neck
+        /// chain resolves to the head itself rather than a helper partway up it.
         /// </summary>
-        private static float ResolveGaitPhase(LegSide side, bool isFront)
+        private void CollectHead()
         {
+            _head = null;
+            if (skeletonRoot == null || headSwayDegrees <= 0f)
+            {
+                return;
+            }
+
+            int bestDepth = int.MaxValue;
+            foreach (Transform bone in
+                skeletonRoot.GetComponentsInChildren<Transform>(true))
+            {
+                if (IsTwistHelper(bone.name)
+                    || bone.name.IndexOf(
+                        "head",
+                        System.StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                int depth = 0;
+                for (Transform p = bone;
+                    p != skeletonRoot && p != null;
+                    p = p.parent)
+                {
+                    depth++;
+                }
+
+                if (depth < bestDepth)
+                {
+                    bestDepth = depth;
+                    _head = bone;
+                }
+            }
+
+            if (_head == null)
+            {
+                return;
+            }
+
+            _headRest = _head.localRotation;
+            MeasureYawAxis(_head, out _headYawAxis, out _headYawSign);
+        }
+
+        /// <summary>
+        /// Picks the local axis whose rotation turns a bone about world up.
+        ///
+        /// Measured rather than assumed, for the same reason the limb swing is:
+        /// the dog and the cat are on different skeletons and neither agrees
+        /// with the other about which axis is which. Comparing the rotation the
+        /// bone actually undergoes against world up answers it for any rig.
+        /// </summary>
+        private static void MeasureYawAxis(
+            Transform bone,
+            out Vector3 axis,
+            out float sign)
+        {
+            axis = Vector3.up;
+            sign = 1f;
+
+            Quaternion rest = bone.localRotation;
+            Quaternion before = bone.rotation;
+            float best = 0f;
+
+            foreach (Vector3 candidate in
+                new[] { Vector3.right, Vector3.up, Vector3.forward })
+            {
+                bone.localRotation =
+                    rest * Quaternion.AngleAxis(25f, candidate);
+                Quaternion change =
+                    bone.rotation * Quaternion.Inverse(before);
+                bone.localRotation = rest;
+
+                change.ToAngleAxis(
+                    out float angle,
+                    out Vector3 worldAxis);
+                if (angle > 180f)
+                {
+                    angle -= 360f;
+                }
+
+                // How much of the resulting turn is about world up.
+                float yaw = Vector3.Dot(
+                    worldAxis.normalized,
+                    Vector3.up) * angle;
+                if (Mathf.Abs(yaw) <= Mathf.Abs(best))
+                {
+                    continue;
+                }
+
+                best = yaw;
+                axis = candidate;
+            }
+
+            sign = best < 0f ? -1f : 1f;
+        }
+
+        /// <summary>
+        /// Finds the local axis that swings a limb along the character's facing,
+        /// and the sign that makes a positive angle swing it forward.
+        ///
+        /// Done by trying each axis and measuring where the limb's tip actually
+        /// goes, because the authored rigs disagree about which axis is which
+        /// and guessing wrong makes a leg splay sideways instead of stride. The
+        /// bone is put straight back, so this leaves no trace in the scene.
+        /// </summary>
+        private void MeasureSwingAxis(
+            Transform bone,
+            out Vector3 axis,
+            out float sign)
+        {
+            axis = Vector3.right;
+            sign = 1f;
+
+            Transform tip = FindTip(bone);
+            if (tip == null)
+            {
+                return;
+            }
+
+            Quaternion rest = bone.localRotation;
+            Vector3 forward = transform.forward;
+            Vector3 restTip = tip.position;
+            float best = 0f;
+
+            foreach (Vector3 candidate in
+                new[] { Vector3.right, Vector3.up, Vector3.forward })
+            {
+                bone.localRotation =
+                    rest * Quaternion.AngleAxis(25f, candidate);
+                float along = Vector3.Dot(
+                    tip.position - restTip,
+                    forward);
+                bone.localRotation = rest;
+
+                if (Mathf.Abs(along) <= Mathf.Abs(best))
+                {
+                    continue;
+                }
+
+                best = along;
+                axis = candidate;
+            }
+
+            // A negative reading means this axis swings the limb backwards, so
+            // the whole gait is mirrored for that bone rather than left to run
+            // out of step with the others.
+            sign = best < 0f ? -1f : 1f;
+        }
+
+        /// <summary>
+        /// Deepest descendant of a bone, used as the limb's tip when measuring
+        /// which way it swings. Twist helpers are skipped: they barely move.
+        /// </summary>
+        private static Transform FindTip(Transform bone)
+        {
+            Transform best = null;
+            int bestDepth = 0;
+            foreach (Transform candidate in
+                bone.GetComponentsInChildren<Transform>(true))
+            {
+                if (candidate == bone || IsTwistHelper(candidate.name))
+                {
+                    continue;
+                }
+
+                int depth = 0;
+                for (Transform p = candidate;
+                    p != bone && p != null;
+                    p = p.parent)
+                {
+                    depth++;
+                }
+
+                if (depth > bestDepth)
+                {
+                    bestDepth = depth;
+                    best = candidate;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// Quadruped: a lateral sequence walk, the gait dogs and cats actually
+        /// use at walking speed — rear-left, front-left, rear-right,
+        /// front-right, each a quarter cycle apart.
+        ///
+        /// Biped: legs half a cycle apart, and each arm opposite the leg on the
+        /// same side. That contralateral swing is most of what makes a walk read
+        /// as a walk rather than a shuffle.
+        /// </summary>
+        private float ResolveGaitPhase(LegSide side, bool isFront)
+        {
+            float half = Mathf.PI;
+            if (gait == GaitMode.Biped)
+            {
+                bool leftish = side == LegSide.Left;
+                if (isFront)
+                {
+                    // Arms: opposite the leg on their own side.
+                    return leftish ? half : 0f;
+                }
+
+                return leftish ? 0f : half;
+            }
+
             float quarter = Mathf.PI * 0.5f;
             if (side == LegSide.Left)
             {
@@ -239,6 +554,13 @@ namespace PawsAndLoot.Animation
                 return;
             }
 
+            // Authored clips beat procedural motion. Writing bones on top of a
+            // running Animator would fight it every frame.
+            if (deferToAnimator != null && deferToAnimator.enabled)
+            {
+                return;
+            }
+
             Vector3 current = transform.position;
             Vector3 delta = current - _lastPosition;
             delta.y = 0f;
@@ -273,19 +595,42 @@ namespace PawsAndLoot.Animation
                     out float kneeDegrees);
 
                 leg.Upper.localRotation = leg.UpperRest
-                    * Quaternion.Euler(
-                        hipDegrees * _movingBlend,
-                        0f,
-                        0f);
+                    * Quaternion.AngleAxis(
+                        hipDegrees * _movingBlend * leg.UpperSign,
+                        leg.UpperAxis);
                 if (leg.Lower != null)
                 {
                     leg.Lower.localRotation = leg.LowerRest
-                        * Quaternion.Euler(
-                            kneeDegrees * _movingBlend,
-                            0f,
-                            0f);
+                        * Quaternion.AngleAxis(
+                            kneeDegrees * _movingBlend * leg.LowerSign,
+                            leg.LowerAxis);
                 }
             }
+
+            ApplyHeadSway();
+        }
+
+        /// <summary>
+        /// Swings the head once per stride, not once per footfall.
+        ///
+        /// The body rises and falls with every paw that lands; the head leads
+        /// the weight shift, which happens once per full cycle. Running them at
+        /// the same rate makes the animal look like it is shaking its head
+        /// rather than walking.
+        /// </summary>
+        private void ApplyHeadSway()
+        {
+            if (_head == null)
+            {
+                return;
+            }
+
+            float sway = Mathf.Sin(_phase)
+                * headSwayDegrees
+                * _movingBlend
+                * _headYawSign;
+            _head.localRotation = _headRest
+                * Quaternion.AngleAxis(sway, _headYawAxis);
         }
 
         /// <summary>
@@ -321,6 +666,36 @@ namespace PawsAndLoot.Animation
                 swingDegrees,
                 Mathf.SmoothStep(0f, 1f, swingT));
             kneeDegrees = Mathf.Sin(swingT * Mathf.PI) * kneeBendDegrees;
+        }
+
+        /// <summary>
+        /// Collects the limbs again when the scene loads.
+        ///
+        /// <see cref="Configure"/> runs in the editor while the scene is built,
+        /// but the collected list is plain runtime state and is not serialised,
+        /// so a built player started with nothing to drive and this component
+        /// silently did nothing at all. Only the body hop was ever visible,
+        /// which is why the animals looked like they were bouncing instead of
+        /// walking.
+        ///
+        /// The serialised fields — the skeleton root, the gait and the Animator
+        /// to defer to — do survive, so re-collecting here is enough.
+        /// </summary>
+        private void Awake()
+        {
+            _lastPosition = transform.position;
+            if (_legs.Count > 0 || skeletonRoot == null)
+            {
+                return;
+            }
+
+            CollectLegs();
+            CollectHead();
+            GameLogger.Debug(
+                GameLogCategory.Companion,
+                $"'{name}' drives {_legs.Count} limbs "
+                + $"as a {gait}.",
+                this);
         }
 
         private void LateUpdate()

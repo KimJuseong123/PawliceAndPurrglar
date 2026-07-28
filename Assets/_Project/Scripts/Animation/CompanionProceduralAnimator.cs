@@ -27,14 +27,39 @@ namespace PawsAndLoot.Animation
         // Once the legs carry the stride, the body only needs a slight vertical
         // settle. The earlier large hop is what made the animals look like they
         // were bouncing rather than walking.
+        //
+        // Dropped again after the legs started swinging on the right axis: the
+        // dog's limbs had been splaying sideways, so the hop was the only motion
+        // that read at all and it had been left doing work it should not.
         [SerializeField, Min(0f)]
-        private float hopHeight = 0.03f;
+        private float hopHeight = 0.065f;
 
+        /// <summary>
+        /// Legs to take the rhythm from. Optional: without it the body falls
+        /// back to a free-running hop.
+        /// </summary>
+        [SerializeField]
+        private CompanionLegAnimator gaitSource;
+
+        /// <summary>
+        /// Twice the stride rate, because a walking animal's body dips once per
+        /// footfall rather than once per stride.
+        /// </summary>
         [SerializeField, Min(0.1f)]
         private float hopsPerSecond = 3.8f;
 
         [SerializeField, Min(0f)]
         private float leanDegrees = 2f;
+
+        /// <summary>
+        /// How far the body rolls toward the supporting side, once per stride.
+        ///
+        /// This is the part that reads as a waddle. A short-legged dog shifts
+        /// its weight sideways over each planted pair, and without it the walk
+        /// looks like a machine moving four sticks.
+        /// </summary>
+        [SerializeField, Min(0f)]
+        private float rollDegrees = 4f;
 
         private Vector3 _visualRestPosition;
         private Vector3 _lastPosition;
@@ -45,10 +70,12 @@ namespace PawsAndLoot.Animation
 
         public void Configure(
             CompanionAgent configuredAgent,
-            Transform configuredVisual)
+            Transform configuredVisual,
+            CompanionLegAnimator configuredGaitSource = null)
         {
             agent = configuredAgent;
             visual = configuredVisual;
+            gaitSource = configuredGaitSource;
             ValidateOrThrow();
             _visualRestPosition = visual.localPosition;
             _lastPosition = transform.position;
@@ -93,15 +120,62 @@ namespace PawsAndLoot.Animation
                 return;
             }
 
-            _phase += deltaTime * hopsPerSecond * Mathf.PI * 2f;
-            float hop = Mathf.Abs(Mathf.Sin(_phase))
-                * hopHeight * _movingBlend;
-            visual.localPosition =
-                _visualRestPosition + new Vector3(0f, hop, 0f);
+            visual.localPosition = _visualRestPosition
+                + new Vector3(0f, EvaluateRise(deltaTime), 0f);
             visual.localRotation = Quaternion.Euler(
                 -leanDegrees * _movingBlend,
                 0f,
-                0f);
+                EvaluateRoll());
+        }
+
+        /// <summary>
+        /// How far the body sits above its rest height this frame.
+        ///
+        /// Tied to the legs when there are legs to tie it to. A walking animal
+        /// is lowest as a paw lands and rises over the planted limb in between,
+        /// and it is that alternation — not the vertical motion by itself —
+        /// that reads as walking. Bobbing on an independent timer drifts against
+        /// the footfalls and just looks like bouncing, which is what this used
+        /// to do.
+        ///
+        /// Falls back to the old free-running hop when no gait is available, so
+        /// a rig with no recognisable legs still shows some life.
+        /// </summary>
+        private float EvaluateRise(float deltaTime)
+        {
+            if (gaitSource != null && gaitSource.HasGait)
+            {
+                float footfalls =
+                    Mathf.Max(1, gaitSource.FootfallsPerCycle);
+                // Zero at each footfall, one midway between them.
+                float rise = (1f - Mathf.Cos(
+                    gaitSource.GaitCycle
+                    * footfalls
+                    * Mathf.PI * 2f)) * 0.5f;
+                return rise * hopHeight * _movingBlend;
+            }
+
+            _phase += deltaTime * hopsPerSecond * Mathf.PI * 2f;
+            return Mathf.Abs(Mathf.Sin(_phase))
+                * hopHeight * _movingBlend;
+        }
+
+        /// <summary>
+        /// Sideways body roll, once per stride so it matches the head rather
+        /// than the twice-as-fast footfalls.
+        /// </summary>
+        private float EvaluateRoll()
+        {
+            if (rollDegrees <= 0f
+                || gaitSource == null
+                || !gaitSource.HasGait)
+            {
+                return 0f;
+            }
+
+            return Mathf.Sin(gaitSource.GaitCycle * Mathf.PI * 2f)
+                * rollDegrees
+                * _movingBlend;
         }
 
         private void LateUpdate()

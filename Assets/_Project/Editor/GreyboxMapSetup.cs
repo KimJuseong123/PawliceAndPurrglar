@@ -969,21 +969,26 @@ namespace PawsAndLoot.Editor
                     resolver,
                     courier);
 
-                // Quadrupeds have no clips, so movement is faked on the visual
-                // child only, never on the collider root.
-                PawsAndLoot.Animation.CompanionProceduralAnimator hop =
-                    agentObject.AddComponent<
-                        PawsAndLoot.Animation.
-                            CompanionProceduralAnimator>();
-                hop.Configure(agent, visualRoot);
-
                 // Real leg bones are swung so the animals walk rather than
                 // slide. Reported so a rig without recognisable legs is
                 // obvious in the rebuild log.
+                //
+                // Created before the body animator because the body takes its
+                // rhythm from the legs.
                 PawsAndLoot.Animation.CompanionLegAnimator legs =
                     agentObject.AddComponent<
                         PawsAndLoot.Animation.CompanionLegAnimator>();
                 legs.Configure(visualRoot);
+
+                // Quadrupeds have no clips, so movement is faked on the visual
+                // child only, never on the collider root. The body rise follows
+                // the legs' footfalls rather than a timer of its own.
+                PawsAndLoot.Animation.CompanionProceduralAnimator hop =
+                    agentObject.AddComponent<
+                        PawsAndLoot.Animation.
+                            CompanionProceduralAnimator>();
+                hop.Configure(agent, visualRoot, legs);
+
                 if (legs.LegCount == 0)
                 {
                     Debug.LogWarning(
@@ -2226,6 +2231,36 @@ namespace PawsAndLoot.Editor
                     playerConfig.MoveSpeed);
             }
 
+            // Procedural walk for the players, driven only when the Animator is
+            // off. The locomotion clips come from TopDownEngine and cannot be
+            // committed, so without it the characters would slide along with no
+            // leg motion at all; this swings their real bones instead.
+            //
+            // Contralateral biped gait, not the animals' four-beat lateral walk.
+            if (characterAnimator != null)
+            {
+                PawsAndLoot.Animation.CompanionLegAnimator stride =
+                    player.AddComponent<
+                        PawsAndLoot.Animation.CompanionLegAnimator>();
+                stride.Configure(
+                    characterAnimator.transform,
+                    PawsAndLoot.Animation.CompanionLegAnimator
+                        .GaitMode.Biped,
+                    characterAnimator);
+                if (stride.LegCount == 0)
+                {
+                    Debug.LogWarning(
+                        $"[{role}] No recognisable limb bones, so the "
+                        + "procedural walk will not play.");
+                }
+                else
+                {
+                    Debug.Log(
+                        $"[ART-014] {role} procedural biped walk on "
+                        + $"{stride.LegCount} limbs.");
+                }
+            }
+
             PlayerRoleIdentity identity =
                 player.GetComponent<PlayerRoleIdentity>();
             PlayerInteractionScanner interactionScanner =
@@ -2431,12 +2466,39 @@ namespace PawsAndLoot.Editor
             Transform root = CreateChild(
                 "PLAYER-004 Interaction Targets",
                 parent);
-            CreateLootTarget(
-                "Prototype Loot",
+            // ISSUE-011. Six pieces at 200 gold against a 1,000 target, so the
+            // thief can win with five and still has one to spare. A single
+            // piece made the sale victory mathematically impossible, which
+            // blocked gate B and two of the NET-010 scenarios.
+            //
+            // Spread across the map on purpose: the thief has to keep crossing
+            // ground the police can cover, rather than farming one corner.
+            Vector3[] lootSpots =
+            {
                 locations[GreyboxLocationId.JewelryStore].position
                     + new Vector3(1.8f, 0.5f, 0f),
-                new Color(0.75f, 0.3f, 0.95f),
-                root);
+                locations[GreyboxLocationId.Bookstore].position
+                    + new Vector3(0f, 0.5f, 4.5f),
+                locations[GreyboxLocationId.Supermarket].position
+                    + new Vector3(0f, 0.5f, -4.5f),
+                new Vector3(-21f, 0.5f, -6f),
+                new Vector3(7f, 0.5f, 26f),
+                new Vector3(36f, 0.5f, 0f)
+            };
+
+            for (int index = 0; index < lootSpots.Length; index++)
+            {
+                CreateLootTarget(
+                    index == 0
+                        ? "Prototype Loot"
+                        : $"Loot {index + 1}",
+                    lootSpots[index],
+                    new Color(0.75f, 0.3f, 0.95f),
+                    root);
+            }
+
+            Debug.Log(
+                $"[ISSUE-011] {lootSpots.Length} loot pieces placed.");
             CreateSaleZone(
                 "Prototype Sale Point",
                 locations[GreyboxLocationId.RaccoonMarket].position

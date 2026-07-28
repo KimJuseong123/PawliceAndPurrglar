@@ -1,5 +1,6 @@
 using System.Linq;
 using NUnit.Framework;
+using PawsAndLoot.Config;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Loot;
@@ -97,13 +98,19 @@ namespace PawsAndLoot.Tests.EditMode
 
             Assert.That(scanners, Has.Length.EqualTo(2));
 
-            // One prototype loot plus the two LOOT-005 hiding spots all use the
-            // Loot type, which keeps them thief only. The three Traversal
-            // targets are the MAP-003 climbable ladders, one per store.
+            // Six ISSUE-011 loot pieces plus the two LOOT-005 hiding spots all
+            // use the Loot type, which keeps them thief only. The three
+            // Traversal targets are the MAP-003 climbable ladders, one per
+            // store.
             Assert.That(
                 targets.Select(target => target.InteractionType),
                 Is.EquivalentTo(new[]
                 {
+                    PlayerInteractionType.Loot,
+                    PlayerInteractionType.Loot,
+                    PlayerInteractionType.Loot,
+                    PlayerInteractionType.Loot,
+                    PlayerInteractionType.Loot,
                     PlayerInteractionType.Loot,
                     PlayerInteractionType.Loot,
                     PlayerInteractionType.Loot,
@@ -120,6 +127,36 @@ namespace PawsAndLoot.Tests.EditMode
                             LootHidingSpot>(true))
                     .ToArray(),
                 Has.Length.EqualTo(2));
+
+            // The thief's win condition is arithmetic, so it is asserted as
+            // arithmetic: the loot on the map has to be worth more than the
+            // target or the sale victory is unreachable no matter how well the
+            // thief plays. That was ISSUE-011, and one spare piece is the
+            // margin that keeps a single loss from ending the run.
+            LootItem[] loot = scene
+                .GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<LootItem>(true))
+                .ToArray();
+            Assert.That(loot, Has.Length.EqualTo(6));
+
+            MatchConfig matchConfig =
+                UnityEditor.AssetDatabase.LoadAssetAtPath<MatchConfig>(
+                    "Assets/_Project/Settings/Configs/MatchConfig.asset");
+            LootConfig lootConfig =
+                UnityEditor.AssetDatabase.LoadAssetAtPath<LootConfig>(
+                    "Assets/_Project/Settings/Configs/LootConfig.asset");
+            Assert.That(matchConfig, Is.Not.Null);
+            Assert.That(lootConfig, Is.Not.Null);
+
+            int onTheMap = loot.Sum(
+                item => lootConfig.GetPrice(item.Definition.Rarity));
+            Assert.That(
+                onTheMap,
+                Is.GreaterThan(matchConfig.TargetSaleAmount),
+                $"The map holds {onTheMap} gold against a target of "
+                + $"{matchConfig.TargetSaleAmount}. Without a margin the thief "
+                + "has to sell every single piece to win.");
 
             LadderTraversal[] ladders = scene
                 .GetRootGameObjects()

@@ -334,7 +334,7 @@ C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe
 ### ISSUE-011 현재 Game 씬에서 도둑이 판매로 승리할 수 없다
 
 - 종류: 미구현
-- 상태: OPEN
+- 상태: RESOLVED
 - 심각도: High
 - 발견 날짜: 2026-07-25
 - 발생 환경: `Assets/_Project/Scenes/Game.unity`, `MatchConfig.targetSaleAmount`
@@ -350,7 +350,12 @@ C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe
   미측정으로 남았다
 - 임시 해결: 없음. 체포와 시간 종료 경로만 검증 가능
 - 관련 작업: LOOT-006, MATCH-004, NET-010, 관문 B
-- 해결 기록:
+- 해결 기록: 2026-07-28. 일반 보물 6개(1,200골드)를 맵 전역에 배치했다. 목표
+  1,000골드에 대해 여유가 한 개이므로 도둑은 5개를 팔면 이기고 경찰은 두 개를
+  막아야 한다. 5개(정확히 1,000골드)도 검토했으나 하나만 잃어도 승리가
+  불가능해져 같은 문제의 약한 형태가 된다.
+  `PlayerInteractionSceneTests`가 `보물 총액 > 목표 금액`을 검사하므로 이
+  조건이 다시 깨지면 테스트가 막는다.
 
 미확정 결정이므로 코드만 바꾸지 않는다. 보물 배치 수를 늘릴지, 목표 금액
 가설값을 낮출지 결정한 뒤 `docs/03_GAME_RULES.md`와
