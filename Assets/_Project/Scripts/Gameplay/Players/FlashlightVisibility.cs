@@ -31,15 +31,17 @@ namespace PawsAndLoot.Gameplay.Players
         private MonoBehaviour matchStateSource;
 
         /// <summary>
-        /// Half-angle of the cone, a little wider than the light itself so the
-        /// thief becomes visible just before they are lit rather than popping in
-        /// already glowing.
+        /// Taken from <see cref="FlashlightCone"/>, which is also what the light
+        /// and the outline drawn on the ground use. They were separate numbers
+        /// and had already drifted: the rule opened 30° while the light opened
+        /// 23°, so the thief appeared in a band that was never lit.
         /// </summary>
         [SerializeField, Range(10f, 90f)]
-        private float halfAngleDegrees = 30f;
+        private float halfAngleDegrees =
+            FlashlightCone.HalfAngleDegrees;
 
         [SerializeField, Min(1f)]
-        private float rangeMeters = 17f;
+        private float rangeMeters = FlashlightCone.RangeMeters;
 
         /// <summary>
         /// Always visible within this distance regardless of facing. Somebody
@@ -47,7 +49,8 @@ namespace PawsAndLoot.Gameplay.Players
         /// grappling with thin air.
         /// </summary>
         [SerializeField, Min(0f)]
-        private float alwaysSeenRadius = 3f;
+        private float alwaysSeenRadius =
+            FlashlightCone.AlwaysSeenRadius;
 
         private IMatchStateReader _matchState;
         private PlayerRoleIdentity _target;

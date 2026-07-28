@@ -43,13 +43,24 @@ namespace PawsAndLoot.Gameplay.Items
         /// <summary>
         /// How far a thrown prop travels before it drops. Short on purpose:
         /// a rock that crosses the map would make the chase a shooting range.
+        ///
+        /// Deliberately shorter than the torch's 17 m reach, so seeing somebody
+        /// is not the same as being able to hit them — the officer still has to
+        /// close the distance, which is the chase.
         /// </summary>
-        public const float ThrowRangeMeters = 9f;
+        public const float ThrowRangeMeters = 12f;
 
         /// <summary>
-        /// How close a throw has to pass to a player to count as a hit.
+        /// Half-width of the corridor a throw sweeps. Measured against the rig
+        /// rather than picked: the player capsule's radius is 0.45 m, so a
+        /// corridor this wide clears a character's own width either side of the
+        /// line and the throw connects on a graze.
+        ///
+        /// Generous on purpose. Aiming with the mouse from a fixed tilted camera
+        /// is not precise, and a pinpoint line would make every throw feel
+        /// stolen rather than missed.
         /// </summary>
-        public const float ThrowHitRadiusMeters = 1.1f;
+        public const float ThrowHitRadiusMeters = 1.25f;
 
         public static ThrowableUse GetUse(ThrowableKind kind)
         {

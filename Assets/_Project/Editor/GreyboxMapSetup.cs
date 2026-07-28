@@ -529,7 +529,7 @@ namespace PawsAndLoot.Editor
             camera.clearFlags = CameraClearFlags.SolidColor;
             // Night sky. Dark enough to read as night, not so dark that the
             // greybox map stops being legible from the fixed camera.
-            camera.backgroundColor = new Color(0.04f, 0.05f, 0.09f);
+            camera.backgroundColor = new Color(0.07f, 0.09f, 0.15f);
             camera.fieldOfView = 50f;
             camera.nearClipPlane = 0.1f;
             camera.farClipPlane = 150f;
@@ -539,36 +539,95 @@ namespace PawsAndLoot.Editor
             // shape; it is the intensity and colour that say "night", not the
             // absence of light.
             //
-            // This is atmosphere only. The police's actual field of view is a
-            // separate decision that waits on a playtest — dimming the scene
-            // does not restrict what anyone can see.
+            // Raised from the first pass. 0.32 read as night but was oppressive
+            // to actually play in: the town stopped being readable, which on a
+            // fixed camera means the player loses track of where they are rather
+            // than feeling hunted. Street lamps are coming, and this is the
+            // level the map has to be legible at before they arrive — they
+            // should be pools of interest, not the only way to see the road.
             var lightObject = new GameObject(
                 "Moonlight",
                 typeof(Light));
             lightObject.transform.rotation = Quaternion.Euler(52f, -28f, 0f);
             Light light = lightObject.GetComponent<Light>();
             light.type = LightType.Directional;
-            light.intensity = 0.32f;
-            light.color = new Color(0.62f, 0.71f, 1f);
-            light.shadowStrength = 0.75f;
+            light.intensity = 0.62f;
+            light.color = new Color(0.66f, 0.74f, 1f);
+            light.shadowStrength = 0.68f;
 
             // The old point light existed to flatten the daytime scene. At night
             // a broad fill would undo the whole effect, so it becomes a faint
-            // sky bounce instead of a lamp.
+            // sky bounce instead of a lamp — lifted alongside the moon so
+            // unlit faces and alley walls do not go to solid black.
             RenderSettings.ambientMode =
                 UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight =
-                new Color(0.10f, 0.12f, 0.20f);
+                new Color(0.20f, 0.23f, 0.33f);
             RenderSettings.fog = false;
         }
 
         /// <summary>
-        /// The officer's torch. Atmosphere for the night lighting, not a vision
-        /// rule: nothing is hidden by being outside the cone.
+        /// One player's night adaptation, as a directional fill lit only on that
+        /// player's own screen.
+        ///
+        /// A directional light because it has to lift the whole town rather than
+        /// follow the character like a second torch — that would hand the thief a
+        /// lantern and undo the night for both of them.
+        ///
+        /// The thief gets roughly three times the police's. The night exists to
+        /// stop the officer seeing across the map, and the story that pays for
+        /// the asymmetry is simply that a cat burglar works in the dark.
+        /// </summary>
+        private static void CreateNightVisionFill(
+            GameObject player,
+            PlayerRoleIdentity identity,
+            MatchRuntimeState matchRuntime,
+            PlayerRole role)
+        {
+            var fillObject = new GameObject(
+                "Night Vision Fill",
+                typeof(Light));
+            fillObject.transform.SetParent(player.transform, false);
+            // Steeper than the moon and from the other side, so it fills the
+            // faces the moonlight leaves black instead of doubling it.
+            fillObject.transform.rotation =
+                Quaternion.Euler(62f, 140f, 0f);
+
+            Light fill = fillObject.GetComponent<Light>();
+            fill.type = LightType.Directional;
+            // Measured against the plan-view render: the scene without any fill
+            // averages 19% luminance with no crushed blacks, so 0.42 lifts the
+            // thief's screen roughly a third above the officer's without
+            // turning their night into dusk.
+            fill.intensity = role == PlayerRole.Thief ? 0.42f : 0.16f;
+            fill.color = role == PlayerRole.Thief
+                // Faintly cool. A warm fill at night reads as dawn, and the
+                // thief is meant to see better, not to see a different time of
+                // day.
+                ? new Color(0.72f, 0.8f, 0.95f)
+                : new Color(0.68f, 0.74f, 0.9f);
+            // No shadows. A second shadow-casting light at night doubles every
+            // building's shadow and the map stops reading.
+            fill.shadows = LightShadows.None;
+
+            player.AddComponent<
+                    PawsAndLoot.Gameplay.Players.NightVisionFill>()
+                .Configure(identity, matchRuntime, fill);
+        }
+
+        /// <summary>
+        /// The officer's torch: the light, and the outline of what it means.
+        ///
+        /// The light alone was not enough to play against. A spot light fades
+        /// out, so both players had to guess where the edge of "seen" was, and
+        /// the light's own angle did not even match the rule. Now the shape
+        /// comes from <c>FlashlightCone</c> and the wedge is drawn on the ground
+        /// for both of them.
         /// </summary>
         private static void CreatePoliceFlashlight(
             GameObject police,
-            MatchRuntimeState matchRuntime)
+            MatchRuntimeState matchRuntime,
+            PlayerRoleIdentity identity)
         {
             var beamObject = new GameObject("Flashlight", typeof(Light));
             beamObject.transform.SetParent(police.transform, false);
@@ -577,10 +636,15 @@ namespace PawsAndLoot.Editor
 
             Light beam = beamObject.GetComponent<Light>();
             beam.type = LightType.Spot;
-            beam.range = 16f;
-            beam.spotAngle = 46f;
-            beam.innerSpotAngle = 22f;
-            beam.intensity = 6f;
+            // Range and angle from the same constants the visibility rule reads,
+            // so the lit floor is an honest picture of what the officer can see.
+            beam.range = PawsAndLoot.Gameplay.Players
+                .FlashlightCone.RangeMeters;
+            beam.spotAngle = PawsAndLoot.Gameplay.Players
+                .FlashlightCone.SpotAngleDegrees;
+            beam.innerSpotAngle = PawsAndLoot.Gameplay.Players
+                .FlashlightCone.SpotAngleDegrees * 0.5f;
+            beam.intensity = 7f;
             beam.color = new Color(1f, 0.96f, 0.82f);
             // Shadows off on purpose: a spot light chasing a running character
             // through a greybox town produces more flicker than atmosphere.
@@ -589,6 +653,61 @@ namespace PawsAndLoot.Editor
             police.AddComponent<
                     PawsAndLoot.Gameplay.Players.PoliceFlashlight>()
                 .Configure(beam, matchRuntime);
+
+            // The wedge on the ground, shown to both players. The thief needs it
+            // more than the officer does: dodging around a beam is only a plan
+            // if the beam has a visible edge.
+            //
+            // Its own object, not the player's, because it must stay flat on the
+            // road while the character it follows leans and turns.
+            var coneObject = new GameObject("Flashlight Cone View");
+            coneObject.transform.SetParent(police.transform, false);
+            coneObject.AddComponent<
+                    PawsAndLoot.Animation.FlashlightConeView>()
+                .Configure(
+                    identity,
+                    matchRuntime,
+                    LoadOrCreateGlowMaterial(
+                        "Greybox_TorchWedge",
+                        new Color(1f, 0.93f, 0.66f, 0.10f)),
+                    LoadOrCreateGlowMaterial(
+                        "Greybox_TorchNear",
+                        new Color(1f, 0.88f, 0.55f, 0.20f)));
+        }
+
+        /// <summary>
+        /// A flat translucent marking that does not go dark at night.
+        ///
+        /// Unlit on purpose: a lit material for a night-time overlay would be
+        /// lit by the very moonlight the overlay exists to compensate for, and
+        /// the cone outline would be dimmest exactly when it matters. Transparent
+        /// with depth writing off so it reads as paint on the road rather than a
+        /// pane of glass standing on it.
+        /// </summary>
+        private static Material LoadOrCreateGlowMaterial(
+            string assetName,
+            Color color)
+        {
+            Material material = LoadOrCreateMaterial(
+                assetName,
+                color,
+                "Universal Render Pipeline/Unlit");
+            // 1 = Transparent. URP reads the property, the blend factors and the
+            // keyword, so all three have to be set or the material stays opaque.
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetFloat(
+                "_SrcBlend",
+                (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat(
+                "_DstBlend",
+                (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_ZWrite", 0f);
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.renderQueue =
+                (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            EditorUtility.SetDirty(material);
+            return material;
         }
 
         private static void CreateGroundAndBoundaries(
@@ -1196,7 +1315,9 @@ namespace PawsAndLoot.Editor
                         PawsAndLoot.Gameplay.Items.ToolUseAction>(),
                     player.GetComponent<
                         PawsAndLoot.Gameplay.Items.ToolUseInput>(),
-                    player.GetComponent<StunState>());
+                    player.GetComponent<StunState>(),
+                    player.GetComponent<
+                        PawsAndLoot.Animation.ThrowPresenter>());
                 links.Add(link);
             }
 
@@ -2355,10 +2476,37 @@ namespace PawsAndLoot.Editor
                 player.AddComponent<PawsAndLoot.Gameplay.Items.ToolUseInput>();
             toolInput.Configure(toolUse, locallyControlled);
 
+            // THROW-008. The swing and the flying rock. Subscribes to the throw
+            // itself, so it plays wherever the throw was resolved; the other
+            // machine is told by the network link.
+            PawsAndLoot.Animation.ThrowPresenter throwPresenter =
+                player.AddComponent<PawsAndLoot.Animation.ThrowPresenter>();
+            throwPresenter.Configure(
+                toolUse,
+                player.transform,
+                LoadOrCreateMaterial(
+                    "Greybox_Rock",
+                    new Color(0.42f, 0.42f, 0.45f)));
+
+            // Stars over a stunned head. Both screens: landing a hit is most of
+            // the reward for throwing, and the thrower has to be able to see it.
+            player.AddComponent<PawsAndLoot.Animation.StunStarsView>()
+                .Configure(
+                    player.GetComponent<
+                        PawsAndLoot.Gameplay.Players.StunState>(),
+                    LoadOrCreateGlowMaterial(
+                        "Greybox_StunStar",
+                        new Color(1f, 0.87f, 0.25f, 0.95f)));
+
+            // Per-screen night adaptation. The thief's is brighter — they are the
+            // one being hunted in the dark, and this is the cheapest
+            // counterweight available: it costs the police nothing they can see
+            // and adds no rule.
+            CreateNightVisionFill(player, identity, matchRuntime, role);
 
             if (role == PlayerRole.Police)
             {
-                CreatePoliceFlashlight(player, matchRuntime);
+                CreatePoliceFlashlight(player, matchRuntime, identity);
 
                 // The thief is only drawn when the torch is on them. Local to
                 // the officer's screen and purely visual — the host still

@@ -125,6 +125,13 @@ namespace PawsAndLoot.Integration.Network
         private StunState stun;
 
         /// <summary>
+        /// The local replay of a throw. Presentation, so it is driven rather
+        /// than consulted.
+        /// </summary>
+        [SerializeField]
+        private PawsAndLoot.Animation.ThrowPresenter throwPresenter;
+
+        /// <summary>
         /// THROW-007. Seconds of stun left, written only by the host.
         ///
         /// Replicated because the host is the only machine that decides a throw
@@ -200,8 +207,11 @@ namespace PawsAndLoot.Integration.Network
             ArrestProgressController configuredArrestProgress,
             PawsAndLoot.Gameplay.Items.ToolUseAction configuredToolUse = null,
             PawsAndLoot.Gameplay.Items.ToolUseInput configuredToolInput = null,
-            StunState configuredStun = null)
+            StunState configuredStun = null,
+            PawsAndLoot.Animation.ThrowPresenter configuredThrowPresenter =
+                null)
         {
+            throwPresenter = configuredThrowPresenter;
             scanner = configuredScanner;
             interactionInput = configuredInteractionInput;
             carrier = configuredCarrier;
@@ -250,6 +260,13 @@ namespace PawsAndLoot.Integration.Network
                 {
                     stun.Stunned += HandleHostStunApplied;
                 }
+
+                // Only the host ever raises this, because only the host
+                // resolves a throw. The other machine is told.
+                if (toolUse != null)
+                {
+                    toolUse.Thrown += HandleHostThrew;
+                }
             }
         }
 
@@ -274,6 +291,11 @@ namespace PawsAndLoot.Integration.Network
             if (stun != null)
             {
                 stun.Stunned -= HandleHostStunApplied;
+            }
+
+            if (toolUse != null)
+            {
+                toolUse.Thrown -= HandleHostThrew;
             }
         }
 
@@ -307,20 +329,69 @@ namespace PawsAndLoot.Integration.Network
         }
 
         /// <summary>
-        /// THROW-007. Asks the host to use this player's held prop.
+        /// THROW-007. Asks the host to use this player's held prop, aimed where
+        /// the requester's cursor was.
         ///
         /// The host resolves the throw against its own simulation, so it — not
         /// the thrower — decides whether the rock connected. Two machines
         /// judging the same throw would disagree, and the loser of that
         /// disagreement would be stunned on one screen and running on the other.
+        ///
+        /// The aim travels with the request because it is the one thing the host
+        /// genuinely cannot know: it comes from a cursor on somebody else's
+        /// screen. Everything decided from it — range, walls, who was in the
+        /// corridor — is still decided here.
         /// </summary>
         [Rpc(SendTo.Server)]
-        public void SubmitUseToolRpc()
+        public void SubmitUseToolRpc(Vector3 aimDirection)
         {
-            if (toolUse != null)
+            if (toolUse == null)
             {
-                toolUse.TryUse();
+                return;
             }
+
+            Vector3 flat = aimDirection;
+            flat.y = 0f;
+            toolUse.TryUse(
+                flat.sqrMagnitude > 0.0001f
+                    ? flat.normalized
+                    : null);
+        }
+
+        /// <summary>
+        /// Tells the other machine what a throw looked like.
+        ///
+        /// Cosmetic only, and one-way: the flight is a replay of a decision the
+        /// host has already made and applied, so nothing here can change the
+        /// outcome. It is sent rather than recomputed because a client has no
+        /// idea a throw happened at all — the stun would simply appear, with no
+        /// rock and no swing to explain it.
+        /// </summary>
+        [Rpc(SendTo.NotServer)]
+        private void PlayThrowRpc(
+            int kind,
+            Vector3 origin,
+            Vector3 landing)
+        {
+            if (throwPresenter != null)
+            {
+                throwPresenter.Play(
+                    (PawsAndLoot.Gameplay.Items.ThrowableKind)kind,
+                    origin,
+                    landing);
+            }
+        }
+
+        private void HandleHostThrew(
+            PawsAndLoot.Gameplay.Items.ThrowableKind kind,
+            PawsAndLoot.Gameplay.Items.ThrowResolver.Result result)
+        {
+            if (!IsServer || !IsSpawned)
+            {
+                return;
+            }
+
+            PlayThrowRpc((int)kind, result.Origin, result.Landing);
         }
 
         /// <summary>

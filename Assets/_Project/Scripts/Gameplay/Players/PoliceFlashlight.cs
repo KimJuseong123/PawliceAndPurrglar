@@ -6,15 +6,13 @@ namespace PawsAndLoot.Gameplay.Players
     /// <summary>
     /// The cone of light the police carries at night.
     ///
-    /// Presentation only, and deliberately so. It lights the ground ahead of the
-    /// officer and nothing reads it: the thief is not hidden by being outside
-    /// the beam, and no rule consults it. Restricting what the police can
-    /// actually see is a separate decision that waits on a playtest, because
-    /// "the police is too strong on a small map" has not been measured in this
-    /// game yet.
+    /// Still just a light — no rule reads this component. What the officer can
+    /// see is decided by <c>FlashlightVisibility</c> and drawn by
+    /// <c>FlashlightConeView</c>; all three now take their shape from
+    /// <see cref="FlashlightCone"/> so the lit floor and the rule agree instead
+    /// of contradicting each other.
     ///
-    /// Keeping the two apart means the atmosphere can ship now and be kept even
-    /// if the vision restriction is rejected.
+    /// Deleting this would leave the night unlit and the rule intact.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PoliceFlashlight : MonoBehaviour
@@ -31,7 +29,7 @@ namespace PawsAndLoot.Gameplay.Players
         /// would light nothing the player can see.
         /// </summary>
         [SerializeField]
-        private float pitchDegrees = 24f;
+        private float pitchDegrees = FlashlightCone.PitchDegrees;
 
         private IMatchStateReader _matchState;
 

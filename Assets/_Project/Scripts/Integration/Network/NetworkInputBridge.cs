@@ -173,6 +173,24 @@ namespace PawsAndLoot.Integration.Network
         }
 
         /// <summary>
+        /// Where this machine's cursor is pointing, measured from the character
+        /// it controls.
+        ///
+        /// Read here rather than on the host because a cursor only exists on the
+        /// machine holding the mouse. The host still decides everything that
+        /// follows from it.
+        /// </summary>
+        private static Vector3 ReadAim(NetworkPlayerLink link)
+        {
+            Vector3? aim =
+                PawsAndLoot.Gameplay.Items.ToolUseInput.ReadAimDirection(
+                    link.transform.position);
+            // Zero tells the host "no aim", and it falls back to the
+            // character's facing rather than throwing at the ground.
+            return aim ?? Vector3.zero;
+        }
+
+        /// <summary>
         /// Actions are edge-triggered, so they are sent only on the frame the key
         /// goes down. Sending them continuously would let one press be applied
         /// many times on the host.
@@ -181,6 +199,15 @@ namespace PawsAndLoot.Integration.Network
             NetworkPlayerLink link,
             Keyboard keyboard)
         {
+            // The mouse is checked before the keyboard guard: a player with the
+            // cursor in one hand still has to be able to throw on a machine
+            // where the keyboard is momentarily unavailable.
+            if (Mouse.current != null
+                && Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                link.SubmitUseToolRpc(ReadAim(link));
+            }
+
             if (keyboard == null)
             {
                 return;
@@ -198,7 +225,7 @@ namespace PawsAndLoot.Integration.Network
 
             if (keyboard.fKey.wasPressedThisFrame)
             {
-                link.SubmitUseToolRpc();
+                link.SubmitUseToolRpc(ReadAim(link));
             }
 
             int command = ReadCompanionCommandKey(keyboard);

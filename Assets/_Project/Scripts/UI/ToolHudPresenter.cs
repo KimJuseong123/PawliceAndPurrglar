@@ -113,9 +113,12 @@ namespace PawsAndLoot.UI
             string what = carrier.HeldKind == ThrowableKind.Banana
                 ? "바나나"
                 : "돌";
+            // The mouse is named first for a throw, because aiming is the half a
+            // player will not discover on their own: F alone worked, so nothing
+            // ever told them the cursor mattered.
             slotLabel.text = placed
                 ? $"{what}  [F] 설치"
-                : $"{what}  [F] 던지기";
+                : $"{what}  [좌클릭] 커서 방향으로 던지기";
             slotLabel.color = new Color(1f, 0.92f, 0.72f);
         }
 

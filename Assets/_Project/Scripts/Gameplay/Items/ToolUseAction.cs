@@ -52,10 +52,25 @@ namespace PawsAndLoot.Gameplay.Items
         }
 
         /// <summary>
-        /// Returns false when there was nothing to use or the match is not
-        /// running, so a wasted press costs nothing.
+        /// Uses the held prop in the direction the player is facing.
+        ///
+        /// Kept so a throw with no aim information still works: the offline
+        /// playtest, the tests and any caller that has no cursor all land here.
         /// </summary>
         public bool TryUse()
+        {
+            return TryUse(null);
+        }
+
+        /// <summary>
+        /// Returns false when there was nothing to use or the match is not
+        /// running, so a wasted press costs nothing.
+        ///
+        /// <paramref name="aimDirection"/> is where the player pointed. Null
+        /// falls back to their facing. A placed prop ignores it — a banana goes
+        /// under your own feet wherever the cursor is.
+        /// </summary>
+        public bool TryUse(Vector3? aimDirection)
         {
             if (identity == null || carrier == null)
             {
@@ -81,11 +96,25 @@ namespace PawsAndLoot.Gameplay.Items
                 return true;
             }
 
+            // The aim is flattened and sanity-checked inside the resolver, so a
+            // client sending nonsense gets its own facing rather than a throw
+            // straight up. The host decides, as always.
             ThrowResolver.Result result = ThrowResolver.Resolve(
                 identity,
-                identity.transform.forward,
+                aimDirection ?? identity.transform.forward,
                 ThrowableCatalog.ThrowRangeMeters,
                 obstacleLayers);
+
+            // Face the throw. Without this the officer hurls a rock over their
+            // shoulder while still running the other way, and the arm swing
+            // plays on a body pointing somewhere else entirely.
+            Vector3 facing = result.Landing - result.Origin;
+            facing.y = 0f;
+            if (facing.sqrMagnitude > 0.0001f)
+            {
+                identity.transform.rotation =
+                    Quaternion.LookRotation(facing.normalized);
+            }
 
             if (result.Connected)
             {
