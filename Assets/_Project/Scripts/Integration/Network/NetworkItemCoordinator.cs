@@ -56,7 +56,8 @@ namespace PawsAndLoot.Integration.Network
             FastBufferWriter.GetWriteSize<int>();
 
         public static readonly int RevealMessageBytes =
-            FastBufferWriter.GetWriteSize<int>() * 2;
+            FastBufferWriter.GetWriteSize<int>() * 2
+            + FastBufferWriter.GetWriteSize<Vector3>();
 
         public static readonly int PickupMessageBytes =
             FastBufferWriter.GetWriteSize<int>()
@@ -218,7 +219,25 @@ namespace PawsAndLoot.Integration.Network
 
             foreach (int id in spent)
             {
-                Clear(id);
+                // A sensor light is destroyed a moment later rather than at
+                // once. Removing it the instant it fired took its lamp with it,
+                // so the flash never happened and the officer's alert had
+                // nothing to point at — which read as the sensor not working.
+                if (_traps.TryGetValue(id, out PlacedTrap spentTrap)
+                    && spentTrap != null
+                    && ThrowableCatalog.GetEffect(spentTrap.Kind)
+                        == TrapEffect.Reveal)
+                {
+                    _traps.Remove(id);
+                    Destroy(
+                        spentTrap.gameObject,
+                        ThrowableCatalog.RevealSeconds);
+                }
+                else
+                {
+                    Clear(id);
+                }
+
                 if (manager != null
                     && manager.IsListening
                     && manager.IsServer)
@@ -249,7 +268,7 @@ namespace PawsAndLoot.Integration.Network
             if (ThrowableCatalog.GetEffect(trap.Kind)
                 == TrapEffect.Reveal)
             {
-                Reveal(victim.Role, trap.TrapId);
+                Reveal(victim.Role, trap.TrapId, trap.transform.position);
                 return;
             }
 
@@ -296,9 +315,12 @@ namespace PawsAndLoot.Integration.Network
         /// machine that has to stop hiding the thief is not the machine that
         /// decided the sensor went off.
         /// </summary>
-        private void Reveal(PlayerRole revealed, int trapId)
+        private void Reveal(
+            PlayerRole revealed,
+            int trapId,
+            Vector3 source)
         {
-            ApplyRevealLocally(revealed, trapId);
+            ApplyRevealLocally(revealed, trapId, source);
 
             NetworkManager manager = ResolveManager();
             if (manager == null
@@ -313,12 +335,16 @@ namespace PawsAndLoot.Integration.Network
                 Allocator.Temp);
             writer.WriteValueSafe((int)revealed);
             writer.WriteValueSafe(trapId);
+            writer.WriteValueSafe(source);
             manager.CustomMessagingManager.SendNamedMessageToAll(
                 RevealMessageName,
                 writer);
         }
 
-        private void ApplyRevealLocally(PlayerRole revealed, int trapId)
+        private void ApplyRevealLocally(
+            PlayerRole revealed,
+            int trapId,
+            Vector3 source)
         {
             foreach (FlashlightVisibility visibility in
                 FindObjectsByType<FlashlightVisibility>(
@@ -331,7 +357,8 @@ namespace PawsAndLoot.Integration.Network
                     != revealed)
                 {
                     visibility.RevealFor(
-                        ThrowableCatalog.RevealSeconds);
+                        ThrowableCatalog.RevealSeconds,
+                        source);
                 }
             }
 
@@ -349,6 +376,7 @@ namespace PawsAndLoot.Integration.Network
         {
             reader.ReadValueSafe(out int revealed);
             reader.ReadValueSafe(out int trapId);
+            reader.ReadValueSafe(out Vector3 source);
 
             NetworkManager manager = ResolveManager();
             if (manager != null && manager.IsServer)
@@ -357,7 +385,7 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
-            ApplyRevealLocally((PlayerRole)revealed, trapId);
+            ApplyRevealLocally((PlayerRole)revealed, trapId, source);
         }
 
         /// <summary>

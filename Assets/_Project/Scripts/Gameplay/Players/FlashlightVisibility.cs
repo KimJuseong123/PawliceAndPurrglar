@@ -61,6 +61,16 @@ namespace PawsAndLoot.Gameplay.Players
         public bool IsRevealed => Time.time < _revealUntil;
 
         /// <summary>
+        /// Where the reveal came from, in world space.
+        ///
+        /// Remembered here rather than looked up, because the sensor that tripped
+        /// is a runtime object the host removes once it has fired — asking the
+        /// world "which sensor is flashing" found nothing, so the officer got no
+        /// direction at all.
+        /// </summary>
+        public Vector3 RevealSource { get; private set; }
+
+        /// <summary>
         /// Shows the other player regardless of the cone for a while.
         ///
         /// This is the sensor light's whole payoff: the officer does not get told
@@ -71,11 +81,17 @@ namespace PawsAndLoot.Gameplay.Players
         /// </summary>
         public void RevealFor(float seconds)
         {
+            RevealFor(seconds, RevealSource);
+        }
+
+        public void RevealFor(float seconds, Vector3 source)
+        {
             if (seconds <= 0f)
             {
                 return;
             }
 
+            RevealSource = source;
             _revealUntil = Mathf.Max(
                 _revealUntil,
                 Time.time + seconds);

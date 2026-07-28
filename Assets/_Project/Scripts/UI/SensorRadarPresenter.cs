@@ -43,10 +43,10 @@ namespace PawsAndLoot.UI
         private float farDistance = 30f;
 
         [SerializeField, Min(0.1f)]
-        private float nearScale = 1.25f;
+        private float nearScale = 2.1f;
 
         [SerializeField, Min(0.1f)]
-        private float farScale = 0.45f;
+        private float farScale = 0.95f;
 
         private readonly List<Image> _bars = new();
         private FlashlightVisibility _visibility;
@@ -120,28 +120,6 @@ namespace PawsAndLoot.UI
             return _officer;
         }
 
-        /// <summary>
-        /// The sensor that is currently flashing.
-        ///
-        /// Found by asking the props rather than being told, because a trap is a
-        /// runtime object created by the network layer and there is nothing to
-        /// wire up at build time.
-        /// </summary>
-        private Transform FindFlashingSensor()
-        {
-            foreach (PawsAndLoot.Animation.PlacedTrapView view in
-                FindObjectsByType<PawsAndLoot.Animation.PlacedTrapView>(
-                    FindObjectsSortMode.None))
-            {
-                if (view.IsFlashing)
-                {
-                    return view.transform;
-                }
-            }
-
-            return null;
-        }
-
         public void Refresh(float deltaTime)
         {
             if (root == null)
@@ -149,12 +127,11 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            Transform sensor = FindFlashingSensor();
+            FlashlightVisibility visibility = ResolveVisibility();
             PlayerRoleIdentity officer = ResolveOfficer();
             bool showing = ViewerIsPolice()
-                && sensor != null
                 && officer != null
-                && ResolveVisibility()?.IsRevealed == true;
+                && visibility?.IsRevealed == true;
 
             if (showing != IsShowing)
             {
@@ -168,7 +145,12 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            Vector3 delta = sensor.position - officer.transform.position;
+            // The remembered source, not a search of the world. The sensor
+            // that fired is removed shortly afterwards, so looking for one still
+            // flashing found nothing and the officer got no direction at all —
+            // which is what "the sensor does not detect" actually was.
+            Vector3 delta =
+                visibility.RevealSource - officer.transform.position;
             delta.y = 0f;
             float distance = delta.magnitude;
 
@@ -200,7 +182,9 @@ namespace PawsAndLoot.UI
                     _pulse - index * 0.22f,
                     1f);
                 Color color = _bars[index].color;
-                color.a = Mathf.Lerp(0.15f, 1f, 1f - phase);
+                // Fully opaque at the leading edge. A faint pulse in the middle
+                // of a night chase is not something anybody notices.
+                color.a = Mathf.Lerp(0.25f, 1f, 1f - phase);
                 _bars[index].color = color;
             }
         }

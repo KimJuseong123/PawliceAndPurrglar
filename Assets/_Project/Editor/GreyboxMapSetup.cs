@@ -2451,32 +2451,24 @@ namespace PawsAndLoot.Editor
                         + $"{stride.LegCount} limbs.");
                 }
 
-                // A body settle on top of the leg swing, synced to the footfalls,
-                // and identical for both roles.
+                // No body settle for the players.
                 //
-                // The leg swing alone is hard to read on these models: the legs
-                // are short against the torso and from a tilted overhead camera
-                // at night they are the least visible part of the silhouette. The
-                // body rising and rolling is what makes running legible, which is
-                // the same reason the animals needed it.
+                // One was added to make running read better and it made things
+                // worse: on a character whose legs barely deform it became the
+                // dominant motion and read as vibration rather than a bounce —
+                // "눈이 아프다" was the report, and it was right. The officer had
+                // looked fine before it went in.
                 //
-                // Taller and with more roll than the animals get — a person's
-                // body travels further per step than a short-legged dog's.
-                Transform bobVisual = player.transform.Find("VisualRoot");
-                if (bobVisual != null && stride.LegCount > 0)
-                {
-                    player.AddComponent<
-                            PawsAndLoot.Animation
-                                .CompanionProceduralAnimator>()
-                        .Configure(
-                            // No agent: that argument only exists to stand down
-                            // while a companion is idle.
-                            null,
-                            bobVisual,
-                            stride,
-                            0.085f,
-                            5.5f);
-                }
+                // The real difference is in the rigs, and it is measurable. Of
+                // the officer's 6,258 vertices, 38.8% are weighted to the leg
+                // chain against 18.1% to the arms, so their stride dominates.
+                // The thief's 3,633 vertices are 19.4% legs against 20.3% arms —
+                // half the officer's leg share and no more than their own arms,
+                // which is exactly why only the arms read. Both characters swing
+                // the same 24° at the bone.
+                //
+                // That is a weighting job in Blender, not something a bob can
+                // paper over. See ART-015.
             }
 
             PlayerRoleIdentity identity =
@@ -3964,7 +3956,7 @@ namespace PawsAndLoot.Editor
             radarRoot.anchorMax = new Vector2(0.5f, 0.5f);
             radarRoot.pivot = new Vector2(0.5f, 0.5f);
             radarRoot.anchoredPosition = Vector2.zero;
-            radarRoot.sizeDelta = new Vector2(260f, 260f);
+            radarRoot.sizeDelta = new Vector2(360f, 360f);
             SensorRadarPresenter radar =
                 hudRoot.gameObject.AddComponent<SensorRadarPresenter>();
             radar.Configure(radarRoot, roleSelector);
@@ -3977,7 +3969,7 @@ namespace PawsAndLoot.Editor
                 RectTransform bar = CreateRect(
                     $"Signal Arc {band + 1}",
                     radarRoot);
-                float size = 70f + band * 58f;
+                float size = 110f + band * 74f;
                 bar.anchorMin = new Vector2(0.5f, 0.5f);
                 bar.anchorMax = new Vector2(0.5f, 0.5f);
                 bar.pivot = new Vector2(0.5f, 0.5f);
@@ -3987,7 +3979,7 @@ namespace PawsAndLoot.Editor
                 bar.anchoredPosition = new Vector2(0f, size * 0.42f);
                 bar.sizeDelta = new Vector2(size, size * 0.36f);
                 Image arc = bar.gameObject.AddComponent<Image>();
-                arc.color = new Color(1f, 0.82f, 0.25f, 0.9f);
+                arc.color = new Color(1f, 0.78f, 0.1f, 1f);
                 arc.raycastTarget = false;
                 radar.AddBar(arc);
             }
