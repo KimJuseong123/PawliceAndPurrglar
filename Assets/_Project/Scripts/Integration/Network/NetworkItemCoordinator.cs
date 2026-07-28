@@ -39,12 +39,15 @@ namespace PawsAndLoot.Integration.Network
         public const string PlaceMessageName = "PawsAndLoot.TrapPlaced";
         public const string ClearMessageName = "PawsAndLoot.TrapCleared";
         public const string PickupMessageName = "PawsAndLoot.PickupTaken";
+        public const string RevealMessageName = "PawsAndLoot.ThiefRevealed";
 
         private static NetworkItemCoordinator _instance;
 
         private readonly Dictionary<int, PlacedTrap> _traps = new();
         private readonly HashSet<ToolUseAction> _watched = new();
         private readonly HashSet<ThrowablePickup> _watchedPickups = new();
+        private readonly Dictionary<ThrowableKind, Material>
+            _trapMaterials = new();
 
         [SerializeField]
         private MonoBehaviour matchStateSource;
@@ -126,6 +129,13 @@ namespace PawsAndLoot.Integration.Network
             trapObject.transform.position = position;
             PlacedTrap trap = trapObject.AddComponent<PlacedTrap>();
             trap.Configure(id, kind, placedBy, ResolveMatchState());
+
+            // Something to look at. Placed props had no visual at all, which
+            // went unnoticed only because nothing placeable was obtainable yet —
+            // the first banana anybody put down would have been invisible, and a
+            // trap you cannot see is not a trap.
+            trapObject.AddComponent<PawsAndLoot.Animation.PlacedTrapView>()
+                .Configure(kind, ResolveTrapMaterial(kind));
             _traps[id] = trap;
         }
 
@@ -168,9 +178,7 @@ namespace PawsAndLoot.Integration.Network
                     continue;
                 }
 
-                StunState stun = victim.GetComponent<StunState>();
-                stun?.TryApply(
-                    ThrowableCatalog.GetStunSeconds(trap.Kind));
+                ApplyEffect(trap, victim);
                 spent ??= new List<int>();
                 spent.Add(entry.Key);
             }
@@ -197,6 +205,129 @@ namespace PawsAndLoot.Integration.Network
                             writer);
                 }
             }
+        }
+
+        /// <summary>
+        /// Host-side. Turns a trip into what that prop actually does.
+        ///
+        /// Two effects, not one per prop, so adding a prop does not add a branch
+        /// here. A hold stops them; a reveal does not slow them at all and simply
+        /// makes them visible — the thief keeps running, in the open.
+        /// </summary>
+        private void ApplyEffect(
+            PlacedTrap trap,
+            PlayerRoleIdentity victim)
+        {
+            if (ThrowableCatalog.GetEffect(trap.Kind)
+                == TrapEffect.Reveal)
+            {
+                Reveal(victim.Role, trap.TrapId);
+                return;
+            }
+
+            StunState stun = victim.GetComponent<StunState>();
+            stun?.TryApply(
+                ThrowableCatalog.GetStunSeconds(trap.Kind));
+        }
+
+        /// <summary>
+        /// Exposes a player on the other side's screen, and lights the lamp on
+        /// every screen.
+        ///
+        /// Sent rather than recomputed: visibility is decided per screen, so the
+        /// machine that has to stop hiding the thief is not the machine that
+        /// decided the sensor went off.
+        /// </summary>
+        private void Reveal(PlayerRole revealed, int trapId)
+        {
+            ApplyRevealLocally(revealed, trapId);
+
+            NetworkManager manager = ResolveManager();
+            if (manager == null
+                || !manager.IsListening
+                || !manager.IsServer)
+            {
+                return;
+            }
+
+            using var writer = new FastBufferWriter(
+                sizeof(int) * 2,
+                Allocator.Temp);
+            writer.WriteValueSafe((int)revealed);
+            writer.WriteValueSafe(trapId);
+            manager.CustomMessagingManager.SendNamedMessageToAll(
+                RevealMessageName,
+                writer);
+        }
+
+        private void ApplyRevealLocally(PlayerRole revealed, int trapId)
+        {
+            foreach (FlashlightVisibility visibility in
+                FindObjectsByType<FlashlightVisibility>(
+                    FindObjectsSortMode.None))
+            {
+                // The component sits on the watcher and hides the other side, so
+                // the one to switch off is the one that is not the revealed
+                // player.
+                if (visibility.GetComponent<PlayerRoleIdentity>()?.Role
+                    != revealed)
+                {
+                    visibility.RevealFor(
+                        ThrowableCatalog.RevealSeconds);
+                }
+            }
+
+            if (_traps.TryGetValue(trapId, out PlacedTrap trap)
+                && trap != null)
+            {
+                trap.GetComponent<
+                    PawsAndLoot.Animation.PlacedTrapView>()?.Flash();
+            }
+        }
+
+        private void HandleRevealed(
+            ulong sender,
+            FastBufferReader reader)
+        {
+            reader.ReadValueSafe(out int revealed);
+            reader.ReadValueSafe(out int trapId);
+
+            NetworkManager manager = ResolveManager();
+            if (manager != null && manager.IsServer)
+            {
+                // The host already applied it when it decided.
+                return;
+            }
+
+            ApplyRevealLocally((PlayerRole)revealed, trapId);
+        }
+
+        /// <summary>
+        /// Greybox colours for the placed props. Loaded rather than authored
+        /// because these are prototype stand-ins.
+        /// </summary>
+        private Material ResolveTrapMaterial(ThrowableKind kind)
+        {
+            if (_trapMaterials.TryGetValue(kind, out Material cached))
+            {
+                return cached;
+            }
+
+            Color color = kind switch
+            {
+                ThrowableKind.GlueTrap => new Color(0.24f, 0.2f, 0.16f),
+                ThrowableKind.SensorLight => new Color(0.86f, 0.88f, 0.9f),
+                _ => new Color(1f, 0.85f, 0.2f)
+            };
+
+            var material = new Material(
+                Shader.Find("Universal Render Pipeline/Lit"))
+            {
+                name = $"PlacedTrap_{kind}"
+            };
+            material.SetColor("_BaseColor", color);
+            _trapMaterials[kind] = material;
+            return material;
         }
 
         private void HandlePlaced(
@@ -248,6 +379,9 @@ namespace PawsAndLoot.Integration.Network
             manager.CustomMessagingManager.RegisterNamedMessageHandler(
                 PickupMessageName,
                 HandlePickupTaken);
+            manager.CustomMessagingManager.RegisterNamedMessageHandler(
+                RevealMessageName,
+                HandleRevealed);
             GameLogger.Debug(
                 GameLogCategory.Network,
                 "Trap messages registered.",

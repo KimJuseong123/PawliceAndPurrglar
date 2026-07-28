@@ -540,6 +540,115 @@ namespace PawsAndLoot.Tests.PlayMode
 
         }
 
+        /// <summary>
+        /// THROW-009. The officer's glue trap holds; the sensor light does not.
+        ///
+        /// Asserted together because the difference is the whole design: one prop
+        /// buys the officer position and the other buys information, and a sensor
+        /// that also froze the thief would just be a better glue trap.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator PolicePropsHoldOrRevealButNotBoth()
+        {
+            var state = new MutableMatchState { IsGameplayActive = true };
+
+            Assert.That(
+                ThrowableCatalog.GetEffect(ThrowableKind.GlueTrap),
+                Is.EqualTo(TrapEffect.Hold));
+            Assert.That(
+                ThrowableCatalog.GetEffect(ThrowableKind.SensorLight),
+                Is.EqualTo(TrapEffect.Reveal));
+            Assert.That(
+                ThrowableCatalog.GetStunSeconds(
+                    ThrowableKind.SensorLight),
+                Is.EqualTo(0f),
+                "A sensor light must not slow anybody down. It tells.");
+            Assert.That(
+                ThrowableCatalog.GetStunSeconds(ThrowableKind.GlueTrap),
+                Is.EqualTo(3f),
+                "Three seconds, as agreed — five made a well-placed trap an "
+                + "arrest rather than a chance at one.");
+
+            // The officer places them, so the officer walks over them safely and
+            // the thief does not.
+            var glueObject = Track(new GameObject("Glue"));
+            PlacedTrap glue = glueObject.AddComponent<PlacedTrap>();
+            glue.Configure(
+                11,
+                ThrowableKind.GlueTrap,
+                PlayerRole.Police,
+                state);
+
+            PlayerRoleIdentity police = CreatePlayer(
+                PlayerRole.Police,
+                Vector3.zero);
+            yield return null;
+            Assert.That(
+                glue.FindVictim(),
+                Is.Null,
+                "An officer must not stick to their own glue trap.");
+            Object.DestroyImmediate(police.gameObject);
+
+            PlayerRoleIdentity thief = CreatePlayer(
+                PlayerRole.Thief,
+                Vector3.zero);
+            yield return null;
+            Assert.That(glue.FindVictim(), Is.SameAs(thief));
+
+            // The sensor reaches further, because it is a detector rather than
+            // something you tread in.
+            Assert.That(
+                ThrowableCatalog.GetTriggerRadius(
+                    ThrowableKind.SensorLight),
+                Is.GreaterThan(
+                    ThrowableCatalog.GetTriggerRadius(
+                        ThrowableKind.GlueTrap)),
+                "A detector you have to step on exactly would never fire.");
+
+            var sensorObject = Track(new GameObject("Sensor"));
+            // Beyond the glue trap's reach but inside the sensor's.
+            sensorObject.transform.position = new Vector3(0f, 0f, 2.2f);
+            PlacedTrap sensor = sensorObject.AddComponent<PlacedTrap>();
+            sensor.Configure(
+                12,
+                ThrowableKind.SensorLight,
+                PlayerRole.Police,
+                state);
+            yield return null;
+
+            Assert.That(
+                sensor.FindVictim(),
+                Is.SameAs(thief),
+                "Walking past a sensor has to be enough to set it off.");
+        }
+
+        /// <summary>
+        /// A tripped sensor overrides the torch cone. Without this the reveal
+        /// would do nothing at all at night, which is the only time it matters.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator RevealShowsSomebodyOutsideTheTorchCone()
+        {
+            var visibilityObject = Track(new GameObject("Watcher"));
+            FlashlightVisibility visibility = visibilityObject
+                .AddComponent<FlashlightVisibility>();
+            yield return null;
+
+            Assert.That(visibility.IsRevealed, Is.False);
+
+            visibility.RevealFor(ThrowableCatalog.RevealSeconds);
+            Assert.That(
+                visibility.IsRevealed,
+                Is.True,
+                "A tripped sensor has to expose the thief whatever way the "
+                + "officer happens to be facing.");
+
+            // Never shortens an existing reveal: two sensors in quick succession
+            // must not end the exposure sooner than one.
+            visibility.RevealFor(0.05f);
+            Assert.That(visibility.IsRevealed, Is.True);
+        }
+
         private sealed class MutableMatchState : IMatchStateReader
         {
             public MatchState CurrentState =>

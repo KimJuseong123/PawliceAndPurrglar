@@ -12,7 +12,7 @@ using UnityEngine.TestTools;
 namespace PawsAndLoot.Tests.PlayMode
 {
     /// <summary>
-    /// Walk up to a rock in the real Game scene and pick it up.
+    /// Walk up to every pickup in the real Game scene and take it.
     ///
     /// Every earlier test asserted a piece of this: the pickup reports the right
     /// interaction type, the permissions let both roles touch it, the spot is not
@@ -26,7 +26,7 @@ namespace PawsAndLoot.Tests.PlayMode
     public sealed class RockPickupScenePlayModeTests
     {
         [UnityTest]
-        public IEnumerator EveryRockInTheSceneCanBePickedUp()
+        public IEnumerator EveryPickupInTheSceneCanBeTakenByItsOwner()
         {
             yield return LoadGameScene();
 
@@ -48,21 +48,28 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.GreaterThan(0),
                 "The scene has to contain rocks for this to mean anything.");
 
-            // The thief, because a rock is meant to be usable by either side and
-            // the thief is the one the loot rules restrict.
-            PlayerRoleIdentity player = Object
+            PlayerRoleIdentity[] players = Object
                 .FindObjectsByType<PlayerRoleIdentity>(
-                    FindObjectsSortMode.None)
-                .First(identity => identity.Role == PlayerRole.Thief);
-            var scanner = player.GetComponent<PlayerInteractionScanner>();
-            var carrier = player.GetComponent<ToolCarrier>();
-            CharacterController controller =
-                player.GetComponent<CharacterController>();
-            Assert.That(scanner, Is.Not.Null);
-            Assert.That(carrier, Is.Not.Null);
+                    FindObjectsSortMode.None);
 
             foreach (ThrowablePickup pickup in pickups)
             {
+                // Whoever the prop belongs to. A shared rock is tried with the
+                // thief; the officer's props are tried with the officer, and the
+                // wrong role is checked below to be refused.
+                PlayerRole owner = pickup.IsRoleRestricted
+                    ? pickup.RestrictedTo
+                    : PlayerRole.Thief;
+                PlayerRoleIdentity player = players
+                    .First(identity => identity.Role == owner);
+                var scanner =
+                    player.GetComponent<PlayerInteractionScanner>();
+                var carrier = player.GetComponent<ToolCarrier>();
+                CharacterController controller =
+                    player.GetComponent<CharacterController>();
+                Assert.That(scanner, Is.Not.Null);
+                Assert.That(carrier, Is.Not.Null);
+
                 // Stand on it. The controller has to be switched off to be
                 // teleported, or it fights the move and lands somewhere else.
                 if (controller != null)
@@ -99,9 +106,28 @@ namespace PawsAndLoot.Tests.PlayMode
                     + "in hand.");
                 Assert.That(carrier.HeldKind, Is.EqualTo(pickup.Kind));
 
-                // Empty the slot so the next rock is not refused for the only
+                // Empty the slot so the next prop is not refused for the only
                 // legitimate reason a pickup can fail.
                 Assert.That(carrier.TryConsume(out _), Is.True);
+
+                // And the other side must not be able to take it.
+                if (!pickup.IsRoleRestricted)
+                {
+                    continue;
+                }
+
+                PlayerRoleIdentity intruder = players
+                    .First(identity => identity.Role != owner);
+                Assert.That(
+                    pickup.TryInteract(
+                        new PlayerInteractionContext(intruder)),
+                    Is.False,
+                    $"{pickup.name} belongs to {owner} but "
+                    + $"{intruder.Role} could take it. That collapses the "
+                    + "two kits into one.");
+                Assert.That(
+                    intruder.GetComponent<ToolCarrier>().HasTool,
+                    Is.False);
             }
         }
 

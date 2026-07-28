@@ -3,9 +3,15 @@ namespace PawsAndLoot.Gameplay.Items
     /// <summary>
     /// The prop kinds a player can pick up and use.
     ///
-    /// Deliberately few. Each one has to teach a different lesson: the rock
-    /// punishes being seen, the banana punishes running a straight line. Adding
-    /// a third that does neither would just be more inventory.
+    /// Deliberately few, and each one has to teach a different lesson. The rock
+    /// punishes being seen, the banana punishes running a straight line, the glue
+    /// trap punishes running the same route twice, and the sensor light punishes
+    /// running past the same corner twice. Anything that does none of those would
+    /// just be more inventory.
+    ///
+    /// Two per side, and they are not mirrored: the thief's props buy seconds,
+    /// the police's props buy information and position. A police banana would be
+    /// a worse rock, so neither side gets the other's.
     /// </summary>
     public enum ThrowableKind
     {
@@ -17,7 +23,21 @@ namespace PawsAndLoot.Gameplay.Items
         /// <summary>
         /// Placed on the ground. Slips whoever runs over it.
         /// </summary>
-        Banana = 1
+        Banana = 1,
+
+        /// <summary>
+        /// Police. Placed on the ground; holds the thief in place long enough to
+        /// be caught up with. A sticky mouse trap, because a bear trap on a
+        /// cartoon street would be the only cruel object in the town.
+        /// </summary>
+        GlueTrap = 2,
+
+        /// <summary>
+        /// Police. Placed on the ground; lights the thief up when they pass. The
+        /// corridor sensor light every apartment block has — at night a light is
+        /// worth more than an alarm, because the officer already cannot see.
+        /// </summary>
+        SensorLight = 3
     }
 
     /// <summary>
@@ -27,6 +47,26 @@ namespace PawsAndLoot.Gameplay.Items
     {
         Thrown = 0,
         Placed = 1
+    }
+
+    /// <summary>
+    /// What a placed prop does to whoever sets it off.
+    ///
+    /// Separate from the kind so the network layer applies an effect rather than
+    /// switching on every prop it has ever heard of.
+    /// </summary>
+    public enum TrapEffect
+    {
+        /// <summary>
+        /// Holds them still. Duration comes from the kind.
+        /// </summary>
+        Hold = 0,
+
+        /// <summary>
+        /// Makes them visible for a while and does not slow them at all. The
+        /// thief keeps running — they just do it in the open.
+        /// </summary>
+        Reveal = 1
     }
 
     public static class ThrowableCatalog
@@ -39,6 +79,20 @@ namespace PawsAndLoot.Gameplay.Items
         /// </summary>
         public const float RockStunSeconds = 1.2f;
         public const float BananaSlipSeconds = 1.0f;
+
+        /// <summary>
+        /// Three seconds, down from the five first sketched. Five is long enough
+        /// that a well-placed trap is an arrest rather than a chance at one, and
+        /// the thief spends it watching.
+        /// </summary>
+        public const float GlueHoldSeconds = 3f;
+
+        /// <summary>
+        /// How long a tripped sensor keeps the thief visible. Long enough for the
+        /// officer to turn and look, short enough that being seen once is not the
+        /// end of the run.
+        /// </summary>
+        public const float RevealSeconds = 2.5f;
 
         /// <summary>
         /// How far a thrown prop travels before it drops. Short on purpose:
@@ -76,27 +130,87 @@ namespace PawsAndLoot.Gameplay.Items
 
         public static ThrowableUse GetUse(ThrowableKind kind)
         {
-            return kind == ThrowableKind.Banana
-                ? ThrowableUse.Placed
-                : ThrowableUse.Thrown;
+            return kind == ThrowableKind.Rock
+                ? ThrowableUse.Thrown
+                : ThrowableUse.Placed;
+        }
+
+        /// <summary>
+        /// Which side a prop belongs to. The pickup points enforce it, and it is
+        /// stated here so a shop or a drop cannot disagree with the map.
+        /// </summary>
+        public static PawsAndLoot.Gameplay.Players.PlayerRole? GetOwner(
+            ThrowableKind kind)
+        {
+            return kind switch
+            {
+                ThrowableKind.Banana =>
+                    PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                ThrowableKind.GlueTrap =>
+                    PawsAndLoot.Gameplay.Players.PlayerRole.Police,
+                ThrowableKind.SensorLight =>
+                    PawsAndLoot.Gameplay.Players.PlayerRole.Police,
+                // A rock in the street is nobody's.
+                _ => null
+            };
+        }
+
+        public static TrapEffect GetEffect(ThrowableKind kind)
+        {
+            return kind == ThrowableKind.SensorLight
+                ? TrapEffect.Reveal
+                : TrapEffect.Hold;
         }
 
         public static float GetStunSeconds(ThrowableKind kind)
         {
-            return kind == ThrowableKind.Banana
-                ? BananaSlipSeconds
-                : RockStunSeconds;
+            return kind switch
+            {
+                ThrowableKind.Banana => BananaSlipSeconds,
+                ThrowableKind.GlueTrap => GlueHoldSeconds,
+                // A sensor light does not slow anybody down. It only tells.
+                ThrowableKind.SensorLight => 0f,
+                _ => RockStunSeconds
+            };
         }
 
         /// <summary>
-        /// Model stem under <c>Assets/_Project/Art/Props</c>. The banana has no
-        /// authored model yet, so it borrows the can until one arrives.
+        /// How close somebody has to pass to set a placed prop off.
+        ///
+        /// The sensor reaches further than the things underfoot, because it is a
+        /// detector rather than something you step in — and a detector you have
+        /// to tread on exactly would never fire.
+        /// </summary>
+        public static float GetTriggerRadius(ThrowableKind kind)
+        {
+            return kind == ThrowableKind.SensorLight ? 3.2f : 0.85f;
+        }
+
+        /// <summary>
+        /// Name shown in the HUD. Here so the UI does not grow its own list that
+        /// drifts out of step with the enum.
+        /// </summary>
+        public static string GetDisplayName(ThrowableKind kind)
+        {
+            return kind switch
+            {
+                ThrowableKind.Banana => "바나나",
+                ThrowableKind.GlueTrap => "끈끈이",
+                ThrowableKind.SensorLight => "센서등",
+                _ => "돌"
+            };
+        }
+
+        /// <summary>
+        /// Model stem under <c>Assets/_Project/Art/Props</c>. The placed props
+        /// have no authored models yet and borrow the can until they arrive;
+        /// <c>PlacedTrapView</c> draws a greybox stand-in either way.
         /// </summary>
         public static string GetModelStem(ThrowableKind kind)
         {
-            return kind == ThrowableKind.Banana
-                ? "throwable_can"
-                : "throwable_rock";
+            return kind == ThrowableKind.Rock
+                ? "throwable_rock"
+                : "throwable_can";
         }
     }
 }

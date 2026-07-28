@@ -110,9 +110,10 @@ namespace PawsAndLoot.UI
             }
 
             bool placed = carrier.HeldUse == ThrowableUse.Placed;
-            string what = carrier.HeldKind == ThrowableKind.Banana
-                ? "바나나"
-                : "돌";
+            // Named by the catalog. A list here would drift out of step with the
+            // enum the moment a prop is added.
+            string what =
+                ThrowableCatalog.GetDisplayName(carrier.HeldKind);
             // The mouse is named first for a throw, because aiming is the half a
             // player will not discover on their own: F alone worked, so nothing
             // ever told them the cursor mattered.

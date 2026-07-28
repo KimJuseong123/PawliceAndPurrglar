@@ -55,6 +55,10 @@ namespace PawsAndLoot.Gameplay.Items
         {
             TrapId = trapId;
             _kind = kind;
+            // Per kind: a sensor light detects at a distance, a thing underfoot
+            // has to be trodden on. A detector with a doormat's reach would
+            // never fire.
+            triggerRadius = ThrowableCatalog.GetTriggerRadius(kind);
             _placedBy = placedBy;
             _matchState = configuredMatchState;
             matchStateSource = configuredMatchState as MonoBehaviour;

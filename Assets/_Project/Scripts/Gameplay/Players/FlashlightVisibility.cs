@@ -55,8 +55,31 @@ namespace PawsAndLoot.Gameplay.Players
         private IMatchStateReader _matchState;
         private PlayerRoleIdentity _target;
         private Renderer[] _targetRenderers;
+        private float _revealUntil;
 
         public bool IsTargetVisible { get; private set; } = true;
+        public bool IsRevealed => Time.time < _revealUntil;
+
+        /// <summary>
+        /// Shows the other player regardless of the cone for a while.
+        ///
+        /// This is the sensor light's whole payoff: the officer does not get told
+        /// where the thief is, they get to see them. A marker on the edge of the
+        /// screen would be the same information delivered worse — and at night,
+        /// simply being visible is the strongest thing that can happen to
+        /// somebody who is relying on not being.
+        /// </summary>
+        public void RevealFor(float seconds)
+        {
+            if (seconds <= 0f)
+            {
+                return;
+            }
+
+            _revealUntil = Mathf.Max(
+                _revealUntil,
+                Time.time + seconds);
+        }
 
         public void Configure(
             PlayerRoleIdentity configuredViewer,
@@ -186,6 +209,14 @@ namespace PawsAndLoot.Gameplay.Players
 
             if (!ResolveTarget())
             {
+                return;
+            }
+
+            // A tripped sensor overrides the cone entirely, including range. The
+            // point is to catch somebody who thought they were away.
+            if (IsRevealed)
+            {
+                SetVisible(true);
                 return;
             }
 

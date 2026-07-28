@@ -59,6 +59,8 @@ namespace PawsAndLoot.Gameplay.Items
         public event System.Action<int, bool> TakenChanged;
 
         public int PickupId => pickupId;
+        public bool IsRoleRestricted => roleRestricted;
+        public PlayerRole RestrictedTo => restrictedTo;
         public bool IsTaken => _taken;
         public ThrowableKind Kind => kind;
         public bool IsAvailable => !_taken && isActiveAndEnabled;
@@ -77,9 +79,8 @@ namespace PawsAndLoot.Gameplay.Items
         public PlayerInteractionType InteractionType =>
             PlayerInteractionType.Generic;
 
-        public string Prompt => kind == ThrowableKind.Banana
-            ? "바나나 챙기기"
-            : "돌 줍기";
+        public string Prompt =>
+            $"{ThrowableCatalog.GetDisplayName(kind)} 챙기기";
 
         public void Configure(
             ThrowableKind configuredKind,

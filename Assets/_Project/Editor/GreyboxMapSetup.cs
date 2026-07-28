@@ -2971,6 +2971,78 @@ namespace PawsAndLoot.Editor
             }
 
             Debug.Log($"[THROW-005] {spots.Length} rock pickups placed.");
+
+            CreatePolicePropPickups(parent, spots.Length);
+        }
+
+        /// <summary>
+        /// The officer's two props, on the same road intersections the rocks use.
+        ///
+        /// Role-restricted, which is what the flag on the pickup exists for: an
+        /// officer's glue trap is no use to the thief, and letting either side
+        /// take either would collapse the two kits into one.
+        ///
+        /// Temporary, like the rocks. The intended source is the shop, which
+        /// waits on the police economy.
+        /// </summary>
+        private static void CreatePolicePropPickups(
+            Transform parent,
+            int firstId)
+        {
+            (Vector3 spot, ThrowableKind kind)[] props =
+            {
+                (new Vector3(-18f, 0.35f, -12f), ThrowableKind.GlueTrap),
+                (new Vector3(18f, 0.35f, 12f), ThrowableKind.GlueTrap),
+                (new Vector3(0f, 0.35f, -18f), ThrowableKind.SensorLight),
+                (new Vector3(24f, 0.35f, 26f), ThrowableKind.SensorLight)
+            };
+
+            for (int index = 0; index < props.Length; index++)
+            {
+                (Vector3 spot, ThrowableKind kind) = props[index];
+                var pickup = new GameObject(
+                    $"{kind} Pickup {index + 1}");
+                pickup.transform.SetParent(parent);
+                pickup.transform.position = spot;
+
+                var trigger = pickup.AddComponent<SphereCollider>();
+                trigger.radius = 0.5f;
+                trigger.isTrigger = true;
+
+                Transform presentation = CreateChild(
+                    "PresentationRoot",
+                    pickup.transform);
+                presentation.localPosition = Vector3.zero;
+                Material propMaterial = LoadOrCreateMaterial(
+                    $"Greybox_{kind}",
+                    kind == ThrowableKind.GlueTrap
+                        ? new Color(0.24f, 0.2f, 0.16f)
+                        : new Color(0.86f, 0.88f, 0.9f));
+                GameObject marker = CreateCube(
+                    $"{kind} Marker",
+                    spot,
+                    kind == ThrowableKind.GlueTrap
+                        ? new Vector3(0.6f, 0.12f, 0.6f)
+                        : new Vector3(0.3f, 0.5f, 0.3f),
+                    propMaterial,
+                    presentation,
+                    false);
+                UnityEngine.Object.DestroyImmediate(
+                    marker.GetComponent<Collider>());
+
+                pickup.AddComponent<ThrowablePickup>().Configure(
+                    kind,
+                    presentation,
+                    true,
+                    PlayerRole.Police,
+                    14f,
+                    firstId + index + 1);
+
+                CheckSpotIsClear(pickup.transform, spot);
+            }
+
+            Debug.Log(
+                $"[THROW-009] {props.Length} police prop pickups placed.");
         }
 
         /// <summary>

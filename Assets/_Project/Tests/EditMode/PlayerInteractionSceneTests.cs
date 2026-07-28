@@ -119,7 +119,12 @@ namespace PawsAndLoot.Tests.EditMode
                     PlayerInteractionType.Traversal,
                     PlayerInteractionType.Traversal,
                     PlayerInteractionType.Traversal,
-                    // The plaza marker plus five THROW-005 rock pickups.
+                    // The plaza marker, five THROW-005 rock pickups and the
+                    // four THROW-009 police prop pickups.
+                    PlayerInteractionType.Generic,
+                    PlayerInteractionType.Generic,
+                    PlayerInteractionType.Generic,
+                    PlayerInteractionType.Generic,
                     PlayerInteractionType.Generic,
                     PlayerInteractionType.Generic,
                     PlayerInteractionType.Generic,
@@ -153,6 +158,37 @@ namespace PawsAndLoot.Tests.EditMode
                     Is.True,
                     $"'{pickup.name}' cannot be picked up by the thief.");
             }
+
+            // Ownership is the pickup's own business, and it has to agree with
+            // the catalog. A glue trap the thief can take, or a rock reserved for
+            // one side, would quietly merge the two kits into one.
+            foreach (ThrowablePickup pickup in pickups)
+            {
+                PlayerRole? owner =
+                    ThrowableCatalog.GetOwner(pickup.Kind);
+                Assert.That(
+                    pickup.IsRoleRestricted,
+                    Is.EqualTo(owner.HasValue),
+                    $"'{pickup.name}' disagrees with the catalog about "
+                    + "whether it belongs to one side.");
+                if (owner.HasValue)
+                {
+                    Assert.That(
+                        pickup.RestrictedTo,
+                        Is.EqualTo(owner.Value),
+                        $"'{pickup.name}' is reserved for the wrong side.");
+                }
+            }
+
+            // THROW-009. The officer has both of their props on the map.
+            Assert.That(
+                pickups.Count(pickup =>
+                    pickup.Kind == ThrowableKind.GlueTrap),
+                Is.GreaterThan(0));
+            Assert.That(
+                pickups.Count(pickup =>
+                    pickup.Kind == ThrowableKind.SensorLight),
+                Is.GreaterThan(0));
             Assert.That(
                 scene.GetRootGameObjects()
                     .SelectMany(root =>
