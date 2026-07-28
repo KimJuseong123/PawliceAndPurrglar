@@ -14,6 +14,7 @@ using PawsAndLoot.Input;
 using PawsAndLoot.Integration.Network;
 using PawsAndLoot.Match;
 using PawsAndLoot.UI;
+using PawsAndLoot.Voice;
 using Unity.Netcode;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -100,6 +101,7 @@ namespace PawsAndLoot.Editor
         private const float MapDepth = MapMaxZ - MapMinZ;
         private const float MapCenterX = (MapMinX + MapMaxX) * 0.5f;
         private const float MapCenterZ = (MapMinZ + MapMaxZ) * 0.5f;
+        private const float RaccoonMarketX = -8f;
 
         /// <summary>
         /// Through-roads stop short of the wall by this much, matching the
@@ -114,7 +116,7 @@ namespace PawsAndLoot.Editor
         /// The expansion street grid.
         ///
         /// Every value is chosen against the lanes the original grid already
-        /// occupies — verticals at x = -24, -18, 0, 18, 24 and horizontals at
+        /// occupies — verticals at x = -24, -18, 0, 18, 40 and horizontals at
         /// z = -18, -12, 0, 12, 18 — so a new street never lands on top of one
         /// or a metre away from it. The house rows below sit in the gaps these
         /// leave, which is what makes the district read as blocks.
@@ -181,6 +183,10 @@ namespace PawsAndLoot.Editor
             Material plaza = LoadOrCreateMaterial(
                 "Plaza",
                 PlazaColor);
+            Material grid = LoadOrCreateMaterial(
+                "MapGrid",
+                new Color(0.08f, 0.12f, 0.16f, 0.72f),
+                "Universal Render Pipeline/Unlit");
             Material wall = LoadOrCreateMaterial(
                 "Boundary",
                 new Color(0.22f, 0.24f, 0.27f));
@@ -233,6 +239,7 @@ namespace PawsAndLoot.Editor
                 environmentRoot,
                 ground,
                 wall);
+            CreateMapGrid(environmentRoot, grid);
             CreateRoadNetwork(roadsRoot, road, plaza);
 
             var rooftops = new List<Transform>();
@@ -240,7 +247,7 @@ namespace PawsAndLoot.Editor
             var pendingLadderClimbs = new List<LadderTraversal>();
             CreateStore(
                 "Supermarket",
-                new Vector3(-9f, 0f, 6f),
+                new Vector3(-6f, 0f, NorthBandRow),
                 supermarket,
                 roof,
                 ladder,
@@ -250,10 +257,11 @@ namespace PawsAndLoot.Editor
                 rooftops,
                 ladders,
                 pendingLadderClimbs,
-                "building_supermarket");
+                "building_supermarket",
+                90f);
             CreateStore(
                 "Bookstore",
-                new Vector3(9f, 0f, 6f),
+                new Vector3(26f, 0f, 17f),
                 bookstore,
                 roof,
                 ladder,
@@ -263,10 +271,13 @@ namespace PawsAndLoot.Editor
                 rooftops,
                 ladders,
                 pendingLadderClimbs,
-                "building_bookstore");
+                "building_bookstore",
+                270f);
+            // No dedicated jewelry-shop model exists, so reuse the available
+            // interior house as the visible Jewelry Shop landmark.
             CreateStore(
-                "Jewelry Store",
-                new Vector3(9f, 0f, -6f),
+                "Jewelry Shop",
+                new Vector3(3f, 0f, 33f),
                 jewelry,
                 roof,
                 ladder,
@@ -275,12 +286,8 @@ namespace PawsAndLoot.Editor
                 LadderSide.East,
                 rooftops,
                 ladders,
-                pendingLadderClimbs);
-            CreateRaccoonMarket(
-                buildingsRoot,
-                MarketGold,
-                wall);
-            CreateCentralPlaza(featuresRoot, plaza, wall);
+                pendingLadderClimbs,
+                "building_house_1f_with_interior");
 
             List<Transform> trashBins = CreateTrashBins(
                 featuresRoot,
@@ -387,21 +394,29 @@ namespace PawsAndLoot.Editor
                     controlBindings,
                     matchRuntime,
                     matchEndController);
-            CreateSceneInterface(
-                roleSelector,
-                matchRuntime,
-                companionDispatcher);
-
             CreateAudio(
                 villageRoot.transform,
                 companionDispatcher,
                 controlBindings,
                 matchRuntime,
                 matchEndController);
-            CreateNetworkSync(
+            NetworkInputBridge networkInputBridge = CreateNetworkSync(
                 villageRoot.transform,
                 controlBindings,
-                matchRuntime);
+                matchRuntime,
+                companionDispatcher);
+            VoiceCommandController voiceController =
+                CreateVoiceCommands(
+                    villageRoot.transform,
+                    matchRuntime,
+                    roleSelector,
+                    companionDispatcher,
+                    networkInputBridge);
+            CreateSceneInterface(
+                roleSelector,
+                matchRuntime,
+                companionDispatcher,
+                voiceController);
 
             // ART-005 probe, inert unless -perfProbe is passed.
             var perfObject = new GameObject("Scene Performance Probe");
@@ -606,9 +621,15 @@ namespace PawsAndLoot.Editor
                 road,
                 parent);
             CreateFlatTile(
-                "North Loop Road",
-                new Vector3(MapCenterX, 0.025f, 12f),
-                new Vector3(RoadSpanX, 0.05f, 4f),
+                "North Loop Road West Segment",
+                new Vector3(-3f, 0.025f, 12f),
+                new Vector3(46f, 0.05f, 4f),
+                road,
+                parent);
+            CreateFlatTile(
+                "North Loop Road East Segment",
+                new Vector3(44f, 0.025f, 12f),
+                new Vector3(12f, 0.05f, 4f),
                 road,
                 parent);
             CreateFlatTile(
@@ -638,36 +659,72 @@ namespace PawsAndLoot.Editor
                 new Vector3(RoadSpanX, 0.05f, 4f),
                 road,
                 parent);
-            CreateFlatTile(
-                "North Ridge Road",
-                new Vector3(MapCenterX, 0.025f, NorthStreetFar),
-                new Vector3(RoadSpanX, 0.05f, 4f),
-                road,
-                parent);
 
-            // One new vertical, not two. A second would have landed within a
-            // metre of the existing x = 24 alley and left a sliver of bare
-            // ground between them instead of a block.
+            // Keep one full building block between the police-side road at
+            // x = 18 and the eastern road at x = 40. The former x = 24 road
+            // made that gap only 6m wide, which cannot contain the rotated
+            // bookstore without crossing a road.
             foreach (float x in
-                new[] { -24f, -18f, 0f, 18f, 24f, EastStreet })
+                new[] { -24f, -18f, 0f, 18f, EastStreet })
             {
                 bool wide = x == 0f
                     || Mathf.Abs(x) == 18f
                     || x == EastStreet;
+                bool endsAtNorthDistrict = x == 0f || x == 18f;
+                float routeStartZ = MapMinZ + RoadInset;
+                float routeEndZ = endsAtNorthDistrict ? 28f : MapMaxZ - RoadInset;
+
+                // Leave the central route clear from (-2, -2) to (2, -10).
+                if (x == 0f)
+                {
+                    CreateFlatTile(
+                        "Vertical Route 0 South Lower Segment",
+                        new Vector3(x, 0.035f, (routeStartZ - 10f) * 0.5f),
+                        new Vector3(4f, 0.07f, -10f - routeStartZ),
+                        road,
+                        parent);
+                    CreateFlatTile(
+                        "Vertical Route 0 South Upper Segment",
+                        new Vector3(x, 0.035f, (-2f + routeEndZ) * 0.5f),
+                        new Vector3(4f, 0.07f, routeEndZ + 2f),
+                        road,
+                        parent);
+                    continue;
+                }
+
                 CreateFlatTile(
-                    $"Vertical Route {x:0}",
-                    new Vector3(x, 0.035f, MapCenterZ),
+                    $"Vertical Route {x:0}{(endsAtNorthDistrict ? " South Segment" : string.Empty)}",
+                    new Vector3(x, 0.035f, (routeStartZ + routeEndZ) * 0.5f),
                     new Vector3(
                         wide ? 4f : 3f,
                         0.07f,
-                        RoadSpanZ),
+                        routeEndZ - routeStartZ),
                     road,
                     parent);
             }
 
             CreateFlatTile(
+                "Vertical Route 28 North Segment",
+                new Vector3(28f, 0.035f, 36f),
+                new Vector3(4f, 0.07f, 16f),
+                road,
+                parent);
+            CreateFlatTile(
+                "Vertical Route 8 North Segment",
+                new Vector3(8f, 0.035f, 36f),
+                new Vector3(2f, 0.07f, 16f),
+                road,
+                parent);
+            CreateFlatTile(
+                "Vertical Route 11 Mid Segment",
+                new Vector3(11f, 0.035f, 29f),
+                new Vector3(2f, 0.07f, 18f),
+                road,
+                parent);
+
+            CreateFlatTile(
                 "Central Plaza",
-                new Vector3(0f, 0.08f, 0f),
+                new Vector3(9f, 0.08f, 6f),
                 new Vector3(8f, 0.12f, 8f),
                 plaza,
                 parent);
@@ -702,30 +759,30 @@ namespace PawsAndLoot.Editor
             CreateDressingBuilding(
                 "building_police_station",
                 root,
-                new Vector3(-9f, 0f, NorthBandRow),
+                new Vector3(9f, 0f, NorthBandRow),
                 12f,
-                8f);
+                8f,
+                -180f);
+            CreateDressingBuilding(
+                "building_house_1f_enterable_open_door",
+                root,
+                new Vector3(-9f, 0f, 6f),
+                6f,
+                8f,
+                0f,
+                false);
             CreateDressingBuilding(
                 "building_house_1f",
                 root,
-                new Vector3(9f, 0f, NorthBandRow),
-                12f,
+                new Vector3(14f, 0f, 33f),
+                6f,
                 8f);
             CreateDressingBuilding(
                 "building_house_1f_with_interior",
                 root,
-                new Vector3(EastColumnNear, 0f, NorthBandRow),
-                9f,
+                new Vector3(12f, 0f, 32f),
+                6f,
                 8f);
-
-            // Inside the trading yard (x -15..-4, z -9.5..-2.5), not beside it.
-            // The previous spot put the bin on the southern alley, and once the
-            // bin grew it blocked the PoliceToJewelry_SouthLoop route outright.
-            CreateRaccoonInBin(
-                root,
-                locations[GreyboxLocationId.RaccoonMarket].position
-                    + new Vector3(-3.5f, 0f, 5f));
-
             CreateExpansionDistricts(root);
         }
 
@@ -759,11 +816,13 @@ namespace PawsAndLoot.Editor
                 8f,
                 placed);
 
-            float[] narrowX = { -12.5f, -5.5f, 5.5f, 12.5f };
             foreach (float rowZ in
                 new[] { NorthRowNear, NorthRowFar })
             {
                 float depth = rowZ == NorthRowNear ? 8f : 4.5f;
+                float[] narrowX = rowZ == NorthRowNear
+                    ? new[] { -12.5f, -5.5f }
+                    : new[] { -12.5f, -5.5f };
                 var row = new List<Vector3>();
                 foreach (float x in narrowX)
                 {
@@ -772,17 +831,8 @@ namespace PawsAndLoot.Editor
 
                 placed += PlaceHouseRow(root, row, 6f, depth, placed);
 
-                // The same row continued into the eastern district, where the
-                // blocks are wider so the houses are too.
-                placed += PlaceHouseRow(
-                    root,
-                    new[]
-                    {
-                        new Vector3(EastColumnNear, 0f, rowZ)
-                    },
-                    9f,
-                    depth,
-                    placed);
+                // Keep the block at x = 28..37 clear between z = 29..45.
+                // This preserves the newly opened cross-district route.
                 placed += PlaceHouseRow(
                     root,
                     new[]
@@ -838,12 +888,20 @@ namespace PawsAndLoot.Editor
 
             for (int index = 0; index < centers.Count; index++)
             {
+                Vector3 center = centers[index];
+                bool isTopLeftNoCollisionHouse =
+                    Mathf.Approximately(center.x, -12.5f)
+                    && Mathf.Approximately(center.z, NorthRowFar);
                 CreateDressingBuilding(
-                    stems[(startIndex + index) % stems.Length],
+                    isTopLeftNoCollisionHouse
+                        ? "building_house_1f_enterable_no_collision"
+                        : stems[(startIndex + index) % stems.Length],
                     root,
-                    centers[index],
+                    center,
                     footprintX,
-                    footprintZ);
+                    footprintZ,
+                    0f,
+                    !isTopLeftNoCollisionHouse);
             }
 
             return centers.Count;
@@ -1110,10 +1168,11 @@ namespace PawsAndLoot.Editor
         /// the local motors keep running and the playtest build behaves exactly
         /// as before.
         /// </summary>
-        private static void CreateNetworkSync(
+        private static NetworkInputBridge CreateNetworkSync(
             Transform parent,
             IReadOnlyList<PlayerRoleControlBinding> bindings,
-            MatchRuntimeState matchRuntime)
+            MatchRuntimeState matchRuntime,
+            CompanionCommandDispatcher companionDispatcher)
         {
             var links = new List<NetworkPlayerLink>();
             foreach (PlayerRoleControlBinding binding in bindings)
@@ -1143,7 +1202,8 @@ namespace PawsAndLoot.Editor
                     player.GetComponent<
                         PawsAndLoot.Input.CompanionCommandKeyboardInput>(),
                     player.GetComponent<ThiefLootWallet>(),
-                    player.GetComponent<ArrestProgressController>());
+                    player.GetComponent<ArrestProgressController>(),
+                    companionDispatcher);
                 links.Add(link);
             }
 
@@ -1177,6 +1237,37 @@ namespace PawsAndLoot.Editor
             Debug.Log(
                 $"[NET-003] {links.Count} player links and the match mirror "
                 + "wired into the Game scene.");
+            return bridge;
+        }
+
+        /// <summary>
+        /// VOICE-001 to VOICE-008. Captures local microphone audio and sends it
+        /// to the localhost gateway. The controller owns no game rule; accepted
+        /// ids still enter through the existing dispatcher or host RPC.
+        /// </summary>
+        private static VoiceCommandController CreateVoiceCommands(
+            Transform parent,
+            MatchRuntimeState matchRuntime,
+            LocalPlayerRoleSelector roleSelector,
+            CompanionCommandDispatcher companionDispatcher,
+            NetworkInputBridge networkInputBridge)
+        {
+            var voiceObject = new GameObject("Voice Commands");
+            voiceObject.transform.SetParent(parent, false);
+            VoiceConfig config = LoadVoiceConfig();
+            VoiceCommandGatewayClient gateway =
+                voiceObject.AddComponent<VoiceCommandGatewayClient>();
+            gateway.Configure(config);
+            VoiceCommandController controller =
+                voiceObject.AddComponent<VoiceCommandController>();
+            controller.Configure(
+                config,
+                matchRuntime,
+                roleSelector,
+                companionDispatcher,
+                gateway,
+                networkInputBridge);
+            return controller;
         }
 
         /// <summary>
@@ -1297,7 +1388,9 @@ namespace PawsAndLoot.Editor
             Transform parent,
             Vector3 groundCenter,
             float footprintX,
-            float footprintZ)
+            float footprintZ,
+            float rotationYDegrees = 0f,
+            bool addCollider = true)
         {
             Transform anchor = CreateChild($"{stem} Anchor", parent);
             anchor.position = groundCenter;
@@ -1315,9 +1408,22 @@ namespace PawsAndLoot.Editor
                 return;
             }
 
-            BoxCollider box = anchor.gameObject.AddComponent<BoxCollider>();
-            box.center = new Vector3(0f, height * 0.5f, 0f);
-            box.size = new Vector3(footprintX, height, footprintZ);
+            anchor.rotation = Quaternion.Euler(0f, rotationYDegrees, 0f);
+
+            if (addCollider)
+            {
+                BoxCollider box = anchor.gameObject.AddComponent<BoxCollider>();
+                box.center = new Vector3(0f, height * 0.5f, 0f);
+                box.size = new Vector3(footprintX, height, footprintZ);
+            }
+            else
+            {
+                foreach (Collider collider in
+                    anchor.GetComponentsInChildren<Collider>(true))
+                {
+                    UnityEngine.Object.DestroyImmediate(collider);
+                }
+            }
         }
 
         /// <summary>
@@ -1618,9 +1724,15 @@ namespace PawsAndLoot.Editor
             ICollection<Transform> rooftops,
             ICollection<Transform> ladders,
             ICollection<LadderTraversal> pendingLadderClimbs,
-            string buildingModelStem = null)
+            string buildingModelStem = null,
+            float rotationYDegrees = 0f)
         {
             Transform root = CreateChild(name, buildingsRoot);
+            Quaternion rotation = Quaternion.Euler(
+                0f,
+                rotationYDegrees,
+                0f);
+            root.rotation = rotation;
             GameObject body = CreateCube(
                 $"{name} Body",
                 center + Vector3.up * 1.8f,
@@ -1666,15 +1778,17 @@ namespace PawsAndLoot.Editor
             }
 
             float roofHeight = modelHeight > 0f ? modelHeight : 3.9f;
-            Vector3 ladderPosition = ladderSide == LadderSide.West
-                ? center + new Vector3(-6.45f, 0f, 0f)
-                : center + new Vector3(6.45f, 0f, 0f);
+            Vector3 ladderOffset = ladderSide == LadderSide.West
+                ? new Vector3(-6.45f, 0f, 0f)
+                : new Vector3(6.45f, 0f, 0f);
+            Vector3 ladderPosition = center + rotation * ladderOffset;
             Transform ladder = CreateLadder(
                 $"{name} Ladder",
                 ladderPosition,
                 ladderMaterial,
                 featuresRoot,
                 roofHeight);
+            ladder.rotation = rotation;
             ladders.Add(ladder);
 
             // MAP-003. The rooftop landing sits inboard of the parapet so the
@@ -1683,15 +1797,16 @@ namespace PawsAndLoot.Editor
             CreateLadderTraversal(
                 $"{name} Ladder Climb",
                 ladderPosition,
-                new Vector3(
-                    ladderPosition.x + inboard,
-                    roofHeight + 1f,
-                    ladderPosition.z),
+                ladderPosition
+                    + rotation * new Vector3(inboard, 0f, 0f)
+                    + Vector3.up * (roofHeight + 1f),
                 ladder,
                 pendingLadderClimbs);
 
             Vector3 labelPosition =
-                center + new Vector3(0f, 4.8f, -4.55f);
+                center
+                + rotation * new Vector3(0f, 0f, -4.55f)
+                + Vector3.up * 4.8f;
             CreateWorldLabel(
                 $"{name} Label",
                 name.ToUpperInvariant(),
@@ -1778,10 +1893,10 @@ namespace PawsAndLoot.Editor
             var result = new List<Transform>();
             Vector3[] positions =
             {
-                new(-20f, 0f, 8f),
-                new(20f, 0f, 8f),
-                new(-20f, 0f, -8f),
-                new(20f, 0f, -8f)
+                new(8f, 0f, 39f),
+                new(-10f, 0f, 26f),
+                new(0f, 0f, -12f),
+                new(25f, 0f, 0f)
             };
 
             for (int index = 0; index < positions.Length; index++)
@@ -1855,13 +1970,13 @@ namespace PawsAndLoot.Editor
                 result,
                 parent,
                 GreyboxLocationId.JewelryStore,
-                new Vector3(9f, 0f, -12f),
+                new Vector3(3f, 0f, 33f),
                 new Color(0.85f, 0.35f, 0.9f));
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.RaccoonMarket,
-                new Vector3(-9f, 0f, -12f),
+                new Vector3(RaccoonMarketX, 0f, -12f),
                 marketColor);
             AddLocation(
                 result,
@@ -1936,7 +2051,7 @@ namespace PawsAndLoot.Editor
                     locations,
                     new Vector3(9f, 0f, -12f),
                     new Vector3(0f, 0f, -12f),
-                    new Vector3(-9f, 0f, -12f)),
+                    new Vector3(RaccoonMarketX, 0f, -12f)),
                 CreateRoute(
                     parent,
                     "JewelryToMarket_PlazaLoop",
@@ -1953,7 +2068,7 @@ namespace PawsAndLoot.Editor
                     new Vector3(-1.5f, 0f, 0f),
                     new Vector3(-18f, 0f, 0f),
                     new Vector3(-18f, 0f, -12f),
-                    new Vector3(-9f, 0f, -12f)),
+                    new Vector3(RaccoonMarketX, 0f, -12f)),
                 CreateRoute(
                     parent,
                     "SupermarketToBookstore_Front",
@@ -2867,6 +2982,48 @@ namespace PawsAndLoot.Editor
                 button);
         }
 
+        private static void CreateVoiceCommandHud(
+            Transform canvasRoot,
+            VoiceCommandController controller)
+        {
+            RectTransform panel = CreateRect(
+                "Voice Command HUD",
+                canvasRoot);
+            panel.anchorMin = new Vector2(0f, 0f);
+            panel.anchorMax = new Vector2(0f, 0f);
+            panel.pivot = new Vector2(0f, 0f);
+            panel.anchoredPosition = new Vector2(40f, 310f);
+            panel.sizeDelta = new Vector2(620f, 120f);
+
+            Image background = panel.gameObject.AddComponent<Image>();
+            background.color = new Color(0.03f, 0.05f, 0.09f, 0.86f);
+            background.raycastTarget = false;
+
+            Text status = CreateHudLabel(
+                "Voice Status",
+                panel,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(16f, -10f),
+                new Vector2(588f, 52f),
+                TextAnchor.UpperLeft,
+                18);
+            Text transcript = CreateHudLabel(
+                "Voice Transcript",
+                panel,
+                new Vector2(0f, 0f),
+                new Vector2(0f, 0f),
+                new Vector2(16f, 10f),
+                new Vector2(588f, 52f),
+                TextAnchor.LowerLeft,
+                17);
+
+            VoiceCommandHudPresenter presenter =
+                panel.gameObject.AddComponent<
+                    VoiceCommandHudPresenter>();
+            presenter.Configure(controller, status, transcript);
+        }
+
         /// <summary>
         /// CAT-004 police side. A screen marker and a banner that only appear
         /// for the police while a distraction is running.
@@ -2931,7 +3088,8 @@ namespace PawsAndLoot.Editor
         private static void CreateSceneInterface(
             LocalPlayerRoleSelector roleSelector,
             MatchRuntimeState matchRuntime,
-            CompanionCommandDispatcher companionDispatcher)
+            CompanionCommandDispatcher companionDispatcher,
+            VoiceCommandController voiceController)
         {
             var canvasObject = new GameObject(
                 "Scene UI",
@@ -3353,6 +3511,9 @@ namespace PawsAndLoot.Editor
                 canvasObject.transform,
                 companionDispatcher,
                 roleSelector);
+            CreateVoiceCommandHud(
+                canvasObject.transform,
+                voiceController);
             CreateDistractionAlert(
                 canvasObject.transform,
                 roleSelector);
@@ -3422,6 +3583,22 @@ namespace PawsAndLoot.Editor
             {
                 throw new GameConfigurationException(
                     $"COMP-001 requires CompanionConfig at '{path}'.");
+            }
+
+            config.ValidateOrThrow();
+            return config;
+        }
+
+        private static VoiceConfig LoadVoiceConfig()
+        {
+            const string path =
+                "Assets/_Project/Settings/Configs/VoiceConfig.asset";
+            VoiceConfig config =
+                AssetDatabase.LoadAssetAtPath<VoiceConfig>(path);
+            if (config == null)
+            {
+                throw new GameConfigurationException(
+                    $"VOICE-001 requires VoiceConfig at '{path}'.");
             }
 
             config.ValidateOrThrow();
@@ -3528,6 +3705,117 @@ namespace PawsAndLoot.Editor
                 parent,
                 false);
             UnityEngine.Object.DestroyImmediate(tile.GetComponent<Collider>());
+        }
+
+        private static void CreateMapGrid(
+            Transform parent,
+            Material gridMaterial)
+        {
+            Transform gridRoot = CreateChild("Map Grid (1 Unit)", parent);
+            const float gridLineHeight = 0.152f;
+            const float gridLineThickness = 0.025f;
+            const float coordinateOffset = 0.75f;
+
+            for (int x = Mathf.CeilToInt(MapMinX);
+                x <= Mathf.FloorToInt(MapMaxX);
+                x++)
+            {
+                CreateFlatTile(
+                    $"X Grid {x}",
+                    new Vector3(x, gridLineHeight, MapCenterZ),
+                    new Vector3(gridLineThickness, 0.01f, MapDepth),
+                    gridMaterial,
+                    gridRoot);
+                CreateGridCoordinateLabel(
+                    $"X {x}",
+                    x.ToString(),
+                    new Vector3(x, gridLineHeight + 0.02f, MapMinZ + coordinateOffset),
+                    gridRoot);
+            }
+
+            for (int z = Mathf.CeilToInt(MapMinZ);
+                z <= Mathf.FloorToInt(MapMaxZ);
+                z++)
+            {
+                CreateFlatTile(
+                    $"Z Grid {z}",
+                    new Vector3(MapCenterX, gridLineHeight, z),
+                    new Vector3(MapWidth, 0.01f, gridLineThickness),
+                    gridMaterial,
+                    gridRoot);
+                CreateGridCoordinateLabel(
+                    $"Z {z}",
+                    z.ToString(),
+                    new Vector3(MapMinX + coordinateOffset, gridLineHeight + 0.02f, z),
+                    gridRoot);
+            }
+
+            for (int x = Mathf.CeilToInt(MapMinX);
+                x <= Mathf.FloorToInt(MapMaxX);
+                x++)
+            {
+                for (int z = Mathf.CeilToInt(MapMinZ);
+                    z <= Mathf.FloorToInt(MapMaxZ);
+                    z++)
+                {
+                    CreateGridIntersectionLabel(
+                        $"Grid Coordinate ({x}, {z})",
+                        $"({x}, {z})",
+                        new Vector3(x, gridLineHeight + 0.025f, z),
+                        gridRoot);
+                }
+            }
+
+            CreateGridCoordinateLabel(
+                "X Axis Label",
+                "X",
+                new Vector3(MapMaxX - coordinateOffset, gridLineHeight + 0.02f, MapMinZ + coordinateOffset),
+                gridRoot);
+            CreateGridCoordinateLabel(
+                "Z Axis Label",
+                "Z",
+                new Vector3(MapMinX + coordinateOffset, gridLineHeight + 0.02f, MapMaxZ - coordinateOffset),
+                gridRoot);
+        }
+
+        private static void CreateGridCoordinateLabel(
+            string name,
+            string value,
+            Vector3 position,
+            Transform parent)
+        {
+            var labelObject = new GameObject(name, typeof(TextMesh));
+            labelObject.transform.SetParent(parent);
+            labelObject.transform.position = position;
+            labelObject.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            TextMesh text = labelObject.GetComponent<TextMesh>();
+            text.text = value;
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 24;
+            text.characterSize = 0.06f;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignment.Center;
+            text.color = Color.white;
+        }
+
+        private static void CreateGridIntersectionLabel(
+            string name,
+            string value,
+            Vector3 position,
+            Transform parent)
+        {
+            var labelObject = new GameObject(name, typeof(TextMesh));
+            labelObject.transform.SetParent(parent);
+            labelObject.transform.position = position;
+            labelObject.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            TextMesh text = labelObject.GetComponent<TextMesh>();
+            text.text = value;
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 24;
+            text.characterSize = 0.06f;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignment.Center;
+            text.color = new Color(0.82f, 0.95f, 1f, 0.9f);
         }
 
         private static void CreateDecorativeCube(
