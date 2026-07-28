@@ -7,6 +7,7 @@ using PawsAndLoot.Companions;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Arrest;
+using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
@@ -526,26 +527,68 @@ namespace PawsAndLoot.Editor
 
             Camera camera = cameraObject.GetComponent<Camera>();
             camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.12f, 0.17f, 0.22f);
+            // Night sky. Dark enough to read as night, not so dark that the
+            // greybox map stops being legible from the fixed camera.
+            camera.backgroundColor = new Color(0.04f, 0.05f, 0.09f);
             camera.fieldOfView = 50f;
             camera.nearClipPlane = 0.1f;
             camera.farClipPlane = 150f;
 
+            // Moonlight rather than daylight. Kept as a directional light so
+            // the buildings still cast readable shadows and the map keeps its
+            // shape; it is the intensity and colour that say "night", not the
+            // absence of light.
+            //
+            // This is atmosphere only. The police's actual field of view is a
+            // separate decision that waits on a playtest — dimming the scene
+            // does not restrict what anyone can see.
             var lightObject = new GameObject(
-                "Directional Light",
+                "Moonlight",
                 typeof(Light));
-            lightObject.transform.rotation = Quaternion.Euler(48f, -35f, 0f);
+            lightObject.transform.rotation = Quaternion.Euler(52f, -28f, 0f);
             Light light = lightObject.GetComponent<Light>();
             light.type = LightType.Directional;
-            light.intensity = 1.25f;
+            light.intensity = 0.32f;
+            light.color = new Color(0.62f, 0.71f, 1f);
+            light.shadowStrength = 0.75f;
 
-            var fillObject = new GameObject("Fill Light", typeof(Light));
-            fillObject.transform.position = new Vector3(0f, 16f, -8f);
-            Light fill = fillObject.GetComponent<Light>();
-            fill.type = LightType.Point;
-            fill.range = 50f;
-            fill.intensity = 20f;
-            fill.color = new Color(0.7f, 0.82f, 1f);
+            // The old point light existed to flatten the daytime scene. At night
+            // a broad fill would undo the whole effect, so it becomes a faint
+            // sky bounce instead of a lamp.
+            RenderSettings.ambientMode =
+                UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight =
+                new Color(0.10f, 0.12f, 0.20f);
+            RenderSettings.fog = false;
+        }
+
+        /// <summary>
+        /// The officer's torch. Atmosphere for the night lighting, not a vision
+        /// rule: nothing is hidden by being outside the cone.
+        /// </summary>
+        private static void CreatePoliceFlashlight(
+            GameObject police,
+            MatchRuntimeState matchRuntime)
+        {
+            var beamObject = new GameObject("Flashlight", typeof(Light));
+            beamObject.transform.SetParent(police.transform, false);
+            beamObject.transform.localPosition =
+                new Vector3(0f, 1.35f, 0.25f);
+
+            Light beam = beamObject.GetComponent<Light>();
+            beam.type = LightType.Spot;
+            beam.range = 16f;
+            beam.spotAngle = 46f;
+            beam.innerSpotAngle = 22f;
+            beam.intensity = 6f;
+            beam.color = new Color(1f, 0.96f, 0.82f);
+            // Shadows off on purpose: a spot light chasing a running character
+            // through a greybox town produces more flicker than atmosphere.
+            beam.shadows = LightShadows.None;
+
+            police.AddComponent<
+                    PawsAndLoot.Gameplay.Players.PoliceFlashlight>()
+                .Configure(beam, matchRuntime);
         }
 
         private static void CreateGroundAndBoundaries(
@@ -1148,7 +1191,12 @@ namespace PawsAndLoot.Editor
                     player.GetComponent<
                         PawsAndLoot.Input.CompanionCommandKeyboardInput>(),
                     player.GetComponent<ThiefLootWallet>(),
-                    player.GetComponent<ArrestProgressController>());
+                    player.GetComponent<ArrestProgressController>(),
+                    player.GetComponent<
+                        PawsAndLoot.Gameplay.Items.ToolUseAction>(),
+                    player.GetComponent<
+                        PawsAndLoot.Gameplay.Items.ToolUseInput>(),
+                    player.GetComponent<StunState>());
                 links.Add(link);
             }
 
@@ -1174,6 +1222,14 @@ namespace PawsAndLoot.Editor
             matchProbe.transform.SetParent(parent);
             matchProbe.AddComponent<
                 PawsAndLoot.TechnicalValidation.NetworkMatchProbe>();
+
+            // THROW-007. Placed props are replicated as named messages rather
+            // than spawned NetworkObjects, and the host owns triggering.
+            var trapObject = new GameObject("Trap Coordinator");
+            trapObject.transform.SetParent(parent);
+            trapObject
+                .AddComponent<NetworkTrapCoordinator>()
+                .Configure(matchRuntime);
 
             // Disconnect handling deliberately lives on the persistent
             // NetworkManager object in Bootstrap, not here: one handler for the
@@ -2285,6 +2341,50 @@ namespace PawsAndLoot.Editor
             LootCarryMovementPenalty carryPenalty =
                 player.AddComponent<LootCarryMovementPenalty>();
             carryPenalty.Configure(lootCarrier, motor);
+
+            // THROW-001/002/003. A prop slot separate from the loot slot, so
+            // picking up a rock never costs the thief their jewels.
+            player.AddComponent<PawsAndLoot.Gameplay.Players.StunState>();
+            PawsAndLoot.Gameplay.Items.ToolCarrier toolCarrier =
+                player.AddComponent<PawsAndLoot.Gameplay.Items.ToolCarrier>();
+            toolCarrier.Configure(identity, matchRuntime);
+            PawsAndLoot.Gameplay.Items.ToolUseAction toolUse =
+                player.AddComponent<PawsAndLoot.Gameplay.Items.ToolUseAction>();
+            toolUse.Configure(identity, toolCarrier, Physics.AllLayers);
+            PawsAndLoot.Gameplay.Items.ToolUseInput toolInput =
+                player.AddComponent<PawsAndLoot.Gameplay.Items.ToolUseInput>();
+            toolInput.Configure(toolUse, locallyControlled);
+
+
+            if (role == PlayerRole.Police)
+            {
+                CreatePoliceFlashlight(player, matchRuntime);
+
+                // The thief is only drawn when the torch is on them. Local to
+                // the officer's screen and purely visual — the host still
+                // simulates an invisible thief exactly the same way.
+                player.AddComponent<
+                        PawsAndLoot.Gameplay.Players.FlashlightVisibility>()
+                    .Configure(identity, matchRuntime);
+
+                // DOG-003's trail, finally drawn. Shown only while the dog is
+                // tracking, and only on this screen; the data has been recorded
+                // and followed since the command shipped but was invisible.
+                var trailViewObject = new GameObject("Scent Trail View");
+                trailViewObject.transform.SetParent(
+                    player.transform,
+                    false);
+                trailViewObject
+                    .AddComponent<PawsAndLoot.Animation.ScentTrailView>()
+                    .Configure(
+                        null,
+                        null,
+                        identity,
+                        matchRuntime,
+                        LoadOrCreateMaterial(
+                            "Greybox_ScentMark",
+                            new Color(1f, 0.78f, 0.32f)));
+            }
             if (role == PlayerRole.Thief)
             {
                 ThiefLootWallet wallet =
@@ -2499,6 +2599,8 @@ namespace PawsAndLoot.Editor
 
             Debug.Log(
                 $"[ISSUE-011] {lootSpots.Length} loot pieces placed.");
+
+            CreateRockPickups(root, matchRuntime);
             CreateSaleZone(
                 "Prototype Sale Point",
                 locations[GreyboxLocationId.RaccoonMarket].position
@@ -2605,6 +2707,79 @@ namespace PawsAndLoot.Editor
 
             LootHidingSpot spot = target.AddComponent<LootHidingSpot>();
             spot.Configure(trigger, storedRoot, matchRuntime);
+        }
+
+        /// <summary>
+        /// THROW-005, temporary placement. Rocks on the road so the throw can be
+        /// used at all; the permanent layout comes with the map pass.
+        ///
+        /// Either side may take these, and they come back after a while, so
+        /// running out of ammo is a short setback rather than the end of the
+        /// tool. Spots sit in road gaps that the loot placement already proved
+        /// clear of the validated routes.
+        /// </summary>
+        private static void CreateRockPickups(
+            Transform parent,
+            MatchRuntimeState matchRuntime)
+        {
+            Vector3[] spots =
+            {
+                new(-13f, 0.35f, 3.5f),
+                new(13f, 0.35f, -3.5f),
+                new(-3f, 0.35f, 20f),
+                new(30f, 0.35f, 20f),
+                new(-21f, 0.35f, -6f)
+            };
+
+            Material rockMaterial = LoadOrCreateMaterial(
+                "Greybox_Rock",
+                new Color(0.45f, 0.46f, 0.5f));
+
+            for (int index = 0; index < spots.Length; index++)
+            {
+                var pickup = new GameObject($"Rock Pickup {index + 1}");
+                pickup.transform.SetParent(parent);
+                pickup.transform.position = spots[index];
+
+                // Trigger, not a solid: a rock in the road must not stop
+                // anybody running over it.
+                var trigger = pickup.AddComponent<SphereCollider>();
+                trigger.radius = 0.5f;
+                trigger.isTrigger = true;
+
+                Transform presentation = CreateChild(
+                    "PresentationRoot",
+                    pickup.transform);
+                presentation.localPosition = Vector3.zero;
+                if (PlaceholderModelLibrary.TryInstantiateProp(
+                        ThrowableCatalog.GetModelStem(
+                            ThrowableKind.Rock),
+                        presentation,
+                        Vector3.zero,
+                        Vector3.zero,
+                        0.5f,
+                        rockMaterial) == null)
+                {
+                    GameObject fallback = CreateCube(
+                        "Rock Fallback",
+                        spots[index],
+                        Vector3.one * 0.35f,
+                        rockMaterial,
+                        presentation,
+                        false);
+                    UnityEngine.Object.DestroyImmediate(
+                        fallback.GetComponent<Collider>());
+                }
+
+                pickup.AddComponent<ThrowablePickup>().Configure(
+                    ThrowableKind.Rock,
+                    presentation,
+                    false,
+                    PlayerRole.Thief,
+                    12f);
+            }
+
+            Debug.Log($"[THROW-005] {spots.Length} rock pickups placed.");
         }
 
         private static void CreateLootTarget(
@@ -2933,6 +3108,81 @@ namespace PawsAndLoot.Editor
         /// CAT-004 police side. A screen marker and a banner that only appear
         /// for the police while a distraction is running.
         /// </summary>
+        /// <summary>
+        /// CAT-003's report, drawn. The resolver already knew what the cat found
+        /// and where; only the words reached the player, so the direction was
+        /// thrown away every time the command was used.
+        /// </summary>
+        private static void CreateScoutMarkers(
+            Transform canvas,
+            LocalPlayerRoleSelector roleSelector)
+        {
+            Text report = CreateHudLabel(
+                "Scout Report",
+                canvas,
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(-330f, -104f),
+                new Vector2(660f, 30f),
+                TextAnchor.MiddleCenter,
+                20);
+            report.color = new Color(0.85f, 1f, 0.86f);
+
+            RectTransform lootMarker = CreateScoutMarker(
+                canvas,
+                "Scout Loot Marker",
+                "보물",
+                new Color(1f, 0.86f, 0.35f));
+            RectTransform policeMarker = CreateScoutMarker(
+                canvas,
+                "Scout Police Marker",
+                "경찰",
+                new Color(1f, 0.45f, 0.42f));
+
+            canvas.gameObject.AddComponent<ScoutMarkerPresenter>()
+                .Configure(
+                    null,
+                    roleSelector,
+                    Camera.main,
+                    lootMarker,
+                    policeMarker,
+                    report);
+        }
+
+        private static RectTransform CreateScoutMarker(
+            Transform canvas,
+            string name,
+            string caption,
+            Color color)
+        {
+            RectTransform rect = CreateRect(name, canvas);
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(72f, 30f);
+            Image background = rect.gameObject.AddComponent<Image>();
+            background.color = new Color(0.02f, 0.04f, 0.08f, 0.8f);
+            background.raycastTarget = false;
+
+            RectTransform labelRect = CreateRect($"{name} Label", rect);
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
+            Text label = labelRect.gameObject.AddComponent<Text>();
+            label.font = Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            label.fontSize = 18;
+            label.fontStyle = FontStyle.Bold;
+            label.alignment = TextAnchor.MiddleCenter;
+            label.color = color;
+            label.text = caption;
+            label.raycastTarget = false;
+
+            rect.gameObject.SetActive(false);
+            return rect;
+        }
+
         private static void CreateDistractionAlert(
             Transform canvasRoot,
             LocalPlayerRoleSelector roleSelector)
@@ -3311,6 +3561,38 @@ namespace PawsAndLoot.Editor
             promptLabel.color = Color.white;
             promptLabel.raycastTarget = false;
 
+            // Held prop and the key that uses it, above the interaction
+            // prompt. A player who does not know F exists is carrying a rock
+            // they will never throw.
+            RectTransform toolRect =
+                CreateRect("Tool Slot", canvasObject.transform);
+            toolRect.anchorMin = new Vector2(0.5f, 0f);
+            toolRect.anchorMax = new Vector2(0.5f, 0f);
+            toolRect.pivot = new Vector2(0.5f, 0f);
+            toolRect.anchoredPosition = new Vector2(0f, 106f);
+            toolRect.sizeDelta = new Vector2(420f, 40f);
+            toolRect.gameObject.AddComponent<Image>().color =
+                new Color(0.02f, 0.04f, 0.08f, 0.7f);
+
+            RectTransform toolLabelRect =
+                CreateRect("Tool Label", toolRect);
+            toolLabelRect.anchorMin = Vector2.zero;
+            toolLabelRect.anchorMax = Vector2.one;
+            toolLabelRect.offsetMin = Vector2.zero;
+            toolLabelRect.offsetMax = Vector2.zero;
+            Text toolLabel =
+                toolLabelRect.gameObject.AddComponent<Text>();
+            toolLabel.font = Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            toolLabel.fontSize = 20;
+            toolLabel.alignment = TextAnchor.MiddleCenter;
+            toolLabel.raycastTarget = false;
+
+            // The presenter finds the local player itself, because the role is
+            // assigned by the host at runtime and is unknown here.
+            hudRoot.gameObject.AddComponent<ToolHudPresenter>()
+                .Configure(toolLabel);
+
             CommonHudPresenter hudPresenter =
                 hudRoot.gameObject.AddComponent<CommonHudPresenter>();
             hudPresenter.Configure(
@@ -3416,6 +3698,9 @@ namespace PawsAndLoot.Editor
                 companionDispatcher,
                 roleSelector);
             CreateDistractionAlert(
+                canvasObject.transform,
+                roleSelector);
+            CreateScoutMarkers(
                 canvasObject.transform,
                 roleSelector);
 

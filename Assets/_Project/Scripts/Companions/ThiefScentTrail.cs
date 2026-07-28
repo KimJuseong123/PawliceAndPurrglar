@@ -44,6 +44,17 @@ namespace PawsAndLoot.Companions
         }
 
         public int PointCount => _points.Count;
+
+        /// <summary>
+        /// The trail, oldest first, for anything that needs to draw it.
+        ///
+        /// Read only. The trail is gameplay data the dog follows, and a view
+        /// that could edit it would be able to move the dog. Exposed at all
+        /// because the points were already being recorded and followed while
+        /// staying completely invisible to the player — the tracking worked and
+        /// nobody could see it.
+        /// </summary>
+        public IReadOnlyList<ScentPoint> Points => _points;
         public float PointLifetimeSeconds => pointLifetimeSeconds;
 
         public void Configure(

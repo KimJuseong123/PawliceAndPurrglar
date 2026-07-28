@@ -3,6 +3,7 @@ using NUnit.Framework;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Arrest;
+using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
@@ -118,8 +119,40 @@ namespace PawsAndLoot.Tests.EditMode
                     PlayerInteractionType.Traversal,
                     PlayerInteractionType.Traversal,
                     PlayerInteractionType.Traversal,
+                    // The plaza marker plus five THROW-005 rock pickups.
+                    PlayerInteractionType.Generic,
+                    PlayerInteractionType.Generic,
+                    PlayerInteractionType.Generic,
+                    PlayerInteractionType.Generic,
+                    PlayerInteractionType.Generic,
                     PlayerInteractionType.Generic
                 }));
+
+            // Rocks have to be Generic, not Loot. PlayerRolePermissions gives
+            // Loot to the thief alone, so a rock typed as Loot would be
+            // invisible to the police — and a throwable the police cannot pick
+            // up is not a throwable. This is the assertion that catches it.
+            ThrowablePickup[] pickups = scene
+                .GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<ThrowablePickup>(true))
+                .ToArray();
+            Assert.That(pickups, Is.Not.Empty);
+            foreach (ThrowablePickup pickup in pickups)
+            {
+                Assert.That(
+                    PlayerRolePermissions.CanInteract(
+                        PlayerRole.Police,
+                        pickup.InteractionType),
+                    Is.True,
+                    $"'{pickup.name}' cannot be picked up by the police.");
+                Assert.That(
+                    PlayerRolePermissions.CanInteract(
+                        PlayerRole.Thief,
+                        pickup.InteractionType),
+                    Is.True,
+                    $"'{pickup.name}' cannot be picked up by the thief.");
+            }
             Assert.That(
                 scene.GetRootGameObjects()
                     .SelectMany(root =>

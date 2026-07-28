@@ -111,6 +111,16 @@ namespace PawsAndLoot.Integration.Network
             {
                 input.IsLocallyControlled = false;
             }
+
+            // THROW-007. The prop key joins the rest: a client that resolved its
+            // own throw would decide it hit while the host decided it missed.
+            foreach (PawsAndLoot.Gameplay.Items.ToolUseInput input in
+                Object.FindObjectsByType<
+                    PawsAndLoot.Gameplay.Items.ToolUseInput>(
+                    FindObjectsSortMode.None))
+            {
+                input.IsLocallyControlled = false;
+            }
         }
 
         private void Update()
@@ -184,6 +194,11 @@ namespace PawsAndLoot.Integration.Network
             if (keyboard.qKey.wasPressedThisFrame)
             {
                 link.SubmitDropRpc();
+            }
+
+            if (keyboard.fKey.wasPressedThisFrame)
+            {
+                link.SubmitUseToolRpc();
             }
 
             int command = ReadCompanionCommandKey(keyboard);

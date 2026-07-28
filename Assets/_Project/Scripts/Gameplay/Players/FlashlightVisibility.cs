@@ -1,0 +1,215 @@
+using PawsAndLoot.Match;
+using UnityEngine;
+
+namespace PawsAndLoot.Gameplay.Players
+{
+    /// <summary>
+    /// Hides the thief from the police unless the torch is on them.
+    ///
+    /// This is what makes the night mean something: a fast officer who cannot
+    /// see has to use the dog, the alarms and the noise, which is the whole
+    /// reason those systems exist.
+    ///
+    /// Only renderers are switched. The world is not darkened and geometry is
+    /// never hidden — the fixed overhead camera needs the town visible to be
+    /// playable at all, and fog of war over 3D geometry is a rendering feature
+    /// this does not need. Hiding the one thing that matters gets the "he was
+    /// right there" moment for the cost of toggling a renderer.
+    ///
+    /// Presentation only, and deliberately local. It runs on the police's own
+    /// machine and changes nothing the host simulates: the thief still moves,
+    /// still carries loot and can still be arrested while invisible. If this
+    /// component were removed the match would play out identically.
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class FlashlightVisibility : MonoBehaviour
+    {
+        [SerializeField]
+        private PlayerRoleIdentity viewer;
+
+        [SerializeField]
+        private MonoBehaviour matchStateSource;
+
+        /// <summary>
+        /// Half-angle of the cone, a little wider than the light itself so the
+        /// thief becomes visible just before they are lit rather than popping in
+        /// already glowing.
+        /// </summary>
+        [SerializeField, Range(10f, 90f)]
+        private float halfAngleDegrees = 30f;
+
+        [SerializeField, Min(1f)]
+        private float rangeMeters = 17f;
+
+        /// <summary>
+        /// Always visible within this distance regardless of facing. Somebody
+        /// close enough to arrest must never be invisible, or the police is
+        /// grappling with thin air.
+        /// </summary>
+        [SerializeField, Min(0f)]
+        private float alwaysSeenRadius = 3f;
+
+        private IMatchStateReader _matchState;
+        private PlayerRoleIdentity _target;
+        private Renderer[] _targetRenderers;
+
+        public bool IsTargetVisible { get; private set; } = true;
+
+        public void Configure(
+            PlayerRoleIdentity configuredViewer,
+            IMatchStateReader configuredMatchState)
+        {
+            viewer = configuredViewer;
+            _matchState = configuredMatchState;
+            matchStateSource = configuredMatchState as MonoBehaviour;
+        }
+
+        /// <summary>
+        /// Finds the opposing player and everything drawn for them, including
+        /// their companion, at runtime. The role each machine controls is handed
+        /// out by the host after the lobby, so it cannot be bound in the editor.
+        /// </summary>
+        private bool ResolveTarget()
+        {
+            if (_target != null && _targetRenderers != null)
+            {
+                return true;
+            }
+
+            if (viewer == null)
+            {
+                return false;
+            }
+
+            foreach (PlayerRoleIdentity candidate in
+                FindObjectsByType<PlayerRoleIdentity>(
+                    FindObjectsSortMode.None))
+            {
+                if (candidate.Role == viewer.Role)
+                {
+                    continue;
+                }
+
+                _target = candidate;
+                _targetRenderers =
+                    candidate.GetComponentsInChildren<Renderer>(true);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void SetVisible(bool visible)
+        {
+            if (IsTargetVisible == visible || _targetRenderers == null)
+            {
+                return;
+            }
+
+            IsTargetVisible = visible;
+            foreach (Renderer renderer in _targetRenderers)
+            {
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                // Line renderers are route debug draws, not the character.
+                if (renderer is LineRenderer)
+                {
+                    continue;
+                }
+
+                renderer.enabled = visible;
+            }
+        }
+
+        /// <summary>
+        /// True only on the machine actually playing the viewer's role.
+        ///
+        /// Without this check the thief's own machine would run the police's
+        /// cone and hide the thief from themselves. Visibility is a per-screen
+        /// decision, so it has to be gated on whose screen this is.
+        /// </summary>
+        private bool ViewerIsLocal()
+        {
+            if (viewer == null)
+            {
+                return false;
+            }
+
+            PlayerRole? assigned = LocalPlayerRoleSelector.OverriddenRole;
+            if (assigned.HasValue)
+            {
+                return assigned.Value == viewer.Role;
+            }
+
+            LocalPlayerRoleSelector selector =
+                FindFirstObjectByType<LocalPlayerRoleSelector>();
+            return selector != null
+                && selector.ActiveRole == viewer.Role;
+        }
+
+        private void LateUpdate()
+        {
+            if (!ViewerIsLocal())
+            {
+                SetVisible(true);
+                return;
+            }
+
+            // Outside a match nothing is hidden, so the lobby, the countdown and
+            // the result screen all show both characters.
+            if (ResolveMatchState()?.IsGameplayActive != true)
+            {
+                SetVisible(true);
+                return;
+            }
+
+            if (!ResolveTarget())
+            {
+                return;
+            }
+
+            Vector3 delta = _target.transform.position
+                - viewer.transform.position;
+            delta.y = 0f;
+            float distance = delta.magnitude;
+
+            if (distance <= alwaysSeenRadius)
+            {
+                SetVisible(true);
+                return;
+            }
+
+            if (distance > rangeMeters)
+            {
+                SetVisible(false);
+                return;
+            }
+
+            Vector3 facing = viewer.transform.forward;
+            facing.y = 0f;
+            float angle = Vector3.Angle(facing, delta);
+            SetVisible(angle <= halfAngleDegrees);
+        }
+
+        private IMatchStateReader ResolveMatchState()
+        {
+            if (_matchState == null
+                && matchStateSource is IMatchStateReader reader)
+            {
+                _matchState = reader;
+            }
+
+            return _matchState;
+        }
+
+        private void OnDisable()
+        {
+            // Never leave the other player invisible because this was switched
+            // off mid-match.
+            SetVisible(true);
+        }
+    }
+}

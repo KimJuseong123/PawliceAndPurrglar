@@ -115,6 +115,41 @@ namespace PawsAndLoot.Integration.Network
         [SerializeField]
         private ArrestProgressController arrestProgress;
 
+        [SerializeField]
+        private PawsAndLoot.Gameplay.Items.ToolUseAction toolUse;
+
+        [SerializeField]
+        private PawsAndLoot.Gameplay.Items.ToolUseInput toolInput;
+
+        [SerializeField]
+        private StunState stun;
+
+        /// <summary>
+        /// THROW-007. Seconds of stun left, written only by the host.
+        ///
+        /// Replicated because the host is the only machine that decides a throw
+        /// connected. Without this a client keeps running on its own screen
+        /// while the host holds it still, and the two players see different
+        /// chases.
+        /// </summary>
+        private readonly NetworkVariable<float> _stunSeconds =
+            new(
+                0f,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        /// <summary>
+        /// Counts stuns so a client can tell a fresh hit from a value that
+        /// happens to be the same, the way arrest interruptions are counted.
+        /// </summary>
+        private readonly NetworkVariable<int> _stunCount =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private int _appliedStunCount;
+
         [SerializeField, Min(1f)]
         private float catchUpSpeed = 14f;
 
@@ -162,7 +197,10 @@ namespace PawsAndLoot.Integration.Network
             LootDropInput configuredDropInput,
             CompanionCommandKeyboardInput configuredCompanionInput,
             ThiefLootWallet configuredWallet,
-            ArrestProgressController configuredArrestProgress)
+            ArrestProgressController configuredArrestProgress,
+            PawsAndLoot.Gameplay.Items.ToolUseAction configuredToolUse = null,
+            PawsAndLoot.Gameplay.Items.ToolUseInput configuredToolInput = null,
+            StunState configuredStun = null)
         {
             scanner = configuredScanner;
             interactionInput = configuredInteractionInput;
@@ -171,6 +209,9 @@ namespace PawsAndLoot.Integration.Network
             companionInput = configuredCompanionInput;
             wallet = configuredWallet;
             arrestProgress = configuredArrestProgress;
+            toolUse = configuredToolUse;
+            toolInput = configuredToolInput;
+            stun = configuredStun;
         }
 
         public override void OnNetworkSpawn()
@@ -203,7 +244,24 @@ namespace PawsAndLoot.Integration.Network
             {
                 _position.Value = transform.position;
                 _yaw.Value = transform.eulerAngles.y;
+                // Counted on the host so a client can tell one hit from the
+                // next; the duration alone repeats and would be missed.
+                if (stun != null)
+                {
+                    stun.Stunned += HandleHostStunApplied;
+                }
             }
+        }
+
+        private void HandleHostStunApplied(float seconds)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            _stunCount.Value++;
+            _stunSeconds.Value = seconds;
         }
 
         public override void OnNetworkDespawn()
@@ -211,6 +269,11 @@ namespace PawsAndLoot.Integration.Network
             if (arrestProgress != null)
             {
                 arrestProgress.SetRemoteControlled(false);
+            }
+
+            if (stun != null)
+            {
+                stun.Stunned -= HandleHostStunApplied;
             }
         }
 
@@ -240,6 +303,23 @@ namespace PawsAndLoot.Integration.Network
             if (carrier != null)
             {
                 carrier.TryDrop();
+            }
+        }
+
+        /// <summary>
+        /// THROW-007. Asks the host to use this player's held prop.
+        ///
+        /// The host resolves the throw against its own simulation, so it — not
+        /// the thrower — decides whether the rock connected. Two machines
+        /// judging the same throw would disagree, and the loser of that
+        /// disagreement would be stunned on one screen and running on the other.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitUseToolRpc()
+        {
+            if (toolUse != null)
+            {
+                toolUse.TryUse();
             }
         }
 
@@ -320,6 +400,11 @@ namespace PawsAndLoot.Integration.Network
 
         private void PublishGameplayState()
         {
+            if (stun != null)
+            {
+                _stunSeconds.Value = stun.RemainingSeconds;
+            }
+
             if (wallet != null)
             {
                 _soldAmount.Value = wallet.SoldAmount;
@@ -340,6 +425,15 @@ namespace PawsAndLoot.Integration.Network
 
         private void ApplyReplicatedGameplayState()
         {
+            // A stun the host applied has to hold this player still here too,
+            // otherwise the client walks away from a hit that landed.
+            if (stun != null
+                && _stunCount.Value > _appliedStunCount)
+            {
+                _appliedStunCount = _stunCount.Value;
+                stun.TryApply(_stunSeconds.Value);
+            }
+
             if (wallet != null)
             {
                 wallet.ApplyRemoteSale(_soldAmount.Value);

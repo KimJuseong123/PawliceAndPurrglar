@@ -49,6 +49,18 @@ namespace PawsAndLoot.Companions
         /// </summary>
         public string LastScoutReport { get; private set; } = string.Empty;
 
+        /// <summary>
+        /// Where the last scout found things, so the thief can be shown a
+        /// direction instead of only the words "보물과 경찰".
+        ///
+        /// Null when that thing was not found. The report text alone told the
+        /// player something existed without telling them where, which is the
+        /// half of the command that was missing.
+        /// </summary>
+        public Vector3? LastScoutLootPosition { get; private set; }
+        public Vector3? LastScoutPolicePosition { get; private set; }
+        public float LastScoutAtSeconds { get; private set; } = -1f;
+
         public readonly struct Resolution
         {
             public Resolution(
@@ -171,12 +183,22 @@ namespace PawsAndLoot.Companions
             if (loot == null && !policeNear)
             {
                 LastScoutReport = string.Empty;
+                LastScoutLootPosition = null;
+                LastScoutPolicePosition = null;
+                LastScoutAtSeconds = Time.time;
                 return new Resolution(
                     true,
                     CompanionCommandOutcome.ScoutFoundNothing,
                     null);
             }
 
+            LastScoutLootPosition = loot != null
+                ? loot.transform.position
+                : (Vector3?)null;
+            LastScoutPolicePosition = policeNear
+                ? policeTransform.position
+                : (Vector3?)null;
+            LastScoutAtSeconds = Time.time;
             LastScoutReport = loot != null && policeNear
                 ? "보물과 경찰"
                 : loot != null

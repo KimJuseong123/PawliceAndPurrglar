@@ -20,6 +20,8 @@ namespace PawsAndLoot.Gameplay.Players
         private Transform orientationReference;
 
         private IMatchStateReader _matchState;
+        private StunState _stun;
+        private bool _lookedForStun;
         private float _verticalVelocity;
         private Vector3 _dashDirection;
         private float _dashRemainingSeconds;
@@ -27,7 +29,49 @@ namespace PawsAndLoot.Gameplay.Players
         private bool _lootCarryPenaltyActive;
 
         public Vector3 LastPlanarVelocity { get; private set; }
-        public bool CanMove => _matchState?.IsGameplayActive == true;
+
+        /// <summary>
+        /// A stun suppresses movement here rather than in the input layer, so it
+        /// applies however the input arrived: local keys, a network RPC or a
+        /// test. Blocking it at the keyboard would leave a networked player
+        /// still walking on the host.
+        ///
+        /// Resolved lazily because the stun component is optional; a player
+        /// without one simply never gets stunned.
+        /// </summary>
+        public bool CanMove =>
+            _matchState?.IsGameplayActive == true
+            && !IsStunned;
+
+        /// <summary>
+        /// False when there is no stun component at all, so a player without one
+        /// moves normally rather than being frozen forever.
+        /// </summary>
+        public bool IsStunned
+        {
+            get
+            {
+                StunState stun = ResolveStun();
+                return stun != null && stun.IsStunned;
+            }
+        }
+        /// <summary>
+        /// Cached after the first look so the lookup is not repeated every
+        /// frame, and so a player deliberately built without a stun component
+        /// is not searched for one over and over.
+        /// </summary>
+        private StunState ResolveStun()
+        {
+            if (_lookedForStun)
+            {
+                return _stun;
+            }
+
+            _lookedForStun = true;
+            _stun = GetComponent<StunState>();
+            return _stun;
+        }
+
         public bool IsDashing => _dashRemainingSeconds > 0f;
         public float DashCooldownRemainingSeconds =>
             _dashCooldownRemainingSeconds;
