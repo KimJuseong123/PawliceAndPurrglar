@@ -1278,7 +1278,52 @@ namespace PawsAndLoot.TechnicalValidation
                 GameLogCategory.Network,
                 $"Match probe wrote '{path}'.",
                 this);
+            // Written, but not gone yet on the host.
+            //
+            // The host decides the winner and stops playing in the same frame, and
+            // quitting there took the session down before the replicated state had
+            // been sent even once. The client then recorded a match still in
+            // progress and a winner of None, which reads exactly like the result
+            // failing to cross when in fact nothing had been given the chance to
+            // cross. Staying up for a moment lets the client observe the result it
+            // is being judged on. The client itself has nobody waiting on it and
+            // leaves immediately.
+            if (_mode == "host")
+            {
+                DelayedQuit.Schedule(2.5f);
+                return;
+            }
+
             Application.Quit(0);
+        }
+
+        /// <summary>
+        /// Quits a moment later, from an object that outlives the scene.
+        ///
+        /// Not a coroutine on the probe: deciding the match unloads the match
+        /// scene, so the probe is destroyed within the same second and a coroutine
+        /// on it would stop without ever quitting. A run that hangs until the
+        /// harness times it out is worse than the race being fixed.
+        /// </summary>
+        private sealed class DelayedQuit : MonoBehaviour
+        {
+            private float _remaining;
+
+            public static void Schedule(float seconds)
+            {
+                var host = new GameObject("Probe Delayed Quit");
+                DontDestroyOnLoad(host);
+                host.AddComponent<DelayedQuit>()._remaining = seconds;
+            }
+
+            private void Update()
+            {
+                _remaining -= Time.unscaledDeltaTime;
+                if (_remaining <= 0f)
+                {
+                    Application.Quit(0);
+                }
+            }
         }
 
         private static string Format(Vector3 value)

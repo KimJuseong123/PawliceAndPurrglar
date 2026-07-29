@@ -26,6 +26,22 @@
 해결: 벽을 9m로 올리고 카메라를 6.5m·42°로 당겼다 (높이 약 5.4m로 벽보다 낮다).
 간격도 40m로 벌렸다. 천장은 그대로 없다 — 천장을 만들면 카메라가 뚫는다.
 
+## ISSUE-037 — 2인 회귀에서 클라이언트가 승패를 못 받았다 (RESOLVED)
+
+**증상**: `-netScenario full`에서 호스트는 `passed=true`, 클라이언트는
+`decidedWinner=None`, `lastMatchState=Playing`, `disconnectHandledCount=1`.
+
+**원인**: 호스트가 승패를 정한 프레임에 프로브가 기록하고 바로 `Application.Quit`을
+불렀다. 복제 상태가 한 번도 전송되기 전에 세션이 내려가서, 클라이언트는 진행 중인
+경기와 끊긴 호스트를 봤다. 결과가 전달되지 않는 것처럼 보이지만 전달될 기회가
+없었던 것이다.
+
+**해결**: 호스트만 기록 후 2.5초 뒤에 종료한다. 경기가 결정되면 씬이 언로드되어
+프로브가 사라지므로, 코루틴이 아니라 `DontDestroyOnLoad` 오브젝트가 종료를 센다 —
+종료하지 않는 실행은 이 경합보다 나쁘다. 클라이언트는 기다릴 상대가 없으므로 즉시
+나간다. 검증: `full` 양쪽 `passed=true`, `Police/ThiefArrested` 일치, `disconnect`
+호스트 1회 유지.
+
 ## ISSUE-036 — 문을 연속으로 오가면 땅으로 꺼졌다 (RESOLVED)
 
 원인: `PlayerMovementMotor._verticalVelocity`가 매 프레임 중력을 누적하는데,
