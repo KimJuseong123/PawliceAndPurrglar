@@ -68,7 +68,8 @@ namespace PawsAndLoot.Tests.PlayMode
             // character's transform sits about that far above their feet — placing
             // the pivot on the floor buried the capsule in it.
             Vector3 arrival =
-                thief.transform.position - interior.EntryPosition;
+                thief.transform.position
+                - interior.EntryPositionFor(wayIn.Side);
             Assert.That(
                 new Vector2(arrival.x, arrival.z).magnitude,
                 Is.LessThan(1f),
@@ -102,7 +103,8 @@ namespace PawsAndLoot.Tests.PlayMode
             // Horizontally, for the same reason as going in: the exit point is
             // the ground and the player stands about a metre above it.
             Vector3 departure =
-                thief.transform.position - interior.ExitPosition;
+                thief.transform.position
+                - interior.ExitPositionFor(wayOut.Side);
             Assert.That(
                 new Vector2(departure.x, departure.z).magnitude,
                 Is.LessThan(1f),
@@ -180,15 +182,17 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         /// <summary>
-        /// The way in and the way out are both at the front door.
+        /// Each door is on the side it says it is, and puts you back out there.
         ///
-        /// Measured against the model rather than assumed: on this house the porch
-        /// floor sits at z = +3.5 and the front door leaf at z = +3.1, so the front
-        /// is +Z. The first version used -Z and quietly put the entrance and the
-        /// exit at the back door instead.
+        /// Measured against the model rather than assumed: the porch floor sits at
+        /// z = +3.5 and the front door leaf at z = +3.1, so the front is +Z, and the
+        /// back step at -3.3 is the back. The first version had one door, used -Z
+        /// for it, and quietly put both the way in and the way out at the back
+        /// (ISSUE-034). Now that there are two, what has to hold is that they do not
+        /// swap.
         /// </summary>
         [UnityTest]
-        public IEnumerator DoorsAreOnTheFrontOfTheHouse()
+        public IEnumerator EachDoorIsOnTheSideItClaims()
         {
             yield return SceneManager.LoadSceneAsync(
                 GameSceneCatalog.GetPath(GameSceneId.Game),
@@ -201,27 +205,160 @@ namespace PawsAndLoot.Tests.PlayMode
                 .Where(door => door.LeadsInside)
                 .ToArray();
             Assert.That(entrances, Is.Not.Empty);
+            Assert.That(
+                entrances.Any(d => d.Side == HouseDoorSide.Front),
+                Is.True,
+                "No front doors at all.");
+            Assert.That(
+                entrances.Any(d => d.Side == HouseDoorSide.Back),
+                Is.True,
+                "No back doors, so a house is still a dead end.");
 
             foreach (HouseDoorway entrance in entrances)
             {
+                float wanted =
+                    entrance.Side == HouseDoorSide.Back ? -1f : 1f;
+
                 // The trigger hangs off the house, so its local z says which wall
                 // it is on.
                 Assert.That(
-                    entrance.transform.localPosition.z,
+                    entrance.transform.localPosition.z * wanted,
                     Is.GreaterThan(0f),
-                    $"{entrance.name} is on the -Z side, which is the back "
-                    + "door. The porch is at +Z.");
+                    $"{entrance.name} says {entrance.Side} but sits at local z "
+                    + $"{entrance.transform.localPosition.z:0.00}.");
 
-                // And the exit puts you back out on the same side.
-                Vector3 house = entrance.transform.parent.position;
+                // And the exit puts you back out on the same side. Measured in the
+                // house's own space, because a building turned to face the other
+                // way has its front at world -Z.
+                Transform house = entrance.transform.parent;
+                Vector3 outside = house.InverseTransformPoint(
+                    entrance.Interior.ExitPositionFor(entrance.Side));
                 Assert.That(
-                    entrance.Interior.ExitPosition.z - house.z,
+                    outside.z * wanted,
                     Is.GreaterThan(0f),
-                    "Coming out at the back of a house you walked into at the "
-                    + "front is disorienting in a chase.");
+                    $"Going in the {entrance.Side} door of {house.name} and "
+                    + "coming out the other side is disorienting in a chase.");
             }
         }
 
+        /// <summary>
+        /// Every house has an inside, roofed or not, reachable from both ends.
+        ///
+        /// Only the roofless variant used to get a door, on the reasoning that a
+        /// door on a solid house promises a room that is not there. But the room is
+        /// built somewhere else entirely, so the roof decides nothing except whether
+        /// the inside is visible from the street — and a town where half the houses
+        /// are solid is a town where the thief learns which half to run to.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator EveryHouseHasAnInsideWithBothDoors()
+        {
+            yield return SceneManager.LoadSceneAsync(
+                GameSceneCatalog.GetPath(GameSceneId.Game),
+                LoadSceneMode.Single);
+            yield return null;
+
+            HouseDoorway[] entrances = Object
+                .FindObjectsByType<HouseDoorway>(
+                    FindObjectsSortMode.None)
+                .Where(door => door.LeadsInside)
+                .ToArray();
+
+            // Grouped by the building they hang off, so a house with two front
+            // doors and none at the back cannot pass on count alone.
+            var byHouse = entrances
+                .GroupBy(door => door.transform.parent)
+                .ToArray();
+            Assert.That(
+                byHouse.Length,
+                Is.GreaterThan(10),
+                "Not enough houses have doors for this to mean anything.");
+
+            foreach (var group in byHouse)
+            {
+                Assert.That(
+                    group.Select(door => door.Side).Distinct().Count(),
+                    Is.EqualTo(2),
+                    $"{group.Key.name} does not have both a front and a back "
+                    + "door, so it is a dead end.");
+            }
+
+            // One room per house, and no two houses sharing one.
+            HouseInterior[] rooms = Object
+                .FindObjectsByType<HouseInterior>(
+                    FindObjectsSortMode.None);
+            Assert.That(
+                rooms.Length,
+                Is.EqualTo(byHouse.Length),
+                "Every house needs its own room: sharing one would teleport two "
+                + "players into the same space from different streets.");
+            Assert.That(
+                entrances.Select(door => door.Interior).Distinct().Count(),
+                Is.EqualTo(rooms.Length),
+                "Two houses lead to the same room.");
+        }
+
+        /// <summary>
+        /// The room is the model's own furnished interior, not a box.
+        ///
+        /// The rooms were hand-built greybox until the model was measured and turned
+        /// out to already contain a bathroom, a bedroom, a kitchen, a living room and
+        /// a dining room behind partition walls. What has to hold is that the
+        /// furniture is really there and really solid — a room full of props you walk
+        /// straight through is a room with no cover in it.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheRoomIsTheModelsFurnishedInterior()
+        {
+            yield return SceneManager.LoadSceneAsync(
+                GameSceneCatalog.GetPath(GameSceneId.Game),
+                LoadSceneMode.Single);
+            yield return null;
+
+            HouseInterior room =
+                Object.FindFirstObjectByType<HouseInterior>();
+            Assert.That(room, Is.Not.Null);
+
+            string[] names = room
+                .GetComponentsInChildren<Renderer>(true)
+                .Select(r => r.name)
+                .ToArray();
+            foreach (string wanted in new[]
+            {
+                "IN_Bedroom_Bed_Frame",
+                "IN_Kitchen_Fridge",
+                "IN_LivingRoom_Sofa_Base",
+                "IN_Bathroom_Bathtub",
+                "IN_House1F_Wall_Bathroom_Back"
+            })
+            {
+                Assert.That(
+                    names,
+                    Has.Member(wanted),
+                    $"The room has no {wanted}, so it is not the model's "
+                    + "interior.");
+            }
+
+            // Solid, and in the right proportion. A partition wall gets a mesh
+            // collider so its doorway stays a doorway; furniture gets one box per
+            // piece rather than one per slat.
+            int walls = room
+                .GetComponentsInChildren<MeshCollider>(true)
+                .Length;
+            int furniture = room
+                .GetComponentsInChildren<BoxCollider>(true)
+                .Count(box => box.name.StartsWith("IN_"));
+            Assert.That(
+                walls,
+                Is.GreaterThanOrEqualTo(8),
+                "The exterior and partition walls are not solid.");
+            Assert.That(
+                furniture,
+                Is.InRange(10, 45),
+                $"{furniture} furniture colliders. Under ten means the room has "
+                + "no cover in it; over forty-five means it is boxing every "
+                + "chair slat again.");
+        }
         /// <summary>
         /// Pocketing a valuable pays the thief, once, and only the thief.
         /// </summary>

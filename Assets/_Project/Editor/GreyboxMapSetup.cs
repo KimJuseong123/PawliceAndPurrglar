@@ -897,20 +897,33 @@ namespace PawsAndLoot.Editor
                 new Vector3(-9f, 0f, NorthBandRow),
                 12f,
                 8f);
-            CreateDressingBuilding(
+            // The two houses on the original band, gathered like the district
+            // ones. They were the only houses in the town that never got a door,
+            // for no reason other than being created before the loop that collects
+            // them existed.
+            foreach (string bandStem in new[]
+            {
                 "building_house_1f",
-                root,
-                new Vector3(9f, 0f, NorthBandRow),
-                ReferenceHouseX,
-                ReferenceHouseZ,
-                HouseScale());
-            CreateDressingBuilding(
-                "building_house_1f_with_interior",
-                root,
-                new Vector3(EastColumnNear, 0f, NorthBandRow),
-                ReferenceHouseX,
-                ReferenceHouseZ,
-                HouseScale());
+                "building_house_1f_with_interior"
+            })
+            {
+                Transform bandHouse = CreateDressingBuilding(
+                    bandStem,
+                    root,
+                    new Vector3(
+                        bandStem == "building_house_1f"
+                            ? 9f
+                            : EastColumnNear,
+                        0f,
+                        NorthBandRow),
+                    ReferenceHouseX,
+                    ReferenceHouseZ,
+                    HouseScale());
+                if (bandHouse != null)
+                {
+                    _enterableHouses.Add(bandHouse);
+                }
+            }
 
             // Inside the trading yard (x -15..-4, z -9.5..-2.5), not beside it.
             // The previous spot put the bin on the southern alley, and once the
@@ -1066,10 +1079,12 @@ namespace PawsAndLoot.Editor
                     footprintZ,
                     HouseScale());
 
-                // Only the model that has an inside gets one. Giving a door to
-                // the solid variant would promise a room that is not there.
-                if (house != null
-                    && stem == "building_house_1f_with_interior")
+                // Every house, roofed or not. The roof only decides whether the
+                // inside is visible from the street; it says nothing about whether
+                // there is one, and the room is built from the interior model
+                // either way. A town where half the houses are solid is a town
+                // where the thief learns which half to run to.
+                if (house != null)
                 {
                     _enterableHouses.Add(house);
                 }

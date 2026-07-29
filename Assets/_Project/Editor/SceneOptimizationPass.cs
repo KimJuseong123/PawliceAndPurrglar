@@ -236,8 +236,32 @@ namespace PawsAndLoot.Editor
             return disabled;
         }
 
+        /// <summary>
+        /// True for the rooms built away from the town.
+        ///
+        /// Left out of this pass on purpose, and the reason is scene bytes rather
+        /// than rendering. Flagging a prefab instance's children writes one
+        /// override per renderer into the scene, and the interior model has 335 of
+        /// them — 68 KB per room, 1.3 MB across nineteen, in a scene that is
+        /// regenerated wholesale and so lands in history again on every rebuild.
+        ///
+        /// What it costs is batching for one room's worth of geometry. Only ever
+        /// one room is visible: the player is in it, and the next one is 36 m away
+        /// behind a wall. That is a trade worth making in this direction.
+        /// </summary>
+        private static bool IsInsideAHouseInterior(Transform candidate)
+        {
+            return candidate.GetComponentInParent<
+                PawsAndLoot.Gameplay.Interiors.HouseInterior>() != null;
+        }
+
         private static bool IsUnderDynamicRoot(Transform candidate)
         {
+            if (IsInsideAHouseInterior(candidate))
+            {
+                return true;
+            }
+
             for (Transform current = candidate;
                 current != null;
                 current = current.parent)

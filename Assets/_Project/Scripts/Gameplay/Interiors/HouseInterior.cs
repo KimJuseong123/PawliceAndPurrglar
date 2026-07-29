@@ -13,11 +13,18 @@ namespace PawsAndLoot.Gameplay.Interiors
     /// and the torch would light all of it. So the room grows instead and nothing
     /// else has to change.
     ///
-    /// Twice the floor plan, 16 m square. The walls stay 4 m rather than doubling
-    /// with everything else — a 10 m ceiling reads as a warehouse, and the extra
-    /// height buys nothing when the camera sits above the player. There is no
-    /// ceiling at all, which is what stops a third-person camera clipping through
-    /// a roof.
+    /// The room is the house model itself, enlarged. It was a greybox box with four
+    /// blocks in it until the model was actually measured and turned out to have a
+    /// furnished interior already — a bathroom, a bedroom, a kitchen, a living room
+    /// and a dining room, 111 parts of it, behind its own partition walls. Building
+    /// a worse room by hand next to a better one that already existed was the wrong
+    /// trade, and the enlarged model has no roof, which is what stops a
+    /// third-person camera clipping through one.
+    ///
+    /// Two doors, front and back. One door makes a room a trap: the thief who goes
+    /// in has one way out and the officer only has to wait on the porch. Both ends
+    /// of the room are therefore reachable, and which door you came in by decides
+    /// which end you appear at.
     ///
     /// Placed outside the map rather than in a separate scene. Scene-placed
     /// <c>NetworkObject</c>s do not survive a scene load (ISSUE-016), so an
@@ -33,17 +40,27 @@ namespace PawsAndLoot.Gameplay.Interiors
         private int interiorId;
 
         /// <summary>
-        /// Where somebody appears when they come in, just inside the doorway.
+        /// Where somebody appears when they come in the front, just inside the
+        /// doorway.
         /// </summary>
         [SerializeField]
-        private Transform entryPoint;
+        private Transform frontEntryPoint;
 
         /// <summary>
-        /// Where they appear when they leave: outside the real house in the town,
-        /// clear of the door so they do not immediately re-enter.
+        /// The same for the back door, at the other end of the room.
         /// </summary>
         [SerializeField]
-        private Transform exitPoint;
+        private Transform backEntryPoint;
+
+        /// <summary>
+        /// Where they appear when they leave by the front: outside the real house in
+        /// the town, clear of the door so they do not immediately re-enter.
+        /// </summary>
+        [SerializeField]
+        private Transform frontExitPoint;
+
+        [SerializeField]
+        private Transform backExitPoint;
 
         /// <summary>
         /// Half-extents of the walkable floor, measured from the room centre.
@@ -52,23 +69,65 @@ namespace PawsAndLoot.Gameplay.Interiors
         [SerializeField]
         private Vector2 floorHalfExtents = new(7f, 7f);
 
+        /// <summary>
+        /// The height of the floor the furniture stands on, so scattered loot lands
+        /// on it rather than at the room object's own origin.
+        /// </summary>
+        [SerializeField]
+        private float floorHeight;
+
         public int InteriorId => interiorId;
-        public Vector3 EntryPosition =>
-            entryPoint != null ? entryPoint.position : transform.position;
-        public Vector3 ExitPosition =>
-            exitPoint != null ? exitPoint.position : transform.position;
         public Vector2 FloorHalfExtents => floorHalfExtents;
+        public float FloorHeight => floorHeight;
+
+        /// <summary>
+        /// The front door's points. Kept as plain properties because most callers —
+        /// the loot scatter, the dog's pointer — only need somewhere in the room and
+        /// have no opinion about which door.
+        /// </summary>
+        public Vector3 EntryPosition => EntryPositionFor(HouseDoorSide.Front);
+        public Vector3 ExitPosition => ExitPositionFor(HouseDoorSide.Front);
+
+        public Vector3 EntryPositionFor(HouseDoorSide side)
+        {
+            Transform point = side == HouseDoorSide.Back
+                ? backEntryPoint
+                : frontEntryPoint;
+            return point != null
+                ? point.position
+                : (frontEntryPoint != null
+                    ? frontEntryPoint.position
+                    : transform.position);
+        }
+
+        public Vector3 ExitPositionFor(HouseDoorSide side)
+        {
+            Transform point = side == HouseDoorSide.Back
+                ? backExitPoint
+                : frontExitPoint;
+            return point != null
+                ? point.position
+                : (frontExitPoint != null
+                    ? frontExitPoint.position
+                    : transform.position);
+        }
 
         public void Configure(
             int configuredInteriorId,
-            Transform configuredEntryPoint,
-            Transform configuredExitPoint,
-            Vector2 configuredFloorHalfExtents)
+            Transform configuredFrontEntry,
+            Transform configuredBackEntry,
+            Transform configuredFrontExit,
+            Transform configuredBackExit,
+            Vector2 configuredFloorHalfExtents,
+            float configuredFloorHeight)
         {
             interiorId = configuredInteriorId;
-            entryPoint = configuredEntryPoint;
-            exitPoint = configuredExitPoint;
+            frontEntryPoint = configuredFrontEntry;
+            backEntryPoint = configuredBackEntry;
+            frontExitPoint = configuredFrontExit;
+            backExitPoint = configuredBackExit;
             floorHalfExtents = configuredFloorHalfExtents;
+            floorHeight = configuredFloorHeight;
         }
 
         /// <summary>
@@ -86,7 +145,10 @@ namespace PawsAndLoot.Gameplay.Interiors
                 (float)(random.NextDouble() * 2.0 - 1.0) * usableX,
                 0f,
                 (float)(random.NextDouble() * 2.0 - 1.0) * usableZ);
-            return transform.position + offset;
+            return new Vector3(
+                transform.position.x + offset.x,
+                floorHeight,
+                transform.position.z + offset.z);
         }
     }
 }

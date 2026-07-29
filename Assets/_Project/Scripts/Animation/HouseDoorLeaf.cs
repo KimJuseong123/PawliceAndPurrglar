@@ -44,11 +44,15 @@ namespace PawsAndLoot.Animation
     public sealed class HouseDoorLeaf : MonoBehaviour
     {
         /// <summary>
-        /// The parts of the front door, in the model's own naming. In code because
-        /// code survives into the build; a serialised list of transforms would not
-        /// have to.
+        /// The parts of each door, in the model's own naming. In code because code
+        /// survives into the build; a serialised list of transforms would not have
+        /// to.
+        ///
+        /// The two doors are not made of the same pieces — the front has one
+        /// vertical glass panel and the back has a mullioned window — so they are
+        /// listed rather than derived by swapping a word.
         /// </summary>
-        private static readonly string[] PartNames =
+        private static readonly string[] FrontPartNames =
         {
             "BD_House1F_Door_Front_Leaf",
             "BD_House1F_Door_Front_Handle",
@@ -57,13 +61,28 @@ namespace PawsAndLoot.Animation
             "BD_House1F_Door_Front_VerticalGlass"
         };
 
-        /// <summary>
-        /// The part whose edge the door turns on. The others follow it.
-        /// </summary>
-        private const string LeafName = "BD_House1F_Door_Front_Leaf";
+        private static readonly string[] BackPartNames =
+        {
+            "BD_House1F_Door_Back_Leaf",
+            "BD_House1F_Door_Back_Handle",
+            "BD_House1F_Door_Back_Panel_1",
+            "BD_House1F_Door_Back_Panel_2",
+            "BD_House1F_Door_Back_GlassMullion_H",
+            "BD_House1F_Door_Back_GlassMullion_V",
+            "BD_House1F_Door_Back_UpperGlass"
+        };
 
         [SerializeField]
         private Transform houseRoot;
+
+        /// <summary>
+        /// Which door this is. Decides both which parts to move and which way is
+        /// out: the two doors are on opposite walls, so the same turn that opens one
+        /// outward opens the other into the building.
+        /// </summary>
+        [SerializeField]
+        private PawsAndLoot.Gameplay.Interiors.HouseDoorSide side =
+            PawsAndLoot.Gameplay.Interiors.HouseDoorSide.Front;
 
         /// <summary>
         /// Signed, because which way is "outward" depends on the wall the door is
@@ -134,12 +153,25 @@ namespace PawsAndLoot.Animation
             }
         }
 
+        private string[] Parts =>
+            side == PawsAndLoot.Gameplay.Interiors.HouseDoorSide.Back
+                ? BackPartNames
+                : FrontPartNames;
+
+        /// <summary>
+        /// The leaf is always the first entry, and the others follow it.
+        /// </summary>
+        private string LeafPartName => Parts[0];
+
         public void Configure(
             Transform configuredHouseRoot,
-            float configuredOpenDegrees)
+            float configuredOpenDegrees,
+            PawsAndLoot.Gameplay.Interiors.HouseDoorSide configuredSide =
+                PawsAndLoot.Gameplay.Interiors.HouseDoorSide.Front)
         {
             houseRoot = configuredHouseRoot;
             openDegrees = configuredOpenDegrees;
+            side = configuredSide;
             _resolved = false;
         }
 
@@ -176,10 +208,12 @@ namespace PawsAndLoot.Animation
 
             Transform leaf = null;
             var found = new List<Transform>();
+            string[] wanted = Parts;
+            string leafName = LeafPartName;
             foreach (Transform candidate in
                 houseRoot.GetComponentsInChildren<Transform>(true))
             {
-                foreach (string name in PartNames)
+                foreach (string name in wanted)
                 {
                     if (candidate.name != name)
                     {
@@ -187,7 +221,7 @@ namespace PawsAndLoot.Animation
                     }
 
                     found.Add(candidate);
-                    if (name == LeafName)
+                    if (name == leafName)
                     {
                         leaf = candidate;
                     }

@@ -32,6 +32,14 @@ namespace PawsAndLoot.Gameplay.Interiors
         [SerializeField]
         private bool leadsInside = true;
 
+        /// <summary>
+        /// Front or back. Both doors reach the same room, but at opposite ends of
+        /// it, and going in the back and out the front is what makes a house a route
+        /// instead of a trap.
+        /// </summary>
+        [SerializeField]
+        private HouseDoorSide side = HouseDoorSide.Front;
+
         [SerializeField]
         private MonoBehaviour matchStateSource;
 
@@ -41,6 +49,7 @@ namespace PawsAndLoot.Gameplay.Interiors
         private IMatchStateReader _matchState;
 
         public bool LeadsInside => leadsInside;
+        public HouseDoorSide Side => side;
         public HouseInterior Interior => interior;
 
         public bool IsAvailable =>
@@ -60,20 +69,34 @@ namespace PawsAndLoot.Gameplay.Interiors
         public PlayerInteractionType InteractionType =>
             PlayerInteractionType.Generic;
 
-        public string Prompt =>
-            leadsInside ? "집에 들어가기" : "집에서 나가기";
+        /// <summary>
+        /// Names the door, because a house now has two of them and a player at the
+        /// back needs to know that is where they are about to come out.
+        /// </summary>
+        public string Prompt
+        {
+            get
+            {
+                string which = side == HouseDoorSide.Back ? "뒷문" : "앞문";
+                return leadsInside
+                    ? $"{which}으로 들어가기"
+                    : $"{which}으로 나가기";
+            }
+        }
 
         public void Configure(
             HouseInterior configuredInterior,
             bool configuredLeadsInside,
             IMatchStateReader configuredMatchState,
-            HouseDoorLeaf configuredLeaf = null)
+            HouseDoorLeaf configuredLeaf = null,
+            HouseDoorSide configuredSide = HouseDoorSide.Front)
         {
             interior = configuredInterior;
             leadsInside = configuredLeadsInside;
             _matchState = configuredMatchState;
             matchStateSource = configuredMatchState as MonoBehaviour;
             leaf = configuredLeaf;
+            side = configuredSide;
         }
 
         /// <summary>
@@ -106,8 +129,8 @@ namespace PawsAndLoot.Gameplay.Interiors
             }
 
             Vector3 destination = leadsInside
-                ? interior.EntryPosition
-                : interior.ExitPosition;
+                ? interior.EntryPositionFor(side)
+                : interior.ExitPositionFor(side);
 
             Transform player = context.Player.transform;
             CharacterController controller =
@@ -163,7 +186,7 @@ namespace PawsAndLoot.Gameplay.Interiors
                 GameLogCategory.Player,
                 $"{context.Player.Role} went "
                 + $"{(leadsInside ? "into" : "out of")} house "
-                + $"{interior.InteriorId}.",
+                + $"{interior.InteriorId} by the {side} door.",
                 this);
             return true;
         }

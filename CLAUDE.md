@@ -127,6 +127,11 @@ Claude Code 전용 작업 지침서다.
 >    제외된다. 새로 움직이는 것을 추가하면 제외 규칙도 함께 넣는다.
 
 
+> **`FindFirstObjectByType`으로 고른 것을 테스트나 프로브의 기준으로 쓰지 않는다.**
+> 인스턴스 ID 순서는 맵의 성질이 아니다. 프로브가 "첫 보물" 옆에 도둑을 놓고 있었는데,
+> 실내 19개를 씬에 추가하자 ID 순서가 바뀌어 다른 보물이 먼저 나왔고 회귀가 깨졌다
+> (`ISSUE-041`). 이름 순서처럼 결정적인 기준으로 고른다.
+
 > **캐릭터를 텔레포트할 때 피벗이 아니라 발을 목표면에 맞춘다.** 문이 플레이어를
 > 바닥면 + 0.06m에 놓았는데, transform은 발바닥보다 0.94m 위에 있어서 캡슐 전체가
 > 바닥 슬래브 안에 파묻혔다. `CharacterController`는 1m짜리 관통을 아래로 밀어내
@@ -182,6 +187,7 @@ Ensure Bootstrap Services         Bootstrap 서비스 오브젝트 보장
 Rebuild MAP-001 Greybox Village   Game 씬 마을 재생성
 Validate MAP-001 Greybox Village  장소·경로·폭·충돌 검사
 Capture Map Overview              Game 씬 상공 평면도 → Logs/map-overview.png
+Report House Model Layout         집 모델 부품·치수 보고 (실내를 손대기 전에 먼저 잰다)
 Create Default Config Assets      Settings/Configs 7개 에셋 생성
 Validate Default Config Assets    설정값과 필수 참조 검사
 Create Default Log Config         로그 설정 생성
@@ -215,7 +221,7 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 - 결과 XML의 실제 테스트 수와 실패 목록
 - **테스트 0개 발견은 성공이 아니다**
 
-현재 기준선: Edit Mode 159개, Play Mode 131개 (`ISSUE-040` 시점).
+현재 기준선: Edit Mode 159개, Play Mode 136개 (`ISSUE-041` 시점).
 테스트를 추가하면 `13_CURRENT_STATE.md`의 `최근 검증` 표에 실제 수치를 기록한다.
 
 ### 런타임 검증 (자체 보고 프로브 패턴)

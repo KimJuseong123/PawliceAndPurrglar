@@ -37,11 +37,17 @@ namespace PawsAndLoot.Integration.Network
         /// <summary>
         /// Money per piece, and the reason it is small.
         ///
-        /// Sixteen pieces at this value comes to 800 against a 1,000 target, so a
-        /// thief who empties every house in the town still has to sell real
-        /// treasure to win. The rooms are a supplement, not a way around the game.
+        /// It has to hold one property: a thief who empties every room in the town
+        /// still cannot win on rooms alone. Thirty-eight pieces across nineteen
+        /// houses comes to 760 against a 1,000 target, so real treasure still has to
+        /// cross the town.
+        ///
+        /// It was 50 while eight houses had insides, which was 800 and fine. Opening
+        /// every house took the same figure to 1,900 and quietly made the rooms a
+        /// way around the game — caught by the test that asserts the property rather
+        /// than the number.
         /// </summary>
-        public const int ValuePerPiece = 50;
+        public const int ValuePerPiece = 20;
 
         /// <summary>
         /// One int for the count, then an interior id and a position each.

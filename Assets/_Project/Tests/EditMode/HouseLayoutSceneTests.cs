@@ -113,12 +113,16 @@ namespace PawsAndLoot.Tests.EditMode
                 path,
                 OpenSceneMode.Single);
 
+            // Parts that draw something. The rooms also hold collider-only objects
+            // named after the wall they were cut from, and those are built by the
+            // setup script on purpose — an unpack is what produces loose
+            // *renderers*.
             GameObject[] modelParts = scene
                 .GetRootGameObjects()
                 .SelectMany(root =>
-                    root.GetComponentsInChildren<Transform>(true))
-                .Where(t => t.name.StartsWith("BD_"))
-                .Select(t => t.gameObject)
+                    root.GetComponentsInChildren<Renderer>(true))
+                .Where(r => r.name.StartsWith("BD_"))
+                .Select(r => r.gameObject)
                 .ToArray();
 
             Assert.That(
@@ -139,13 +143,18 @@ namespace PawsAndLoot.Tests.EditMode
 
             // The consequence, measured directly. An unpack does not announce
             // itself, but the file size does.
+            //
+            // The ceiling is deliberately loose. It was 3.4 MB with eight hand-built
+            // greybox rooms and is 5.3 MB with nineteen furnished ones, and an
+            // unpack of nineteen houses would add about 6 MB on top of that — so
+            // this still catches the thing it exists for while leaving room for the
+            // rooms to be real. The scene is regenerated wholesale, so whatever
+            // this grows to lands in history again on every rebuild.
             var file = new System.IO.FileInfo(path);
             Assert.That(
                 file.Length / (1024f * 1024f),
-                Is.LessThan(5f),
-                $"Game.unity is {file.Length / (1024f * 1024f):0.0} MB. It is "
-                + "regenerated wholesale, so every rebuild commits another copy "
-                + "of whatever this grows to.");
+                Is.LessThan(6.5f),
+                $"Game.unity is {file.Length / (1024f * 1024f):0.0} MB.");
 
             // And the doors still exist, so this cannot be passed by having no
             // openable houses at all.

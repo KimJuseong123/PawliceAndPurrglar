@@ -44,12 +44,14 @@ namespace PawsAndLoot.Gameplay.Camera
         ///
         /// Nine metres at 34 degrees put the camera 6.2 m above the player, which is
         /// over the top of a wall — every neighbouring room was visible at once.
+        /// Read by the sightline test together with <see cref="Distance"/> and the
+        /// pitch cap, since the three of them and the wall height are one decision.
         /// </summary>
         [SerializeField, Min(1f)]
         private float distance = 6.5f;
 
         [SerializeField, Range(5f, 80f)]
-        private float pitchDegrees = 42f;
+        private float pitchDegrees = 34f;
 
         /// <summary>
         /// Low, which is the whole reason the cursor is locked. Unlocked, a slow
@@ -61,11 +63,18 @@ namespace PawsAndLoot.Gameplay.Camera
         /// <summary>
         /// How far the view may tilt. Clamped at both ends: past the low limit the
         /// camera slides into the floor, and past the high one it looks over the
-        /// wall into the neighbouring rooms — which is the problem the raised walls
-        /// were meant to fix.
+        /// wall into the neighbouring rooms (ISSUE-035).
+        ///
+        /// The high limit is not a taste decision, it is arithmetic. The camera sits
+        /// <c>lookOffset.y + distance·sin(pitch)</c> above the player, and the rooms
+        /// are the house model at 2.2x, so their 2.55 m walls stand 5.61 m tall.
+        /// At 38 degrees the camera is 5.20 m up and stays inside; at the 62 it used
+        /// to allow it would be 6.94 m and looking over the top. The upper bound and
+        /// the room scale have to move together, which
+        /// <c>InteriorSightlinePlayModeTests</c> is there to enforce.
         /// </summary>
         [SerializeField]
-        private Vector2 pitchLimits = new(14f, 62f);
+        private Vector2 pitchLimits = new(14f, 38f);
 
         [SerializeField, Min(0.01f)]
         private float smoothTimeSeconds = 0.08f;
@@ -83,6 +92,14 @@ namespace PawsAndLoot.Gameplay.Camera
         public bool IsActive => _active;
         public float Yaw => _yaw;
         public float Pitch => pitchDegrees;
+
+        /// <summary>
+        /// Exposed so a test can work out how high the camera can ever get, rather
+        /// than being told the answer.
+        /// </summary>
+        public float Distance => distance;
+        public float MaxPitch => pitchLimits.y;
+        public Vector3 LookOffset => lookOffset;
 
         /// <summary>
         /// True while the cursor is deliberately free — Escape was pressed. Exposed

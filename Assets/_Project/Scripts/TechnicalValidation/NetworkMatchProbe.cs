@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -734,9 +735,22 @@ namespace PawsAndLoot.TechnicalValidation
             }
         }
 
+        /// <summary>
+        /// The same treasure every run.
+        ///
+        /// <c>FindFirstObjectByType</c> hands back whatever instance id ordering
+        /// puts first, which is not a property of the map: adding nineteen rooms to
+        /// the scene silently changed which treasure this was, and with it the
+        /// height the thief was placed at. Ordering by name makes the run
+        /// reproducible and the failure, when there is one, about the thing under
+        /// test.
+        /// </summary>
         private void PlaceThiefBesideLoot()
         {
-            LootItem loot = FindFirstObjectByType<LootItem>();
+            LootItem loot = FindObjectsByType<LootItem>(
+                    FindObjectsSortMode.None)
+                .OrderBy(item => item.name, StringComparer.Ordinal)
+                .FirstOrDefault();
             if (loot == null)
             {
                 return;
@@ -749,7 +763,10 @@ namespace PawsAndLoot.TechnicalValidation
 
         private void PlaceThiefBesideSaleZone()
         {
-            LootSaleZone zone = FindFirstObjectByType<LootSaleZone>();
+            LootSaleZone zone = FindObjectsByType<LootSaleZone>(
+                    FindObjectsSortMode.None)
+                .OrderBy(area => area.name, StringComparer.Ordinal)
+                .FirstOrDefault();
             if (zone == null)
             {
                 return;
@@ -948,10 +965,22 @@ namespace PawsAndLoot.TechnicalValidation
             var controller = link.GetComponent<CharacterController>();
             if (controller != null)
             {
+                // Feet on the point, not the pivot on it.
+                //
+                // A character's transform sits about 0.9 m above their soles, so
+                // writing the pivot to a spot on the ground buries the capsule and
+                // the controller resolves that by pushing down — the character
+                // drops away from whatever they were placed beside. It went
+                // unnoticed while the treasure this lands next to happened to
+                // stand on a plinth, and broke the moment a different one came
+                // first. The same mistake the house doors made (ISSUE-040).
+                float lift =
+                    controller.height * 0.5f - controller.center.y;
+
                 // A CharacterController ignores direct transform writes while
                 // enabled, so it is cycled around the move.
                 controller.enabled = false;
-                link.transform.position = position;
+                link.transform.position = position + Vector3.up * lift;
                 controller.enabled = true;
                 return;
             }
