@@ -338,6 +338,23 @@ namespace PawsAndLoot.Companions
 
         private Resolution ResolveTrack(float nowSeconds)
         {
+            // MAP-008. A thief who has gone indoors is reported as the house they
+            // went into, not as where they actually are.
+            //
+            // Their real position is in a room built far outside the town, so
+            // pointing at it would send the officer and the dog off the edge of
+            // the map. The door is also the honest answer: the trail genuinely
+            // ends there, and "he went in there" is what a dog at a doorway
+            // tells you.
+            Vector3? indoors = TryResolveIndoorDoor();
+            if (indoors.HasValue)
+            {
+                return new Resolution(
+                    true,
+                    CompanionCommandOutcome.TrailFound,
+                    indoors.Value);
+            }
+
             if (scentTrail == null
                 || !scentTrail.TryGetFreshestPoint(
                     nowSeconds,
@@ -353,6 +370,58 @@ namespace PawsAndLoot.Companions
                 true,
                 CompanionCommandOutcome.TrailFound,
                 point);
+        }
+
+        /// <summary>
+        /// The doorway of whichever house the thief is inside, or null when they
+        /// are out in the streets.
+        ///
+        /// Found by asking the world rather than being wired up, because the rooms
+        /// and their doors are built by the map generator and the thief's location
+        /// only becomes true at runtime.
+        /// </summary>
+        private static Vector3? TryResolveIndoorDoor()
+        {
+            PawsAndLoot.Gameplay.Interiors.PlayerInteriorState thiefState =
+                null;
+            foreach (PawsAndLoot.Gameplay.Players.PlayerRoleIdentity candidate
+                in Object.FindObjectsByType<
+                    PawsAndLoot.Gameplay.Players.PlayerRoleIdentity>(
+                    FindObjectsSortMode.None))
+            {
+                if (candidate.Role
+                    != PawsAndLoot.Gameplay.Players.PlayerRole.Thief)
+                {
+                    continue;
+                }
+
+                thiefState = candidate.GetComponent<
+                    PawsAndLoot.Gameplay.Interiors.PlayerInteriorState>();
+                break;
+            }
+
+            if (thiefState == null || !thiefState.IsIndoors)
+            {
+                return null;
+            }
+
+            foreach (PawsAndLoot.Gameplay.Interiors.HouseDoorway door in
+                Object.FindObjectsByType<
+                    PawsAndLoot.Gameplay.Interiors.HouseDoorway>(
+                    FindObjectsSortMode.None))
+            {
+                // The street-side door of that house: the one the officer can
+                // actually walk to.
+                if (door.LeadsInside
+                    && door.Interior != null
+                    && door.Interior.InteriorId
+                        == thiefState.CurrentInteriorId)
+                {
+                    return door.transform.position;
+                }
+            }
+
+            return null;
         }
 
         private Resolution ResolveDistract(

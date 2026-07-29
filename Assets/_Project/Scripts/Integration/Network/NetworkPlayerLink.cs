@@ -145,6 +145,25 @@ namespace PawsAndLoot.Integration.Network
         [SerializeField]
         private PawsAndLoot.Animation.CompanionLegAnimator legAnimator;
 
+        [SerializeField]
+        private PawsAndLoot.Gameplay.Interiors.PlayerInteriorState
+            interiorState;
+
+        /// <summary>
+        /// MAP-008. Which house this player is inside, written only by the host.
+        ///
+        /// Replicated because three separate things read it and two of them are on
+        /// the other machine: the indoor camera switches on the player's own
+        /// screen, and the dog reports a house rather than a position on the
+        /// officer's. A client that guessed would put the camera in a room while
+        /// the host still had the character in the street.
+        /// </summary>
+        private readonly NetworkVariable<int> _interiorId =
+            new(
+                PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
         /// <summary>
         /// THROW-011. The officer's purse, written only by the host.
         ///
@@ -271,8 +290,11 @@ namespace PawsAndLoot.Integration.Network
                 null,
             PoliceWallet configuredPoliceWallet = null,
             PawsAndLoot.Animation.CompanionLegAnimator configuredLegAnimator =
-                null)
+                null,
+            PawsAndLoot.Gameplay.Interiors.PlayerInteriorState
+                configuredInteriorState = null)
         {
+            interiorState = configuredInteriorState;
             policeWallet = configuredPoliceWallet;
             legAnimator = configuredLegAnimator;
             throwPresenter = configuredThrowPresenter;
@@ -553,6 +575,11 @@ namespace PawsAndLoot.Integration.Network
                 _policeAmount.Value = policeWallet.Amount;
             }
 
+            if (interiorState != null)
+            {
+                _interiorId.Value = interiorState.CurrentInteriorId;
+            }
+
             if (wallet != null)
             {
                 _soldAmount.Value = wallet.SoldAmount;
@@ -585,6 +612,11 @@ namespace PawsAndLoot.Integration.Network
             if (policeWallet != null)
             {
                 policeWallet.ApplyReplicated(_policeAmount.Value);
+            }
+
+            if (interiorState != null)
+            {
+                interiorState.ApplyReplicated(_interiorId.Value);
             }
 
             // What is in hand, so the HUD on this screen matches the hand the

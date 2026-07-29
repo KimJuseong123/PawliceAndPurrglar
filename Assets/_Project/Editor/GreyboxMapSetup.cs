@@ -7,6 +7,7 @@ using PawsAndLoot.Companions;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Arrest;
+using PawsAndLoot.Gameplay.Interiors;
 using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Map;
@@ -185,6 +186,10 @@ namespace PawsAndLoot.Editor
         [MenuItem("Paws & Loot/Setup/Rebuild MAP-001 Greybox Village")]
         public static void CreateGameScene()
         {
+            // Static, so a second rebuild in the same editor session would
+            // otherwise build interiors for the previous run's houses too.
+            _enterableHouses.Clear();
+            _houseScale = 0f;
             PlaceholderModelLibrary.ResetMissingAssetLog();
             EnsureMaterialFolder();
             Material ground = LoadOrCreateMaterial(
@@ -395,7 +400,8 @@ namespace PawsAndLoot.Editor
                 villageRoot.transform);
             CreateAuthoredSceneDressing(
                 villageRoot.transform,
-                locations);
+                locations,
+                matchRuntime);
             CompanionCommandDispatcher companionDispatcher =
                 CreateCompanions(
                     villageRoot.transform,
@@ -869,7 +875,8 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static void CreateAuthoredSceneDressing(
             Transform parent,
-            IReadOnlyDictionary<GreyboxLocationId, Transform> locations)
+            IReadOnlyDictionary<GreyboxLocationId, Transform> locations,
+            MatchRuntimeState matchRuntime)
         {
             Transform root = CreateChild("Authored Dressing", parent);
             root.localPosition = Vector3.zero;
@@ -914,6 +921,30 @@ namespace PawsAndLoot.Editor
                     + new Vector3(-3.5f, 0f, 5f));
 
             CreateExpansionDistricts(root);
+
+            // MAP-008. The host scatters loot around the rooms when the match
+            // starts and announces where it went. Rolling a shared seed on both
+            // machines would be smaller on the wire and would silently put the
+            // loot in different rooms the moment one side made one extra call.
+            var scatterObject = new GameObject("Interior Loot Scatter");
+            scatterObject.transform.SetParent(parent);
+            scatterObject
+                .AddComponent<NetworkInteriorLootScatter>()
+                .Configure(
+                    matchRuntime,
+                    LoadOrCreateMaterial(
+                        "Greybox_InteriorLoot",
+                        new Color(0.95f, 0.78f, 0.25f)));
+
+            // Interiors last, because they need the finished houses: each one
+            // takes its exit point from the building it belongs to.
+            HouseInteriorSetup.Build(
+                root,
+                matchRuntime,
+                _enterableHouses,
+                LoadOrCreateMaterial2,
+                CreateCube,
+                CreateChild);
         }
 
         /// <summary>
@@ -1026,13 +1057,22 @@ namespace PawsAndLoot.Editor
 
             for (int index = 0; index < centers.Count; index++)
             {
-                CreateDressingBuilding(
-                    stems[(startIndex + index) % stems.Length],
+                string stem = stems[(startIndex + index) % stems.Length];
+                Transform house = CreateDressingBuilding(
+                    stem,
                     root,
                     centers[index],
                     footprintX,
                     footprintZ,
                     HouseScale());
+
+                // Only the model that has an inside gets one. Giving a door to
+                // the solid variant would promise a room that is not there.
+                if (house != null
+                    && stem == "building_house_1f_with_interior")
+                {
+                    _enterableHouses.Add(house);
+                }
             }
 
             return centers.Count;
@@ -1349,7 +1389,8 @@ namespace PawsAndLoot.Editor
                         PawsAndLoot.Gameplay.Items.ToolCarrier>(),
                     player.GetComponent<PoliceWallet>(),
                     player.GetComponent<
-                        PawsAndLoot.Animation.CompanionLegAnimator>());
+                        PawsAndLoot.Animation.CompanionLegAnimator>(),
+                    player.GetComponent<PlayerInteriorState>());
                 links.Add(link);
             }
 
@@ -1506,7 +1547,7 @@ namespace PawsAndLoot.Editor
         /// MAP-002. A dressing building plus one Box collider derived from the
         /// model's measured bounds. The visual mesh is never used for collision.
         /// </summary>
-        private static void CreateDressingBuilding(
+        private static Transform CreateDressingBuilding(
             string stem,
             Transform parent,
             Vector3 groundCenter,
@@ -1529,7 +1570,7 @@ namespace PawsAndLoot.Editor
             if (size.y <= 0f)
             {
                 UnityEngine.Object.DestroyImmediate(anchor.gameObject);
-                return;
+                return null;
             }
 
             // Sized from what the model actually became, not from the lot it was
@@ -1539,6 +1580,7 @@ namespace PawsAndLoot.Editor
             BoxCollider box = anchor.gameObject.AddComponent<BoxCollider>();
             box.center = new Vector3(0f, size.y * 0.5f, 0f);
             box.size = size;
+            return anchor;
         }
 
         /// <summary>
@@ -1550,6 +1592,12 @@ namespace PawsAndLoot.Editor
         /// it to little more than half the size of a 8 m one, so the same model
         /// read as half a dozen different buildings.
         /// </summary>
+        /// <summary>
+        /// Houses that get an inside, gathered as they are built so the interiors
+        /// can be generated once at the end.
+        /// </summary>
+        private static readonly List<Transform> _enterableHouses = new();
+
         private static float HouseScale()
         {
             if (_houseScale <= 0f)
@@ -2555,6 +2603,10 @@ namespace PawsAndLoot.Editor
             // THROW-001/002/003. A prop slot separate from the loot slot, so
             // picking up a rock never costs the thief their jewels.
             player.AddComponent<PawsAndLoot.Gameplay.Players.StunState>();
+
+            // MAP-008. Which house this player is inside, if any. Read by the
+            // doorway, the indoor camera and the dog's report.
+            player.AddComponent<PlayerInteriorState>();
             PawsAndLoot.Gameplay.Items.ToolCarrier toolCarrier =
                 player.AddComponent<PawsAndLoot.Gameplay.Items.ToolCarrier>();
             toolCarrier.Configure(identity, matchRuntime);
@@ -2675,6 +2727,23 @@ namespace PawsAndLoot.Editor
                 FixedCameraOffset,
                 0.12f);
             Camera.main.transform.rotation = followCamera.FixedRotation;
+
+            // MAP-008. The free view, used only while the local player is inside
+            // a house. It disables the town camera rather than both of them
+            // writing the transform and fighting over it.
+            //
+            // The town keeps one fixed angle so both players read the streets the
+            // same way and nobody gains an advantage by turning the camera. A room
+            // is the opposite case: it has four walls, and a fixed overhead angle
+            // would put two of them between the camera and the player.
+            Camera.main.gameObject
+                .AddComponent<
+                    PawsAndLoot.Gameplay.Camera.InteriorOrbitCamera>()
+                .Configure(
+                    followCamera,
+                    UnityEngine.Object
+                        .FindFirstObjectByType<
+                            LocalPlayerRoleSelector>());
             return followCamera;
         }
 
@@ -4383,6 +4452,20 @@ namespace PawsAndLoot.Editor
             var child = new GameObject(name);
             child.transform.SetParent(parent);
             return child.transform;
+        }
+
+        /// <summary>
+        /// Two-argument wrapper so this can be passed as a delegate.
+        ///
+        /// A method group with an optional parameter does not convert to a
+        /// two-argument Func, and the interior builder only ever wants the
+        /// default shader.
+        /// </summary>
+        private static Material LoadOrCreateMaterial2(
+            string assetName,
+            Color color)
+        {
+            return LoadOrCreateMaterial(assetName, color);
         }
 
         private static Material LoadOrCreateMaterial(

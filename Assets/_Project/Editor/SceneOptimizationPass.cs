@@ -250,7 +250,8 @@ namespace PawsAndLoot.Editor
                     }
                 }
 
-                if (IsAnimatedByGreeter(current))
+                if (IsAnimatedByGreeter(current)
+                    || IsAnimatedByDoor(current))
                 {
                     return true;
                 }
@@ -268,6 +269,28 @@ namespace PawsAndLoot.Editor
         /// Whatever the greeter holds a reference to is excluded by
         /// construction, so renaming the objects cannot break it again.
         /// </summary>
+        /// <summary>
+        /// The same question for the house doors, and asked the same way.
+        ///
+        /// A baked door leaf turns on its hinge and stays shut on screen, with
+        /// nothing in any log to say so — the exact failure the bin lid had.
+        /// </summary>
+        private static bool IsAnimatedByDoor(Transform candidate)
+        {
+            foreach (PawsAndLoot.Animation.HouseDoorLeaf leaf in
+                Object.FindObjectsByType<
+                    PawsAndLoot.Animation.HouseDoorLeaf>(
+                    FindObjectsSortMode.None))
+            {
+                if (leaf.Hinge == candidate)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static bool IsAnimatedByGreeter(Transform candidate)
         {
             foreach (RaccoonBinGreeter greeter in

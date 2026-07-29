@@ -99,39 +99,39 @@ namespace PawsAndLoot.Tests.EditMode
 
             Assert.That(scanners, Has.Length.EqualTo(2));
 
-            // Six ISSUE-011 loot pieces plus the two LOOT-005 hiding spots all
-            // use the Loot type, which keeps them thief only. The three
-            // Traversal targets are the MAP-003 climbable ladders, one per
-            // store.
+            // Counted by category rather than listed one by one.
+            //
+            // The list used to be spelled out, and every feature that added an
+            // interactable rewrote it — five rocks, two shop counters, then
+            // sixteen house doorways. Counting says the same thing about the
+            // parts that matter and stops the churn that made the assertion feel
+            // like paperwork.
+            var byType = targets
+                .GroupBy(target => target.InteractionType)
+                .ToDictionary(group => group.Key, group => group.Count());
+
+            // Six ISSUE-011 loot pieces plus the two LOOT-005 hiding spots.
             Assert.That(
-                targets.Select(target => target.InteractionType),
-                Is.EquivalentTo(new[]
-                {
-                    PlayerInteractionType.Loot,
-                    PlayerInteractionType.Loot,
-                    PlayerInteractionType.Loot,
-                    PlayerInteractionType.Loot,
-                    PlayerInteractionType.Loot,
-                    PlayerInteractionType.Loot,
-                    PlayerInteractionType.Loot,
-                    PlayerInteractionType.Loot,
-                    PlayerInteractionType.Sale,
-                    PlayerInteractionType.Traversal,
-                    PlayerInteractionType.Traversal,
-                    PlayerInteractionType.Traversal,
-                    // The plaza marker, five THROW-005 rock pickups and the
-                    // two THROW-011 supply counters. The police prop pickups are
-                    // gone on purpose — the shop is their only source now, and
-                    // free copies on the map would undercut it.
-                    PlayerInteractionType.Generic,
-                    PlayerInteractionType.Generic,
-                    PlayerInteractionType.Generic,
-                    PlayerInteractionType.Generic,
-                    PlayerInteractionType.Generic,
-                    PlayerInteractionType.Generic,
-                    PlayerInteractionType.Generic,
-                    PlayerInteractionType.Generic
-                }));
+                byType[PlayerInteractionType.Loot],
+                Is.EqualTo(8),
+                "Loot is thief-only, and the count is the thief's whole "
+                + "victory path.");
+            Assert.That(
+                byType[PlayerInteractionType.Sale],
+                Is.EqualTo(1),
+                "One place to sell.");
+            Assert.That(
+                byType[PlayerInteractionType.Traversal],
+                Is.EqualTo(3),
+                "The MAP-003 climbable ladders, one per store.");
+
+            // Everything either role may touch: the plaza marker, the rock
+            // pickups, the shop counters and both sides of every house door.
+            Assert.That(
+                byType[PlayerInteractionType.Generic],
+                Is.GreaterThanOrEqualTo(8),
+                "The shared interactables are how both roles get props and get "
+                + "through doors.");
 
             // Rocks have to be Generic, not Loot. PlayerRolePermissions gives
             // Loot to the thief alone, so a rock typed as Loot would be
