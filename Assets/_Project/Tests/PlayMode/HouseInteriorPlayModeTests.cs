@@ -63,10 +63,14 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.EqualTo(interior.InteriorId),
                 "Going in has to be recorded, or the camera and the dog have "
                 + "nothing to read.");
+            // Horizontally. The door deliberately puts the player a metre higher
+            // than the entry point, because the entry point is the floor and a
+            // character's transform sits about that far above their feet — placing
+            // the pivot on the floor buried the capsule in it.
+            Vector3 arrival =
+                thief.transform.position - interior.EntryPosition;
             Assert.That(
-                Vector3.Distance(
-                    thief.transform.position,
-                    interior.EntryPosition),
+                new Vector2(arrival.x, arrival.z).magnitude,
                 Is.LessThan(1f),
                 "The thief has to actually arrive inside the room.");
             Assert.That(
@@ -95,10 +99,12 @@ namespace PawsAndLoot.Tests.PlayMode
                 wayOut.TryInteract(new PlayerInteractionContext(thief)),
                 Is.True);
             Assert.That(state.IsIndoors, Is.False);
+            // Horizontally, for the same reason as going in: the exit point is
+            // the ground and the player stands about a metre above it.
+            Vector3 departure =
+                thief.transform.position - interior.ExitPosition;
             Assert.That(
-                Vector3.Distance(
-                    thief.transform.position,
-                    interior.ExitPosition),
+                new Vector2(departure.x, departure.z).magnitude,
                 Is.LessThan(1f),
                 "Leaving has to put them back in the town.");
         }

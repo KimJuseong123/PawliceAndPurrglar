@@ -118,10 +118,26 @@ namespace PawsAndLoot.Gameplay.Interiors
                 controller.enabled = false;
             }
 
-            // A hair above the floor. Landing exactly on it leaves the capsule
-            // and the floor sharing a surface, and the controller resolves that
-            // by pushing down.
-            player.position = destination + Vector3.up * 0.06f;
+            // Feet on the floor, not the pivot on the floor.
+            //
+            // A character's transform sits about 0.9 m above their soles, so
+            // putting the transform on the surface buries the whole capsule in it.
+            // That is nearly a metre of penetration for the controller to sort out
+            // on the frame it wakes up, and it sorts it out downward: the player
+            // dropped straight through the floor of every room, immediately. The
+            // earlier accumulated-fall-speed fix was a real bug and a different
+            // one, which is why this survived it.
+            //
+            // From the capsule's own numbers, not its bounds: the controller has
+            // just been switched off and a disabled collider's bounds are not
+            // reliable. Read rather than assumed either way, because the two
+            // characters are different models and neither figure belongs here.
+            float feetToPivot = controller != null
+                ? (controller.height * 0.5f - controller.center.y)
+                    * Mathf.Abs(player.lossyScale.y)
+                : 0f;
+            player.position = destination
+                + Vector3.up * (feetToPivot + 0.06f);
             if (hadController)
             {
                 controller.enabled = true;
