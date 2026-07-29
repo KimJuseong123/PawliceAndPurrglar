@@ -396,6 +396,17 @@ namespace PawsAndLoot.Editor
                 MeshCollider collider =
                     shell.AddComponent<MeshCollider>();
                 collider.sharedMesh = filter.sharedMesh;
+
+                // The link the cutaway needs. A cast from the camera hits this
+                // collider, which draws nothing, so the renderer it was cut from has
+                // to be recorded here — matching them by name at runtime would fail
+                // silently the day a part is renamed. The floor is left out: taking
+                // away the floor the player stands on is not a view of them.
+                if (!part.name.StartsWith("BD_House1F_Foundation"))
+                {
+                    shell.AddComponent<InteriorOccluder>().Configure(part);
+                }
+
                 added++;
             }
 

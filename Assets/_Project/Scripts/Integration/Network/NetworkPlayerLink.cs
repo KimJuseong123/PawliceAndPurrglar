@@ -219,6 +219,22 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
 
+        /// <summary>
+        /// Off the ground, replicated.
+        ///
+        /// The pose cannot work this out for itself on a client. A replicated
+        /// character is moved by writing its position, not by its controller, so
+        /// <c>isGrounded</c> is meaningless there — and reading the vertical
+        /// motion instead would be measuring a value that arrives in lumps, which
+        /// is the mistake that made both characters look legless on the client
+        /// (ISSUE-026). The host says so.
+        /// </summary>
+        private readonly NetworkVariable<bool> _airborne =
+            new(
+                false,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
         private int _appliedStunCount;
 
         [SerializeField, Min(1f)]
@@ -245,6 +261,7 @@ namespace PawsAndLoot.Integration.Network
 
         private Vector2 _submittedMove;
         private bool _submittedDash;
+        private bool _submittedJump;
         private bool _remoteDriven;
 
         public PlayerRole Role =>
@@ -509,6 +526,21 @@ namespace PawsAndLoot.Integration.Network
         }
 
         /// <summary>
+        /// A jump, as its own message rather than another flag on the movement one.
+        ///
+        /// Movement is a stream and a jump is an event. Riding along on the movement
+        /// packet would mean the press is only heard if it lands on a frame the
+        /// stream happens to be sent, which is how a jump comes to work four times
+        /// out of five. This follows <c>SubmitInteractRpc</c>, which is an event for
+        /// the same reason.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitJumpRpc()
+        {
+            _submittedJump = true;
+        }
+
+        /// <summary>
         /// Consumes the queued remote input. The host applies it through the
         /// same motor the local player uses, so both roles obey identical rules.
         /// </summary>
@@ -523,6 +555,12 @@ namespace PawsAndLoot.Integration.Network
             {
                 _submittedDash = false;
                 motor.TryStartDash(_submittedMove);
+            }
+
+            if (_submittedJump)
+            {
+                _submittedJump = false;
+                motor.TryJump();
             }
 
             motor.Move(_submittedMove, deltaTime);
@@ -558,6 +596,16 @@ namespace PawsAndLoot.Integration.Network
 
         private void PublishGameplayState()
         {
+            if (motor != null)
+            {
+                _airborne.Value = motor.IsAirborne;
+
+                // The host's own pose, from the motor that just ran. The client
+                // branch reads the replicated flag instead; this branch returns
+                // before it, so both need saying.
+                legAnimator?.SetAirborne(motor.IsAirborne);
+            }
+
             if (stun != null)
             {
                 _stunSeconds.Value = stun.RemainingSeconds;
@@ -695,6 +743,11 @@ namespace PawsAndLoot.Integration.Network
             // stuttering transform. The correction above arrives at its target
             // and then waits for the next packet, so a measured speed reads zero
             // on most frames and the character slides with still legs.
+            // Told, not worked out. A replicated character is moved by writing its
+            // position, so its controller never reports a contact and its vertical
+            // motion arrives in lumps.
+            legAnimator?.SetAirborne(_airborne.Value);
+
             if (legAnimator != null && motor != null)
             {
                 legAnimator.SetExternalSpeed(

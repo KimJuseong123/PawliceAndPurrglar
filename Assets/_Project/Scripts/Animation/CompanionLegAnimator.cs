@@ -19,6 +19,15 @@ namespace PawsAndLoot.Animation
     [DisallowMultipleComponent]
     public sealed class CompanionLegAnimator : MonoBehaviour
     {
+
+        /// <summary>
+        /// The jump pose, in degrees. Large on purpose — the ask was for
+        /// something comical, and a tasteful jump on a chibi model reads as a
+        /// hitch in the walk. The signs are per-limb, so the two sides splay
+        /// outward instead of both swinging the same way.
+        /// </summary>
+        private const float JumpUpperDegrees = 54f;
+        private const float JumpLowerDegrees = -38f;
         private enum LegSide
         {
             Left,
@@ -144,6 +153,9 @@ namespace PawsAndLoot.Animation
         private int _externalSpeedFrame = int.MinValue;
         private float _phase;
         private float _movingBlend;
+        private float _airborneBlend;
+        private float _airborneTarget;
+        private int _airborneFrame = -10;
 
         public int LegCount => _legs.Count;
         public float MovingBlend => _movingBlend;
@@ -589,6 +601,49 @@ namespace PawsAndLoot.Animation
             _externalSpeedFrame = Time.frameCount;
         }
 
+        /// <summary>
+        /// Off the ground, so the limbs stop walking and start flailing.
+        ///
+        /// Told rather than worked out, for the same reason the speed is: on a client
+        /// the character is moved by writing its position, so it has no grounded
+        /// state of its own and its vertical motion arrives in lumps.
+        /// </summary>
+        public void SetAirborne(bool airborne)
+        {
+            _airborneTarget = airborne ? 1f : 0f;
+            _airborneFrame = Time.frameCount;
+        }
+
+        /// <summary>
+        /// The motor to ask when nobody has told this animator anything.
+        ///
+        /// A single reference, set by the scene builder, so a character works with
+        /// or without a session: in the editor scene there is no link publishing
+        /// anything, and without this the jump would be invisible in exactly the
+        /// place it is easiest to test. Null on the animals, which do not jump.
+        ///
+        /// The network call wins while it is fresh, because a replicated character's
+        /// own controller has no useful grounded state — its position is written,
+        /// not walked.
+        /// </summary>
+        [SerializeField]
+        private PawsAndLoot.Gameplay.Players.PlayerMovementMotor
+            airborneSource;
+
+        public void ConfigureAirborneSource(
+            PawsAndLoot.Gameplay.Players.PlayerMovementMotor motor)
+        {
+            airborneSource = motor;
+        }
+
+        /// <summary>
+        /// How far into the jump pose the limbs are. Exposed so a test can assert
+        /// that a jump looks different from a walk, which is the entire ask —
+        /// "우스꽝스럽게" is not something a number can check, but "not the same
+        /// pose as standing" is.
+        /// </summary>
+        public float AirborneBlend => _airborneBlend;
+
         private bool HasFreshExternalSpeed =>
             _externalSpeedFrame >= Time.frameCount - 1;
 
@@ -631,6 +686,19 @@ namespace PawsAndLoot.Animation
                 target,
                 blendPerSecond * deltaTime);
 
+            // Faster than the walk blend. A jump is over in under half a second, so
+            // easing into the pose at walking speed would mean landing before the
+            // legs had finished leaving the ground.
+            float airborneWanted = _airborneFrame >= Time.frameCount - 1
+                ? _airborneTarget
+                : (airborneSource != null && airborneSource.IsAirborne
+                    ? 1f
+                    : 0f);
+            _airborneBlend = Mathf.MoveTowards(
+                _airborneBlend,
+                airborneWanted,
+                8f * deltaTime);
+
             if (_movingBlend > 0.001f)
             {
                 _phase += deltaTime * stridesPerSecond * Mathf.PI * 2f;
@@ -652,21 +720,35 @@ namespace PawsAndLoot.Animation
                     out float hipDegrees,
                     out float kneeDegrees);
 
+                // A star jump, deliberately silly: every limb thrown out at once
+                // and the lower joints kicked the other way. The stride is faded
+                // out underneath rather than switched off, so a jump taken at a run
+                // does not snap.
+                float hipAngle = hipDegrees * _movingBlend * leg.UpperSign
+                    * leg.Amplitude;
+                float kneeAngle = kneeDegrees * _movingBlend * leg.LowerSign
+                    * leg.Amplitude * leg.Amplitude;
+                if (_airborneBlend > 0.001f)
+                {
+                    hipAngle = Mathf.Lerp(
+                        hipAngle,
+                        JumpUpperDegrees * leg.UpperSign * leg.Amplitude,
+                        _airborneBlend);
+                    kneeAngle = Mathf.Lerp(
+                        kneeAngle,
+                        JumpLowerDegrees * leg.LowerSign * leg.Amplitude,
+                        _airborneBlend);
+                }
+
                 leg.Upper.localRotation = leg.UpperRest
-                    * Quaternion.AngleAxis(
-                        hipDegrees * _movingBlend * leg.UpperSign
-                        * leg.Amplitude,
-                        leg.UpperAxis);
+                    * Quaternion.AngleAxis(hipAngle, leg.UpperAxis);
                 if (leg.Lower != null)
                 {
                     // The elbow gets even less than the shoulder. A forearm
                     // bending as far as a knee is the single most flail-like
                     // part of the whole thing.
                     leg.Lower.localRotation = leg.LowerRest
-                        * Quaternion.AngleAxis(
-                            kneeDegrees * _movingBlend * leg.LowerSign
-                            * leg.Amplitude * leg.Amplitude,
-                            leg.LowerAxis);
+                        * Quaternion.AngleAxis(kneeAngle, leg.LowerAxis);
                 }
             }
 

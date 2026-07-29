@@ -44,6 +44,15 @@ namespace PawsAndLoot.Gameplay.Players
                 movementMotor.TryStartDash(input);
             }
 
+            // Left shift, not space. Space is the dash, which is a tuned mechanic
+            // with its own speed and cooldown in the rules, and taking it for a jump
+            // would have removed something to add something. Shift is free and falls
+            // under the same hand as WASD.
+            if (keyboard?.leftShiftKey.wasPressedThisFrame == true)
+            {
+                movementMotor.TryJump();
+            }
+
             movementMotor.Move(input, Time.deltaTime);
         }
 

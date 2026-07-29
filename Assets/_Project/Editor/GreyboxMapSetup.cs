@@ -2557,6 +2557,12 @@ namespace PawsAndLoot.Editor
                     PawsAndLoot.Animation.CompanionLegAnimator
                         .GaitMode.Biped,
                     characterAnimator);
+
+                // So the jump pose works with no session running. The link tells it
+                // during a match; this is what makes it visible in the editor scene,
+                // which is also the only place it can be tested.
+                stride.ConfigureAirborneSource(
+                    player.GetComponent<PlayerMovementMotor>());
                 if (stride.LegCount == 0)
                 {
                     Debug.LogWarning(
@@ -2756,6 +2762,18 @@ namespace PawsAndLoot.Editor
                     PawsAndLoot.Gameplay.Camera.InteriorOrbitCamera>()
                 .Configure(
                     followCamera,
+                    UnityEngine.Object
+                        .FindFirstObjectByType<
+                            LocalPlayerRoleSelector>());
+
+            // Takes the wall out from between the camera and the player. On the same
+            // object as the camera it serves, and per screen only — nothing in the
+            // simulation reads it, so the two players can have different walls
+            // missing.
+            Camera.main.gameObject
+                .AddComponent<
+                    PawsAndLoot.Gameplay.Camera.InteriorCutawayView>()
+                .Configure(
                     UnityEngine.Object
                         .FindFirstObjectByType<
                             LocalPlayerRoleSelector>());

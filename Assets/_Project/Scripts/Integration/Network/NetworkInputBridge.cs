@@ -169,6 +169,15 @@ namespace PawsAndLoot.Integration.Network
                 && keyboard.spaceKey.wasPressedThisFrame;
 
             link.SubmitInputRpc(move, dash);
+
+            // Sent only on the frame it is pressed, and as its own message. A jump
+            // is an event; folding it into the movement stream would drop presses
+            // that landed between sends.
+            if (keyboard != null
+                && keyboard.leftShiftKey.wasPressedThisFrame)
+            {
+                link.SubmitJumpRpc();
+            }
             SubmitActions(link, keyboard);
         }
 

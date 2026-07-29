@@ -504,6 +504,22 @@ namespace PawsAndLoot.TechnicalValidation
                     _thighPeak[identity.Role] = 0f;
                 }
 
+                // Only while the walk is what is writing this bone.
+                //
+                // The jump pose throws the same thigh 54 degrees against the walk's
+                // 24, so counting those frames would let this figure look healthy
+                // for a character whose walk had stopped working entirely — and
+                // diagnosing exactly that is what it is for. Asked of the animator's
+                // own blend rather than of grounded state: the pose eases out over
+                // several frames after landing, so the feet are back down while the
+                // limbs are still splayed.
+                var poser = identity
+                    .GetComponent<PawsAndLoot.Animation.CompanionLegAnimator>();
+                if (poser != null && poser.AirborneBlend > 0.05f)
+                {
+                    continue;
+                }
+
                 _thighPeak[identity.Role] = Mathf.Max(
                     _thighPeak[identity.Role],
                     Quaternion.Angle(

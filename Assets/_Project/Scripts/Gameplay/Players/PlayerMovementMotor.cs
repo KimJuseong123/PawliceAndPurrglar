@@ -23,6 +23,7 @@ namespace PawsAndLoot.Gameplay.Players
         private StunState _stun;
         private bool _lookedForStun;
         private float _verticalVelocity;
+        private float _airborneSince;
 
         /// <summary>
         /// Clears the accumulated fall speed.
@@ -87,7 +88,30 @@ namespace PawsAndLoot.Gameplay.Players
             return _stun;
         }
 
+
         public bool IsDashing => _dashRemainingSeconds > 0f;
+
+
+        /// <summary>
+
+        /// Off the ground. Read by the pose so a jump looks like one, and
+
+        /// replicated by the session so it looks like one on both screens.
+
+        /// </summary>
+
+        public bool IsAirborne { get; private set; }
+
+
+        /// <summary>
+
+        /// Seconds since leaving the ground, so a pose can ease in rather than
+
+        /// snapping on the frame a foot lifts off a kerb.
+
+        /// </summary>
+
+        public float AirborneSeconds => _airborneSince;
         public float DashCooldownRemainingSeconds =>
             _dashCooldownRemainingSeconds;
         public float DashCooldownNormalized =>
@@ -151,6 +175,15 @@ namespace PawsAndLoot.Gameplay.Players
                 || !characterController.enabled)
             {
                 LastPlanarVelocity = Vector3.zero;
+
+                // Cleared, not left as it was. A motor that is not simulating is not
+                // airborne, and a stale true here is read by the jump pose: the
+                // character freezes in a star jump and stops walking, which is
+                // exactly what happened to the walk test the moment the pose
+                // existed. Anything switching the controller off is teleporting or
+                // stopping the character, never mid-jump.
+                IsAirborne = false;
+                _airborneSince = 0f;
                 return;
             }
 
@@ -191,6 +224,16 @@ namespace PawsAndLoot.Gameplay.Players
                 _verticalVelocity += Physics.gravity.y * deltaTime;
             }
 
+            // Off the ground, and for how long. A jump lasts under half a second, so
+            // the pose that goes with it needs to know within a frame or two — and
+            // the ground-stick term above means a grounded character always has a
+            // small negative vertical speed, which is why this asks the controller
+            // instead of looking at the number.
+            IsAirborne = !characterController.isGrounded;
+            _airborneSince = IsAirborne
+                ? _airborneSince + deltaTime
+                : 0f;
+
             Vector3 velocity =
                 LastPlanarVelocity + Vector3.up * _verticalVelocity;
             characterController.Move(velocity * deltaTime);
@@ -201,6 +244,36 @@ namespace PawsAndLoot.Gameplay.Players
                     0f,
                     _dashRemainingSeconds - deltaTime);
             }
+        }
+
+        /// <summary>
+        /// Leaves the ground, if there is ground to leave.
+        ///
+        /// Only from standing on something: a jump in mid-air would let a player
+        /// climb anything by pressing it repeatedly. Grounded is asked of the
+        /// controller rather than tracked here, because the controller is what
+        /// resolves the contact.
+        ///
+        /// Returns whether it happened, so the caller can tell a jump from a press
+        /// that did nothing.
+        /// </summary>
+        public bool TryJump()
+        {
+            ValidateDependencies();
+            if (!CanMove
+                || characterController == null
+                || !characterController.enabled
+                || !characterController.isGrounded)
+            {
+                return false;
+            }
+
+            // Set, not added. Falling speed at the moment of the press is whatever
+            // the ground-stick term left behind, and adding to it would make the
+            // jump height depend on which frame the key landed on.
+            _verticalVelocity = playerConfig.JumpSpeed;
+            _airborneSince = 0f;
+            return true;
         }
 
         public bool TryStartDash(Vector2 input)
