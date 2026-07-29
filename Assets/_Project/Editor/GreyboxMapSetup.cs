@@ -95,7 +95,16 @@ namespace PawsAndLoot.Editor
         private const float MapMinX = -28f;
         private const float MapMaxX = 52f;
         private const float MapMinZ = -22f;
-        private const float MapMaxZ = 46f;
+        /// <summary>
+        /// Pushed north from 46 to make room for the far row of houses.
+        ///
+        /// Every house is now one size (the one beside the police station), and at
+        /// that size the band between the ridge road and the old wall was 5 m for
+        /// an 8 m house — six of them stood 1.4 m through the wall. Squeezing them
+        /// back was the thing that produced a dozen different house sizes in the
+        /// first place, so the wall moved instead.
+        /// </summary>
+        private const float MapMaxZ = 50f;
 
         private const float MapWidth = MapMaxX - MapMinX;
         private const float MapDepth = MapMaxZ - MapMinZ;
@@ -136,7 +145,12 @@ namespace PawsAndLoot.Editor
         private const float NorthBandRow = 19f;
 
         private const float NorthRowNear = 32.5f;
-        private const float NorthRowFar = 43.4f;
+        /// <summary>
+        /// Centred in the band between the ridge road and the north wall, with a
+        /// metre to spare at each edge: the road ends at 41 and the wall is at 50,
+        /// so a 8 m house centred at 45 clears both.
+        /// </summary>
+        private const float NorthRowFar = 45f;
         private const float EastColumnNear = 32f;
         private const float EastColumnFar = 47f;
 
@@ -880,14 +894,16 @@ namespace PawsAndLoot.Editor
                 "building_house_1f",
                 root,
                 new Vector3(9f, 0f, NorthBandRow),
-                12f,
-                8f);
+                ReferenceHouseX,
+                ReferenceHouseZ,
+                HouseScale());
             CreateDressingBuilding(
                 "building_house_1f_with_interior",
                 root,
                 new Vector3(EastColumnNear, 0f, NorthBandRow),
-                9f,
-                8f);
+                ReferenceHouseX,
+                ReferenceHouseZ,
+                HouseScale());
 
             // Inside the trading yard (x -15..-4, z -9.5..-2.5), not beside it.
             // The previous spot put the bin on the southern alley, and once the
@@ -991,7 +1007,8 @@ namespace PawsAndLoot.Editor
 
             Debug.Log(
                 $"[MAP-006] {placed} houses placed in the north and east "
-                + "expansion districts.");
+                + $"expansion districts at a uniform scale of "
+                + $"{HouseScale():0.###}.");
         }
 
         private static int PlaceHouseRow(
@@ -1014,7 +1031,8 @@ namespace PawsAndLoot.Editor
                     root,
                     centers[index],
                     footprintX,
-                    footprintZ);
+                    footprintZ,
+                    HouseScale());
             }
 
             return centers.Count;
@@ -1493,28 +1511,62 @@ namespace PawsAndLoot.Editor
             Transform parent,
             Vector3 groundCenter,
             float footprintX,
-            float footprintZ)
+            float footprintZ,
+            float uniformScale = 0f)
         {
             Transform anchor = CreateChild($"{stem} Anchor", parent);
             anchor.position = groundCenter;
             anchor.localRotation = Quaternion.identity;
 
-            float height = PlaceholderModelLibrary.TryInstantiateBuilding(
-                stem,
-                anchor,
-                groundCenter,
-                footprintX,
-                footprintZ);
-            if (height <= 0f)
+            Vector3 size =
+                PlaceholderModelLibrary.TryInstantiateBuildingSized(
+                    stem,
+                    anchor,
+                    groundCenter,
+                    footprintX,
+                    footprintZ,
+                    uniformScale);
+            if (size.y <= 0f)
             {
                 UnityEngine.Object.DestroyImmediate(anchor.gameObject);
                 return;
             }
 
+            // Sized from what the model actually became, not from the lot it was
+            // asked to fill. The two differ on the shorter axis of every fitted
+            // building, and the difference was an invisible wall standing off the
+            // side of it.
             BoxCollider box = anchor.gameObject.AddComponent<BoxCollider>();
-            box.center = new Vector3(0f, height * 0.5f, 0f);
-            box.size = new Vector3(footprintX, height, footprintZ);
+            box.center = new Vector3(0f, size.y * 0.5f, 0f);
+            box.size = size;
         }
+
+        /// <summary>
+        /// One scale for every house in the town.
+        ///
+        /// Measured once from the house beside the police station, which is the
+        /// one the layout was designed around. Before this each house was
+        /// stretched to fill whatever lot it stood in — a 4.5 m deep row squeezed
+        /// it to little more than half the size of a 8 m one, so the same model
+        /// read as half a dozen different buildings.
+        /// </summary>
+        private static float HouseScale()
+        {
+            if (_houseScale <= 0f)
+            {
+                _houseScale =
+                    PlaceholderModelLibrary.MeasureFittingScale(
+                        "building_house_1f",
+                        ReferenceHouseX,
+                        ReferenceHouseZ);
+            }
+
+            return _houseScale;
+        }
+
+        private const float ReferenceHouseX = 12f;
+        private const float ReferenceHouseZ = 8f;
+        private static float _houseScale;
 
         /// <summary>
         /// The raccoon merchant and the bin it hides in.
@@ -1840,13 +1892,17 @@ namespace PawsAndLoot.Editor
             float modelHeight = -1f;
             if (buildingModelStem != null)
             {
+                // The shops keep fitting their own lots: each one is a different
+                // model on a deliberately different plot, so there is no shared
+                // size for them to agree on. Only the houses, which are the same
+                // two models repeated, needed standardising.
                 modelHeight =
-                    PlaceholderModelLibrary.TryInstantiateBuilding(
+                    PlaceholderModelLibrary.TryInstantiateBuildingSized(
                         buildingModelStem,
                         root,
                         center,
                         12f,
-                        8f);
+                        8f).y;
             }
 
             if (modelHeight > 0f)

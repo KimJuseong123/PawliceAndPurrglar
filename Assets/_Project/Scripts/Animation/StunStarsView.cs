@@ -64,6 +64,17 @@ namespace PawsAndLoot.Animation
         public int StarCount => Mathf.Max(1, starCount);
         public float OrbitRadius => orbitRadius;
 
+        /// <summary>
+        /// The object the stars hang from, or null before it is built.
+        ///
+        /// Exposed so the torch visibility rule can tell a star from the
+        /// character it orbits. Asking whether a renderer has a
+        /// <c>StunStarsView</c> above it does not work: this component lives on
+        /// the player root, so that question is true of every renderer on the
+        /// character — which silently exempted the whole thief from being hidden.
+        /// </summary>
+        public Transform RingRoot => _ring;
+
         public void Configure(
             StunState configuredStun,
             Material configuredStarMaterial)

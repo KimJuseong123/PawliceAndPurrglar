@@ -164,21 +164,37 @@ namespace PawsAndLoot.Gameplay.Players
 
                 // The stun stars stay up even on somebody outside the beam.
                 //
-                // A deliberate exception, not an oversight. Stars only appear on
-                // a player who was just hit, so the thrower already knew roughly
-                // where they were — and hiding the one confirmation that a throw
-                // in the dark landed would make throwing at night pointless. It
-                // is also stated here rather than left to chance: the stars are
-                // built at runtime, so whether they ended up in this cached list
-                // was previously a matter of which component ran first.
-                if (renderer.GetComponentInParent<
-                        PawsAndLoot.Animation.StunStarsView>() != null)
+                // A deliberate exception: stars only appear on a player who was
+                // just hit, so the thrower already knew roughly where they were,
+                // and hiding the one confirmation that a throw in the dark landed
+                // would make throwing at night pointless.
+                //
+                // Tested against the ring itself, not against "does an ancestor
+                // have a StunStarsView". That component sits on the player root,
+                // so the looser question is true of every renderer on the
+                // character — which exempted the entire thief and left them
+                // visible from any direction. The whole feature quietly stopped
+                // working and nothing failed.
+                if (IsStunStar(renderer))
                 {
                     continue;
                 }
 
                 renderer.enabled = visible;
             }
+        }
+
+        /// <summary>
+        /// True for the star meshes themselves and nothing else on the character.
+        /// </summary>
+        private static bool IsStunStar(Renderer renderer)
+        {
+            PawsAndLoot.Animation.StunStarsView stars =
+                renderer.GetComponentInParent<
+                    PawsAndLoot.Animation.StunStarsView>();
+            return stars != null
+                && stars.RingRoot != null
+                && renderer.transform.IsChildOf(stars.RingRoot);
         }
 
         /// <summary>

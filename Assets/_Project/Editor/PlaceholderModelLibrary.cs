@@ -154,12 +154,28 @@ namespace PawsAndLoot.Editor
         /// so the caller can move the walkable rooftop collider onto the real
         /// roof, or -1 when the model is unavailable.
         /// </summary>
-        public static float TryInstantiateBuilding(
+        /// <summary>
+        /// Drops a building model onto a spot.
+        ///
+        /// <paramref name="uniformScale"/> above zero uses that scale directly and
+        /// ignores the footprint for sizing. Fitting each model to its lot is what
+        /// made one house model appear at half a dozen different sizes across the
+        /// town — a narrow lot squeezed it, a wide one stretched it, and the same
+        /// asset read as a different building each time.
+        ///
+        /// Returns the size the model actually ended up, so the caller can give it
+        /// a collider that matches. The old version returned only the height and
+        /// callers sized the box from the requested footprint, which on the
+        /// shorter axis was always bigger than the model — an invisible wall
+        /// standing off the side of every building.
+        /// </summary>
+        public static Vector3 TryInstantiateBuildingSized(
             string stem,
             Transform parent,
             Vector3 groundCenter,
             float footprintX,
-            float footprintZ)
+            float footprintZ,
+            float uniformScale = 0f)
         {
             GameObject instance = TryInstantiate(
                 $"{BuildingDirectory}/{stem}.fbx",
@@ -167,7 +183,7 @@ namespace PawsAndLoot.Editor
                 $"{stem}_Model");
             if (instance == null)
             {
-                return -1f;
+                return Vector3.zero;
             }
 
             instance.transform.localRotation = Quaternion.identity;
@@ -177,17 +193,19 @@ namespace PawsAndLoot.Editor
                 || bounds.size.x <= 0.001f
                 || bounds.size.z <= 0.001f)
             {
-                return -1f;
+                return Vector3.zero;
             }
 
-            float scale = Mathf.Min(
-                footprintX / bounds.size.x,
-                footprintZ / bounds.size.z);
+            float scale = uniformScale > 0f
+                ? uniformScale
+                : Mathf.Min(
+                    footprintX / bounds.size.x,
+                    footprintZ / bounds.size.z);
             instance.transform.localScale = Vector3.one * scale;
 
             if (!TryGetWorldBounds(instance, out Bounds scaled))
             {
-                return -1f;
+                return Vector3.zero;
             }
 
             // Re-centre on the slot and drop the base onto the ground.
@@ -196,7 +214,43 @@ namespace PawsAndLoot.Editor
                 scaled.min.y,
                 scaled.center.z);
             instance.transform.position += delta;
-            return scaled.size.y;
+            return scaled.size;
+        }
+
+        /// <summary>
+        /// The scale a model needs to fit a lot, without instantiating it into the
+        /// scene for keeps.
+        ///
+        /// Used to work out one canonical house size from one canonical lot and
+        /// then apply it everywhere.
+        /// </summary>
+        public static float MeasureFittingScale(
+            string stem,
+            float footprintX,
+            float footprintZ)
+        {
+            GameObject probe = TryInstantiate(
+                $"{BuildingDirectory}/{stem}.fbx",
+                null,
+                $"{stem}_ScaleProbe");
+            if (probe == null)
+            {
+                return 0f;
+            }
+
+            probe.transform.localScale = Vector3.one;
+            float scale = 0f;
+            if (TryGetWorldBounds(probe, out Bounds bounds)
+                && bounds.size.x > 0.001f
+                && bounds.size.z > 0.001f)
+            {
+                scale = Mathf.Min(
+                    footprintX / bounds.size.x,
+                    footprintZ / bounds.size.z);
+            }
+
+            Object.DestroyImmediate(probe);
+            return scale;
         }
 
         private static void NormaliseToHeight(
