@@ -36,7 +36,17 @@ namespace PawsAndLoot.Editor
         /// when the camera sits above the player.
         /// </summary>
         private const float RoomSize = 16f;
-        private const float WallHeight = 4f;
+
+        /// <summary>
+        /// Tall enough that the camera cannot see over it.
+        ///
+        /// Four metres was not: the indoor camera sits above the player, so it
+        /// looked straight over the walls and the neighbouring rooms were all
+        /// visible at once. Nine metres puts the wall top well above the camera,
+        /// which is what makes a room feel closed without a ceiling to clip
+        /// through.
+        /// </summary>
+        private const float WallHeight = 9f;
         private const float WallThickness = 0.4f;
         private const float DoorGap = 3.2f;
 
@@ -46,7 +56,12 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private const float RowZ = -70f;
         private const float RowStartX = -28f;
-        private const float Spacing = 26f;
+
+        /// <summary>
+        /// Well clear of each other. The tall walls are what actually hide the
+        /// neighbours; this is margin on top of that.
+        /// </summary>
+        private const float Spacing = 40f;
 
         public static void Build(
             Transform parent,
@@ -123,10 +138,13 @@ namespace PawsAndLoot.Editor
             room.position = centre;
 
             float half = RoomSize * 0.5f;
+            // A thick slab, not a sheet. A 0.2 m floor is thin enough for a fast
+            // enough fall to cross in one frame, and a character who has picked up
+            // speed does exactly that.
             cube(
                 $"Interior {number} Floor",
-                centre + new Vector3(0f, -0.1f, 0f),
-                new Vector3(RoomSize, 0.2f, RoomSize),
+                centre + new Vector3(0f, -0.75f, 0f),
+                new Vector3(RoomSize, 1.5f, RoomSize),
                 floorMaterial,
                 room,
                 true);
@@ -196,8 +214,14 @@ namespace PawsAndLoot.Editor
 
             // Out in front of the real house, clear of its own door trigger so
             // stepping out does not immediately offer to go back in.
+            // Out at the front of the real house.
+            //
+            // Measured, not assumed: on this model the porch floor is at z = +3.5
+            // and the front door leaf at z = +3.1, so the front is +Z. The first
+            // version used -Z and quietly put both the entrance and the exit at
+            // the back door.
             Transform exit = child($"Interior {number} Exit", room);
-            exit.position = house.position + new Vector3(0f, 0f, -6f);
+            exit.position = house.position + new Vector3(0f, 0f, 6f);
 
             HouseInterior interior =
                 room.gameObject.AddComponent<HouseInterior>();
@@ -234,8 +258,8 @@ namespace PawsAndLoot.Editor
 
             var entrance = new GameObject("House Entrance");
             entrance.transform.SetParent(house, false);
-            // On the porch side, which on these models faces -Z.
-            entrance.transform.localPosition = new Vector3(0f, 0.5f, -4.4f);
+            // On the porch, which on these models faces +Z.
+            entrance.transform.localPosition = new Vector3(0f, 0.5f, 4.6f);
             SphereCollider trigger =
                 entrance.AddComponent<SphereCollider>();
             trigger.isTrigger = true;
@@ -325,7 +349,10 @@ namespace PawsAndLoot.Editor
 
             HouseDoorLeaf leaf =
                 pivotObject.AddComponent<HouseDoorLeaf>();
-            leaf.Configure(pivot, 95f);
+            // Negative, so it opens outward. A positive rotation about Y carries
+            // the free edge from +X toward -Z, which for a door on the +Z wall is
+            // into the house.
+            leaf.Configure(pivot, -95f);
             return leaf;
         }
 

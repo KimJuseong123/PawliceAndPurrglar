@@ -118,12 +118,26 @@ namespace PawsAndLoot.Gameplay.Interiors
                 controller.enabled = false;
             }
 
-            player.position = destination;
-            Physics.SyncTransforms();
+            // A hair above the floor. Landing exactly on it leaves the capsule
+            // and the floor sharing a surface, and the controller resolves that
+            // by pushing down.
+            player.position = destination + Vector3.up * 0.06f;
             if (hadController)
             {
                 controller.enabled = true;
             }
+
+            Physics.SyncTransforms();
+
+            // The fall speed has to go with the old position.
+            //
+            // Gravity accumulates every frame the controller is not grounded, and
+            // a teleport leaves it briefly airborne. Going in and out of a door a
+            // few times built that speed up until it carried the capsule through
+            // the floor between two frames — which is exactly the sinking that
+            // was reported after using a door repeatedly.
+            context.Player.GetComponent<PlayerMovementMotor>()
+                ?.ResetVerticalVelocity();
 
             state.SetInterior(
                 leadsInside ? interior.InteriorId : PlayerInteriorState.Outside);

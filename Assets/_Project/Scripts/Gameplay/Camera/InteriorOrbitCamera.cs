@@ -33,11 +33,18 @@ namespace PawsAndLoot.Gameplay.Camera
         [SerializeField]
         private LocalPlayerRoleSelector roleSelector;
 
+        /// <summary>
+        /// Close and steep enough to stay inside the room.
+        ///
+        /// Nine metres at 34 degrees put the camera 6.2 m above the player, which
+        /// is over the top of a wall — every neighbouring room was visible at
+        /// once. At these values it sits about 5.5 m up, below the raised walls.
+        /// </summary>
         [SerializeField, Min(1f)]
-        private float distance = 9f;
+        private float distance = 6.5f;
 
         [SerializeField, Range(5f, 80f)]
-        private float pitchDegrees = 34f;
+        private float pitchDegrees = 42f;
 
         [SerializeField, Min(0.05f)]
         private float degreesPerPixel = 0.22f;

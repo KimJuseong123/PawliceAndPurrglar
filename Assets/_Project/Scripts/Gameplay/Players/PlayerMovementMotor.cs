@@ -23,6 +23,21 @@ namespace PawsAndLoot.Gameplay.Players
         private StunState _stun;
         private bool _lookedForStun;
         private float _verticalVelocity;
+
+        /// <summary>
+        /// Clears the accumulated fall speed.
+        ///
+        /// Has to be called by anything that places the character rather than
+        /// walking them. Gravity accumulates every frame the controller is not
+        /// grounded, and a teleport leaves it momentarily airborne — so going
+        /// through a door repeatedly built the speed up until it was fast enough
+        /// to punch straight through the floor between two frames. That is the
+        /// "sinking into the ground" a few doors in.
+        /// </summary>
+        public void ResetVerticalVelocity()
+        {
+            _verticalVelocity = 0f;
+        }
         private Vector3 _dashDirection;
         private float _dashRemainingSeconds;
         private float _dashCooldownRemainingSeconds;

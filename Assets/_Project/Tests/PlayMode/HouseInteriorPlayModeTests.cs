@@ -104,6 +104,119 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         /// <summary>
+        /// Going in and out repeatedly must not drop anybody through the floor.
+        ///
+        /// It did. Gravity accumulates every frame the controller is not grounded,
+        /// a teleport leaves it briefly airborne, and nothing cleared the speed —
+        /// so a few doors in the capsule was falling fast enough to cross the
+        /// floor between two frames. The fix is two things at once: the fall speed
+        /// goes with the old position, and the floor is a slab rather than a sheet.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator GoingThroughADoorRepeatedlyKeepsYouOnTheFloor()
+        {
+            yield return SceneManager.LoadSceneAsync(
+                GameSceneCatalog.GetPath(GameSceneId.Game),
+                LoadSceneMode.Single);
+            yield return null;
+
+            Object.FindFirstObjectByType<MatchRuntimeState>()
+                .TryTransitionTo(MatchState.Playing);
+            yield return null;
+
+            PlayerRoleIdentity thief = Object
+                .FindObjectsByType<PlayerRoleIdentity>(
+                    FindObjectsSortMode.None)
+                .First(p => p.Role == PlayerRole.Thief);
+
+            HouseDoorway wayIn = Object
+                .FindObjectsByType<HouseDoorway>(
+                    FindObjectsSortMode.None)
+                .First(door => door.LeadsInside);
+            HouseDoorway wayOut = Object
+                .FindObjectsByType<HouseDoorway>(
+                    FindObjectsSortMode.None)
+                .First(door =>
+                    !door.LeadsInside
+                    && door.Interior == wayIn.Interior);
+
+            // Six round trips, with frames in between so gravity has every chance
+            // to accumulate the way it did in the game.
+            for (int trip = 0; trip < 6; trip++)
+            {
+                Assert.That(
+                    wayIn.TryInteract(new PlayerInteractionContext(thief)),
+                    Is.True,
+                    $"Trip {trip + 1} could not get in.");
+                yield return null;
+                yield return null;
+
+                Assert.That(
+                    thief.transform.position.y,
+                    Is.GreaterThan(-1f),
+                    $"Trip {trip + 1}: the thief is at "
+                    + $"y={thief.transform.position.y:0.00} inside the room. "
+                    + "Anything below the floor means they fell through it.");
+
+                Assert.That(
+                    wayOut.TryInteract(new PlayerInteractionContext(thief)),
+                    Is.True,
+                    $"Trip {trip + 1} could not get out.");
+                yield return null;
+                yield return null;
+
+                Assert.That(
+                    thief.transform.position.y,
+                    Is.GreaterThan(-1f),
+                    $"Trip {trip + 1}: the thief is at "
+                    + $"y={thief.transform.position.y:0.00} in the street.");
+            }
+        }
+
+        /// <summary>
+        /// The way in and the way out are both at the front door.
+        ///
+        /// Measured against the model rather than assumed: on this house the porch
+        /// floor sits at z = +3.5 and the front door leaf at z = +3.1, so the front
+        /// is +Z. The first version used -Z and quietly put the entrance and the
+        /// exit at the back door instead.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator DoorsAreOnTheFrontOfTheHouse()
+        {
+            yield return SceneManager.LoadSceneAsync(
+                GameSceneCatalog.GetPath(GameSceneId.Game),
+                LoadSceneMode.Single);
+            yield return null;
+
+            HouseDoorway[] entrances = Object
+                .FindObjectsByType<HouseDoorway>(
+                    FindObjectsSortMode.None)
+                .Where(door => door.LeadsInside)
+                .ToArray();
+            Assert.That(entrances, Is.Not.Empty);
+
+            foreach (HouseDoorway entrance in entrances)
+            {
+                // The trigger hangs off the house, so its local z says which wall
+                // it is on.
+                Assert.That(
+                    entrance.transform.localPosition.z,
+                    Is.GreaterThan(0f),
+                    $"{entrance.name} is on the -Z side, which is the back "
+                    + "door. The porch is at +Z.");
+
+                // And the exit puts you back out on the same side.
+                Vector3 house = entrance.transform.parent.position;
+                Assert.That(
+                    entrance.Interior.ExitPosition.z - house.z,
+                    Is.GreaterThan(0f),
+                    "Coming out at the back of a house you walked into at the "
+                    + "front is disorienting in a chase.");
+            }
+        }
+
+        /// <summary>
         /// Pocketing a valuable pays the thief, once, and only the thief.
         /// </summary>
         [UnityTest]
