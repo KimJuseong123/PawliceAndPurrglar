@@ -272,8 +272,10 @@ namespace PawsAndLoot.Editor
         /// <summary>
         /// The same question for the house doors, and asked the same way.
         ///
-        /// A baked door leaf turns on its hinge and stays shut on screen, with
-        /// nothing in any log to say so — the exact failure the bin lid had.
+        /// A baked door part is turned and stays shut on screen, with nothing in
+        /// any log to say so — the exact failure the bin lid had. Now that the
+        /// parts are turned where they stand instead of being gathered onto a
+        /// hinge, each of the five has to be asked about individually.
         /// </summary>
         private static bool IsAnimatedByDoor(Transform candidate)
         {
@@ -282,7 +284,7 @@ namespace PawsAndLoot.Editor
                     PawsAndLoot.Animation.HouseDoorLeaf>(
                     FindObjectsSortMode.None))
             {
-                if (leaf.Hinge == candidate)
+                if (leaf.MovesTransform(candidate))
                 {
                     return true;
                 }

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using PawsAndLoot.Animation;
 using PawsAndLoot.Gameplay.Interiors;
 using PawsAndLoot.Match;
-using UnityEditor;
 using UnityEngine;
 
 namespace PawsAndLoot.Editor
@@ -269,105 +268,40 @@ namespace PawsAndLoot.Editor
         }
 
         /// <summary>
-        /// Gathers the front door's parts onto a hinge so they can swing together.
+        /// Hands the door animator the house to find its own parts in.
         ///
-        /// The house is a flat list of two hundred named parts, so the leaf, its
-        /// handle, panels and glass are separate objects. Two traps apply and both
-        /// have already cost a playtest on the bin lid: a prefab instance refuses
-        /// to have its children reparented, and a renderer baked
-        /// <c>BatchingStatic</c> does not move however far its transform turns.
-        /// The unpack below handles the first; <c>SceneOptimizationPass</c> asks
-        /// <c>HouseDoorLeaf</c> about the second.
+        /// It used to gather the five door parts onto a hinge object here, which
+        /// meant unpacking the prefab first — a prefab instance refuses to have its
+        /// children reparented. That worked and cost 6 MB of scene per rebuild,
+        /// because unpacking writes all 186 parts of every house into the scene as
+        /// real objects. <c>HouseDoorLeaf</c> now turns the parts about a point
+        /// instead, so the houses stay packed and this hands over a reference.
         /// </summary>
         private static HouseDoorLeaf TryCreateHinge(Transform house)
         {
-            Transform model = house.childCount > 0
-                ? house.GetChild(0)
-                : null;
-            if (model == null)
-            {
-                return null;
-            }
+            var door = new GameObject("Front Door");
+            door.transform.SetParent(house, false);
+            door.transform.localPosition = Vector3.zero;
 
-            if (PrefabUtility.IsPartOfPrefabInstance(model.gameObject))
-            {
-                PrefabUtility.UnpackPrefabInstance(
-                    model.gameObject,
-                    PrefabUnpackMode.Completely,
-                    InteractionMode.AutomatedAction);
-            }
-
-            Transform leafPart =
-                FindPart(model, "BD_House1F_Door_Front_Leaf");
-            Renderer leafRenderer = leafPart != null
-                ? leafPart.GetComponent<Renderer>()
-                : null;
-            if (leafRenderer == null)
-            {
-                return null;
-            }
-
-            // Hinged on the left edge so it opens across the porch rather than
-            // through whoever is standing at it.
-            Bounds bounds = leafRenderer.bounds;
-            var pivotObject = new GameObject("Front Door Hinge");
-            Transform pivot = pivotObject.transform;
-            pivot.SetParent(model.parent, false);
-            pivot.position = new Vector3(
-                bounds.min.x,
-                bounds.min.y,
-                bounds.center.z);
-            pivot.rotation = Quaternion.identity;
-
-            string[] swinging =
-            {
-                "BD_House1F_Door_Front_Leaf",
-                "BD_House1F_Door_Front_Handle",
-                "BD_House1F_Door_Front_Panel_1",
-                "BD_House1F_Door_Front_Panel_2",
-                "BD_House1F_Door_Front_VerticalGlass"
-            };
-            foreach (string part in swinging)
-            {
-                Transform found = FindPart(model, part);
-                if (found != null)
-                {
-                    found.SetParent(pivot, true);
-                }
-            }
-
-            if (pivot.childCount == 0)
-            {
-                // Reparenting fails silently, so the one thing this animation
-                // depends on is asserted rather than assumed.
-                Debug.LogError(
-                    "[MAP-008] The front door could not be moved onto its "
-                    + "hinge, so it will not open.");
-                Object.DestroyImmediate(pivotObject);
-                return null;
-            }
-
-            HouseDoorLeaf leaf =
-                pivotObject.AddComponent<HouseDoorLeaf>();
-            // Negative, so it opens outward. A positive rotation about Y carries
+            HouseDoorLeaf leaf = door.AddComponent<HouseDoorLeaf>();
+            // Negative, so it opens outward. A positive rotation about up carries
             // the free edge from +X toward -Z, which for a door on the +Z wall is
             // into the house.
-            leaf.Configure(pivot, -95f);
+            leaf.Configure(house, -95f);
+
+            if (leaf.PartCount == 0)
+            {
+                // Resolution fails silently, so the one thing the animation
+                // depends on is asserted rather than assumed.
+                Debug.LogError(
+                    $"[MAP-008] '{house.name}' has no front door parts, so its "
+                    + "door will not open.");
+                Object.DestroyImmediate(door);
+                return null;
+            }
+
             return leaf;
         }
 
-        private static Transform FindPart(Transform root, string name)
-        {
-            foreach (Transform candidate in
-                root.GetComponentsInChildren<Transform>(true))
-            {
-                if (candidate.name == name)
-                {
-                    return candidate;
-                }
-            }
-
-            return null;
-        }
     }
 }
