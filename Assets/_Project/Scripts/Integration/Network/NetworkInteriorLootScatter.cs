@@ -31,6 +31,17 @@ namespace PawsAndLoot.Integration.Network
     {
         public const string ScatterMessageName =
             "PawsAndLoot.InteriorLoot";
+        public const string TakenMessageName =
+            "PawsAndLoot.InteriorLootTaken";
+
+        /// <summary>
+        /// Money per piece, and the reason it is small.
+        ///
+        /// Sixteen pieces at this value comes to 800 against a 1,000 target, so a
+        /// thief who empties every house in the town still has to sell real
+        /// treasure to win. The rooms are a supplement, not a way around the game.
+        /// </summary>
+        public const int ValuePerPiece = 50;
 
         /// <summary>
         /// One int for the count, then an interior id and a position each.
@@ -59,6 +70,8 @@ namespace PawsAndLoot.Integration.Network
         private float clearanceMargin = 1.2f;
 
         private readonly List<GameObject> _spawned = new();
+        private readonly Dictionary<int, InteriorValuablePickup>
+            _pickups = new();
         private IMatchStateReader _matchState;
         private NetworkManager _networkManager;
         private bool _registered;
@@ -178,14 +191,23 @@ namespace PawsAndLoot.Integration.Network
         /// </summary>
         private void Spawn(int interiorId, Vector3 position)
         {
+            int sourceId = _spawned.Count + 1;
             var piece = new GameObject(
-                $"Interior Loot {interiorId}.{_spawned.Count + 1}");
+                $"Interior Loot {interiorId}.{sourceId}");
             piece.transform.position = position + Vector3.up * 0.3f;
+
+            // A trigger, not a solid: something to walk up to, never something
+            // to trip over in a room being chased through.
+            SphereCollider trigger = piece.AddComponent<SphereCollider>();
+            trigger.isTrigger = true;
+            trigger.radius = 0.5f;
+
+            var presentation = new GameObject("Visual");
+            presentation.transform.SetParent(piece.transform, false);
 
             GameObject visual = GameObject.CreatePrimitive(
                 PrimitiveType.Cube);
-            visual.name = "Visual";
-            visual.transform.SetParent(piece.transform, false);
+            visual.transform.SetParent(presentation.transform, false);
             visual.transform.localScale = Vector3.one * 0.55f;
             Destroy(visual.GetComponent<Collider>());
             if (_material != null)
@@ -193,6 +215,16 @@ namespace PawsAndLoot.Integration.Network
                 visual.GetComponent<Renderer>().sharedMaterial = _material;
             }
 
+            InteriorValuablePickup pickup =
+                piece.AddComponent<InteriorValuablePickup>();
+            pickup.Configure(
+                sourceId,
+                ValuePerPiece,
+                ResolveMatchState(),
+                presentation.transform);
+            pickup.Taken += HandleTakenLocally;
+
+            _pickups[sourceId] = pickup;
             _spawned.Add(piece);
         }
 
@@ -216,6 +248,53 @@ namespace PawsAndLoot.Integration.Network
             _scattered = true;
         }
 
+        /// <summary>
+        /// Announces a shelf that has just been emptied.
+        ///
+        /// The money is already replicated through the thief's total, but the
+        /// object is not: without this the piece stays sitting there on the other
+        /// screen, which is exactly the split that made a picked-up rock look like
+        /// a rock that would not pick up.
+        /// </summary>
+        private void HandleTakenLocally(int sourceId)
+        {
+            NetworkManager manager = ResolveManager();
+            if (manager == null
+                || !manager.IsListening
+                || !manager.IsServer)
+            {
+                return;
+            }
+
+            using var writer = new FastBufferWriter(
+                FastBufferWriter.GetWriteSize<int>(),
+                Allocator.Temp);
+            writer.WriteValueSafe(sourceId);
+            manager.CustomMessagingManager.SendNamedMessageToAll(
+                TakenMessageName,
+                writer);
+        }
+
+        private void HandleTakenMessage(
+            ulong sender,
+            FastBufferReader reader)
+        {
+            reader.ReadValueSafe(out int sourceId);
+
+            NetworkManager manager = ResolveManager();
+            if (manager != null && manager.IsServer)
+            {
+                // The host emptied it when it decided.
+                return;
+            }
+
+            if (_pickups.TryGetValue(sourceId, out InteriorValuablePickup p)
+                && p != null)
+            {
+                p.ApplyReplicatedTaken(true);
+            }
+        }
+
         private void EnsureRegistered(NetworkManager manager)
         {
             if (_registered
@@ -229,6 +308,9 @@ namespace PawsAndLoot.Integration.Network
             manager.CustomMessagingManager.RegisterNamedMessageHandler(
                 ScatterMessageName,
                 HandleScatter);
+            manager.CustomMessagingManager.RegisterNamedMessageHandler(
+                TakenMessageName,
+                HandleTakenMessage);
         }
 
         private NetworkManager ResolveManager()

@@ -23,6 +23,11 @@ namespace PawsAndLoot.Gameplay.Loot
         public event Action<int, int> SaleAmountChanged;
         public event Action VictoryCheckRequested;
 
+        /// <summary>
+        /// Ids of the shelves already emptied, so one press pays once.
+        /// </summary>
+        private readonly HashSet<int> _creditedCashSources = new();
+
         public int SoldAmount { get; private set; }
         public int TargetAmount =>
             matchConfig != null ? matchConfig.TargetSaleAmount : 0;
@@ -49,6 +54,7 @@ namespace PawsAndLoot.Gameplay.Loot
             LastSalePrice = 0;
             _creditedSaleRequests.Clear();
             _creditedLoot.Clear();
+            _creditedCashSources.Clear();
         }
 
         /// <summary>
@@ -71,6 +77,38 @@ namespace PawsAndLoot.Gameplay.Loot
             int previousAmount = SoldAmount;
             SoldAmount = clamped;
             SaleAmountChanged?.Invoke(previousAmount, SoldAmount);
+        }
+
+        /// <summary>
+        /// Host side. Credits cash pocketed straight off a shelf.
+        ///
+        /// Unlike a treasure, small valuables from inside a house are not carried
+        /// to the merchant — they go in a pocket and count at once. That is what
+        /// makes a room worth entering: a quick, small, certain gain against the
+        /// slow, large, risky business of hauling a treasure across town past
+        /// somebody hunting you.
+        ///
+        /// Deduplicated by the source's own id for the same reason a sale is: an
+        /// interact key can be pressed faster than the world can hide what it just
+        /// gave away, and a second press must not pay twice.
+        /// </summary>
+        public bool TryCreditCash(int amount, int sourceId)
+        {
+            ValidateOrThrow();
+            if (amount <= 0 || !_creditedCashSources.Add(sourceId))
+            {
+                return false;
+            }
+
+            int previousAmount = SoldAmount;
+            SoldAmount += amount;
+            GameLogger.Info(
+                GameLogCategory.Loot,
+                $"Thief pocketed {amount}, now holding {SoldAmount}.",
+                this);
+            SaleAmountChanged?.Invoke(previousAmount, SoldAmount);
+            VictoryCheckRequested?.Invoke();
+            return true;
         }
 
         /// <summary>

@@ -104,6 +104,87 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         /// <summary>
+        /// Pocketing a valuable pays the thief, once, and only the thief.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator PocketingAValuablePaysTheThiefExactlyOnce()
+        {
+            yield return SceneManager.LoadSceneAsync(
+                GameSceneCatalog.GetPath(GameSceneId.Game),
+                LoadSceneMode.Single);
+            yield return null;
+
+            Object.FindFirstObjectByType<MatchRuntimeState>()
+                .TryTransitionTo(MatchState.Playing);
+            // The scatter waits for the match to be running, then rolls once.
+            yield return null;
+            yield return null;
+
+            InteriorValuablePickup[] pickups = Object
+                .FindObjectsByType<InteriorValuablePickup>(
+                    FindObjectsSortMode.None);
+            Assert.That(
+                pickups,
+                Is.Not.Empty,
+                "The host scatters valuables once the match starts; without "
+                + "them there is nothing to pick up.");
+
+            PlayerRoleIdentity[] players = Object
+                .FindObjectsByType<PlayerRoleIdentity>(
+                    FindObjectsSortMode.None);
+            PlayerRoleIdentity thief =
+                players.First(p => p.Role == PlayerRole.Thief);
+            PlayerRoleIdentity police =
+                players.First(p => p.Role == PlayerRole.Police);
+            var wallet =
+                thief.GetComponent<PawsAndLoot.Gameplay.Loot.ThiefLootWallet>();
+
+            InteriorValuablePickup piece = pickups[0];
+            int before = wallet.SoldAmount;
+
+            // The officer cannot loot the place. Loot is thief-only by type, and
+            // an officer who could pocket valuables would be playing the thief's
+            // game with the thief's rewards.
+            Assert.That(
+                PawsAndLoot.Gameplay.Players.PlayerRolePermissions.CanInteract(
+                    PlayerRole.Police,
+                    piece.InteractionType),
+                Is.False,
+                "A valuable the officer can take is not the thief's loot.");
+
+            Assert.That(
+                piece.TryInteract(new PlayerInteractionContext(thief)),
+                Is.True);
+            Assert.That(
+                wallet.SoldAmount,
+                Is.EqualTo(before + piece.Value),
+                "Pocketing has to move the number that decides the match — "
+                + "there is no merchant trip for small valuables.");
+            Assert.That(piece.IsTaken, Is.True);
+
+            // A second press must pay nothing. The interact key can be pressed
+            // faster than the world hides what it just gave away.
+            Assert.That(
+                piece.TryInteract(new PlayerInteractionContext(thief)),
+                Is.False);
+            Assert.That(
+                wallet.SoldAmount,
+                Is.EqualTo(before + piece.Value),
+                "One shelf, one payment.");
+
+            // Every room together must not be a way around the game.
+            int everything = pickups.Sum(p => p.Value);
+            Assert.That(
+                everything,
+                Is.LessThan(wallet.TargetAmount),
+                $"Emptying every house pays {everything} against a target of "
+                + $"{wallet.TargetAmount}. If the rooms alone could win, "
+                + "nobody would ever carry a treasure across town again.");
+
+            Assert.That(police, Is.Not.Null);
+        }
+
+        /// <summary>
         /// The room has to be big enough to be worth the trip. A character is
         /// 0.9 m across, and the reason the rooms exist at all is that the 8 m
         /// houses are four character-widths — too small to chase anybody through.
