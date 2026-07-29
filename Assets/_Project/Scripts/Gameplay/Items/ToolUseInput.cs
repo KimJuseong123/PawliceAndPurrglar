@@ -54,7 +54,29 @@ namespace PawsAndLoot.Gameplay.Items
             // Fully qualified: PawsAndLoot.Gameplay.Camera is a namespace, so a
             // bare Camera inside Gameplay resolves to it and not to the type.
             UnityEngine.Camera view = UnityEngine.Camera.main;
-            if (mouse == null || view == null)
+            if (view == null)
+            {
+                return null;
+            }
+
+            // No cursor to read indoors.
+            //
+            // The interior view hides and locks the pointer so it can turn with a
+            // low sensitivity, which leaves the cursor pinned to the middle of the
+            // screen — reading it would aim every throw straight ahead regardless
+            // of where the player was looking. Throwing along the camera's own
+            // facing is both correct and what a third-person view implies: you
+            // throw where you are looking.
+            if (Cursor.lockState == CursorLockMode.Locked)
+            {
+                Vector3 facing = view.transform.forward;
+                facing.y = 0f;
+                return facing.sqrMagnitude > 0.0001f
+                    ? facing.normalized
+                    : null;
+            }
+
+            if (mouse == null)
             {
                 return null;
             }

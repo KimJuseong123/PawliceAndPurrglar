@@ -180,10 +180,20 @@ namespace PawsAndLoot.UI
             delta.y = 0f;
             float distance = delta.magnitude;
 
-            // Taken from the world rather than the camera, because the camera
-            // never turns and a world bearing is therefore also a screen bearing.
-            CurrentAngle =
-                -Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
+            // A screen bearing, which is the world bearing turned by however far
+            // the camera is facing.
+            //
+            // The camera used to never turn, so the two were the same and this read
+            // the world directly. The interior view does turn, and a fixed world
+            // bearing would point the arrows at a wall the moment the officer
+            // looked somewhere else. Subtracting the camera's yaw is correct in
+            // both cases: outdoors it is a constant and nothing changes.
+            float cameraYaw = UnityEngine.Camera.main != null
+                ? UnityEngine.Camera.main.transform.eulerAngles.y
+                : 0f;
+            CurrentAngle = -Mathf.DeltaAngle(
+                cameraYaw,
+                Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg);
             root.localRotation =
                 Quaternion.Euler(0f, 0f, CurrentAngle);
 

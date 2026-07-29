@@ -6,23 +6,29 @@ using UnityEngine.InputSystem;
 namespace PawsAndLoot.Gameplay.Camera
 {
     /// <summary>
-    /// A free third-person view, used only while the local player is indoors.
+    /// A free look-around view, used only while the local player is indoors.
     ///
-    /// The town is seen from one fixed angle on purpose: both players read the
-    /// same streets the same way, and nobody can gain an advantage by turning the
-    /// camera. A room is the opposite case — it has four walls, and a fixed
-    /// overhead angle would put two of them between the camera and the player.
-    /// So the camera turns indoors and only indoors.
+    /// The town is seen from one fixed angle on purpose: both players read the same
+    /// streets the same way, and nobody gains an advantage by turning the camera.
+    /// A room is the opposite case — it has four walls, and a fixed overhead angle
+    /// would put two of them between the camera and the player. So the camera turns
+    /// indoors and only indoors.
     ///
-    /// Orbited by dragging the right mouse button. The left button throws and the
-    /// cursor aims, so free-look cannot have the bare mouse; a held button is the
-    /// cheapest way to have both without a mode to remember.
+    /// The cursor is hidden and locked while it is active. That is what allows a low
+    /// sensitivity: with the pointer confined to the window, a slow turn runs out of
+    /// screen and stops, and the player has to swipe repeatedly. Locked, the mouse
+    /// reports movement forever.
     ///
-    /// Takes over from <see cref="TopDownFollowCamera"/> by disabling it, rather
-    /// than by both writing the transform and fighting over it.
+    /// Two consequences are handled deliberately rather than left as surprises.
+    /// Aiming has no cursor to read, so <c>ToolUseInput</c> switches to throwing
+    /// along the camera's own facing while the cursor is locked — indoors you throw
+    /// where you are looking, which is what a third-person view implies anyway.
+    /// And <b>Escape</b> releases the cursor: without it the pointer is trapped, and
+    /// with two windows open on one machine for testing there would be no way to
+    /// reach the other one.
     ///
-    /// Per screen and presentation only. Nothing about the simulation reads the
-    /// camera, so the two players can be looking at completely different things.
+    /// Per screen and presentation only. Nothing in the simulation reads the camera,
+    /// so the two players can be looking at completely different things.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class InteriorOrbitCamera : MonoBehaviour
@@ -36,9 +42,8 @@ namespace PawsAndLoot.Gameplay.Camera
         /// <summary>
         /// Close and steep enough to stay inside the room.
         ///
-        /// Nine metres at 34 degrees put the camera 6.2 m above the player, which
-        /// is over the top of a wall — every neighbouring room was visible at
-        /// once. At these values it sits about 5.5 m up, below the raised walls.
+        /// Nine metres at 34 degrees put the camera 6.2 m above the player, which is
+        /// over the top of a wall — every neighbouring room was visible at once.
         /// </summary>
         [SerializeField, Min(1f)]
         private float distance = 6.5f;
@@ -46,8 +51,21 @@ namespace PawsAndLoot.Gameplay.Camera
         [SerializeField, Range(5f, 80f)]
         private float pitchDegrees = 42f;
 
-        [SerializeField, Min(0.05f)]
-        private float degreesPerPixel = 0.22f;
+        /// <summary>
+        /// Low, which is the whole reason the cursor is locked. Unlocked, a slow
+        /// turn runs out of screen; locked, it can be as slow as it likes.
+        /// </summary>
+        [SerializeField, Min(0.01f)]
+        private float degreesPerPixel = 0.11f;
+
+        /// <summary>
+        /// How far the view may tilt. Clamped at both ends: past the low limit the
+        /// camera slides into the floor, and past the high one it looks over the
+        /// wall into the neighbouring rooms — which is the problem the raised walls
+        /// were meant to fix.
+        /// </summary>
+        [SerializeField]
+        private Vector2 pitchLimits = new(14f, 62f);
 
         [SerializeField, Min(0.01f)]
         private float smoothTimeSeconds = 0.08f;
@@ -60,9 +78,17 @@ namespace PawsAndLoot.Gameplay.Camera
         private float _yaw;
         private Vector3 _velocity;
         private bool _active;
+        private bool _released;
 
         public bool IsActive => _active;
         public float Yaw => _yaw;
+        public float Pitch => pitchDegrees;
+
+        /// <summary>
+        /// True while the cursor is deliberately free — Escape was pressed. Exposed
+        /// so a test can assert that the trap has a way out.
+        /// </summary>
+        public bool IsCursorReleased => _released;
 
         public void Configure(
             TopDownFollowCamera configuredTownCamera,
@@ -75,9 +101,9 @@ namespace PawsAndLoot.Gameplay.Camera
         /// <summary>
         /// The local player's own interior state.
         ///
-        /// Resolved every frame until found, because the role each machine
-        /// controls is handed out by the host after the lobby — binding this at
-        /// scene-build time would watch the wrong character.
+        /// Resolved every frame until found, because the role each machine controls
+        /// is handed out by the host after the lobby — binding this at scene-build
+        /// time would watch the wrong character.
         /// </summary>
         private PlayerInteriorState ResolveLocalState()
         {
@@ -114,6 +140,14 @@ namespace PawsAndLoot.Gameplay.Camera
             return null;
         }
 
+        private static void SetCursorLocked(bool locked)
+        {
+            Cursor.lockState = locked
+                ? CursorLockMode.Locked
+                : CursorLockMode.None;
+            Cursor.visible = !locked;
+        }
+
         private void SetActive(bool active)
         {
             if (_active == active)
@@ -127,14 +161,19 @@ namespace PawsAndLoot.Gameplay.Camera
                 townCamera.enabled = !active;
             }
 
+            // Leaving always frees the cursor, whatever state it was in. A pointer
+            // still trapped after stepping into the street would be a bug nobody
+            // could work around.
+            _released = false;
+            SetCursorLocked(active);
+
             if (!active || _followed == null)
             {
                 return;
             }
 
             // Start behind the player rather than at whatever yaw was left over
-            // from the last visit, so walking in never begins with the camera
-            // facing a wall.
+            // from the last visit, so walking in never begins facing a wall.
             _yaw = _followed.eulerAngles.y;
             transform.position = DesiredPosition();
             _velocity = Vector3.zero;
@@ -151,6 +190,35 @@ namespace PawsAndLoot.Gameplay.Camera
                 - rotation * Vector3.forward * distance;
         }
 
+        /// <summary>
+        /// Escape frees the pointer; a click takes it back.
+        ///
+        /// Both halves matter. Without the release the cursor is trapped in the
+        /// window, which on a machine running two copies for testing means the
+        /// other one cannot be reached. Without the re-capture the player has no
+        /// way back into looking around except by leaving the house.
+        /// </summary>
+        private void UpdateCursorLock(Mouse mouse)
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null
+                && keyboard.escapeKey.wasPressedThisFrame
+                && !_released)
+            {
+                _released = true;
+                SetCursorLocked(false);
+                return;
+            }
+
+            if (_released
+                && mouse != null
+                && mouse.leftButton.wasPressedThisFrame)
+            {
+                _released = false;
+                SetCursorLocked(true);
+            }
+        }
+
         public void Tick(float deltaTime)
         {
             PlayerInteriorState state = ResolveLocalState();
@@ -161,9 +229,20 @@ namespace PawsAndLoot.Gameplay.Camera
             }
 
             Mouse mouse = Mouse.current;
-            if (mouse != null && mouse.rightButton.isPressed)
+            UpdateCursorLock(mouse);
+
+            // Only while the cursor is actually captured. Turning the view with a
+            // free pointer would move the camera every time somebody reached for a
+            // window.
+            if (mouse != null && !_released)
             {
-                _yaw += mouse.delta.ReadValue().x * degreesPerPixel;
+                Vector2 delta = mouse.delta.ReadValue();
+                _yaw += delta.x * degreesPerPixel;
+                // Mouse up raises the view, which means a shallower angle.
+                pitchDegrees = Mathf.Clamp(
+                    pitchDegrees - delta.y * degreesPerPixel,
+                    pitchLimits.x,
+                    pitchLimits.y);
             }
 
             transform.position = Vector3.SmoothDamp(
@@ -177,6 +256,15 @@ namespace PawsAndLoot.Gameplay.Camera
                 (_followed.position + lookOffset - transform.position)
                     .normalized,
                 Vector3.up);
+        }
+
+        private void OnDisable()
+        {
+            // Never leave the pointer captured because this was switched off.
+            if (_active)
+            {
+                SetCursorLocked(false);
+            }
         }
 
         private void LateUpdate()
