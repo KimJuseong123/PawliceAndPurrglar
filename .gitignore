@@ -61,3 +61,7 @@ server/.env.*
 server/audio-debug/
 server/dist/
 server/node_modules/
+
+# Map sandbox player output. A throwaway town for walking around in, rebuilt from
+# MapSandboxSetup whenever it is wanted.
+/Builds/Sandbox/
