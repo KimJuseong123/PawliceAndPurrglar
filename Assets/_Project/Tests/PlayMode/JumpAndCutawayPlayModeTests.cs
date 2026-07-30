@@ -265,15 +265,25 @@ namespace PawsAndLoot.Tests.PlayMode
 
             HouseInterior interior =
                 Object.FindFirstObjectByType<HouseInterior>();
-            InteriorOccluder[] panels =
-                interior.GetComponentsInChildren<InteriorOccluder>(true);
-            // The four exterior walls, and only those. The partitions are 2 m now,
-            // so nothing has to be done about them at all.
+            var screen = interior.GetComponent<InteriorShellScreen>();
             Assert.That(
-                panels.Length,
-                Is.EqualTo(4),
-                "A room should offer exactly its four sides as things that can "
-                + "move aside.");
+                screen,
+                Is.Not.Null,
+                "The room has no removable faces.");
+
+            // A face is a wall plus everything bolted to it. One part per face was
+            // the first attempt, and it left the player behind a cage of window
+            // frames with the wall panel gone from in front of them.
+            for (int face = 0; face < screen.FaceCount; face++)
+            {
+                Assert.That(
+                    screen.PartsOn(face),
+                    Is.GreaterThan(5),
+                    $"Face {face} is made of {screen.PartsOn(face)} renderers. "
+                    + "A side of this house is a wall, its windows, its siding "
+                    + "and its shutters — a handful means only the wall panel "
+                    + "was found.");
+            }
 
             // Nothing hidden while outdoors: the street camera is fixed and tuned,
             // and quietly deleting buildings in it is not what was asked for.
@@ -311,41 +321,48 @@ namespace PawsAndLoot.Tests.PlayMode
             // Compared against the other three rather than against a threshold: the
             // claim is that the best one was chosen, not that it scored well.
             UnityEngine.Camera view = UnityEngine.Camera.main;
-            InteriorOccluder hiddenPanel = cutaway.RemovedPanel;
-            Assert.That(hiddenPanel, Is.Not.Null);
+            int removed = cutaway.RemovedFace;
+            Assert.That(removed, Is.GreaterThanOrEqualTo(0));
+            Assert.That(
+                screen.IsHidden(removed),
+                Is.True,
+                "The face it reports removing is still drawn.");
 
             Vector3 towardCamera =
                 view.transform.position - interior.transform.position;
             towardCamera.y = 0f;
             towardCamera.Normalize();
 
-            float Facing(InteriorOccluder panel)
+            float Facing(int face)
             {
                 Vector3 outward =
-                    panel.View.bounds.center - interior.transform.position;
+                    screen.CentreOf(face) - interior.transform.position;
                 outward.y = 0f;
                 return Vector3.Dot(outward.normalized, towardCamera);
             }
 
-            float chosen = Facing(hiddenPanel);
-            foreach (InteriorOccluder panel in panels)
+            float chosen = Facing(removed);
+            for (int face = 0; face < screen.FaceCount; face++)
             {
                 Assert.That(
                     chosen,
-                    Is.GreaterThanOrEqualTo(Facing(panel) - 0.15f),
-                    $"'{panel.name}' faces the camera more than the wall that "
-                    + $"was actually removed ('{hiddenPanel.name}').");
+                    Is.GreaterThanOrEqualTo(Facing(face) - 0.15f),
+                    $"Face {face} faces the camera more than the one that was "
+                    + $"actually removed ({removed}).");
             }
 
             // Back on the way out.
             LocalPlayerRoleSelector.ClearOverriddenRole();
             cutaway.enabled = false;
             yield return null;
-            Assert.That(
-                panels.All(p => !p.IsHidden),
-                Is.True,
-                "A wall stayed invisible after the view was switched off, which "
-                + "is not something a player can work around.");
+            for (int face = 0; face < screen.FaceCount; face++)
+            {
+                Assert.That(
+                    screen.IsHidden(face),
+                    Is.False,
+                    $"Face {face} stayed invisible after the view was switched "
+                    + "off, which is not something a player can work around.");
+            }
         }
     }
 }

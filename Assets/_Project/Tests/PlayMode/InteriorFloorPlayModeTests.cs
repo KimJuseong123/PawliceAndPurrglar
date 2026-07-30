@@ -131,9 +131,18 @@ namespace PawsAndLoot.Tests.PlayMode
             // No press. The way out is automatic now, so being in the doorway is
             // the whole action — and pressing it afterwards would be refused,
             // because by then the thief is already outside.
-            yield return null;
+            //
+            // A few frames, not one. The trigger is reported by the physics step and
+            // the move itself waits for LateUpdate, because doing it inside
+            // CharacterController.Move gets it overwritten (ISSUE-044).
+            var interiorState = thief.GetComponent<PlayerInteriorState>();
+            for (int frame = 0; frame < 10 && interiorState.IsIndoors; frame++)
+            {
+                yield return null;
+            }
+
             Assert.That(
-                thief.GetComponent<PlayerInteriorState>().IsIndoors,
+                interiorState.IsIndoors,
                 Is.False,
                 "Standing in the doorway did not put the thief outside.");
 

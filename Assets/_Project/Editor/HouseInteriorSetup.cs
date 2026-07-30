@@ -348,6 +348,15 @@ namespace PawsAndLoot.Editor
                 new Vector3(backDoor.x, floorTop, inner.min.z + 0.2f),
                 number);
 
+            // Whichever face the camera is behind comes away as a whole. Given the
+            // room's measured inside rather than a list of parts: it works out which
+            // face each piece belongs to from where the piece is, so windows and
+            // siding leave with the wall they are bolted to.
+            room.gameObject.AddComponent<InteriorShellScreen>()
+                .Configure(
+                    new Vector2(inner.extents.x, inner.extents.z),
+                    floorTop);
+
             CreateEntrance(house, interior, matchRuntime, HouseDoorSide.Front);
             CreateEntrance(house, interior, matchRuntime, HouseDoorSide.Back);
             return true;
@@ -450,16 +459,6 @@ namespace PawsAndLoot.Editor
                 MeshCollider collider =
                     shell.AddComponent<MeshCollider>();
                 collider.sharedMesh = filter.sharedMesh;
-
-                // The link the cutaway needs. A cast from the camera hits this
-                // collider, which draws nothing, so the renderer it was cut from has
-                // to be recorded here — matching them by name at runtime would fail
-                // silently the day a part is renamed. The floor is left out: taking
-                // away the floor the player stands on is not a view of them.
-                if (!part.name.StartsWith("BD_House1F_Foundation"))
-                {
-                    shell.AddComponent<InteriorOccluder>().Configure(part);
-                }
 
                 added++;
             }

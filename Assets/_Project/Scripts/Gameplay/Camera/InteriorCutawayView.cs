@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using PawsAndLoot.Gameplay.Interiors;
 using PawsAndLoot.Gameplay.Players;
 using UnityEngine;
@@ -6,17 +5,19 @@ using UnityEngine;
 namespace PawsAndLoot.Gameplay.Camera
 {
     /// <summary>
-    /// Takes away the one wall the camera is looking through, indoors.
+    /// Takes away the one side of the room the camera is looking through, indoors.
     ///
     /// It used to cast from the camera to the player and remove whatever the ray
     /// touched. That worked and was tiring to look at: several walls qualify at any
     /// angle, which ones qualify changes continuously as the view turns, and the
     /// result was walls appearing and disappearing while the player stood still.
     ///
-    /// So the choice is made by side instead. A room has four exterior walls, the
-    /// camera is on one side of it, and that side is the one in the way — the whole
-    /// panel goes, and it stays gone until the camera has moved round far enough for a
-    /// different side to be the obvious answer. Four possible states instead of a
+    /// So the choice is made by side instead. A room has four faces, the camera is on
+    /// one side of it, and that side is the one in the way — the whole face goes, wall
+    /// and windows and siding and shutters together, and it stays gone until the
+    /// camera has moved round far enough for a different side to be the obvious
+    /// answer. Removing only the wall panel was the first attempt and left the player
+    /// behind a cage of window frames. Four possible states instead of a
     /// per-frame answer, and the partitions no longer matter at all because they are
     /// rebuilt at 2 m and nothing has to be done about them.
     ///
@@ -41,9 +42,9 @@ namespace PawsAndLoot.Gameplay.Camera
         [SerializeField]
         private LocalPlayerRoleSelector roleSelector;
 
-        private readonly List<InteriorOccluder> _panels = new();
         private HouseInterior _room;
-        private InteriorOccluder _removed;
+        private InteriorShellScreen _screen;
+        private int _removed = -1;
         private Transform _followed;
         private PlayerInteriorState _state;
 
@@ -51,13 +52,18 @@ namespace PawsAndLoot.Gameplay.Camera
         /// How many panels are out of the way. One indoors, none outside — a count is
         /// something a test can read, and "the wall disappeared" is not.
         /// </summary>
-        public int HiddenCount => _removed != null ? 1 : 0;
+        public int HiddenCount => _removed >= 0 ? 1 : 0;
 
         /// <summary>
-        /// Which panel it is, so a test can check it is the one between the camera and
+        /// Which face it is, so a test can check it is the one between the camera and
         /// the player rather than just any of the four.
         /// </summary>
-        public InteriorOccluder RemovedPanel => _removed;
+        public int RemovedFace => _removed;
+
+        /// <summary>
+        /// The room being looked into, exposed for the same reason.
+        /// </summary>
+        public InteriorShellScreen Screen => _screen;
 
         public void Configure(
             LocalPlayerRoleSelector configuredRoleSelector)
@@ -106,13 +112,8 @@ namespace PawsAndLoot.Gameplay.Camera
         }
 
         /// <summary>
-        /// The room the player is in, and its four walls.
-        ///
-        /// Collected from the room rather than handed over, and identified by being
-        /// the only things in it that carry an occluder: the partitions are greybox
-        /// now and take none, so whatever is left is the shell. No names involved,
-        /// which is the point — a name list is what fails silently when a model part
-        /// is renamed.
+        /// The room the player is in and its shell, found by id rather than kept from
+        /// the last frame — the player may have walked into a different house.
         /// </summary>
         private void ResolveRoom(int interiorId)
         {
@@ -122,7 +123,7 @@ namespace PawsAndLoot.Gameplay.Camera
             }
 
             _room = null;
-            _panels.Clear();
+            _screen = null;
             foreach (HouseInterior candidate in
                 FindObjectsByType<HouseInterior>(FindObjectsSortMode.None))
             {
@@ -132,41 +133,34 @@ namespace PawsAndLoot.Gameplay.Camera
                 }
 
                 _room = candidate;
-                _panels.AddRange(
-                    candidate.GetComponentsInChildren<InteriorOccluder>(
-                        true));
+                _screen = candidate.GetComponent<InteriorShellScreen>();
                 break;
             }
         }
 
         private void PutEverythingBack()
         {
-            foreach (InteriorOccluder panel in _panels)
+            if (_screen != null)
             {
-                if (panel != null)
-                {
-                    panel.SetHidden(false);
-                }
+                _screen.ShowEverything();
             }
 
-            _removed = null;
+            _removed = -1;
         }
 
         /// <summary>
-        /// How much a panel is on the camera's side of the room. A wall the camera is
-        /// behind scores near 1; the opposite wall scores near -1.
+        /// How much a face is on the camera's side of the room. The face the camera is
+        /// behind scores near 1; the opposite one near -1.
         /// </summary>
-        private float FacingScore(
-            InteriorOccluder panel,
-            Vector3 towardCamera)
+        private float FacingScore(int face, Vector3 towardCamera)
         {
-            if (panel == null || panel.View == null || _room == null)
+            if (_screen == null || _screen.PartsOn(face) == 0)
             {
                 return -2f;
             }
 
             Vector3 outward =
-                panel.View.bounds.center - _room.transform.position;
+                _screen.CentreOf(face) - _room.transform.position;
             outward.y = 0f;
             return outward.sqrMagnitude > 0.01f
                 ? Vector3.Dot(outward.normalized, towardCamera)
@@ -181,12 +175,12 @@ namespace PawsAndLoot.Gameplay.Camera
             {
                 PutEverythingBack();
                 _room = null;
-                _panels.Clear();
+                _screen = null;
                 return;
             }
 
             ResolveRoom(state.CurrentInteriorId);
-            if (_room == null || _panels.Count == 0)
+            if (_room == null || _screen == null)
             {
                 return;
             }
@@ -201,22 +195,22 @@ namespace PawsAndLoot.Gameplay.Camera
 
             towardCamera.Normalize();
 
-            InteriorOccluder best = null;
+            int best = -1;
             float bestScore = -2f;
-            foreach (InteriorOccluder panel in _panels)
+            for (int face = 0; face < _screen.FaceCount; face++)
             {
-                float score = FacingScore(panel, towardCamera);
+                float score = FacingScore(face, towardCamera);
                 if (score > bestScore)
                 {
                     bestScore = score;
-                    best = panel;
+                    best = face;
                 }
             }
 
             // Held on to unless something is clearly better. A camera sitting on a
-            // corner scores two walls almost equally, and without this it would
+            // corner scores two faces almost equally, and without this it would
             // alternate between them from one frame to the next.
-            if (_removed != null && _removed != best)
+            if (_removed >= 0 && _removed != best)
             {
                 float held = FacingScore(_removed, towardCamera);
                 if (bestScore - held < switchMargin)
@@ -231,7 +225,11 @@ namespace PawsAndLoot.Gameplay.Camera
             }
 
             PutEverythingBack();
-            best?.SetHidden(true);
+            if (best >= 0)
+            {
+                _screen.SetHidden(best, true);
+            }
+
             _removed = best;
         }
 
