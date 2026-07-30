@@ -1,6 +1,7 @@
 using System;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Logging;
+using PawsAndLoot.Integration.Voice;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -121,7 +122,29 @@ namespace PawsAndLoot.Integration.Network
             }
 
             CommitRolesRpc(_policeClientId.Value);
+            VoiceSessionCapabilityClient capabilityClient =
+                FindFirstObjectByType<VoiceSessionCapabilityClient>();
+            capabilityClient?.RegisterForRoles(this);
             return true;
+        }
+
+        [Rpc(SendTo.Everyone)]
+        public void ApplyVoiceTokensRpc(
+            string sessionId,
+            string hostToken,
+            string policeToken,
+            string thiefToken)
+        {
+            string token = LocalRole == PlayerRole.Police
+                ? policeToken
+                : thiefToken;
+            if (NetworkManager != null
+                && NetworkManager.LocalClientId == NetworkManager.ServerClientId)
+            {
+                token = hostToken;
+            }
+
+            VoiceCapabilityStore.Set(sessionId, token);
         }
 
         /// <summary>

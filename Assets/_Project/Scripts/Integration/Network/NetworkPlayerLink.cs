@@ -1,3 +1,4 @@
+using System;
 using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
@@ -227,6 +228,11 @@ namespace PawsAndLoot.Integration.Network
         private Vector2 _submittedMove;
         private bool _submittedDash;
         private bool _remoteDriven;
+
+        public event Action<ulong, string, string>
+            VoiceCommandMetadataReceived;
+        public event Action<string, string, string, string, int, int, int>
+            VoiceCommandEventReceived;
 
         public PlayerRole Role =>
             identity != null ? identity.Role : PlayerRole.Police;
@@ -470,6 +476,84 @@ namespace PawsAndLoot.Integration.Network
             {
                 companionInput.TryIssue(numberKey, Time.time);
             }
+        }
+
+        /// <summary>
+        /// Registers the lightweight part of a voice command with the Host.
+        /// The audio never travels through NGO; the Host uses this callback to
+        /// prepare the authoritative world context before classification.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitVoiceCommandMetadataRpc(
+            string clientCommandId,
+            string petId)
+        {
+            if (string.IsNullOrWhiteSpace(clientCommandId)
+                || string.IsNullOrWhiteSpace(petId))
+            {
+                return;
+            }
+
+            VoiceCommandMetadataReceived?.Invoke(
+                OwnerClientId,
+                clientCommandId,
+                petId);
+        }
+
+        /// <summary>
+        /// Host-only result publication. Clients never calculate cognition or
+        /// random outcomes; they only receive this presentation/event data.
+        /// </summary>
+        public void PublishVoiceCommandEvent(
+            string commandId,
+            string eventType,
+            string transcript,
+            string targetId,
+            int resultType,
+            int reaction,
+            int action)
+        {
+            if (!IsServer || !IsSpawned)
+            {
+                return;
+            }
+
+            VoiceCommandEventReceived?.Invoke(
+                commandId,
+                eventType,
+                transcript,
+                targetId,
+                resultType,
+                reaction,
+                action);
+            BroadcastVoiceCommandEventRpc(
+                commandId,
+                eventType,
+                transcript,
+                targetId,
+                resultType,
+                reaction,
+                action);
+        }
+
+        [Rpc(SendTo.NotServer)]
+        private void BroadcastVoiceCommandEventRpc(
+            string commandId,
+            string eventType,
+            string transcript,
+            string targetId,
+            int resultType,
+            int reaction,
+            int action)
+        {
+            VoiceCommandEventReceived?.Invoke(
+                commandId,
+                eventType,
+                transcript,
+                targetId,
+                resultType,
+                reaction,
+                action);
         }
 
         /// <summary>

@@ -616,3 +616,26 @@ READY와 경기 시작 직후에는 현재 역할의 목표를 한 문장으로 
 도둑 역할에서는 우측 HUD에 현재 판매 금액과 목표 금액, 보유 보물과 가격,
 10% 운반 페널티, 너구리 장터 판매 가능 여부가 표시됩니다. HUD는 게임 규칙을
 변경하지 않고 지갑·소지·이동·상호작용 상태를 읽기만 합니다.
+
+## Local WebGL Playtest
+
+Run `play-webgl.bat` from the repository root. The first run builds the
+WebGL player with Unity `6000.5.4f1`, starts the local WebGL server on port
+`8080`, starts the optional voice API on port `3000`, and opens the browser.
+
+```text
+play-webgl.bat
+play-webgl.bat --no-build
+play-webgl.bat --no-voice
+play-webgl.bat --port 8081
+```
+
+The game starts as an offline one-player test. Use `WASD` to move, `E` to
+interact, `Space` to dash, `Q` to drop a carried object, and number keys
+`1` through `4` for companion commands. Voice capture requires a browser
+microphone permission and `server/.env` with `OPENAI_API_KEY`; keyboard input
+continues to work when the voice server or OpenAI is unavailable.
+
+The launcher requires Unity `6000.5.4f1` and Node.js. If `server/node_modules`
+does not exist, run `npm install` inside `server` before using voice. Close the
+two service console windows to stop the local servers.

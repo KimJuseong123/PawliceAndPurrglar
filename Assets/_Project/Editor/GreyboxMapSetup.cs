@@ -1034,6 +1034,8 @@ namespace PawsAndLoot.Editor
             Transform root = CreateChild("Companions", parent);
             root.localPosition = Vector3.zero;
             CompanionConfig config = LoadCompanionConfig();
+            PawsAndLoot.Config.PetCognitionConfig cognitionConfig =
+                LoadPetCognitionConfig();
 
             // DOG-003 and CAT-004 shared services. The trail lives on the
             // thief because only the thief writes it.
@@ -1187,6 +1189,21 @@ namespace PawsAndLoot.Editor
                     CompanionCommandDispatcher>();
             dispatcher.Configure(matchRuntime, agents);
 
+            // Voice remains an adapter around the existing dispatcher. The
+            // session capability and backend URL are injected when the network
+            // session is established; no secret is serialized into the scene.
+            var targetRegistry = root.gameObject.AddComponent<
+                PawsAndLoot.Integration.Voice.CompanionTargetRegistry>();
+            var backendSocket = root.gameObject.AddComponent<
+                PawsAndLoot.Integration.Voice.VoiceBackendSocketClient>();
+            var voiceBridge = root.gameObject.AddComponent<
+                PawsAndLoot.Integration.Voice.CompanionVoiceCommandBridge>();
+            voiceBridge.Configure(
+                dispatcher,
+                backendSocket,
+                targetRegistry,
+                cognitionConfig);
+
             CompanionMatchEndBridge bridge =
                 dispatcherObject.AddComponent<CompanionMatchEndBridge>();
             bridge.Configure(matchEndController, dispatcher);
@@ -1204,6 +1221,17 @@ namespace PawsAndLoot.Editor
                     binding.Identity.transform,
                     binding.KeyboardInput != null
                     && binding.KeyboardInput.IsLocallyControlled);
+
+                var voiceInput = binding.Identity.gameObject.AddComponent<
+                    PawsAndLoot.Integration.Voice.VoiceCommandInput>();
+                voiceInput.Configure(
+                    LoadVoiceConfig(),
+                    string.Empty,
+                    CompanionCommandCatalog.GetCompanionKind(binding.Role)
+                        == CompanionKind.Dog
+                        ? "dog"
+                        : "cat",
+                    string.Empty);
 
                 // ART-003. Reflects the decided result and accepted commands.
                 Animator playerAnimator = binding.Identity
@@ -3372,7 +3400,7 @@ namespace PawsAndLoot.Editor
             panel.anchorMax = new Vector2(0f, 0f);
             panel.pivot = new Vector2(0f, 0f);
             panel.anchoredPosition = new Vector2(40f, 150f);
-            panel.sizeDelta = new Vector2(420f, 150f);
+            panel.sizeDelta = new Vector2(420f, 210f);
 
             Text commandLabel = CreateHudLabel(
                 "Command Name",
@@ -3423,6 +3451,47 @@ namespace PawsAndLoot.Editor
                 18);
             buttonLabel.text = "COMMAND  [1/2]";
 
+            Text voiceStateLabel = CreateHudLabel(
+                "Voice State",
+                panel,
+                new Vector2(0f, 0f),
+                new Vector2(0f, 0f),
+                new Vector2(0f, -35f),
+                new Vector2(400f, 28f),
+                TextAnchor.LowerLeft,
+                18);
+            Text voiceTranscriptLabel = CreateHudLabel(
+                "Voice Transcript",
+                panel,
+                new Vector2(0f, 0f),
+                new Vector2(0f, 0f),
+                new Vector2(0f, -64f),
+                new Vector2(400f, 28f),
+                TextAnchor.LowerLeft,
+                16);
+            RectTransform voiceButtonRect = CreateRect(
+                "Voice Command Button",
+                panel);
+            voiceButtonRect.anchorMin = new Vector2(0f, 0f);
+            voiceButtonRect.anchorMax = new Vector2(0f, 0f);
+            voiceButtonRect.pivot = new Vector2(0f, 0f);
+            voiceButtonRect.anchoredPosition = new Vector2(220f, 40f);
+            voiceButtonRect.sizeDelta = new Vector2(190f, 34f);
+            Image voiceButtonImage = voiceButtonRect.gameObject.AddComponent<Image>();
+            voiceButtonImage.color = new Color(0.12f, 0.48f, 0.32f, 0.9f);
+            Button voiceButton = voiceButtonRect.gameObject.AddComponent<Button>();
+            voiceButton.targetGraphic = voiceButtonImage;
+            Text voiceButtonLabel = CreateHudLabel(
+                "Voice Command Button Label",
+                voiceButtonRect,
+                new Vector2(0f, 0f),
+                new Vector2(1f, 1f),
+                Vector2.zero,
+                Vector2.zero,
+                TextAnchor.MiddleCenter,
+                18);
+            voiceButtonLabel.text = "VOICE";
+
             CompanionCommandHudPresenter presenter =
                 panel.gameObject.AddComponent<
                     CompanionCommandHudPresenter>();
@@ -3433,6 +3502,15 @@ namespace PawsAndLoot.Editor
                 cooldownLabel,
                 feedbackLabel,
                 button);
+
+            VoiceCommandHudPresenter voicePresenter =
+                panel.gameObject.AddComponent<VoiceCommandHudPresenter>();
+            voicePresenter.Configure(
+                null,
+                voiceStateLabel,
+                voiceTranscriptLabel,
+                null,
+                voiceButton);
         }
 
         /// <summary>
@@ -4165,6 +4243,41 @@ namespace PawsAndLoot.Editor
             {
                 throw new GameConfigurationException(
                     $"COMP-001 requires CompanionConfig at '{path}'.");
+            }
+
+            config.ValidateOrThrow();
+            return config;
+        }
+
+        private static PawsAndLoot.Config.PetCognitionConfig
+            LoadPetCognitionConfig()
+        {
+            const string path =
+                "Assets/_Project/Settings/Configs/PetCognitionConfig.asset";
+            PawsAndLoot.Config.PetCognitionConfig config =
+                AssetDatabase.LoadAssetAtPath<
+                    PawsAndLoot.Config.PetCognitionConfig>(path);
+            if (config == null)
+            {
+                throw new InvalidOperationException(
+                    $"VOICE requires PetCognitionConfig at '{path}'.");
+            }
+
+            config.ValidateOrThrow();
+            return config;
+        }
+
+        private static PawsAndLoot.Config.VoiceConfig LoadVoiceConfig()
+        {
+            const string path =
+                "Assets/_Project/Settings/Configs/VoiceConfig.asset";
+            PawsAndLoot.Config.VoiceConfig config =
+                AssetDatabase.LoadAssetAtPath<
+                    PawsAndLoot.Config.VoiceConfig>(path);
+            if (config == null)
+            {
+                throw new InvalidOperationException(
+                    $"VOICE requires VoiceConfig at '{path}'.");
             }
 
             config.ValidateOrThrow();

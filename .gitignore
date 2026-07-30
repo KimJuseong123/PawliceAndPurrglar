@@ -53,3 +53,11 @@ crashlytics-build.properties
 # See README.md for the import step.
 /Assets/TopDownEngine/
 /Assets/TopDownEngine.meta
+
+# Voice server secrets and local debug captures.
+server/.env
+server/.env.*
+!server/.env.example
+server/audio-debug/
+server/dist/
+server/node_modules/

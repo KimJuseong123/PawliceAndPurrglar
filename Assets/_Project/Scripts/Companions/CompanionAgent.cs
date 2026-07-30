@@ -188,6 +188,11 @@ namespace PawsAndLoot.Companions
             _stuckElapsedSeconds = 0f;
             _recoveryLogged = false;
 
+            if (TryHandleSafetyCommand(request))
+            {
+                return true;
+            }
+
             // The resolver decides what the command actually means. A refusal
             // here is a gameplay result, so it still consumes the cooldown and
             // gets reported instead of silently doing nothing.
@@ -235,6 +240,37 @@ namespace PawsAndLoot.Companions
                 + $"{CompanionCommandCatalog.GetDisplayName(request.CommandId)}"
                 + $" from {request.InputSource}.",
                 this);
+            return true;
+        }
+
+        private bool TryHandleSafetyCommand(
+            in CompanionCommandRequest request)
+        {
+            CompanionState nextState;
+            switch (request.CommandId)
+            {
+                case CompanionCommandId.Stop:
+                case CompanionCommandId.Stay:
+                case CompanionCommandId.Cancel:
+                    _hasCommandDestination = false;
+                    nextState = CompanionState.Idle;
+                    break;
+                case CompanionCommandId.FollowOwner:
+                case CompanionCommandId.ReturnOwner:
+                    _hasCommandDestination = false;
+                    nextState = CompanionState.ReturnToOwner;
+                    break;
+                default:
+                    return false;
+            }
+
+            _cooldownRemainingSeconds = companionConfig.CommandCooldownSeconds;
+            if (_stateMachine.CurrentState != nextState)
+            {
+                _stateMachine.TryTransitionTo(nextState);
+            }
+
+            CommandCompleted?.Invoke(request.CommandId);
             return true;
         }
 
