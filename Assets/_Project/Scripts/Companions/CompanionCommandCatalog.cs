@@ -32,6 +32,11 @@ namespace PawsAndLoot.Companions
                     or CompanionCommandId.Steal
                     or CompanionCommandId.Hide =>
                     role == PlayerRole.Thief,
+                CompanionCommandId.Stop
+                    or CompanionCommandId.FollowOwner
+                    or CompanionCommandId.Stay
+                    or CompanionCommandId.ReturnOwner
+                    or CompanionCommandId.Cancel => true,
                 _ => false
             };
         }
@@ -54,6 +59,38 @@ namespace PawsAndLoot.Companions
                 // Barking happens where the dog already stands.
                 CompanionCommandId.Bark => false,
                 _ => false
+            };
+        }
+
+        public static CompanionCommandId FromIntent(
+            string intent,
+            CompanionKind kind)
+        {
+            return intent switch
+            {
+                "STOP" => CompanionCommandId.Stop,
+                "FOLLOW_OWNER" => CompanionCommandId.FollowOwner,
+                "STAY" => CompanionCommandId.Stay,
+                "RETURN_OWNER" => CompanionCommandId.ReturnOwner,
+                "CANCEL" => CompanionCommandId.Cancel,
+                "SEARCH_AREA" => CompanionCommandId.Search,
+                "FETCH_OBJECT" => kind == CompanionKind.Cat
+                    ? CompanionCommandId.Steal
+                    : CompanionCommandId.Search,
+                "CHASE_TARGET" => kind == CompanionKind.Dog
+                    ? CompanionCommandId.Track
+                    : CompanionCommandId.Distract,
+                "GUARD_AREA" => kind == CompanionKind.Dog
+                    ? CompanionCommandId.Guard
+                    : CompanionCommandId.Hide,
+                "INSPECT_TARGET" => kind == CompanionKind.Cat
+                    ? CompanionCommandId.Scout
+                    : CompanionCommandId.Search,
+                "DISTRACT_TARGET" => CompanionCommandId.Distract,
+                "MOVE_TO_POSITION" => kind == CompanionKind.Dog
+                    ? CompanionCommandId.Guard
+                    : CompanionCommandId.Scout,
+                _ => CompanionCommandId.None
             };
         }
 
@@ -99,6 +136,11 @@ namespace PawsAndLoot.Companions
                 CompanionCommandId.Distract => "DISTRACT",
                 CompanionCommandId.Steal => "STEAL",
                 CompanionCommandId.Hide => "HIDE",
+                CompanionCommandId.Stop => "STOP",
+                CompanionCommandId.FollowOwner => "FOLLOW OWNER",
+                CompanionCommandId.Stay => "STAY",
+                CompanionCommandId.ReturnOwner => "RETURN OWNER",
+                CompanionCommandId.Cancel => "CANCEL",
                 _ => "NONE"
             };
         }

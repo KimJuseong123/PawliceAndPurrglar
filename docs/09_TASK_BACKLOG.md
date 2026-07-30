@@ -514,3 +514,10 @@ Blender 모델 자체는 작업자가 제작한다. 이 저장소의 작업은 U
 2. 관문 B 플레이테스트
 3. `COMP-001` 공통 명령 요청과 검증
 4. `COMP-002` 숫자키 `1`~`4` 입력 어댑터
+# Voice implementation status
+
+The previously blocked voice tasks are unblocked for the WebGL/Fastify path.
+The first implementation slice includes browser capture, upload validation,
+STT, absolute-command matching, structured Intent candidates, Host cognition,
+NGO result events, and fallback keyboard input. Streaming STT, fine-tuning,
+persistent analytics, and multi-instance server deployment remain later work.

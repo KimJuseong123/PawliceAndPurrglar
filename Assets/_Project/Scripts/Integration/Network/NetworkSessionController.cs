@@ -1,5 +1,7 @@
 using System;
 using PawsAndLoot.Logging;
+using PawsAndLoot.Config;
+using PawsAndLoot.Integration.Voice;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -142,6 +144,17 @@ namespace PawsAndLoot.Integration.Network
             }
 
             SpawnRoleBoard();
+            VoiceSessionCapabilityClient voiceClient =
+                GetComponent<VoiceSessionCapabilityClient>();
+            if (voiceClient == null)
+            {
+                voiceClient = gameObject.AddComponent<
+                    VoiceSessionCapabilityClient>();
+            }
+            voiceClient.Configure(
+                GameConfigService.IsInitialized
+                    ? GameConfigService.Current.Voice
+                    : null);
             SetMode(SessionMode.Host);
             SetStatus(
                 $"호스트 대기 중 · 포트 {parsed} · 상대에게 내 IP를 알려주세요.");

@@ -22,11 +22,28 @@ namespace PawsAndLoot.Editor
         private const string WebGlBuildPath = "Builds/Playtest/WebGL";
 
         /// <summary>
-        /// ART-005 asks for the WebGL payload size. WebGL is not the target
-        /// platform (ISSUE-008), so this exists purely to measure, not to ship.
+        /// ART-005 measures the WebGL payload without development metadata.
         /// </summary>
         [MenuItem("Paws & Loot/Build/Measure WebGL Build Size")]
         public static void BuildWebGl()
+        {
+            BuildWebGl(BuildOptions.None, true);
+        }
+
+        /// <summary>
+        /// Builds the browser playtest used by the local launcher. Keeping this
+        /// separate from the measurement command makes the batch entry point
+        /// explicit without changing the existing validation workflow.
+        /// </summary>
+        [MenuItem("Paws & Loot/Build/Build WebGL Playtest")]
+        public static void BuildWebGlPlaytest()
+        {
+            BuildWebGl(BuildOptions.Development, false);
+        }
+
+        private static void BuildWebGl(
+            BuildOptions buildOptions,
+            bool measurePayload)
         {
             string[] scenePaths = ResolveScenePaths();
             string absolute = Path.GetFullPath(WebGlBuildPath);
@@ -38,7 +55,7 @@ namespace PawsAndLoot.Editor
                     scenes = scenePaths,
                     locationPathName = absolute,
                     target = BuildTarget.WebGL,
-                    options = BuildOptions.None
+                    options = buildOptions
                 });
 
             if (report.summary.result != BuildResult.Succeeded)
@@ -46,6 +63,13 @@ namespace PawsAndLoot.Editor
                 throw new InvalidOperationException(
                     $"WebGL build failed with "
                     + $"{report.summary.totalErrors} errors.");
+            }
+
+            if (!measurePayload)
+            {
+                Debug.Log(
+                    $"WebGL playtest build succeeded at '{absolute}'.");
+                return;
             }
 
             long totalBytes = 0;

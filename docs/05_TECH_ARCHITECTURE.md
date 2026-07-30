@@ -609,3 +609,14 @@ Play Mode 테스트는 일반 빌드에서 `TestAssemblies`로 제외한다.
 네트워크는 Netcode for GameObjects와 Unity Multiplayer Services 조합을 우선 후보로 둔다.
 이 단계에서는 설치하지 않으며, 기술 검증에서 Host, Client, 역할 배정, 위치 동기화, 연결 종료를 확인한 뒤 최종 채택한다.
 WebGL은 마이크와 네트워크 제약을 별도로 검증한 뒤 보조 빌드 대상으로 재검토한다.
+# Voice Integration Boundary
+
+`server/` is a separate Fastify TypeScript service. It owns upload validation,
+capability-session checks, STT, Intent classification, retry/timeout handling,
+and the Host-only WebSocket channel. It does not own Unity transforms or game
+rules.
+
+Unity WebGL owns microphone capture and UI. The NGO Host owns
+`PetCognitionResolver`, live target validation, deterministic random decisions,
+and the existing companion state/action path. Final voice results are sent to
+all clients through the existing NGO authority path.

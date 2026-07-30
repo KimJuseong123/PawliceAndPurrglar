@@ -18,7 +18,9 @@ namespace PawsAndLoot.Companions
             CompanionCommandInputSource inputSource,
             float issuedAtSeconds,
             Transform targetEntity = null,
-            Vector3? targetPosition = null)
+            Vector3? targetPosition = null,
+            string commandCorrelationId = null,
+            string targetEntityId = null)
         {
             CommandId = commandId;
             IssuerRole = issuerRole;
@@ -27,6 +29,8 @@ namespace PawsAndLoot.Companions
             IssuedAtSeconds = issuedAtSeconds;
             TargetEntity = targetEntity;
             TargetPosition = targetPosition;
+            CommandCorrelationId = commandCorrelationId;
+            TargetEntityId = targetEntityId;
         }
 
         public CompanionCommandId CommandId { get; }
@@ -47,6 +51,8 @@ namespace PawsAndLoot.Companions
 
         /// <summary>Optional world position, null for commands that need none.</summary>
         public Vector3? TargetPosition { get; }
+        public string CommandCorrelationId { get; }
+        public string TargetEntityId { get; }
 
         public bool HasTarget =>
             TargetEntity != null || TargetPosition.HasValue;

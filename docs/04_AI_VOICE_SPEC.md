@@ -287,3 +287,16 @@ CompanionCommandRequest
 - 마이크 거부
 - 서비스 실패
 - 음성과 버튼의 동일한 결과
+# Implemented Voice Pipeline
+
+The production prototype path is:
+
+`WebGL MediaRecorder -> Fastify multipart API -> STT -> exact command matcher /
+Structured Intent candidates -> Host WebSocket -> PetCognitionResolver ->
+existing CompanionCommandDispatcher`.
+
+Absolute commands are resolved before the intent model. The Fastify service
+only returns normalized text and bounded candidates. The Unity NGO Host
+revalidates target IDs, faction, range, cooldown, and action availability before
+executing anything. Dog and cat cognition are separate and use deterministic
+Host-side seeds.

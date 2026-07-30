@@ -61,9 +61,10 @@ namespace PawsAndLoot.Companions
             if (!CompanionCommandCatalog.BelongsTo(
                     request.CommandId,
                     request.IssuerRole)
-                || CompanionCommandCatalog.GetCompanionKind(
-                       request.IssuerRole)
-                   != request.CompanionKind)
+                || ((int)request.CommandId < (int)CompanionCommandId.Stop
+                    && CompanionCommandCatalog.GetCompanionKind(
+                           request.IssuerRole)
+                       != request.CompanionKind))
             {
                 rejection = CompanionCommandRejection.WrongFaction;
                 return false;

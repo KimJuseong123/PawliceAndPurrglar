@@ -18,3 +18,4 @@ MonoBehaviour:
   arrestConfig: {fileID: 11400000, guid: d8fe1d468de78ee4ea9a1c4de75c5de5, type: 2}
   companionConfig: {fileID: 11400000, guid: 70185034501b7584ca6d2e0288937482, type: 2}
   voiceConfig: {fileID: 11400000, guid: 6afb0216b724018448374e5b0232194d, type: 2}
+  petCognitionConfig: {fileID: 11400000, guid: 2c1f1d3e3c1f4ea2a5b1f8e6e2d9b7c4, type: 2}
