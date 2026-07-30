@@ -38,6 +38,20 @@ namespace PawsAndLoot.Gameplay.Interiors
         };
 
         /// <summary>
+        /// Where the middle of the room actually is, relative to this object.
+        ///
+        /// Not zero, and that was a bug worth the trouble it caused. The model is
+        /// re-centred on its whole silhouette when it is placed, and that silhouette
+        /// includes the porch sticking out of the front — so the walls sit about a
+        /// metre behind this object's origin. Measuring from the origin put the front
+        /// wall <b>inside</b> the room by that margin, and the entire front face,
+        /// door and siding and shutters, belonged to no face at all. The back worked
+        /// perfectly, which is exactly why it read as a door problem.
+        /// </summary>
+        [SerializeField]
+        private Vector3 innerCentreOffset;
+
+        /// <summary>
         /// Half the room's inside, measured by the builder from the wall positions.
         /// A part further out than this on an axis is part of that face.
         /// </summary>
@@ -61,8 +75,18 @@ namespace PawsAndLoot.Gameplay.Interiors
 
         public int FaceCount => Outward.Length;
 
-        public void Configure(Vector2 configuredInner, float configuredFloorTop)
+        /// <summary>
+        /// The middle of the room in world space. Used for classifying parts and for
+        /// deciding which face the camera is behind, so that both agree.
+        /// </summary>
+        public Vector3 Centre => transform.position + innerCentreOffset;
+
+        public void Configure(
+            Vector3 configuredCentreOffset,
+            Vector2 configuredInner,
+            float configuredFloorTop)
         {
+            innerCentreOffset = configuredCentreOffset;
             innerHalfExtents = configuredInner;
             floorTop = configuredFloorTop;
             _resolved = false;
@@ -80,6 +104,19 @@ namespace PawsAndLoot.Gameplay.Interiors
                 : 0;
         }
 
+        /// <summary>
+        /// The parts a face is made of, so a report can list what was assigned and,
+        /// by subtraction, what was left behind. Exposed for measurement: the bug
+        /// this class exists for is a part quietly not belonging to any face.
+        /// </summary>
+        public IReadOnlyList<Renderer> PartsOf(int face)
+        {
+            Resolve();
+            return face >= 0 && face < _faces.Length
+                ? _faces[face]
+                : System.Array.Empty<Renderer>();
+        }
+
         public bool IsHidden(int face)
         {
             return face >= 0 && face < _hidden.Length && _hidden[face];
@@ -94,7 +131,7 @@ namespace PawsAndLoot.Gameplay.Interiors
             Resolve();
             if (face < 0 || face >= _faces.Length || _faces[face].Count == 0)
             {
-                return transform.position;
+                return Centre;
             }
 
             Vector3 total = Vector3.zero;
@@ -145,7 +182,7 @@ namespace PawsAndLoot.Gameplay.Interiors
                 face.Clear();
             }
 
-            Vector3 centre = transform.position;
+            Vector3 centre = Centre;
             foreach (Renderer part in
                 GetComponentsInChildren<Renderer>(true))
             {

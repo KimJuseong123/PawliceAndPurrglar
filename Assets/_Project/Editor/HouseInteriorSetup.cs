@@ -354,6 +354,7 @@ namespace PawsAndLoot.Editor
             // siding leave with the wall they are bolted to.
             room.gameObject.AddComponent<InteriorShellScreen>()
                 .Configure(
+                    inner.center - room.position,
                     new Vector2(inner.extents.x, inner.extents.z),
                     floorTop);
 

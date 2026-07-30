@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using PawsAndLoot.Animation;
@@ -284,6 +285,37 @@ namespace PawsAndLoot.Tests.PlayMode
                     + "and its shutters — a handful means only the wall panel "
                     + "was found.");
             }
+
+            // And nothing is left over.
+            //
+            // This is the assertion that would have caught the second version. The
+            // model is re-centred on a silhouette that includes its porch, so the
+            // room's origin sits about a metre behind the real middle — measured from
+            // the origin, the whole front face counted as being inside the room and
+            // belonged to nowhere. The back face was perfect, which is why it looked
+            // like a problem with the door.
+            var assigned = new HashSet<Renderer>();
+            for (int face = 0; face < screen.FaceCount; face++)
+            {
+                foreach (Renderer part in screen.PartsOf(face))
+                {
+                    assigned.Add(part);
+                }
+            }
+
+            Renderer[] orphaned = screen
+                .GetComponentsInChildren<Renderer>(true)
+                .Where(r => r.enabled
+                    && r.name.StartsWith("BD_")
+                    && r.bounds.min.y > interior.FloorHeight + 0.4f
+                    && !assigned.Contains(r))
+                .ToArray();
+            Assert.That(
+                orphaned.Length,
+                Is.Zero,
+                $"{orphaned.Length} pieces of the shell belong to no face, so "
+                + "they stay put when their side is removed: e.g. "
+                + $"'{orphaned.FirstOrDefault()?.name}'.");
 
             // Nothing hidden while outdoors: the street camera is fixed and tuned,
             // and quietly deleting buildings in it is not what was asked for.

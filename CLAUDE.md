@@ -127,6 +127,14 @@ Claude Code 전용 작업 지침서다.
 >    제외된다. 새로 움직이는 것을 추가하면 제외 규칙도 함께 넣는다.
 
 
+> **오브젝트의 원점이 그 오브젝트의 중심이라고 가정하지 않는다.** 집 모델은 배치될 때
+> 실루엣 전체로 재중심되고 그 실루엣에는 앞으로 튀어나온 현관이 들어간다. 그래서 벽이
+> 원점보다 1.09m 뒤에 있고, 원점 기준으로 면을 판정하니 **앞면 전체가 방 안쪽으로 분류돼**
+> 투과되지 않았다. 뒷면은 완벽했으므로 문 문제처럼 보였다 (`ISSUE-045`).
+>
+> 그리고 분류를 하면 **"어디에도 속하지 않은 것"의 수를 단정한다.** 면마다 개수가 충분한지만
+> 보면 앞면이 25개로 통과한다 — 원래 82개여야 하는데.
+
 > **물리 콜백 안에서 `CharacterController`를 옮기지 않는다.** `OnTriggerEnter`는
 > `Move` 안에서 오고, 컨트롤러는 그 호출 끝에 자기가 계산한 위치를 덮어쓴다. 순간이동이
 > 조용히 되돌려져서 플레이어가 나가려던 문턱에 남고 21m를 떨어졌다 (`ISSUE-044`).
@@ -215,6 +223,7 @@ Rebuild MAP-001 Greybox Village   Game 씬 마을 재생성
 Validate MAP-001 Greybox Village  장소·경로·폭·충돌 검사
 Capture Map Overview              Game 씬 상공 평면도 → Logs/map-overview.png
 Report House Model Layout         집 모델 부품·치수 보고 (실내를 손대기 전에 먼저 잰다)
+Report Interior Faces             실내 네 면의 부품 배정과 **어디에도 안 속한 것** 보고
 Create Default Config Assets      Settings/Configs 7개 에셋 생성
 Validate Default Config Assets    설정값과 필수 참조 검사
 Create Default Log Config         로그 설정 생성
@@ -248,7 +257,7 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 - 결과 XML의 실제 테스트 수와 실패 목록
 - **테스트 0개 발견은 성공이 아니다**
 
-현재 기준선: Edit Mode 159개, Play Mode 142개 (`ISSUE-043` 시점).
+현재 기준선: Edit Mode 161개, Play Mode 142개 (`ISSUE-045` 시점).
 테스트를 추가하면 `13_CURRENT_STATE.md`의 `최근 검증` 표에 실제 수치를 기록한다.
 
 ### 런타임 검증 (자체 보고 프로브 패턴)

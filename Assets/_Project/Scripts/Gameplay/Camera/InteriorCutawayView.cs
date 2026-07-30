@@ -160,7 +160,7 @@ namespace PawsAndLoot.Gameplay.Camera
             }
 
             Vector3 outward =
-                _screen.CentreOf(face) - _room.transform.position;
+                _screen.CentreOf(face) - _screen.Centre;
             outward.y = 0f;
             return outward.sqrMagnitude > 0.01f
                 ? Vector3.Dot(outward.normalized, towardCamera)
@@ -185,8 +185,10 @@ namespace PawsAndLoot.Gameplay.Camera
                 return;
             }
 
+            // From the middle of the room, which is not this object's origin: the
+            // model is re-centred on a silhouette that includes its porch.
             Vector3 towardCamera =
-                view.transform.position - _room.transform.position;
+                view.transform.position - _screen.Centre;
             towardCamera.y = 0f;
             if (towardCamera.sqrMagnitude <= 0.01f)
             {
