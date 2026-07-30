@@ -6,64 +6,58 @@ using UnityEngine;
 namespace PawsAndLoot.Gameplay.Camera
 {
     /// <summary>
-    /// Hides whatever stands between the camera and the player, indoors.
+    /// Takes away the one wall the camera is looking through, indoors.
     ///
-    /// The rooms are the house model, which means four exterior walls, five partition
-    /// walls and a room's worth of furniture, all of it taller than the character and
-    /// all of it between the camera and them at some angle. Turning the camera to
-    /// find a gap is not a solution: at the pitch the walls allow there is often no
-    /// gap, and hunting for one is the player doing the camera's job.
+    /// It used to cast from the camera to the player and remove whatever the ray
+    /// touched. That worked and was tiring to look at: several walls qualify at any
+    /// angle, which ones qualify changes continuously as the view turns, and the
+    /// result was walls appearing and disappearing while the player stood still.
     ///
-    /// So the wall comes out instead. A cast from the camera to the player collects
-    /// everything in the way and switches those renderers off; anything that was
-    /// switched off and is no longer in the way goes back. The player is never one of
-    /// them — they are the thing being looked at.
+    /// So the choice is made by side instead. A room has four exterior walls, the
+    /// camera is on one side of it, and that side is the one in the way — the whole
+    /// panel goes, and it stays gone until the camera has moved round far enough for a
+    /// different side to be the obvious answer. Four possible states instead of a
+    /// per-frame answer, and the partitions no longer matter at all because they are
+    /// rebuilt at 2 m and nothing has to be done about them.
     ///
-    /// A cutaway rather than a fade because these are single meshes: one wall is one
-    /// renderer for a whole side of the house, so there is no "part near the player"
-    /// to dissolve without a shader that knows where the player is. Removing the
-    /// whole panel is what the top-down games this borrows from do, and it reads
-    /// cleanly at this camera distance.
+    /// The margin is what makes it calm. Without it, a camera parked on a diagonal
+    /// swaps between two walls every few frames, which is the flicker this replaced.
     ///
     /// Per screen. Nothing in the simulation reads it, so the two players can have
-    /// different walls missing, and neither gains anything: you can only see into the
+    /// different walls missing and neither gains anything: you can only see into the
     /// room you are already standing in.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class InteriorCutawayView : MonoBehaviour
     {
         /// <summary>
-        /// A fat cast, not a line. A hairline ray slips between a door frame and a
-        /// wall and the panel flickers back once a frame, which is worse to look at
-        /// than the wall was.
+        /// How much better a different side has to look before the view switches to
+        /// it. Compared against a dot product, so this is roughly 20 degrees of
+        /// camera rotation past the halfway line.
         /// </summary>
-        [SerializeField, Min(0.05f)]
-        private float castRadius = 0.55f;
-
-        /// <summary>
-        /// Aimed a little above the feet. Casting at the pivot clips the floor the
-        /// player is standing on and hides it.
-        /// </summary>
-        [SerializeField]
-        private Vector3 targetOffset = new(0f, 1.1f, 0f);
+        [SerializeField, Range(0f, 0.5f)]
+        private float switchMargin = 0.12f;
 
         [SerializeField]
         private LocalPlayerRoleSelector roleSelector;
 
-        private const int MaxHits = 32;
-
-        private readonly RaycastHit[] _hits = new RaycastHit[MaxHits];
-        private readonly HashSet<InteriorOccluder> _hidden = new();
-        private readonly HashSet<InteriorOccluder> _stillBlocking = new();
+        private readonly List<InteriorOccluder> _panels = new();
+        private HouseInterior _room;
+        private InteriorOccluder _removed;
         private Transform _followed;
         private PlayerInteriorState _state;
 
         /// <summary>
-        /// How many panels are currently out of the way. Exposed because "the wall
-        /// disappeared" is not something a screenshot test can assert, and a count
-        /// is.
+        /// How many panels are out of the way. One indoors, none outside — a count is
+        /// something a test can read, and "the wall disappeared" is not.
         /// </summary>
-        public int HiddenCount => _hidden.Count;
+        public int HiddenCount => _removed != null ? 1 : 0;
+
+        /// <summary>
+        /// Which panel it is, so a test can check it is the one between the camera and
+        /// the player rather than just any of the four.
+        /// </summary>
+        public InteriorOccluder RemovedPanel => _removed;
 
         public void Configure(
             LocalPlayerRoleSelector configuredRoleSelector)
@@ -73,8 +67,8 @@ namespace PawsAndLoot.Gameplay.Camera
 
         /// <summary>
         /// The local player's own state, resolved every frame until found: which role
-        /// this machine controls is handed out by the host after the lobby, so
-        /// binding it at scene-build time would watch the wrong character.
+        /// this machine controls is handed out by the host after the lobby, so binding
+        /// it at scene-build time would watch the wrong character.
         /// </summary>
         private PlayerInteriorState ResolveLocalState()
         {
@@ -111,100 +105,139 @@ namespace PawsAndLoot.Gameplay.Camera
             return null;
         }
 
-        private void RevealEverything()
+        /// <summary>
+        /// The room the player is in, and its four walls.
+        ///
+        /// Collected from the room rather than handed over, and identified by being
+        /// the only things in it that carry an occluder: the partitions are greybox
+        /// now and take none, so whatever is left is the shell. No names involved,
+        /// which is the point — a name list is what fails silently when a model part
+        /// is renamed.
+        /// </summary>
+        private void ResolveRoom(int interiorId)
         {
-            foreach (InteriorOccluder occluder in _hidden)
+            if (_room != null && _room.InteriorId == interiorId)
             {
-                if (occluder != null)
+                return;
+            }
+
+            _room = null;
+            _panels.Clear();
+            foreach (HouseInterior candidate in
+                FindObjectsByType<HouseInterior>(FindObjectsSortMode.None))
+            {
+                if (candidate.InteriorId != interiorId)
                 {
-                    occluder.SetHidden(false);
+                    continue;
+                }
+
+                _room = candidate;
+                _panels.AddRange(
+                    candidate.GetComponentsInChildren<InteriorOccluder>(
+                        true));
+                break;
+            }
+        }
+
+        private void PutEverythingBack()
+        {
+            foreach (InteriorOccluder panel in _panels)
+            {
+                if (panel != null)
+                {
+                    panel.SetHidden(false);
                 }
             }
 
-            _hidden.Clear();
+            _removed = null;
+        }
+
+        /// <summary>
+        /// How much a panel is on the camera's side of the room. A wall the camera is
+        /// behind scores near 1; the opposite wall scores near -1.
+        /// </summary>
+        private float FacingScore(
+            InteriorOccluder panel,
+            Vector3 towardCamera)
+        {
+            if (panel == null || panel.View == null || _room == null)
+            {
+                return -2f;
+            }
+
+            Vector3 outward =
+                panel.View.bounds.center - _room.transform.position;
+            outward.y = 0f;
+            return outward.sqrMagnitude > 0.01f
+                ? Vector3.Dot(outward.normalized, towardCamera)
+                : -2f;
         }
 
         public void Tick()
         {
             PlayerInteriorState state = ResolveLocalState();
             UnityEngine.Camera view = UnityEngine.Camera.main;
-            if (state == null
-                || !state.IsIndoors
-                || _followed == null
-                || view == null)
+            if (state == null || !state.IsIndoors || view == null)
             {
-                RevealEverything();
+                PutEverythingBack();
+                _room = null;
+                _panels.Clear();
                 return;
             }
 
-            Vector3 target = _followed.position + targetOffset;
-            Vector3 from = view.transform.position;
-            Vector3 toTarget = target - from;
-            float distance = toTarget.magnitude;
-            if (distance <= 0.01f)
-            {
-                RevealEverything();
-                return;
-            }
-
-            _stillBlocking.Clear();
-
-            // Triggers ignored, as everywhere that asks "what is in the way" — the
-            // map is full of them and a doorway trigger is not a wall.
-            int count = Physics.SphereCastNonAlloc(
-                from,
-                castRadius,
-                toTarget / distance,
-                _hits,
-                distance,
-                Physics.AllLayers,
-                QueryTriggerInteraction.Ignore);
-            for (int index = 0; index < count; index++)
-            {
-                Collider hit = _hits[index].collider;
-                if (hit == null)
-                {
-                    continue;
-                }
-
-                InteriorOccluder occluder =
-                    hit.GetComponentInParent<InteriorOccluder>();
-                if (occluder == null)
-                {
-                    continue;
-                }
-
-                _stillBlocking.Add(occluder);
-                occluder.SetHidden(true);
-                _hidden.Add(occluder);
-            }
-
-            // Put back anything that has stopped blocking. Iterated over a copy,
-            // because the set is being written to.
-            if (_hidden.Count == _stillBlocking.Count)
+            ResolveRoom(state.CurrentInteriorId);
+            if (_room == null || _panels.Count == 0)
             {
                 return;
             }
 
-            var toReveal = new List<InteriorOccluder>();
-            foreach (InteriorOccluder occluder in _hidden)
+            Vector3 towardCamera =
+                view.transform.position - _room.transform.position;
+            towardCamera.y = 0f;
+            if (towardCamera.sqrMagnitude <= 0.01f)
             {
-                if (occluder == null || !_stillBlocking.Contains(occluder))
+                return;
+            }
+
+            towardCamera.Normalize();
+
+            InteriorOccluder best = null;
+            float bestScore = -2f;
+            foreach (InteriorOccluder panel in _panels)
+            {
+                float score = FacingScore(panel, towardCamera);
+                if (score > bestScore)
                 {
-                    toReveal.Add(occluder);
+                    bestScore = score;
+                    best = panel;
                 }
             }
 
-            foreach (InteriorOccluder occluder in toReveal)
+            // Held on to unless something is clearly better. A camera sitting on a
+            // corner scores two walls almost equally, and without this it would
+            // alternate between them from one frame to the next.
+            if (_removed != null && _removed != best)
             {
-                occluder?.SetHidden(false);
-                _hidden.Remove(occluder);
+                float held = FacingScore(_removed, towardCamera);
+                if (bestScore - held < switchMargin)
+                {
+                    return;
+                }
             }
+
+            if (best == _removed)
+            {
+                return;
+            }
+
+            PutEverythingBack();
+            best?.SetHidden(true);
+            _removed = best;
         }
 
         private void OnDisable()
         {
-            RevealEverything();
+            PutEverythingBack();
         }
 
         private void LateUpdate()

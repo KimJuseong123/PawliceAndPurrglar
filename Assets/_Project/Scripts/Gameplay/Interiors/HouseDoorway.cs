@@ -62,6 +62,7 @@ namespace PawsAndLoot.Gameplay.Interiors
         private bool automatic;
 
         private IMatchStateReader _matchState;
+        private PlayerRoleIdentity _pendingPlayer;
 
         public bool LeadsInside => leadsInside;
         public bool IsAutomatic => automatic;
@@ -150,6 +151,24 @@ namespace PawsAndLoot.Gameplay.Interiors
                 return;
             }
 
+            // Remembered, not acted on. This callback arrives from inside
+            // CharacterController.Move, and the controller writes its own computed
+            // position over the transform when that call finishes — so a teleport
+            // here is quietly undone and the player is left standing in the doorway
+            // they were being moved out of, which is outside the room and above
+            // nothing. They fell 21 m.
+            _pendingPlayer = player;
+        }
+
+        private void LateUpdate()
+        {
+            if (_pendingPlayer == null)
+            {
+                return;
+            }
+
+            PlayerRoleIdentity player = _pendingPlayer;
+            _pendingPlayer = null;
             TryInteract(new PlayerInteractionContext(player));
         }
 

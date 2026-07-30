@@ -348,10 +348,42 @@ namespace PawsAndLoot.Tests.PlayMode
             int furniture = room
                 .GetComponentsInChildren<BoxCollider>(true)
                 .Count(box => box.name.StartsWith("IN_"));
+            // Four exterior walls and the foundation. The partitions are not among
+            // them any more: they are rebuilt as 2 m greybox with their own boxes, so
+            // that the camera can see over every one of them at once.
             Assert.That(
                 walls,
-                Is.GreaterThanOrEqualTo(8),
-                "The exterior and partition walls are not solid.");
+                Is.GreaterThanOrEqualTo(4),
+                "The shell of the room is not solid.");
+
+            BoxCollider[] lowWalls = room
+                .GetComponentsInChildren<BoxCollider>(true)
+                .Where(box => box.name.EndsWith(" Low"))
+                .ToArray();
+            Assert.That(
+                lowWalls.Length,
+                Is.GreaterThanOrEqualTo(4),
+                "The partitions were not rebuilt, so the rooms are not divided.");
+            foreach (BoxCollider lowWall in lowWalls)
+            {
+                Assert.That(
+                    lowWall.bounds.size.y,
+                    Is.LessThan(2.6f),
+                    $"{lowWall.name} is {lowWall.bounds.size.y:0.0} m tall. Over "
+                    + "about two it starts blocking the camera again, which is "
+                    + "the whole thing this was for.");
+            }
+
+            // And what you walk into is what you see: the original full-height
+            // partition must be switched off, or there is an invisible wall above
+            // the visible one for throws to hit.
+            Renderer tallPartition = room
+                .GetComponentsInChildren<Renderer>(true)
+                .First(r => r.name == "IN_House1F_Wall_Bathroom_Back");
+            Assert.That(
+                tallPartition.enabled,
+                Is.False,
+                "The full-height partition is still drawn.");
             Assert.That(
                 furniture,
                 Is.InRange(10, 45),

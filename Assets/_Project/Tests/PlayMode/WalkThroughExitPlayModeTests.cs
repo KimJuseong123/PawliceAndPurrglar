@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using PawsAndLoot.Core;
@@ -19,7 +19,7 @@ namespace PawsAndLoot.Tests.PlayMode
     /// edge of the world. Pressing a key at the same spot worked, which is what made
     /// it look like a control problem rather than a hole.
     ///
-    /// The press is also wanted for something else indoors — wardrobes and drawers —
+    /// The press is also wanted for something else indoors ??wardrobes and drawers ??
     /// so the way out is a trigger and takes no prompt at all.
     /// </summary>
     public sealed class WalkThroughExitPlayModeTests

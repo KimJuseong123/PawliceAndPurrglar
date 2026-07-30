@@ -69,16 +69,46 @@ namespace PawsAndLoot.Editor
         private const float RowStartX = -28f;
 
         /// <summary>
-        /// Parts that make the room solid. Given mesh colliders, not boxes: these
-        /// walls have door-shaped holes in them, and a box from their bounds would
-        /// seal every room off from the next. A mesh collider keeps the holes.
+        /// The outside of the room. Given mesh colliders, not boxes: these walls have
+        /// door-shaped holes in them, and a box from their bounds would seal the way
+        /// out. A mesh collider keeps the holes.
         /// </summary>
         private static readonly string[] SolidPrefixes =
         {
             "BD_House1F_Wall_",
-            "IN_House1F_Wall",
             "BD_House1F_Foundation"
         };
+
+        /// <summary>
+        /// The partitions, which are rebuilt at half height instead of being kept.
+        ///
+        /// Full-height partitions are the reason being indoors was hard to look at.
+        /// Nine walls at 5.6 m, and the camera can only be 5.2 m up, so several of
+        /// them are between it and the player at any angle: removing whichever ones
+        /// were in the way meant walls appearing and disappearing every time the view
+        /// turned, which reads worse than the walls did.
+        ///
+        /// A 2 m wall divides the room without ever getting in the way. The character
+        /// is 1.9 m, so their head clears it and the camera sees over all of them at
+        /// once — the doll's-house read. The rooms stay separate places because the
+        /// floors are different colours per room in the model and the furniture is
+        /// still where it was.
+        ///
+        /// The model's own interior door frames go with them: 4.7 m frames standing
+        /// over 2 m walls would be the only thing left blocking the view.
+        /// </summary>
+        private static readonly string[] PartitionPrefixes =
+        {
+            "IN_House1F_Wall",
+            "IN_House1F_Door",
+            "IN_House1F_InteriorTrim"
+        };
+
+        /// <summary>
+        /// How tall a partition is rebuilt. Just over a character, so a head shows
+        /// above it and nothing else does.
+        /// </summary>
+        private const float PartitionHeight = 2f;
 
         /// <summary>
         /// Furniture worth bumping into, named by item rather than by part.
@@ -145,9 +175,16 @@ namespace PawsAndLoot.Editor
                 "Greybox_InteriorFloor",
                 new Color(0.42f, 0.36f, 0.31f));
 
+            // Close to the model's own cream wall so the rebuilt partitions do not
+            // read as a different material from the shell they stand in.
+            Material partitionMaterial = materialFactory(
+                "Greybox_InteriorPartition",
+                new Color(0.80f, 0.77f, 0.71f));
+
             int built = 0;
             int solids = 0;
             int props = 0;
+            int partitions = 0;
             for (int index = 0; index < houses.Count; index++)
             {
                 if (houses[index] == null)
@@ -166,10 +203,12 @@ namespace PawsAndLoot.Editor
                         houses[index],
                         centre,
                         floorMaterial,
+                        partitionMaterial,
                         cubeFactory,
                         childFactory,
                         ref solids,
-                        ref props))
+                        ref props,
+                        ref partitions))
                 {
                     built++;
                 }
@@ -177,8 +216,10 @@ namespace PawsAndLoot.Editor
 
             Debug.Log(
                 $"[MAP-008] {built} house interiors built from the model at "
-                + $"{InteriorScale:0.#}x, with {solids} wall colliders and "
-                + $"{props} furniture colliders, front and back doors on each.");
+                + $"{InteriorScale:0.#}x, with {solids} shell colliders, "
+                + $"{props} furniture colliders and {partitions} partitions "
+                + $"rebuilt at {PartitionHeight:0.#}m, front and back doors on "
+                + "each.");
         }
 
         private static bool BuildOne(
@@ -188,11 +229,13 @@ namespace PawsAndLoot.Editor
             Transform house,
             Vector3 centre,
             Material floorMaterial,
+            Material partitionMaterial,
             System.Func<string, Vector3, Vector3, Material, Transform, bool,
                 GameObject> cube,
             System.Func<string, Transform, Transform> child,
             ref int solids,
-            ref int props)
+            ref int props,
+            ref int partitions)
         {
             int number = index + 1;
             Transform room = child($"Interior {number}", root);
@@ -235,6 +278,12 @@ namespace PawsAndLoot.Editor
             colliders.position = centre;
             solids += AddSolidColliders(parts, colliders);
             props += AddFurnitureColliders(parts, colliders);
+            partitions += AddHalfHeightPartitions(
+                parts,
+                colliders,
+                floorTop,
+                cube,
+                partitionMaterial);
 
             // A thick slab under the whole room, on top of the model's own floor.
             // The foundation is a 1.1 m plate at this scale, and a character who has
@@ -418,6 +467,65 @@ namespace PawsAndLoot.Editor
             return added;
         }
 
+        /// <summary>
+        /// Replaces each partition segment with a knee-to-chest-high one.
+        ///
+        /// A box per segment is safe here and would not have been for the shell: the
+        /// model already splits its partitions either side of every doorway — five
+        /// pieces named for the room and the side — so there is no hole to preserve.
+        /// Measured rather than assumed, which is what the model probe is for.
+        ///
+        /// The original renderer is switched off rather than deleted. It belongs to a
+        /// prefab instance, and deleting a child of one is recorded in the scene as an
+        /// override; disabling one is a single boolean.
+        /// </summary>
+        private static int AddHalfHeightPartitions(
+            IReadOnlyList<Renderer> parts,
+            Transform holder,
+            float floorTop,
+            System.Func<string, Vector3, Vector3, Material, Transform, bool,
+                GameObject> cube,
+            Material material)
+        {
+            int rebuilt = 0;
+            foreach (Renderer part in parts)
+            {
+                if (!PartitionPrefixes.Any(prefix =>
+                        part.name.StartsWith(prefix)))
+                {
+                    continue;
+                }
+
+                Bounds bounds = part.bounds;
+                part.enabled = false;
+
+                // Only the walls come back. The door frames and trim were there to
+                // finish a full-height wall and have nothing to finish now.
+                if (!part.name.StartsWith("IN_House1F_Wall"))
+                {
+                    continue;
+                }
+
+                GameObject low = cube(
+                    $"{part.name} Low",
+                    new Vector3(
+                        bounds.center.x,
+                        floorTop + PartitionHeight * 0.5f,
+                        bounds.center.z),
+                    new Vector3(
+                        bounds.size.x,
+                        PartitionHeight,
+                        bounds.size.z),
+                    material,
+                    holder,
+                    true);
+                low.transform.SetParent(holder, true);
+                rebuilt++;
+            }
+
+            return rebuilt;
+        }
+
         private static int AddFurnitureColliders(
             IReadOnlyList<Renderer> parts,
             Transform holder)
@@ -501,9 +609,62 @@ namespace PawsAndLoot.Editor
             float distance)
         {
             float sign = side == HouseDoorSide.Back ? -1f : 1f;
-            var local = new Vector3(0f, 0f, sign * distance);
-            Vector3 world = house.TransformPoint(local);
-            return new Vector3(world.x, house.position.y, world.z);
+
+            // Walked inward until there is ground to stand on.
+            //
+            // A fixed offset is not enough. The houses on the far north row stand
+            // against the boundary, so five metres in front of one is inside the
+            // town wall: the exit put the player past the edge of the map with
+            // nothing underneath, and they fell 21 m. It only showed up sometimes
+            // because which house is "the first one" is instance-id order.
+            //
+            // Ground means a surface at about the height the house stands on. The
+            // top of a 2 m wall is a hit too, and standing on the town wall is not
+            // what this is for.
+            foreach (float step in new[]
+            {
+                distance, distance - 0.8f, distance - 1.6f, distance - 2.4f
+            })
+            {
+                if (step <= 1.5f)
+                {
+                    continue;
+                }
+
+                Vector3 candidate = house.TransformPoint(
+                    new Vector3(0f, 0f, sign * step));
+                if (!Physics.Raycast(
+                        candidate + Vector3.up * 3f,
+                        Vector3.down,
+                        out RaycastHit hit,
+                        8f,
+                        Physics.AllLayers,
+                        QueryTriggerInteraction.Ignore))
+                {
+                    continue;
+                }
+
+                if (Mathf.Abs(hit.point.y - house.position.y) > 0.6f)
+                {
+                    continue;
+                }
+
+                return new Vector3(
+                    candidate.x,
+                    house.position.y,
+                    candidate.z);
+            }
+
+            Vector3 fallback = house.TransformPoint(
+                new Vector3(0f, 0f, sign * 2.6f));
+            Debug.LogWarning(
+                $"[MAP-008] No ground in front of the {side} door of "
+                + $"'{house.name}'. Falling back to 2.6 m, which may be inside "
+                + "the porch.");
+            return new Vector3(
+                fallback.x,
+                house.position.y,
+                fallback.z);
         }
 
         private static void CreateInsideDoor(

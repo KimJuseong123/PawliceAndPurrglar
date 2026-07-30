@@ -267,10 +267,13 @@ namespace PawsAndLoot.Tests.PlayMode
                 Object.FindFirstObjectByType<HouseInterior>();
             InteriorOccluder[] panels =
                 interior.GetComponentsInChildren<InteriorOccluder>(true);
+            // The four exterior walls, and only those. The partitions are 2 m now,
+            // so nothing has to be done about them at all.
             Assert.That(
                 panels.Length,
-                Is.GreaterThanOrEqualTo(8),
-                "The walls are not registered as things that can move aside.");
+                Is.EqualTo(4),
+                "A room should offer exactly its four sides as things that can "
+                + "move aside.");
 
             // Nothing hidden while outdoors: the street camera is fixed and tuned,
             // and quietly deleting buildings in it is not what was asked for.
@@ -288,11 +291,12 @@ namespace PawsAndLoot.Tests.PlayMode
                 yield return null;
             }
 
+            // Exactly one. Removing several is what made this tiring to look at:
+            // which ones qualified changed continuously as the view turned.
             Assert.That(
                 cutaway.HiddenCount,
-                Is.GreaterThan(0),
-                "Indoors the camera sits outside the room's own walls, so at "
-                + "least one of them must be out of the way.");
+                Is.EqualTo(1),
+                "Indoors exactly one side should be out of the way.");
 
             // The player is still drawn. Hiding them would be the one thing worse
             // than the wall.
@@ -303,19 +307,35 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.True,
                 "The character was hidden along with the walls.");
 
-            // And the wall that came out is genuinely between the camera and them.
+            // And it is the side the camera is on, which is the side in the way.
+            // Compared against the other three rather than against a threshold: the
+            // claim is that the best one was chosen, not that it scored well.
             UnityEngine.Camera view = UnityEngine.Camera.main;
-            InteriorOccluder hiddenPanel = panels.First(p => p.IsHidden);
-            Vector3 toPlayer =
-                thief.transform.position + Vector3.up * 1.1f
-                - view.transform.position;
-            Vector3 toPanel =
-                hiddenPanel.View.bounds.center - view.transform.position;
-            Assert.That(
-                Vector3.Dot(toPanel.normalized, toPlayer.normalized),
-                Is.GreaterThan(0.3f),
-                $"'{hiddenPanel.name}' was removed but is not in front of the "
-                + "camera at all.");
+            InteriorOccluder hiddenPanel = cutaway.RemovedPanel;
+            Assert.That(hiddenPanel, Is.Not.Null);
+
+            Vector3 towardCamera =
+                view.transform.position - interior.transform.position;
+            towardCamera.y = 0f;
+            towardCamera.Normalize();
+
+            float Facing(InteriorOccluder panel)
+            {
+                Vector3 outward =
+                    panel.View.bounds.center - interior.transform.position;
+                outward.y = 0f;
+                return Vector3.Dot(outward.normalized, towardCamera);
+            }
+
+            float chosen = Facing(hiddenPanel);
+            foreach (InteriorOccluder panel in panels)
+            {
+                Assert.That(
+                    chosen,
+                    Is.GreaterThanOrEqualTo(Facing(panel) - 0.15f),
+                    $"'{panel.name}' faces the camera more than the wall that "
+                    + $"was actually removed ('{hiddenPanel.name}').");
+            }
 
             // Back on the way out.
             LocalPlayerRoleSelector.ClearOverriddenRole();
