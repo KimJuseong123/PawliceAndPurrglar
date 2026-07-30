@@ -26,6 +26,37 @@ namespace PawsAndLoot.Sandbox
             matchRuntime = runtime;
         }
 
+        private float _waited;
+        private bool _reported;
+
+        /// <summary>
+        /// Says so if the match never starts, once. A sandbox that silently refuses to
+        /// let you walk is the failure this exists to make visible.
+        /// </summary>
+        private void Update()
+        {
+            if (_reported || matchRuntime == null)
+            {
+                return;
+            }
+
+            if (matchRuntime.CurrentState == MatchState.Playing)
+            {
+                _reported = true;
+                Debug.Log("[SANDBOX] Match is playing; you can walk.");
+                return;
+            }
+
+            _waited += Time.unscaledDeltaTime;
+            if (_waited > 6f)
+            {
+                _reported = true;
+                Debug.LogError(
+                    "[SANDBOX] The match never started; it is still "
+                    + $"{matchRuntime.CurrentState}, so nothing will move.");
+            }
+        }
+
         private void Start()
         {
             if (matchRuntime == null)
@@ -42,17 +73,14 @@ namespace PawsAndLoot.Sandbox
                 return;
             }
 
-            // Through the state machine, not around it. Writing the field directly
-            // would skip the transition rules the rest of the game relies on, and a
-            // sandbox that behaves differently from the game is not a test of the
-            // game.
-            if (matchRuntime.CurrentState != MatchState.Playing
-                && !matchRuntime.TryTransitionTo(MatchState.Playing))
-            {
-                Debug.LogError(
-                    "[SANDBOX] The match refused to start from "
-                    + $"{matchRuntime.CurrentState}.");
-            }
+            // Nothing is forced here.
+            //
+            // Asking for Playing from Lobby was refused, and rightly: the state
+            // machine goes Lobby then Countdown then Playing, and jumping the queue
+            // is exactly the kind of shortcut that makes a sandbox behave unlike the
+            // game. The scene is built with the automatic countdown switched on, so
+            // the match starts itself; this only reports if it has not.
+            _waited = 0f;
         }
     }
 }

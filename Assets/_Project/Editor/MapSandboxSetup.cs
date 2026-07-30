@@ -268,7 +268,9 @@ namespace PawsAndLoot.Editor
                     + "Run Create Default Config Assets first.");
             }
 
-            match.Configure(matchConfig, false);
+            // Started automatically, because the state machine will not go
+            // straight from Lobby to Playing and should not be made to.
+            match.Configure(matchConfig, true);
             systems.gameObject.AddComponent<SandboxFreeRoam>()
                 .Configure(match);
             return match;
@@ -425,11 +427,17 @@ namespace PawsAndLoot.Editor
             out Vector3 plazaCentre)
         {
             plazaCentre = Vector3.zero;
-            var houses = new[]
-            {
-                "building_house_1f",
-                "building_house_1f_with_interior"
-            };
+            // Only the roofed house. The other variant is the one with its roof
+            // removed so you can see the furniture inside, which from the street
+            // reads as a house someone has taken the lid off.
+            const string House = "building_house_1f";
+
+            // The same lot the real town measures its houses against, so a character
+            // stands next to a house here at exactly the proportion they do in the
+            // game. Fitting houses to these blocks instead made them three times too
+            // big, which is why they overlapped.
+            const float HouseLotX = 12f;
+            const float HouseLotZ = 8f;
 
             int placed = 0;
             int special = 0;
@@ -454,8 +462,8 @@ namespace PawsAndLoot.Editor
                                 MiddleBand[special],
                                 centre,
                                 0f,
-                                block.size.x * 0.86f,
-                                block.size.z * 0.86f,
+                                15f,
+                                14f,
                                 sizes))
                         {
                             placed++;
@@ -468,25 +476,28 @@ namespace PawsAndLoot.Editor
                     // Two houses per residential block, side by side across its long
                     // axis, each facing the nearer road. Four was too many: they
                     // ended up shoulder to shoulder with no yard between them.
+                    // As many houses as fit at the game's own house size, in a row
+                    // along the block's long axis with a gap between them. Spacing
+                    // comes from the lot, not from the block, so they cannot overlap
+                    // however the block sizes change.
                     bool wide = block.size.x >= block.size.z;
-                    for (int slot = 0; slot < 2; slot++)
+                    float along = wide ? block.size.x : block.size.z;
+                    float pitch = HouseLotX + 4f;
+                    int fit = Mathf.Max(1, Mathf.FloorToInt(along / pitch));
+                    for (int slot = 0; slot < fit; slot++)
                     {
-                        float shift = (slot == 0 ? -1f : 1f) * 0.24f;
+                        float offset = (slot - (fit - 1) * 0.5f) * pitch;
                         Vector3 spot = centre + (wide
-                            ? new Vector3(block.size.x * shift, 0f, 0f)
-                            : new Vector3(0f, 0f, block.size.z * shift));
-                        string stem = houses[houseIndex++ % houses.Length];
+                            ? new Vector3(offset, 0f, 0f)
+                            : new Vector3(0f, 0f, offset));
+                        houseIndex++;
                         if (PlaceBuilding(
                                 parent,
-                                stem,
+                                House,
                                 spot,
-                                wide
-                                    ? (slot == 0 ? 0f : 180f)
-                                    : (slot == 0 ? 90f : 270f),
-                                (wide ? block.size.x * 0.42f : block.size.x)
-                                    * 0.82f,
-                                (wide ? block.size.z : block.size.z * 0.42f)
-                                    * 0.82f,
+                                wide ? 0f : 90f,
+                                HouseLotX,
+                                HouseLotZ,
                                 sizes))
                         {
                             placed++;
@@ -600,47 +611,68 @@ namespace PawsAndLoot.Editor
             float plazaScale = Mathf.Min(
                 plazaBlock.size.x / Mathf.Max(0.01f, plazaSize.x),
                 plazaBlock.size.z / Mathf.Max(0.01f, plazaSize.z));
-            if (Instantiate(
-                    "env_fountain_plaza",
-                    EnvironmentDirectory,
-                    dressing,
-                    plazaCentre,
-                    Quaternion.identity,
-                    Vector3.one * plazaScale,
-                    "Plaza") != null)
+            GameObject plaza = Instantiate(
+                "env_fountain_plaza",
+                EnvironmentDirectory,
+                dressing,
+                plazaCentre,
+                Quaternion.identity,
+                Vector3.one * plazaScale,
+                "Plaza");
+            if (plaza != null)
             {
+                // The environment FBXs import without materials, so everything from
+                // that folder renders white. Painted rather than left as it was: a
+                // white plaza is not a plaza.
+                Paint(plaza, LoadOrCreate(
+                    "Sandbox_Plaza",
+                    new Color(0.72f, 0.70f, 0.66f)));
                 count++;
             }
 
             // Lamps on the road corners and a tree beside each one, which is where
             // the reference puts them.
+            // Sized against the character, not guessed. A 4 m lamp and a 6 m tree
+            // are what those things are, and the models come in at one unit tall —
+            // at 1.6x they were ankle height and read as litter.
+            Material lampMaterial = LoadOrCreate(
+                "Sandbox_Lamp",
+                new Color(0.24f, 0.25f, 0.28f));
+            Material treeMaterial = LoadOrCreate(
+                "Sandbox_Tree",
+                new Color(0.22f, 0.42f, 0.24f));
+
             foreach (float x in LaneCentres(Columns, ColumnWidths))
             {
                 foreach (float z in LaneCentres(Rows, RowDepths))
                 {
-                    if (Instantiate(
-                            "env_street_lamp",
-                            EnvironmentDirectory,
-                            dressing,
-                            new Vector3(x + RoadWidth * 0.36f, 0f,
-                                z + RoadWidth * 0.36f),
-                            Quaternion.identity,
-                            Vector3.one * 1.6f,
-                            $"Lamp ({x:0},{z:0})") != null)
+                    GameObject lamp = Instantiate(
+                        "env_street_lamp",
+                        EnvironmentDirectory,
+                        dressing,
+                        new Vector3(x + RoadWidth * 0.38f, 0f,
+                            z + RoadWidth * 0.38f),
+                        Quaternion.identity,
+                        Vector3.one * ScaleFor(sizes, "env_street_lamp", 4.5f),
+                        $"Lamp ({x:0},{z:0})");
+                    if (lamp != null)
                     {
+                        Paint(lamp, lampMaterial);
                         count++;
                     }
 
-                    if (Instantiate(
-                            "env_tree",
-                            EnvironmentDirectory,
-                            dressing,
-                            new Vector3(x - RoadWidth * 0.36f, 0f,
-                                z - RoadWidth * 0.36f),
-                            Quaternion.identity,
-                            Vector3.one * 1.4f,
-                            $"Tree ({x:0},{z:0})") != null)
+                    GameObject tree = Instantiate(
+                        "env_tree",
+                        EnvironmentDirectory,
+                        dressing,
+                        new Vector3(x - RoadWidth * 0.38f, 0f,
+                            z - RoadWidth * 0.38f),
+                        Quaternion.identity,
+                        Vector3.one * ScaleFor(sizes, "env_tree", 6f),
+                        $"Tree ({x:0},{z:0})");
+                    if (tree != null)
                     {
+                        Paint(tree, treeMaterial);
                         count++;
                     }
                 }
@@ -753,6 +785,38 @@ namespace PawsAndLoot.Editor
             sun.shadows = LightShadows.Soft;
             lightObject.transform.rotation =
                 Quaternion.Euler(48f, 35f, 0f);
+        }
+
+        /// <summary>
+        /// The scale that makes a model a given number of metres tall. The
+        /// environment models come in at roughly one unit, so a metre figure is the
+        /// only thing worth writing down.
+        /// </summary>
+        private static float ScaleFor(
+            Measurements sizes,
+            string stem,
+            float wantedHeight)
+        {
+            float height = Mathf.Max(0.01f, sizes.Of(stem).y);
+            return wantedHeight / height;
+        }
+
+        /// <summary>
+        /// Paints every renderer under an object, for the environment models that
+        /// import without materials and would otherwise be white.
+        /// </summary>
+        private static void Paint(GameObject instance, Material material)
+        {
+            if (material == null)
+            {
+                return;
+            }
+
+            foreach (Renderer renderer in
+                instance.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.sharedMaterial = material;
+            }
         }
 
         private static GameObject Instantiate(
