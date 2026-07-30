@@ -48,12 +48,22 @@ namespace PawsAndLoot.Editor
         /// drawing's proportions: blocks a little wider than deep, with roads wide
         /// enough for two characters to pass and for the fixed camera to read.
         /// </summary>
-        private const float BlockWidth = 34f;
-        private const float BlockDepth = 26f;
         private const float RoadWidth = 10f;
 
-        private const int Columns = 3;
-        private const int Rows = 3;
+        /// <summary>
+        /// Blocks of different sizes, on purpose.
+        ///
+        /// Equal blocks in a 3x3 grid gave a town that reads as a spreadsheet, and
+        /// the reference drawing is not that: its blocks are different shapes and its
+        /// roads do not all line up. Uneven columns and rows cost nothing here —
+        /// everything is placed from these numbers — and they make the streets tell
+        /// you where you are.
+        /// </summary>
+        private static readonly float[] ColumnWidths = { 40f, 30f, 46f };
+        private static readonly float[] RowDepths = { 24f, 34f, 28f };
+
+        private static int Columns => ColumnWidths.Length;
+        private static int Rows => RowDepths.Length;
 
         /// <summary>
         /// The special buildings, in the order the reference puts them along the
@@ -82,8 +92,9 @@ namespace PawsAndLoot.Editor
             MatchRuntimeState match = BuildSystems(root);
             Measurements sizes = Measure();
 
-            float townWidth = Columns * BlockWidth + (Columns + 1) * RoadWidth;
-            float townDepth = Rows * BlockDepth + (Rows + 1) * RoadWidth;
+            float townWidth = ColumnWidths.Sum()
+                + (Columns + 1) * RoadWidth;
+            float townDepth = RowDepths.Sum() + (Rows + 1) * RoadWidth;
             BuildGround(environment, townWidth, townDepth, sizes);
             int roadPieces = BuildRoads(
                 environment,
@@ -243,6 +254,21 @@ namespace PawsAndLoot.Editor
             Transform systems = Child("Systems", root);
             MatchRuntimeState match =
                 systems.gameObject.AddComponent<MatchRuntimeState>();
+
+            // Without a MatchConfig it refuses every transition, so the sandbox
+            // stayed in Lobby and the motor would not move: "MatchRuntimeState
+            // requires a MatchConfig" in the player's console. The countdown is off
+            // because there is nothing to count down to here.
+            var matchConfig = AssetDatabase.LoadAssetAtPath<MatchConfig>(
+                "Assets/_Project/Settings/Configs/MatchConfig.asset");
+            if (matchConfig == null)
+            {
+                Debug.LogError(
+                    "[SANDBOX] MatchConfig is missing, so nothing will move. "
+                    + "Run Create Default Config Assets first.");
+            }
+
+            match.Configure(matchConfig, false);
             systems.gameObject.AddComponent<SandboxFreeRoam>()
                 .Configure(match);
             return match;
@@ -285,87 +311,107 @@ namespace PawsAndLoot.Editor
             Measurements sizes)
         {
             Transform roads = Child("Roads", parent);
-            Vector3 tile = sizes.Of("env_road_tile");
-            float step = Mathf.Max(1f, Mathf.Min(tile.x, tile.z));
-            float scale = RoadWidth / step;
+            var material = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/_Project/Materials/Greybox/Road.mat");
 
+            // Flat strips, not tiled models.
+            //
+            // The road tile measures 0.93 x 1.00 m and has a raised bevel round its
+            // edge, so scaled up eleven times to fill a 10 m lane it reads as a row
+            // of separate slabs with gaps between them — which is exactly how it
+            // looked. A strip is one box per lane, it meets its neighbours, and it is
+            // the surface being tested rather than the decoration on it. The plaza,
+            // the trees and the lamps are still the environment art.
             int count = 0;
-            foreach (float z in LaneCentres(Rows, BlockDepth))
+            foreach (float z in LaneCentres(Rows, RowDepths))
             {
-                count += LayLane(
+                Strip(
                     roads,
-                    new Vector3(-townWidth * 0.5f, 0f, z),
-                    Vector3.right,
-                    townWidth,
-                    RoadWidth,
-                    scale,
+                    new Vector3(0f, 0.01f, z),
+                    new Vector3(townWidth, 0.02f, RoadWidth),
+                    material,
                     $"Road EW {z:0}");
+                count++;
             }
 
-            foreach (float x in LaneCentres(Columns, BlockWidth))
+            foreach (float x in LaneCentres(Columns, ColumnWidths))
             {
-                count += LayLane(
+                Strip(
                     roads,
-                    new Vector3(x, 0f, -townDepth * 0.5f),
-                    Vector3.forward,
-                    townDepth,
-                    RoadWidth,
-                    scale,
+                    new Vector3(x, 0.01f, 0f),
+                    new Vector3(RoadWidth, 0.02f, townDepth),
+                    material,
                     $"Road NS {x:0}");
+                count++;
             }
 
             return count;
         }
 
         /// <summary>
-        /// The centre of each road running between and around the blocks.
+        /// The centre of each road, walking along a row of uneven block sizes.
         /// </summary>
         private static IEnumerable<float> LaneCentres(
             int blocks,
-            float blockSize)
+            IReadOnlyList<float> sizes)
         {
-            float span = blocks * blockSize + (blocks + 1) * RoadWidth;
+            float span = sizes.Sum() + (blocks + 1) * RoadWidth;
+            float cursor = -span * 0.5f;
             for (int lane = 0; lane <= blocks; lane++)
             {
-                yield return -span * 0.5f
-                    + RoadWidth * 0.5f
-                    + lane * (blockSize + RoadWidth);
+                yield return cursor + RoadWidth * 0.5f;
+                if (lane < blocks)
+                {
+                    cursor += RoadWidth + sizes[lane];
+                }
             }
         }
 
-        private static int LayLane(
-            Transform parent,
-            Vector3 from,
-            Vector3 direction,
-            float length,
-            float width,
-            float scale,
-            string name)
+        /// <summary>
+        /// The middle of a block, and how big it is.
+        /// </summary>
+        private static Bounds BlockBounds(int row, int column)
         {
-            Vector3 tileSize =
-                Vector3.one * scale;
-            int pieces = Mathf.Max(
-                1,
-                Mathf.CeilToInt(length / width));
-            for (int index = 0; index < pieces; index++)
+            float townWidth = ColumnWidths.Sum() + (Columns + 1) * RoadWidth;
+            float x = -townWidth * 0.5f + RoadWidth;
+            for (int index = 0; index < column; index++)
             {
-                Vector3 position = from
-                    + direction * (width * (index + 0.5f));
-                GameObject piece = Instantiate(
-                    "env_road_tile",
-                    EnvironmentDirectory,
-                    parent,
-                    new Vector3(position.x, 0.02f, position.z),
-                    Quaternion.identity,
-                    tileSize,
-                    $"{name} {index:00}");
-                if (piece == null)
-                {
-                    return index;
-                }
+                x += ColumnWidths[index] + RoadWidth;
             }
 
-            return pieces;
+            x += ColumnWidths[column] * 0.5f;
+
+            float townDepth = RowDepths.Sum() + (Rows + 1) * RoadWidth;
+            float z = townDepth * 0.5f - RoadWidth;
+            for (int index = 0; index < row; index++)
+            {
+                z -= RowDepths[index] + RoadWidth;
+            }
+
+            z -= RowDepths[row] * 0.5f;
+            return new Bounds(
+                new Vector3(x, 0f, z),
+                new Vector3(ColumnWidths[column], 0f, RowDepths[row]));
+        }
+
+        private static void Strip(
+            Transform parent,
+            Vector3 centre,
+            Vector3 size,
+            Material material,
+            string name)
+        {
+            GameObject strip =
+                GameObject.CreatePrimitive(PrimitiveType.Cube);
+            strip.name = name;
+            strip.transform.SetParent(parent, false);
+            strip.transform.position = centre;
+            strip.transform.localScale = size;
+            Object.DestroyImmediate(strip.GetComponent<Collider>());
+            if (material != null)
+            {
+                strip.GetComponent<Renderer>().sharedMaterial = material;
+            }
         }
 
         /// <summary>
@@ -392,17 +438,15 @@ namespace PawsAndLoot.Editor
             {
                 for (int column = 0; column < Columns; column++)
                 {
-                    Vector3 centre = BlockCentre(row, column);
+                    Bounds block = BlockBounds(row, column);
+                    Vector3 centre = block.center;
 
-                    // The plaza goes where the reference puts it: the middle of the
-                    // row below the civic band.
                     if (row == 2 && column == 1)
                     {
                         plazaCentre = centre;
                         continue;
                     }
 
-                    // The middle row is the civic band, one special building each.
                     if (row == 1 && special < MiddleBand.Length)
                     {
                         if (PlaceBuilding(
@@ -410,8 +454,8 @@ namespace PawsAndLoot.Editor
                                 MiddleBand[special],
                                 centre,
                                 0f,
-                                BlockWidth,
-                                BlockDepth,
+                                block.size.x * 0.86f,
+                                block.size.z * 0.86f,
                                 sizes))
                         {
                             placed++;
@@ -421,25 +465,28 @@ namespace PawsAndLoot.Editor
                         continue;
                     }
 
-                    // Four houses per residential block, two rows of two, each
-                    // facing the road on its own side of the block. Two left the
-                    // blocks looking mostly empty from above, which is not what the
-                    // reference drawing shows.
-                    for (int slot = 0; slot < 4; slot++)
+                    // Two houses per residential block, side by side across its long
+                    // axis, each facing the nearer road. Four was too many: they
+                    // ended up shoulder to shoulder with no yard between them.
+                    bool wide = block.size.x >= block.size.z;
+                    for (int slot = 0; slot < 2; slot++)
                     {
-                        bool north = slot < 2;
-                        float alongX = (slot % 2 == 0 ? -1f : 1f)
-                            * BlockWidth * 0.25f;
-                        float alongZ = (north ? 1f : -1f)
-                            * BlockDepth * 0.25f;
+                        float shift = (slot == 0 ? -1f : 1f) * 0.24f;
+                        Vector3 spot = centre + (wide
+                            ? new Vector3(block.size.x * shift, 0f, 0f)
+                            : new Vector3(0f, 0f, block.size.z * shift));
                         string stem = houses[houseIndex++ % houses.Length];
                         if (PlaceBuilding(
                                 parent,
                                 stem,
-                                centre + new Vector3(alongX, 0f, alongZ),
-                                north ? 0f : 180f,
-                                BlockWidth * 0.44f,
-                                BlockDepth * 0.44f,
+                                spot,
+                                wide
+                                    ? (slot == 0 ? 0f : 180f)
+                                    : (slot == 0 ? 90f : 270f),
+                                (wide ? block.size.x * 0.42f : block.size.x)
+                                    * 0.82f,
+                                (wide ? block.size.z : block.size.z * 0.42f)
+                                    * 0.82f,
                                 sizes))
                         {
                             placed++;
@@ -451,22 +498,9 @@ namespace PawsAndLoot.Editor
             // The jewellery shop has no FBX, only a .blend. A labelled greybox keeps
             // the layout honest instead of quietly having three destinations where
             // the design calls for four.
-            PlaceJewelleryStandIn(parent, BlockCentre(2, 0));
+            PlaceJewelleryStandIn(parent, BlockBounds(2, 0).center);
             placed++;
             return placed;
-        }
-
-        private static Vector3 BlockCentre(int row, int column)
-        {
-            float x = -(Columns * BlockWidth + (Columns + 1) * RoadWidth) * 0.5f
-                + RoadWidth
-                + BlockWidth * 0.5f
-                + column * (BlockWidth + RoadWidth);
-            float z = (Rows * BlockDepth + (Rows + 1) * RoadWidth) * 0.5f
-                - RoadWidth
-                - BlockDepth * 0.5f
-                - row * (BlockDepth + RoadWidth);
-            return new Vector3(x, 0f, z);
         }
 
         /// <summary>
@@ -561,10 +595,11 @@ namespace PawsAndLoot.Editor
             Transform dressing = Child("Dressing", parent);
             int count = 0;
 
+            Bounds plazaBlock = BlockBounds(2, 1);
             Vector3 plazaSize = sizes.Of("env_fountain_plaza");
             float plazaScale = Mathf.Min(
-                BlockWidth / Mathf.Max(0.01f, plazaSize.x),
-                BlockDepth / Mathf.Max(0.01f, plazaSize.z));
+                plazaBlock.size.x / Mathf.Max(0.01f, plazaSize.x),
+                plazaBlock.size.z / Mathf.Max(0.01f, plazaSize.z));
             if (Instantiate(
                     "env_fountain_plaza",
                     EnvironmentDirectory,
@@ -579,9 +614,9 @@ namespace PawsAndLoot.Editor
 
             // Lamps on the road corners and a tree beside each one, which is where
             // the reference puts them.
-            foreach (float x in LaneCentres(Columns, BlockWidth))
+            foreach (float x in LaneCentres(Columns, ColumnWidths))
             {
-                foreach (float z in LaneCentres(Rows, BlockDepth))
+                foreach (float z in LaneCentres(Rows, RowDepths))
                 {
                     if (Instantiate(
                             "env_street_lamp",
@@ -629,7 +664,10 @@ namespace PawsAndLoot.Editor
             var player = new GameObject("Police Player");
             player.transform.SetParent(root, false);
             player.transform.position =
-                plazaCentre + new Vector3(0f, 1.2f, -BlockDepth * 0.5f - 4f);
+                plazaCentre + new Vector3(
+                    0f,
+                    1.2f,
+                    -RowDepths[2] * 0.5f - RoadWidth * 0.5f);
 
             CharacterController controller =
                 player.AddComponent<CharacterController>();
@@ -639,10 +677,36 @@ namespace PawsAndLoot.Editor
             controller.slopeLimit = 50f;
             controller.stepOffset = 0.45f;
 
-            PlaceholderModelLibrary.TryInstantiateAuthoredCharacter(
-                "police",
-                player.transform,
-                1.8f);
+            GameObject model =
+                PlaceholderModelLibrary.TryInstantiateAuthoredCharacter(
+                    "police",
+                    player.transform,
+                    1.8f);
+            if (model == null)
+            {
+                Debug.LogError(
+                    "[SANDBOX] The police model did not instantiate, so there "
+                    + "is nobody to walk.");
+            }
+            else
+            {
+                // The same guard the real scene uses. The shared locomotion
+                // controller's clips come from TopDownEngine, which is not in the
+                // repository, and an Animator left running on missing clips buries
+                // the character in the ground — hips at 0.07 m instead of 0.45.
+                var animator = model.GetComponent<Animator>();
+                if (animator != null)
+                {
+                    animator.gameObject
+                        .AddComponent<PawsAndLoot.Animation
+                            .AnimatorClipGuard>();
+                }
+
+                Debug.Log(
+                    $"[SANDBOX] Police model '{model.name}' with "
+                    + $"{model.GetComponentsInChildren<Renderer>(true).Length} "
+                    + $"renderers at {player.transform.position}.");
+            }
 
             var config =
                 AssetDatabase.LoadAssetAtPath<PlayerConfig>(
