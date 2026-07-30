@@ -46,9 +46,25 @@ namespace PawsAndLoot.Gameplay.Interiors
         [SerializeField]
         private HouseDoorLeaf leaf;
 
+        /// <summary>
+        /// Walk through it instead of pressing it.
+        ///
+        /// Set on the doors inside a room, and only those. Two reasons, and the
+        /// second is the important one: the doorway is a real hole in a wall, so
+        /// walking through it used to drop the player off the edge of the room and
+        /// into nothing; and indoors the press wants to be free for wardrobes and
+        /// drawers, which is what a thief is in there to open.
+        ///
+        /// Never on the street door. Auto-entering a house every time somebody ran
+        /// past a porch would make the front of every building a hazard.
+        /// </summary>
+        [SerializeField]
+        private bool automatic;
+
         private IMatchStateReader _matchState;
 
         public bool LeadsInside => leadsInside;
+        public bool IsAutomatic => automatic;
         public HouseDoorSide Side => side;
         public HouseInterior Interior => interior;
 
@@ -67,7 +83,9 @@ namespace PawsAndLoot.Gameplay.Interiors
         /// a hiding place with no risk attached.
         /// </summary>
         public PlayerInteractionType InteractionType =>
-            PlayerInteractionType.Generic;
+            automatic
+                ? PlayerInteractionType.Automatic
+                : PlayerInteractionType.Generic;
 
         /// <summary>
         /// Names the door, because a house now has two of them and a player at the
@@ -77,6 +95,11 @@ namespace PawsAndLoot.Gameplay.Interiors
         {
             get
             {
+                if (automatic)
+                {
+                    return string.Empty;
+                }
+
                 string which = side == HouseDoorSide.Back ? "뒷문" : "앞문";
                 return leadsInside
                     ? $"{which}으로 들어가기"
@@ -89,7 +112,8 @@ namespace PawsAndLoot.Gameplay.Interiors
             bool configuredLeadsInside,
             IMatchStateReader configuredMatchState,
             HouseDoorLeaf configuredLeaf = null,
-            HouseDoorSide configuredSide = HouseDoorSide.Front)
+            HouseDoorSide configuredSide = HouseDoorSide.Front,
+            bool configuredAutomatic = false)
         {
             interior = configuredInterior;
             leadsInside = configuredLeadsInside;
@@ -97,6 +121,36 @@ namespace PawsAndLoot.Gameplay.Interiors
             matchStateSource = configuredMatchState as MonoBehaviour;
             leaf = configuredLeaf;
             side = configuredSide;
+            automatic = configuredAutomatic;
+        }
+
+        /// <summary>
+        /// Walking into it is the press.
+        ///
+        /// Guarded on authority rather than on being the local player: the host
+        /// simulates both characters, so both of their capsules pass through this
+        /// trigger on the host and nowhere else that matters. On a client the capsule
+        /// passes through too — it is just a copy following replicated positions —
+        /// and acting there would move somebody the host immediately drags back.
+        /// </summary>
+        private void OnTriggerEnter(Collider other)
+        {
+            if (!automatic || other == null)
+            {
+                return;
+            }
+
+            PlayerRoleIdentity player =
+                other.GetComponentInParent<PlayerRoleIdentity>();
+            var state = player != null
+                ? player.GetComponent<PlayerInteriorState>()
+                : null;
+            if (state == null || !state.HasAuthority)
+            {
+                return;
+            }
+
+            TryInteract(new PlayerInteractionContext(player));
         }
 
         /// <summary>

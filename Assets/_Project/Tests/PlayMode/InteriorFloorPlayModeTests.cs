@@ -128,11 +128,14 @@ namespace PawsAndLoot.Tests.PlayMode
             Physics.SyncTransforms();
             yield return null;
 
-            Assert.That(
-                exit.TryInteract(new PlayerInteractionContext(thief)),
-                Is.True,
-                "The door refused to let the thief out.");
+            // No press. The way out is automatic now, so being in the doorway is
+            // the whole action — and pressing it afterwards would be refused,
+            // because by then the thief is already outside.
             yield return null;
+            Assert.That(
+                thief.GetComponent<PlayerInteriorState>().IsIndoors,
+                Is.False,
+                "Standing in the doorway did not put the thief outside.");
 
             // The street under the doorstep. Every hit on the thief themselves is
             // skipped: they are standing in the way, and the first version of this

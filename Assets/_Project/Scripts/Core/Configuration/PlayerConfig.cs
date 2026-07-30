@@ -22,7 +22,7 @@ namespace PawsAndLoot.Config
         private float lootCarrySpeedMultiplier = 0.9f;
 
         [SerializeField, Min(0.01f), Tooltip("Upward speed at the moment of a jump, in meters per second.")]
-        private float jumpSpeed = 4.8f;
+        private float jumpSpeed = 5.4f;
 
         [Header("Interaction")]
         [SerializeField, Min(0.01f), Tooltip("Maximum distance for selecting an interactable target.")]
@@ -39,11 +39,11 @@ namespace PawsAndLoot.Config
         /// Upward speed at take-off, not a height, because that is what the motor
         /// adds to its own falling speed.
         ///
-        /// 4.8 m/s against Unity's -9.81 gravity is v squared over 2g = 1.17 m, which
-        /// is what it takes to get onto the furniture indoors: the rooms are the house
-        /// model at 2.2x, so a sofa base is a metre tall and a coffee table nearly
-        /// that. Anything less and the jump only helps in the street, which is not
-        /// where players were getting stuck.
+        /// 5.4 m/s against Unity's -9.81 gravity is v squared over 2g = 1.49 m. The
+        /// figure comes from the furniture indoors: the rooms are the house model at
+        /// 2.2x, so a sofa base is a metre tall, a kitchen counter base 1.85 m and a
+        /// dining chair seat 1.2 m. 1.17 m cleared the sofa and nothing else, which
+        /// is why this went up.
         /// </summary>
         public float JumpSpeed => jumpSpeed;
 

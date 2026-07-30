@@ -29,6 +29,26 @@ namespace PawsAndLoot.Gameplay.Interiors
 
         public event Action<int> InteriorChanged;
 
+        /// <summary>
+        /// Whether this machine decides where this player is.
+        ///
+        /// True by default so the editor scene, which has no session, works: there is
+        /// nobody else to defer to. In a match the link sets it, and it is only true
+        /// on the host — a client's copy of a character is moved by writing its
+        /// position, so acting on a trigger there would teleport somebody the host
+        /// then drags straight back.
+        ///
+        /// It exists because a walk-through door is not a key press. A press travels
+        /// to the host through the input bridge and is authoritative for free; a
+        /// collision happens wherever the collider is, on every machine at once.
+        /// </summary>
+        public bool HasAuthority { get; private set; } = true;
+
+        public void SetAuthority(bool authoritative)
+        {
+            HasAuthority = authoritative;
+        }
+
         public int CurrentInteriorId => currentInteriorId;
         public bool IsIndoors => currentInteriorId != Outside;
 

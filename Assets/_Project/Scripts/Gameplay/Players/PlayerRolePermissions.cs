@@ -23,6 +23,10 @@ namespace PawsAndLoot.Gameplay.Players
                 PlayerInteractionType.Loot => role == PlayerRole.Thief,
                 PlayerInteractionType.Sale => role == PlayerRole.Thief,
                 PlayerInteractionType.Arrest => role == PlayerRole.Police,
+
+                // Nobody, on purpose. A walk-through door is not something the
+                // press should ever land on.
+                PlayerInteractionType.Automatic => false,
                 _ => false
             };
         }

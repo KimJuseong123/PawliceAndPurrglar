@@ -248,17 +248,22 @@ namespace PawsAndLoot.Editor
                 room,
                 true);
 
-            // Just inside each door, far enough in that the doorway is behind you.
+            // Well inside each door, clear of its trigger.
+            //
+            // 1.6 m was not: the way out is a trigger now, and arriving inside it
+            // means the door reads the arrival as a departure and throws the player
+            // straight back into the street. 3.2 m is past it with room to spare, and
+            // still close enough that the door is behind you when you turn round.
             Transform frontEntry = child($"Interior {number} Entry Front", room);
             frontEntry.position = new Vector3(
                 frontDoor.x,
                 floorTop,
-                inner.max.z - 1.6f);
+                inner.max.z - 3.2f);
             Transform backEntry = child($"Interior {number} Entry Back", room);
             backEntry.position = new Vector3(
                 backDoor.x,
                 floorTop,
-                inner.min.z + 1.6f);
+                inner.min.z + 3.2f);
 
             // Out at the real house, on the matching side.
             Transform frontExit = child($"Interior {number} Exit Front", room);
@@ -284,14 +289,14 @@ namespace PawsAndLoot.Editor
                 interior,
                 matchRuntime,
                 HouseDoorSide.Front,
-                new Vector3(frontDoor.x, floorTop + 1f, inner.max.z - 0.7f),
+                new Vector3(frontDoor.x, floorTop, inner.max.z - 0.2f),
                 number);
             CreateInsideDoor(
                 room,
                 interior,
                 matchRuntime,
                 HouseDoorSide.Back,
-                new Vector3(backDoor.x, floorTop + 1f, inner.min.z + 0.7f),
+                new Vector3(backDoor.x, floorTop, inner.min.z + 0.2f),
                 number);
 
             CreateEntrance(house, interior, matchRuntime, HouseDoorSide.Front);
@@ -513,12 +518,29 @@ namespace PawsAndLoot.Editor
                 $"Interior {number} Exit Door {side}");
             outward.transform.SetParent(room, false);
             outward.transform.position = position;
-            SphereCollider trigger =
-                outward.AddComponent<SphereCollider>();
+
+            // A slab in the doorway, and only in the doorway.
+            //
+            // The opening is a real hole in the wall: walking through it used to put
+            // the player outside the room, where there is no floor, and they fell. So
+            // the trigger has to be impossible to walk past — as tall as a jump, and
+            // thick enough that a dash at 9 m/s cannot cross it between two frames
+            // (1.2 m against 0.15 m of travel).
+            //
+            // No wider than the opening, though. The first version was 4.5 m across
+            // and 2.2 m deep, which reached along the wall on both sides and out into
+            // the room: walking past the inside of the front wall threw the player
+            // into the street, and the entry point itself landed inside it, so coming
+            // in bounced straight back out.
+            BoxCollider trigger = outward.AddComponent<BoxCollider>();
             trigger.isTrigger = true;
-            trigger.radius = 1.8f;
+            trigger.size = new Vector3(2.6f, 5f, 1.2f);
+            trigger.center = new Vector3(0f, 1.5f, 0f);
+
+            // Automatic, so getting out is walking out. Indoors the press belongs to
+            // the wardrobes and drawers.
             outward.AddComponent<HouseDoorway>()
-                .Configure(interior, false, matchRuntime, null, side);
+                .Configure(interior, false, matchRuntime, null, side, true);
         }
 
         /// <summary>

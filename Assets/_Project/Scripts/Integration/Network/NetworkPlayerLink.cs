@@ -330,6 +330,11 @@ namespace PawsAndLoot.Integration.Network
 
         public override void OnNetworkSpawn()
         {
+            // Only the host decides where a character is, so only the host may act
+            // on one walking into a doorway. A client's capsule passes through the
+            // same trigger while following replicated positions.
+            interiorState?.SetAuthority(IsServer);
+
             // The host simulates both players. Every other machine only
             // displays them, so its motor and controller are switched off to
             // keep local physics from fighting the replicated position.
