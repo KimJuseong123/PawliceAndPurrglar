@@ -24,12 +24,16 @@ namespace PawsAndLoot.Config
         [SerializeField]
         private VoiceConfig voiceConfig;
 
+        [SerializeField]
+        private PetCognitionConfig petCognitionConfig;
+
         public MatchConfig Match => matchConfig;
         public PlayerConfig Player => playerConfig;
         public LootConfig Loot => lootConfig;
         public ArrestConfig Arrest => arrestConfig;
         public CompanionConfig Companion => companionConfig;
         public VoiceConfig Voice => voiceConfig;
+        public PetCognitionConfig PetCognition => petCognitionConfig;
 
         public void Configure(
             MatchConfig match,
@@ -37,7 +41,8 @@ namespace PawsAndLoot.Config
             LootConfig loot,
             ArrestConfig arrest,
             CompanionConfig companion,
-            VoiceConfig voice)
+            VoiceConfig voice,
+            PetCognitionConfig petCognition = null)
         {
             matchConfig = match;
             playerConfig = player;
@@ -45,6 +50,7 @@ namespace PawsAndLoot.Config
             arrestConfig = arrest;
             companionConfig = companion;
             voiceConfig = voice;
+            petCognitionConfig = petCognition;
         }
 
         public override void ValidateOrThrow()
@@ -62,6 +68,10 @@ namespace PawsAndLoot.Config
             arrestConfig.ValidateOrThrow();
             companionConfig.ValidateOrThrow();
             voiceConfig.ValidateOrThrow();
+            if (petCognitionConfig != null)
+            {
+                petCognitionConfig.ValidateOrThrow();
+            }
         }
     }
 }

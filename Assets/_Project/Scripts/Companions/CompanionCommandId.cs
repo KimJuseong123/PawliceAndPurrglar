@@ -19,6 +19,14 @@ namespace PawsAndLoot.Companions
         Scout = 11,
         Distract = 12,
         Steal = 13,
-        Hide = 14
+        Hide = 14,
+
+        // Safety commands are shared by both animals and must remain usable
+        // when the external voice service is unavailable.
+        Stop = 20,
+        FollowOwner = 21,
+        Stay = 22,
+        ReturnOwner = 23,
+        Cancel = 24
     }
 }

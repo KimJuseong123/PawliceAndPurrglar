@@ -443,3 +443,33 @@
 
 - 상태: 프로토타입 가설
 - 필요한 근거: 최소 5회 이상 플레이테스트 데이터
+# DEC-VOICE-001: WebGL voice service and Host authority
+
+- Status: Accepted
+- Date: 2026-07-29
+- WebGL browser capture uses `MediaRecorder` for at most five seconds.
+- A same-repository Node.js TypeScript Fastify service handles STT and bounded
+  Intent candidates. OpenAI credentials remain server-only environment values.
+- The NGO Host remains the final authority for Pet Cognition, random results,
+  target validation, and action execution. This supplements the existing
+  network authority decision rather than introducing a second game server.
+- Session capability tokens are used for voice API access. MVP storage is
+  in-memory and single-replica; account authentication and Redis are out of
+  scope.
+- This decision supersedes the old voice placeholder that only considered
+  Windows DictationRecognizer. The Windows technical probe remains isolated.
+
+### DEC-VOICE-002: Local WebGL one-player launch path
+
+- Status: Accepted
+- Date: 2026-07-30
+- Decision: Use `play-webgl.bat` to build and serve the existing Bootstrap,
+  Game, and Result scenes through a local Node static server on port `8080`.
+- Decision: Start the existing Fastify voice service on port `3000` as an
+  optional companion process; no Unity or npm dependency is added for static
+  file serving.
+- Decision: Offline one-player WebGL sessions receive a temporary Host
+  capability from `/api/game/sessions`. The game remains offline and uses the
+  same local authoritative simulation; network matches keep NGO Host authority.
+- Constraint: OpenAI credentials remain in `server/.env` and keyboard commands
+  must remain usable when voice setup or external APIs fail.

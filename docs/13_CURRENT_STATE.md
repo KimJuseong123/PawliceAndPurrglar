@@ -947,3 +947,11 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 | 2026-07-29 | 떨림·칸수·은닉 후 Edit/Play Mode | **157/157**, **121/121 통과** |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.
+# Voice MVP implementation state
+
+The repository now contains the WebGL voice capture adapter and the
+same-repository `server/` Fastify service. The server is responsible for
+transcription and Intent candidates; the Unity NGO Host is responsible for
+Pet Cognition, live action validation, deterministic random decisions, and
+networked result presentation. Runtime WebGL and two-client transport smoke
+testing remain required before submission.

@@ -122,3 +122,21 @@
 - 음성, 네트워크, 최종 모델링은 별도의 에픽으로 유지한다.
 - 미확정 밸런스 수치를 완료 조건으로 고정하지 않는다.
 - 범위 변경은 `docs/14_DECISION_LOG.md`와 이 문서에 함께 기록한다.
+# Voice Command MVP Addendum
+
+The voice-command MVP is now implemented as a WebGL client adapter plus a
+same-repository Fastify service. Browser audio is capped at five seconds and
+five megabytes. The service performs transcription and intent candidate
+extraction; the Unity NGO Host remains authoritative for target validation,
+Pet Cognition, random outcomes, and companion actions.
+
+Voice failures must not disable numeric-key or button commands. Original audio
+is not persisted by default. The MVP does not include streaming STT, model
+fine-tuning, a database, or a replacement network transport.
+
+## Local WebGL Playtest Addendum
+
+The playable MVP includes a local one-player WebGL launch path through
+`play-webgl.bat`. Keyboard commands remain the fallback. When the voice API is
+configured, the offline game registers a temporary voice capability session so
+the browser microphone can exercise the existing STT and intent pipeline.
