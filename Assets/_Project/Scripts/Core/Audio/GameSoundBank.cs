@@ -100,6 +100,46 @@ namespace PawsAndLoot.Audio
             entries = rebuilt;
         }
 
+        /// <summary>
+        /// True when the vocabulary has a slot for this sound, clip or not.
+        ///
+        /// A missing entry and a missing clip are different bugs. The first cannot be
+        /// fixed without touching code; the second is only work outstanding, and the
+        /// game is meant to run silently either way.
+        /// </summary>
+        public bool HasEntry(GameSoundId soundId)
+        {
+            foreach (Entry entry in entries)
+            {
+                if (entry.soundId == soundId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Puts a clip in an existing slot. Returns false when there is no slot, so a
+        /// caller can say so rather than appearing to have worked.
+        /// </summary>
+        public bool TryAssignClip(GameSoundId soundId, AudioClip clip)
+        {
+            for (int index = 0; index < entries.Length; index++)
+            {
+                if (entries[index].soundId != soundId)
+                {
+                    continue;
+                }
+
+                entries[index].clip = clip;
+                return true;
+            }
+
+            return false;
+        }
+
         public int CountMissingClips()
         {
             int missing = 0;

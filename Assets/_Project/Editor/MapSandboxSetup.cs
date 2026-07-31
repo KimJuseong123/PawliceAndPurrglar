@@ -68,36 +68,104 @@ namespace PawsAndLoot.Editor
         private const float LotX = 12f;
         private const float LotZ = 8f;
 
-        private static readonly float[] EastWestRoads =
+        /// <summary>
+        /// What fills a block.
+        /// </summary>
+        private enum Use
         {
-            0f, 12f, -12f, NorthStreetNear, NorthStreetFar
-        };
-
-        private static readonly float[] NorthSouthRoads =
-        {
-            -24f, -18f, 0f, 18f, 24f, EastStreet
-        };
+            Houses,
+            Civic,
+            Plaza,
+            Green
+        }
 
         /// <summary>
-        /// Where the town puts its four destinations. Kept rather than re-invented, so
-        /// that walking between them here takes as long as it does in the game.
+        /// A city block: a rectangle and what stands in it.
         /// </summary>
-        private static readonly (string Name, string Stem, Vector3 At)[]
-            Specials =
-            {
-                ("Supermarket", "building_supermarket",
-                    new Vector3(-9f, 0f, 6f)),
-                ("Bookstore", "building_bookstore",
-                    new Vector3(9f, 0f, 6f)),
-                ("Police Station", "building_police_station",
-                    new Vector3(-9f, 0f, 19f)),
+        private readonly struct Block
+        {
+            public readonly float MinX;
+            public readonly float MaxX;
+            public readonly float MinZ;
+            public readonly float MaxZ;
+            public readonly Use Use;
+            public readonly string Stem;
+            public readonly string Label;
 
-                // The jewellery shop exists only as a .blend, and Unity is not asked
-                // to import those — that would make the build depend on Blender being
-                // installed. A greybox of the same footprint, which is what the real
-                // town uses for it as well.
-                ("Jewellery Store", null, new Vector3(9f, 0f, -6f))
-            };
+            public Block(
+                float minX,
+                float maxX,
+                float minZ,
+                float maxZ,
+                Use use,
+                string stem = null,
+                string label = null)
+            {
+                MinX = minX;
+                MaxX = maxX;
+                MinZ = minZ;
+                MaxZ = maxZ;
+                Use = use;
+                Stem = stem;
+                Label = label;
+            }
+
+            public float Width => MaxX - MinX;
+            public float Depth => MaxZ - MinZ;
+
+            public Vector3 Centre => new(
+                (MinX + MaxX) * 0.5f,
+                0f,
+                (MinZ + MaxZ) * 0.5f);
+        }
+
+        /// <summary>
+        /// The town, authored as blocks rather than derived from a grid.
+        ///
+        /// This is the other way round from the first attempt and the reason it looked
+        /// like a spreadsheet. Drawing evenly spaced roads and filling the leftovers
+        /// gives identical square blocks by construction; the reference drawing is the
+        /// opposite — a wide shallow terrace along the top, three big civic lots across
+        /// the middle, narrow rotated rows down the sides, and alleys where two blocks
+        /// nearly touch. So the blocks are written down and the roads are whatever is
+        /// left between them, which is how a town actually reads.
+        ///
+        /// Four bands with different depths, and a different number of blocks in each
+        /// so the vertical streets do not line up all the way through. Every figure is
+        /// still the real map's: 80 x 72 m of ground, a 12 x 8 m lot, 4 m streets and
+        /// 3 m alleys.
+        /// </summary>
+        private static readonly Block[] Blocks =
+        {
+            // North terrace: wide and shallow, split by one alley.
+            new(-28f, -4f, 36f, 48f, Use.Houses),
+            new(-1f, 23f, 36f, 48f, Use.Houses),
+            new(27f, 52f, 36f, 48f, Use.Houses),
+
+            // Second band: deeper, and its streets do not align with the terrace's.
+            new(-28f, -12f, 18f, 32f, Use.Houses),
+            new(-8f, 14f, 18f, 32f, Use.Houses),
+            new(17f, 38f, 18f, 32f, Use.Houses),
+            new(42f, 52f, 18f, 32f, Use.Green),
+
+            // Civic band: the three destinations that have models, with a narrow
+            // rotated row against the west wall.
+            new(-28f, -16f, -2f, 14f, Use.Houses),
+            new(-12f, 6f, -2f, 14f, Use.Civic, "building_supermarket",
+                "Supermarket"),
+            new(10f, 28f, -2f, 14f, Use.Civic, "building_police_station",
+                "Police Station"),
+            new(32f, 50f, -2f, 14f, Use.Civic, "building_bookstore",
+                "Bookstore"),
+
+            // South band: the plaza off-centre, the jewellery lot beside it behind an
+            // alley, and terraces at both ends.
+            new(-28f, -10f, -22f, -6f, Use.Houses),
+            new(-6f, 12f, -22f, -6f, Use.Plaza),
+            new(15f, 33f, -22f, -6f, Use.Civic, null, "Jewellery Store"),
+            new(37f, 52f, -22f, -6f, Use.Houses)
+        };
+
 
         [MenuItem("Paws & Loot/Sandbox/Rebuild Map Sandbox")]
         public static void RebuildSandbox()
@@ -115,8 +183,7 @@ namespace PawsAndLoot.Editor
 
             BuildGround(environment);
             int roads = BuildRoadNetwork(environment);
-            int placed = BuildSpecials(buildings, sizes);
-            int houses = BuildHouses(buildings, sizes);
+            int placed = BuildBlocks(buildings, sizes, out int houses);
             int dressing = BuildDressing(environment, sizes);
 
             BuildPlayer(root, match);
@@ -287,6 +354,15 @@ namespace PawsAndLoot.Editor
         /// separate slabs — laying it as a real 1 m grid is a job worth doing once
         /// these widths are settled.
         /// </summary>
+        /// <summary>
+        /// Tarmac everywhere the blocks are not.
+        ///
+        /// Derived from the block table rather than listed, so a block cannot be moved
+        /// without its street following. Between two neighbours in the same band the
+        /// gap becomes a street if it is wide, an alley if it is narrow — which is
+        /// where the reference's hiding places are — and the space between bands
+        /// becomes a road across the whole map.
+        /// </summary>
         private static int BuildRoadNetwork(Transform parent)
         {
             Transform roads = Child("Roads", parent);
@@ -294,56 +370,93 @@ namespace PawsAndLoot.Editor
             Material plaza = Load<Material>($"{MaterialDirectory}/Plaza.mat");
             int count = 0;
 
-            foreach (float z in EastWestRoads)
+            // Across, between the bands. Taken from the distinct band edges so the
+            // count follows the table.
+            float[] bandEdges = Blocks
+                .SelectMany(block => new[] { block.MinZ, block.MaxZ })
+                .Distinct()
+                .OrderBy(value => value)
+                .ToArray();
+            for (int edge = 0; edge < bandEdges.Length - 1; edge++)
             {
-                bool central = Mathf.Approximately(z, 0f);
+                float gap = bandEdges[edge + 1] - bandEdges[edge];
+                if (gap < 1f || gap > 8f)
+                {
+                    // Either a band itself, or two bands that touch.
+                    continue;
+                }
+
                 Slab(
                     roads,
-                    $"East-West Road {z:0}",
-                    new Vector3(MapCentreX, central ? 0.02f : 0.025f, z),
+                    $"Street z {(bandEdges[edge] + bandEdges[edge + 1]) * 0.5f:0}",
                     new Vector3(
-                        central ? MapWidth : RoadSpanX,
-                        central ? 0.04f : 0.05f,
-                        4f),
+                        MapCentreX,
+                        0.02f,
+                        (bandEdges[edge] + bandEdges[edge + 1]) * 0.5f),
+                    new Vector3(MapWidth, 0.04f, gap),
                     road,
                     false);
                 count++;
             }
 
-            Slab(
-                roads,
-                "South Outer Alley",
-                new Vector3(MapCentreX, 0.03f, -18f),
-                new Vector3(RoadSpanX, 0.06f, 3f),
-                road,
-                false);
-            count++;
-
-            foreach (float x in NorthSouthRoads)
+            // Along, between neighbours in the same band, and only as long as the band
+            // is deep. That is what stops the verticals running the whole way through
+            // and gives the T-junctions.
+            foreach (var band in Blocks.GroupBy(block => block.MinZ))
             {
-                bool wide = Mathf.Approximately(x, 0f)
-                    || Mathf.Approximately(Mathf.Abs(x), 18f)
-                    || Mathf.Approximately(x, EastStreet);
-                Slab(
-                    roads,
-                    $"North-South Road {x:0}",
-                    new Vector3(x, 0.035f, MapCentreZ),
-                    new Vector3(wide ? 4f : 3f, 0.07f, RoadSpanZ),
-                    road,
-                    false);
-                count++;
+                Block[] ordered = band
+                    .OrderBy(block => block.MinX)
+                    .ToArray();
+                float depth = ordered[0].Depth;
+                float centre = (ordered[0].MinZ + ordered[0].MaxZ) * 0.5f;
+
+                // The map edge to the first block, then between each pair.
+                var edges = new List<(float From, float To)>
+                {
+                    (MapMinX, ordered[0].MinX)
+                };
+                for (int index = 0; index < ordered.Length - 1; index++)
+                {
+                    edges.Add((ordered[index].MaxX, ordered[index + 1].MinX));
+                }
+
+                edges.Add((ordered[^1].MaxX, MapMaxX));
+
+                foreach ((float from, float to) in edges)
+                {
+                    float gap = to - from;
+                    if (gap < 1f)
+                    {
+                        continue;
+                    }
+
+                    bool alley = gap < 3.5f;
+                    Slab(
+                        roads,
+                        alley
+                            ? $"Alley x {(from + to) * 0.5f:0}"
+                            : $"Street x {(from + to) * 0.5f:0}",
+                        new Vector3((from + to) * 0.5f, 0.03f, centre),
+                        new Vector3(gap, 0.06f, depth),
+                        road,
+                        false);
+                    count++;
+                }
             }
 
+            // The plaza floor, under the fountain.
+            Block plazaBlock = Blocks.First(block => block.Use == Use.Plaza);
             Slab(
                 roads,
                 "Central Plaza",
-                new Vector3(0f, 0.08f, 0f),
-                new Vector3(8f, 0.12f, 8f),
+                new Vector3(plazaBlock.Centre.x, 0.05f, plazaBlock.Centre.z),
+                new Vector3(plazaBlock.Width, 0.1f, plazaBlock.Depth),
                 plaza,
                 false);
             count++;
             return count;
         }
+
 
         private static void Slab(
             Transform parent,
@@ -369,140 +482,121 @@ namespace PawsAndLoot.Editor
             }
         }
 
-        private static int BuildSpecials(
-            Transform parent,
-            Measurements sizes)
-        {
-            int placed = 0;
-            foreach ((string name, string stem, Vector3 at) in Specials)
-            {
-                if (stem == null)
-                {
-                    Slab(
-                        parent,
-                        $"{name} (greybox, no FBX)",
-                        at + new Vector3(0f, 1.8f, 0f),
-                        new Vector3(LotX, 3.6f, LotZ),
-                        Load<Material>(
-                            $"{MaterialDirectory}/JewelryStore.mat"),
-                        true);
-                    placed++;
-                    continue;
-                }
-
-                if (PlaceBuilding(parent, stem, at, 0f, name, sizes))
-                {
-                    placed++;
-                }
-            }
-
-            return placed;
-        }
-
         /// <summary>
-        /// Houses in the blocks the roads leave behind.
+        /// Everything that stands in a block, from the same table the roads came from.
         ///
-        /// Derived rather than listed. A cross-product of the town's district rows and
-        /// columns put most of the houses on tarmac — the real map places specific
-        /// houses at specific points, and copying the lines without the placements
-        /// gave two houses in an empty town. So the blocks are worked out from the
-        /// roads themselves: the gap between each pair of neighbouring streets is a
-        /// band, and a band wide enough for a lot gets houses along it.
-        ///
-        /// Only the roofed variant. The other one has had its roof removed so the
-        /// furniture inside can be seen, which from the street reads as a house with
-        /// its lid off.
+        /// Houses are laid out on the real 12 x 8 m lot with a 2 m verge, rotated to
+        /// face the near street, and a block that is deeper than it is wide gets them
+        /// turned sideways — which is what puts the rows down the map's edges facing
+        /// inward, as the reference has them.
         /// </summary>
-        private static int BuildHouses(
+        private static int BuildBlocks(
             Transform parent,
-            Measurements sizes)
+            Measurements sizes,
+            out int houses)
         {
-            float[] eastWest = EastWestRoads
-                .Concat(new[] { -18f, MapMinZ, MapMaxZ })
-                .OrderBy(value => value)
-                .ToArray();
-            float[] northSouth = NorthSouthRoads
-                .Concat(new[] { MapMinX, MapMaxX })
-                .OrderBy(value => value)
-                .ToArray();
+            const float Verge = 2f;
+            int specials = 0;
+            houses = 0;
 
-            // Half a road, and no more.
-            //
-            // Three metres looked safer and emptied the town: the streets sit 12 m
-            // apart and the lot is 8 m deep, so 2 m of verge on each side is exactly
-            // what fits — which is what the real map does. An extra metre disqualified
-            // every 12 m band and left one house standing on its own.
-            const float Margin = 2f;
-
-            int placed = 0;
-            for (int band = 0; band < eastWest.Length - 1; band++)
+            foreach (Block block in Blocks)
             {
-                float depth = eastWest[band + 1] - eastWest[band]
-                    - Margin * 2f;
-                if (depth < LotZ)
+                switch (block.Use)
                 {
-                    continue;
-                }
-
-                float z = (eastWest[band] + eastWest[band + 1]) * 0.5f;
-                for (int column = 0;
-                    column < northSouth.Length - 1;
-                    column++)
-                {
-                    float width = northSouth[column + 1] - northSouth[column]
-                        - Margin * 2f;
-                    if (width < LotX)
-                    {
+                    case Use.Plaza:
+                    case Use.Green:
                         continue;
-                    }
 
-                    // As many as fit across the block, spaced by the lot itself so
-                    // they cannot overlap however the roads move.
-                    int fit = Mathf.Max(
-                        1,
-                        Mathf.FloorToInt(width / (LotX + 2f)));
-                    float centre =
-                        (northSouth[column] + northSouth[column + 1]) * 0.5f;
-                    for (int slot = 0; slot < fit; slot++)
-                    {
-                        float x = centre
-                            + (slot - (fit - 1) * 0.5f) * (LotX + 2f);
-                        var at = new Vector3(x, 0f, z);
-                        if (NearASpecial(at))
+                    case Use.Civic when block.Stem == null:
+                        // The jewellery shop exists only as a .blend, and Unity is not
+                        // asked to import those — that would make the build depend on
+                        // Blender being installed. A greybox of the store footprint,
+                        // which is what the real town uses for it too.
+                        Slab(
+                            parent,
+                            $"{block.Label} (greybox, no FBX)",
+                            block.Centre + new Vector3(0f, 1.8f, 0f),
+                            new Vector3(LotX, 3.6f, LotZ),
+                            Load<Material>(
+                                $"{MaterialDirectory}/JewelryStore.mat"),
+                            true);
+                        specials++;
+                        continue;
+
+                    case Use.Civic:
+                        if (PlaceBuilding(
+                                parent,
+                                block.Stem,
+                                block.Centre,
+                                block.Centre.z > MapCentreZ ? 180f : 0f,
+                                block.Label,
+                                sizes))
                         {
-                            continue;
+                            specials++;
                         }
 
+                        continue;
+                }
+
+                // Houses. Rotated when the block is deeper than it is wide, so the lot
+                // runs along the block rather than across it.
+                bool sideways = block.Depth > block.Width;
+                float lotAlong = sideways ? LotZ : LotX;
+                float lotAcross = sideways ? LotX : LotZ;
+                float along = (sideways ? block.Width : block.Width)
+                    - Verge * 2f;
+                float across = block.Depth - Verge * 2f;
+                if (sideways)
+                {
+                    along = block.Depth - Verge * 2f;
+                    across = block.Width - Verge * 2f;
+                }
+
+                if (along < lotAlong || across < lotAcross)
+                {
+                    continue;
+                }
+
+                int fit = Mathf.Max(
+                    1,
+                    Mathf.FloorToInt(along / (lotAlong + 2f)));
+                int rows = Mathf.Max(
+                    1,
+                    Mathf.FloorToInt(across / (lotAcross + 2f)));
+                for (int row = 0; row < rows; row++)
+                {
+                    float rowOffset =
+                        (row - (rows - 1) * 0.5f) * (lotAcross + 2f);
+                    for (int slot = 0; slot < fit; slot++)
+                    {
+                        float slotOffset =
+                            (slot - (fit - 1) * 0.5f) * (lotAlong + 2f);
+                        Vector3 at = block.Centre + (sideways
+                            ? new Vector3(rowOffset, 0f, slotOffset)
+                            : new Vector3(slotOffset, 0f, rowOffset));
+
+                        // Facing the nearer long edge of its own block.
+                        float yaw = sideways
+                            ? (rowOffset <= 0f ? 270f : 90f)
+                            : (rowOffset <= 0f ? 0f : 180f);
                         if (PlaceBuilding(
                                 parent,
                                 "building_house_1f",
                                 at,
-                                z > MapCentreZ ? 180f : 0f,
-                                $"House ({x:0},{z:0})",
+                                yaw,
+                                $"House ({at.x:0},{at.z:0})",
                                 sizes))
                         {
-                            placed++;
+                            houses++;
                         }
                     }
                 }
             }
 
-            return placed;
+            return specials;
         }
 
-        private static bool NearASpecial(Vector3 at)
-        {
-            foreach ((string _, string _, Vector3 special) in Specials)
-            {
-                if (Mathf.Abs(at.x - special.x) < LotX + 2f
-                    && Mathf.Abs(at.z - special.z) < LotZ + 2f)
-                {
-                    return true;
-                }
-            }
 
-            return false;
-        }
 
         /// <summary>
         /// One building on the town's lot, dropped onto the ground and boxed.
@@ -569,7 +663,8 @@ namespace PawsAndLoot.Editor
                 "env_fountain_plaza",
                 EnvironmentDirectory,
                 dressing,
-                new Vector3(0f, 0.14f, 0f),
+                Blocks.First(block => block.Use == Use.Plaza).Centre
+                    + new Vector3(0f, 0.12f, 0f),
                 Quaternion.identity,
                 Vector3.one * ScaleTo(sizes, "env_fountain_plaza", 8f, true),
                 "Fountain");
@@ -588,46 +683,49 @@ namespace PawsAndLoot.Editor
             Material metal =
                 Colour("Sandbox_LampPost", new Color(0.20f, 0.21f, 0.24f));
 
-            // On the corners where the streets cross, pulled clear of the tarmac so
-            // that nothing stands in a lane.
-            foreach (float x in NorthSouthRoads)
+            // On the corners of every block, just outside it, so lamps and trees
+            // line the streets without standing in a lane. Taken from the block table
+            // like everything else, so moving a block moves its planting.
+            foreach (Block block in Blocks)
             {
-                foreach (float z in EastWestRoads)
+                if (block.Use == Use.Plaza)
                 {
-                    if (Mathf.Approximately(z, 0f))
-                    {
-                        // The central street runs through the plaza; leave it clear.
-                        continue;
-                    }
+                    continue;
+                }
 
-                    GameObject lamp = Instantiate(
-                        "env_street_lamp",
-                        EnvironmentDirectory,
-                        dressing,
-                        new Vector3(x + 3.4f, 0f, z + 3.4f),
-                        Quaternion.identity,
-                        Vector3.one
-                            * ScaleTo(sizes, "env_street_lamp", 4.5f, false),
-                        $"Lamp ({x:0},{z:0})");
-                    if (lamp != null)
-                    {
-                        Paint(lamp, metal);
-                        count++;
-                    }
+                var corners = new[]
+                {
+                    new Vector3(block.MinX - 1.4f, 0f, block.MinZ - 1.4f),
+                    new Vector3(block.MaxX + 1.4f, 0f, block.MaxZ + 1.4f)
+                };
 
-                    GameObject tree = Instantiate(
-                        "env_tree",
-                        EnvironmentDirectory,
-                        dressing,
-                        new Vector3(x - 3.4f, 0f, z - 3.4f),
-                        Quaternion.identity,
-                        Vector3.one * ScaleTo(sizes, "env_tree", 6f, false),
-                        $"Tree ({x:0},{z:0})");
-                    if (tree != null)
-                    {
-                        PaintTree(tree, bark, leaves);
-                        count++;
-                    }
+                GameObject lamp = Instantiate(
+                    "env_street_lamp",
+                    EnvironmentDirectory,
+                    dressing,
+                    corners[0],
+                    Quaternion.identity,
+                    Vector3.one
+                        * ScaleTo(sizes, "env_street_lamp", 4.5f, false),
+                    $"Lamp ({corners[0].x:0},{corners[0].z:0})");
+                if (lamp != null)
+                {
+                    Paint(lamp, metal);
+                    count++;
+                }
+
+                GameObject tree = Instantiate(
+                    "env_tree",
+                    EnvironmentDirectory,
+                    dressing,
+                    corners[1],
+                    Quaternion.identity,
+                    Vector3.one * ScaleTo(sizes, "env_tree", 6f, false),
+                    $"Tree ({corners[1].x:0},{corners[1].z:0})");
+                if (tree != null)
+                {
+                    PaintTree(tree, bark, leaves);
+                    count++;
                 }
             }
 
@@ -753,10 +851,31 @@ namespace PawsAndLoot.Editor
                 return;
             }
 
+            // The same procedural biped walk the real scene uses. Without it the
+            // character slides: the locomotion clips come from TopDownEngine, which
+            // is not in the repository, so nothing moves the legs unless this does.
+            if (model != null)
+            {
+                var stride = player.AddComponent<
+                    PawsAndLoot.Animation.CompanionLegAnimator>();
+                stride.Configure(
+                    model.transform,
+                    PawsAndLoot.Animation.CompanionLegAnimator.GaitMode.Biped,
+                    model.GetComponent<Animator>());
+                if (stride.LegCount == 0)
+                {
+                    Debug.LogWarning(
+                        "[SANDBOX] No limb bones found, so the walk will not "
+                        + "play.");
+                }
+            }
+
             PlayerMovementMotor motor =
                 player.AddComponent<PlayerMovementMotor>();
             motor.Configure(controller, playerConfig, match, null);
             player.AddComponent<PlayerKeyboardInput>().Configure(motor, true);
+            player.GetComponent<PawsAndLoot.Animation.CompanionLegAnimator>()
+                ?.ConfigureAirborneSource(motor);
 
             var cameraObject = new GameObject("Sandbox Camera");
             cameraObject.transform.SetParent(root, false);

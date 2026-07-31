@@ -29,13 +29,13 @@ MonoBehaviour:
     clip: {fileID: 0}
     volume: 1
   - soundId: 6
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 332b422dd00e77448a7262288137eb46, type: 3}
     volume: 1
   - soundId: 7
     clip: {fileID: 0}
     volume: 1
   - soundId: 8
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 9a29342fc96a2a34da7d63b37982e0a6, type: 3}
     volume: 1
   - soundId: 9
     clip: {fileID: 0}
