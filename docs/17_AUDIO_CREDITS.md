@@ -5,17 +5,43 @@
 
 ## 효과음
 
-| 파일 | 이벤트 | 출처 | 작성자 | 라이선스 | URL |
-|---|---|---|---|---|---|
-| `sfx_cat_meow.mp3` | `CatMeow` | freesound? | dragon-studio | **확인 필요** | 확인 필요 |
-| `sfx_alarm_siren.mp3` | `ArrestCompleted` (임시) | freesound? | ribhavagrawal | **확인 필요** | 확인 필요 |
+**전부 CC0.** freesound에서 CC0 필터로만 받았다. CC0는 표기 의무가 없으므로 URL은
+기록하지 않았다 — 다만 같은 소리를 다시 찾거나 더 나은 것으로 교체할 때는 URL이 있는
+편이 편하다. 다음에 받는 것은 URL도 함께 적는다.
 
-두 파일은 이번 작업 전에 이미 저장소에 있던 것으로, 파일명에 작성자로 보이는 문자열이
-있을 뿐 출처와 라이선스가 기록돼 있지 않다. **배포 전에 반드시 확인해야 한다** —
-CC-BY라면 여기에 URL과 작성자를 적어야 하고, CC-BY-NC라면 교체해야 한다.
+| 파일 | 이벤트 | 라이선스 | 길이 | 비고 |
+|---|---|---:|---:|---|
+| `sfx_command_ok.wav` | `CommandSucceeded` | CC0 | 0.20초 | 원본 3.0초를 잘랐다 (아래 참고) |
+| `sfx_command_fail.wav` | `CommandFailed` | CC0 | 0.60초 | |
+| `sfx_loot_pickup.wav` | `LootAcquired` | CC0 | 1.85초 | |
+| `sfx_loot_sold.wav` | `LootSold` | CC0 | 1.72초 | |
+| `sfx_arrest_start.wav` | `ArrestStarted` | CC0 | 1.52초 | |
+| `sfx_arrest_done.mp3` | `ArrestCompleted` | CC0 | — | |
+| `sfx_dog_bark.flac` | `DogBark` | CC0 | — | |
+| `sfx_cat_meow.wav` | `CatMeow` | CC0 | — | |
+| `sfx_victory.wav` | `Victory` | CC0 | 1.81초 | |
+| `sfx_defeat.wav` | `Defeat` | CC0 | 2.00초 | |
 
-`sfx_alarm_siren`은 `ArrestCompleted`의 **임시 대체물**이다. 4분 경기가 소리 없이 끝나면
-멈춘 것처럼 읽히므로 무언가 울리게 해 둔 것이고, 호루라기나 수갑 소리로 바꿔야 한다.
+### 확장자를 고친 이력
+
+받은 파일은 전부 `.mp3`였지만 실제로 MP3인 것은 `sfx_arrest_done` 하나뿐이었다. 나머지
+여덟 개는 WAV, `sfx_dog_bark`는 FLAC이다. Unity는 확장자로 임포터를 고르므로 실제 포맷에
+맞춰 이름을 바꿨다. 뱅크 매핑은 확장자 없이 이름만 적고 코드가 찾는다.
+
+### 잘라낸 것
+
+`sfx_command_ok`는 원본이 3.0초였다. 동물 명령은 몇 초마다 눌리는 동작이라 자기 소리와
+겹쳐서, 앞 0.2초만 남기고 마지막 25ms를 페이드아웃했다. 잘린 파형을 그냥 끊으면 딸깍
+소리가 나고, 그건 듣는 사람이 매번 알아채는 유일한 잡음이다.
+
+ffmpeg이 없고 scipy는 24비트 WAV를 쓰지 못해서 바이트 단위로 잘랐다 — 헤더가 1초당
+바이트 수를 알려주므로 data 청크를 자르고 크기 필드만 고치면 된다.
+
+### 지운 것
+
+`sfx_alarm_siren.mp3`는 지웠다. `sfx_arrest_done`이 들어와 쓰이지 않게 됐고, 저장소에
+있던 두 파일 중 유일하게 출처와 라이선스가 기록돼 있지 않았다. 라이선스를 모르는 파일을
+남겨 둘 이유가 없다.
 
 ## 배경음악
 

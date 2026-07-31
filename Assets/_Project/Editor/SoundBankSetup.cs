@@ -25,17 +25,35 @@ namespace PawsAndLoot.Editor
         private const string ClipDirectory = "Assets/_Project/Audio/SFX";
 
         /// <summary>
-        /// Which file plays for which event.
+        /// Which file plays for which event, by name without an extension.
         ///
-        /// Only what the repository actually has. The siren stands in for the arrest
-        /// because an arrest is the loudest thing that happens in a match and a
-        /// four-minute round with no audible ending reads as a crash; it is a
-        /// placeholder and should be replaced by a whistle or a cuff.
+        /// The extension is looked up rather than written down. Every one of these
+        /// arrived from freesound named <c>.mp3</c> and only two of them were: the
+        /// rest were WAV and one was FLAC. Unity picks its importer by extension, so
+        /// a mislabelled file is at best confusing and at worst silent, and hard-coding
+        /// the extension here would make the mapping wrong again the next time
+        /// somebody saves in a different format.
         /// </summary>
-        private static readonly (GameSoundId Id, string File)[] Mapping =
+        private static readonly (GameSoundId Id, string Stem)[] Mapping =
         {
+            (GameSoundId.CommandSucceeded, "sfx_command_ok"),
+            (GameSoundId.CommandFailed, "sfx_command_fail"),
+            (GameSoundId.LootAcquired, "sfx_loot_pickup"),
+            (GameSoundId.LootSold, "sfx_loot_sold"),
+            (GameSoundId.ArrestStarted, "sfx_arrest_start"),
+            (GameSoundId.ArrestCompleted, "sfx_arrest_done"),
+            (GameSoundId.DogBark, "sfx_dog_bark"),
             (GameSoundId.CatMeow, "sfx_cat_meow"),
-            (GameSoundId.ArrestCompleted, "sfx_alarm_siren")
+            (GameSoundId.Victory, "sfx_victory"),
+            (GameSoundId.Defeat, "sfx_defeat")
+        };
+
+        /// <summary>
+        /// The audio formats Unity imports, in the order they are tried.
+        /// </summary>
+        private static readonly string[] Extensions =
+        {
+            ".wav", ".mp3", ".ogg", ".flac", ".aiff", ".aif"
         };
 
         [MenuItem("Paws & Loot/Setup/Assign Sound Bank Clips")]
@@ -51,26 +69,45 @@ namespace PawsAndLoot.Editor
             }
 
             int assigned = 0;
-            foreach ((GameSoundId id, string file) in Mapping)
+            foreach ((GameSoundId id, string stem) in Mapping)
             {
-                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(
-                    $"{ClipDirectory}/{file}.mp3");
+                AudioClip clip = null;
+                foreach (string extension in Extensions)
+                {
+                    clip = AssetDatabase.LoadAssetAtPath<AudioClip>(
+                        $"{ClipDirectory}/{stem}{extension}");
+                    if (clip != null)
+                    {
+                        break;
+                    }
+                }
+
                 if (clip == null)
                 {
                     Debug.LogWarning(
-                        $"[AUDIO-001] '{file}.mp3' is missing, so "
-                        + $"{id} stays silent.");
+                        $"[AUDIO-001] No file named '{stem}' in "
+                        + $"{ClipDirectory}, so {id} stays silent.");
                     continue;
                 }
 
-                if (bank.TryAssignClip(id, clip))
-                {
-                    assigned++;
-                }
-                else
+                if (!bank.TryAssignClip(id, clip))
                 {
                     Debug.LogWarning(
                         $"[AUDIO-001] The bank has no entry for {id}.");
+                    continue;
+                }
+
+                assigned++;
+
+                // Length is reported because it is the thing most likely to be
+                // wrong and the thing nobody checks. A three-second blip on a
+                // command that fires every few seconds overlaps itself.
+                if (clip.length > 2.5f)
+                {
+                    Debug.LogWarning(
+                        $"[AUDIO-001] {id} is {clip.length:0.0}s long. Anything "
+                        + "over about two seconds outstays its welcome unless it "
+                        + "is the end of a match.");
                 }
             }
 
