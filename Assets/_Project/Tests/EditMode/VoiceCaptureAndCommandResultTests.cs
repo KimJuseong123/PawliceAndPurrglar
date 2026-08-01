@@ -38,6 +38,8 @@ namespace PawsAndLoot.Tests.EditMode
                 animalFeedback = "Command accepted"
             });
             Assert.That(input.State, Is.EqualTo(VoiceCommandInputState.Completed));
+            Assert.That(input.CooldownRemainingSeconds, Is.EqualTo(30f));
+            Assert.That(input.PostCommandCooldownSeconds, Is.EqualTo(30f));
             Assert.That(input.LastResult.interpretedCommand, Is.EqualTo("DOG SCENT TRACK"));
 
             input.ApplyServerFailure("VOICE_PROVIDER_MISSING");

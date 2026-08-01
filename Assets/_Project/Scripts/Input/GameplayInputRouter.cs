@@ -27,6 +27,7 @@ namespace PawsAndLoot.Input
         public static event Action<int> AnimalCommandPressed;
         public static event Action ContextInteractionPressed;
         public static event Action InventoryTogglePressed;
+        public static event Action VoicePressed;
         public static event Action EscapePressed;
         public static event Action BindingDisplayChanged;
 
@@ -49,7 +50,7 @@ namespace PawsAndLoot.Input
 
         public static string GetAnimalCommandLabel(int command) =>
             command > 0 && command <= animalCommandLabels.Length
-                ? $"SHIFT + {animalCommandLabels[command - 1]}"
+                ? $"CTRL + {animalCommandLabels[command - 1]}"
                 : string.Empty;
 
         public static void SetBindingDisplayLabels(
@@ -115,12 +116,12 @@ namespace PawsAndLoot.Input
                 return;
             }
 
-            bool shift = keyboard.leftShiftKey.isPressed
-                || keyboard.rightShiftKey.isPressed;
+            bool ctrl = keyboard.leftCtrlKey.isPressed
+                || keyboard.rightCtrlKey.isPressed;
             int number = ReadNumberKey(keyboard);
             if (number > 0)
             {
-                if (shift)
+                if (ctrl)
                 {
                     AnimalCommandPressed?.Invoke(number);
                 }
@@ -137,18 +138,11 @@ namespace PawsAndLoot.Input
 
             if (keyboard.vKey.wasPressedThisFrame)
             {
+                VoicePressed?.Invoke();
                 foreach (VoiceCommandInput voice in
                     FindObjectsByType<VoiceCommandInput>(FindObjectsSortMode.None))
                 {
                     voice.StartListening();
-                }
-            }
-            else if (keyboard.vKey.wasReleasedThisFrame)
-            {
-                foreach (VoiceCommandInput voice in
-                    FindObjectsByType<VoiceCommandInput>(FindObjectsSortMode.None))
-                {
-                    voice.StopListening();
                 }
             }
         }

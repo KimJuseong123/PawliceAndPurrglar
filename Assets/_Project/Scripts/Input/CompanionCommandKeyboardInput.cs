@@ -1,5 +1,6 @@
 using PawsAndLoot.Companions;
 using PawsAndLoot.Gameplay.Players;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -98,12 +99,19 @@ namespace PawsAndLoot.Input
 
         private void Update()
         {
-            if (!isLocallyControlled || Keyboard.current == null)
+            if (!CanReadLocalInput() || Keyboard.current == null)
             {
                 return;
             }
 
             Keyboard keyboard = Keyboard.current;
+            bool ctrl = keyboard.leftCtrlKey.isPressed
+                || keyboard.rightCtrlKey.isPressed;
+            if (!ctrl)
+            {
+                return;
+            }
+
             if (keyboard.digit1Key.wasPressedThisFrame)
             {
                 TryIssue(1, Time.time);
@@ -120,6 +128,26 @@ namespace PawsAndLoot.Input
             {
                 TryIssue(4, Time.time);
             }
+        }
+
+        private bool CanReadLocalInput()
+        {
+            if (isLocallyControlled)
+            {
+                return true;
+            }
+
+            if (NetworkManager.Singleton?.IsListening == true
+                || issuer == null)
+            {
+                return false;
+            }
+
+            LocalPlayerRoleSelector selector =
+                FindFirstObjectByType<LocalPlayerRoleSelector>();
+            return selector != null
+                && selector.IsGameplayInputEnabled
+                && selector.ActiveRole == issuer.Role;
         }
     }
 }

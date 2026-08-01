@@ -39,6 +39,38 @@ namespace PawsAndLoot.Tests.EditMode
         }
 
         [Test]
+        public void TrajectoryPreviewUsesSerializedResourceMaterials()
+        {
+            GameObject previewObject = new("Trajectory Preview Test");
+            ThrowTrajectoryPreview preview =
+                previewObject.AddComponent<ThrowTrajectoryPreview>();
+
+            preview.Show(
+                new Vector3(0f, 1.9f, 0f),
+                Vector3.forward,
+                ThrowableCatalog.ThrowRangeMeters,
+                0);
+
+            Assert.That(preview.Line, Is.Not.Null);
+            Assert.That(preview.Line.enabled, Is.True);
+            Assert.That(preview.Line.positionCount, Is.GreaterThan(1));
+            AssertBuildSafeMaterial(preview.Line.sharedMaterial);
+
+            Assert.That(preview.LandingMarker, Is.Not.Null);
+            Assert.That(preview.LandingMarker.activeSelf, Is.True);
+            Renderer landingRenderer =
+                preview.LandingMarker.GetComponent<Renderer>();
+            Assert.That(landingRenderer, Is.Not.Null);
+            AssertBuildSafeMaterial(landingRenderer.sharedMaterial);
+
+            preview.Hide();
+            Assert.That(preview.Line.enabled, Is.False);
+            Assert.That(preview.LandingMarker.activeSelf, Is.False);
+
+            Object.DestroyImmediate(previewObject);
+        }
+
+        [Test]
         public void HoldTargetUsesHoldContractAndActionText()
         {
             GameObject playerObject = new("Validation Test Player");
@@ -61,6 +93,16 @@ namespace PawsAndLoot.Tests.EditMode
 
             Object.DestroyImmediate(targetObject);
             Object.DestroyImmediate(playerObject);
+        }
+
+        private static void AssertBuildSafeMaterial(Material material)
+        {
+            Assert.That(material, Is.Not.Null);
+            Assert.That(material.shader, Is.Not.Null);
+            Assert.That(material.shader.isSupported, Is.True);
+            Assert.That(
+                material.shader.name,
+                Does.Not.Contain("InternalError"));
         }
     }
 }

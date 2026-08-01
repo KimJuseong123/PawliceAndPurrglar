@@ -5,10 +5,9 @@ namespace PawsAndLoot.Tests.EditMode
 {
     public sealed class CoreCommandMatcherTests
     {
-        [TestCase("강아지 냄새 추적", CompanionCommandId.DogScentTrack)]
-        [TestCase("지금 자리를 지켜", CompanionCommandId.DogGuard)]
-        [TestCase("도둑을 쫓아가", CompanionCommandId.DogChase)]
-        [TestCase("물어", CompanionCommandId.DogBite)]
+        [TestCase("강아지 냄새 추적", CompanionCommandId.Track)]
+        [TestCase("지금 자리를 지켜", CompanionCommandId.Guard)]
+        [TestCase("도둑을 쫓아가", CompanionCommandId.Track)]
         public void MatchesDogCoreCommands(
             string text,
             CompanionCommandId expected)
@@ -21,10 +20,10 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(result.Accepted, Is.True);
         }
 
-        [TestCase("지붕으로 올라가", CompanionCommandId.CatClimbRoof)]
-        [TestCase("할퀴어", CompanionCommandId.CatScratch)]
-        [TestCase("소리 질러", CompanionCommandId.CatScream)]
-        [TestCase("은신처를 찾아", CompanionCommandId.CatFindHideout)]
+        [TestCase("지붕으로 올라가", CompanionCommandId.Scout)]
+        [TestCase("할퀴어", CompanionCommandId.Distract)]
+        [TestCase("소리 질러", CompanionCommandId.Distract)]
+        [TestCase("은신처를 찾아", CompanionCommandId.Hide)]
         public void MatchesCatCoreCommands(
             string text,
             CompanionCommandId expected)
@@ -35,6 +34,17 @@ namespace PawsAndLoot.Tests.EditMode
 
             Assert.That(result.CommandId, Is.EqualTo(expected));
             Assert.That(result.Accepted, Is.True);
+        }
+
+        [Test]
+        public void BiteIsRejectedWhenNoBiteExecutorExists()
+        {
+            CoreCommandMatch result = CoreCommandMatcher.Match(
+                "물어",
+                CompanionKind.Dog);
+
+            Assert.That(result.CommandId, Is.EqualTo(CompanionCommandId.None));
+            Assert.That(result.Accepted, Is.False);
         }
 
         [Test]

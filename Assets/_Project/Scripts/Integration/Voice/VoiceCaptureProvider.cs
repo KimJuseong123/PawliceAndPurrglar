@@ -41,11 +41,14 @@ namespace PawsAndLoot.Integration.Voice
     public sealed class NativeVoiceCaptureProvider : IVoiceCaptureProvider
     {
         private const int SampleRate = 16000;
+        private const int MinimumMilliseconds = 250;
+        private const float SilenceRmsThreshold = 0.003f;
         private AudioClip clip;
         private string deviceName;
         private bool recording;
 
-        public bool IsAvailable => Microphone.devices != null;
+        public bool IsAvailable => Microphone.devices != null
+            && Microphone.devices.Length > 0;
 
         public IEnumerator Begin(
             float maximumSeconds,
@@ -161,6 +164,30 @@ namespace PawsAndLoot.Integration.Voice
             int sampleCount = Mathf.Min(
                 samples.Length,
                 sampleFrames * clip.channels);
+            int minimumFrames = Mathf.CeilToInt(
+                SampleRate * (MinimumMilliseconds / 1000f));
+            if (sampleFrames < minimumFrames)
+            {
+                clip = null;
+                failed?.Invoke("VOICE_AUDIO_TOO_SHORT");
+                yield break;
+            }
+
+            float sumSquares = 0f;
+            for (int index = 0; index < sampleCount; index++)
+            {
+                float value = samples[index];
+                sumSquares += value * value;
+            }
+
+            float rms = Mathf.Sqrt(sumSquares / Mathf.Max(1, sampleCount));
+            if (rms < SilenceRmsThreshold)
+            {
+                clip = null;
+                failed?.Invoke("VOICE_AUDIO_SILENT");
+                yield break;
+            }
+
             byte[] wav = WavAudioEncoder.Encode(
                 samples,
                 sampleCount,

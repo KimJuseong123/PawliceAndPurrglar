@@ -2,6 +2,7 @@ using System;
 using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
+using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Logging;
 using PawsAndLoot.Match;
 using UnityEngine;
@@ -88,6 +89,45 @@ namespace PawsAndLoot.Companions
 
         public CompanionKind CompanionKind => companionKind;
         public CompanionState CurrentState => _stateMachine.CurrentState;
+        public CompanionStatusId CurrentStatus => CurrentState switch
+        {
+            CompanionState.MoveToTarget => CompanionStatusId.Tracking,
+            CompanionState.ExecuteCommand => CompanionStatusId.CommandReceived,
+            CompanionState.ReturnToOwner => CompanionStatusId.Chasing,
+            CompanionState.Cooldown => CompanionStatusId.CommandReceived,
+            _ => CompanionStatusId.Idle
+        };
+
+        public void ReceiveAttraction(
+            ThrowableKind kind,
+            Vector3 position,
+            float strength,
+            float duration)
+        {
+            GameLogger.DebugOnce(
+                GameLogCategory.Companion,
+                "companion-attraction",
+                $"{CompanionKind} noticed {kind} nearby.",
+                this);
+        }
+
+        public void ReceiveConfusion(float duration)
+        {
+            GameLogger.DebugOnce(
+                GameLogCategory.Companion,
+                "companion-confusion",
+                $"{CompanionKind} was confused for {duration:0.0}s.",
+                this);
+        }
+
+        public void ReceiveNoise(Vector3 position, float strength, float duration)
+        {
+            GameLogger.DebugOnce(
+                GameLogCategory.Companion,
+                "companion-noise",
+                $"{CompanionKind} heard a nearby noise.",
+                this);
+        }
         public bool IsActive => _stateMachine.IsActive;
         public bool IsBusyWithCommand => _stateMachine.IsBusyWithCommand;
         public float CooldownRemainingSeconds => _cooldownRemainingSeconds;

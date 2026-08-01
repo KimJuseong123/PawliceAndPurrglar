@@ -63,6 +63,42 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator SelectedThrownToolWaitsForHeldUseBeforeShowingTrajectory()
+        {
+            var state = new MutableMatchState { IsGameplayActive = true };
+            var playerObject = Track(new GameObject("Preview Police"));
+            playerObject.SetActive(false);
+            PlayerRoleIdentity identity =
+                playerObject.AddComponent<PlayerRoleIdentity>();
+            identity.Configure(PlayerRole.Police);
+            ToolCarrier carrier = playerObject.AddComponent<ToolCarrier>();
+            carrier.Configure(identity, state);
+            Assert.That(carrier.TryPickUp(ThrowableKind.Rock), Is.True);
+
+            ToolUseAction action = playerObject.AddComponent<ToolUseAction>();
+            action.Configure(identity, carrier, 0);
+            ThrowTrajectoryPreview preview =
+                playerObject.AddComponent<ThrowTrajectoryPreview>();
+            ToolUseInput input = playerObject.AddComponent<ToolUseInput>();
+            input.Configure(action, true, null, preview, 0);
+            playerObject.transform.rotation =
+                Quaternion.LookRotation(Vector3.forward);
+            playerObject.SetActive(true);
+
+            yield return null;
+
+            Assert.That(
+                preview.Line == null || !preview.Line.enabled,
+                Is.True,
+                "A selected throwable should not draw a path until the player "
+                + "is actually holding the throw input.");
+            Assert.That(
+                preview.LandingMarker == null
+                || !preview.LandingMarker.activeSelf,
+                Is.True);
+        }
+
+        [UnityTest]
         public IEnumerator ThrowHitsAnOpponentInFrontOfIt()
         {
             PlayerRoleIdentity thief = CreatePlayer(

@@ -7,13 +7,6 @@ namespace PawsAndLoot.UI
 {
     /// <summary>
     /// Shows what the local player is holding and which key uses it.
-    ///
-    /// Read only, like every other presenter here. It never picks anything up
-    /// and never uses anything, so the HUD cannot change the match.
-    ///
-    /// The key hint is on screen rather than in a manual because there is no
-    /// tutorial: a player who does not know F exists is carrying a rock they
-    /// will never throw.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ToolHudPresenter : MonoBehaviour
@@ -39,15 +32,19 @@ namespace PawsAndLoot.UI
             Refresh();
         }
 
-        /// <summary>
-        /// Finds the local player's slot at runtime rather than at scene-build
-        /// time.
-        ///
-        /// It has to be runtime: in a session the role is handed out by the host
-        /// after the lobby, so which player is "mine" is not known when the
-        /// scene is built. Binding it in the editor would show the host's slot
-        /// on the client's screen.
-        /// </summary>
+        private bool SuppressIfModernHudExists()
+        {
+            RoleAwareHudController modernHud =
+                FindFirstObjectByType<RoleAwareHudController>();
+            if (modernHud == null)
+            {
+                return false;
+            }
+
+            gameObject.SetActive(false);
+            return true;
+        }
+
         private void ResolveLocalPlayer()
         {
             if (carrier != null)
@@ -55,8 +52,6 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            // The lobby's assignment wins; offline it falls back to whichever
-            // role the scene's selector actually activated.
             PlayerRole? assigned = LocalPlayerRoleSelector.OverriddenRole;
             if (!assigned.HasValue)
             {
@@ -71,10 +66,8 @@ namespace PawsAndLoot.UI
             }
 
             PlayerRole role = assigned.Value;
-
             foreach (ToolCarrier candidate in
-                FindObjectsByType<ToolCarrier>(
-                    FindObjectsSortMode.None))
+                FindObjectsByType<ToolCarrier>(FindObjectsSortMode.None))
             {
                 if (candidate.Role != role)
                 {
@@ -95,22 +88,15 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            // Being stunned outranks the slot: a frozen player needs to know why
-            // their keys stopped working before they need to know their
-            // inventory.
             if (stun != null && stun.IsStunned)
             {
-                slotLabel.text =
-                    $"기절!  {stun.RemainingSeconds:0.0}초";
+                slotLabel.text = $"기절!  {stun.RemainingSeconds:0.0}초";
                 slotLabel.color = new Color(1f, 0.55f, 0.4f);
                 return;
             }
 
             if (carrier == null || !carrier.HasTool)
             {
-                // The officer's purse belongs on the empty-handed line, because
-                // that is exactly when they need to know whether a trip to the
-                // shop is worth it.
                 slotLabel.text = policeWallet != null
                     ? $"손에 든 것 없음  ·  {policeWallet.Amount}골드"
                     : "손에 든 것 없음";
@@ -119,24 +105,26 @@ namespace PawsAndLoot.UI
             }
 
             bool placed = carrier.HeldUse == ThrowableUse.Placed;
-            // Named by the catalog. A list here would drift out of step with the
-            // enum the moment a prop is added.
-            string what =
-                ThrowableCatalog.GetDisplayName(carrier.HeldKind);
-            // The mouse is named first for a throw, because aiming is the half a
-            // player will not discover on their own: F alone worked, so nothing
-            // ever told them the cursor mattered.
+            string what = ThrowableCatalog.GetDisplayName(carrier.HeldKind);
+            string quantity = carrier.HeldQuantity > 1
+                ? $" x{carrier.HeldQuantity}"
+                : string.Empty;
             string purse = policeWallet != null
                 ? $"  ·  {policeWallet.Amount}골드"
                 : string.Empty;
             slotLabel.text = placed
-                ? $"{what}  [F] 설치{purse}"
-                : $"{what}  [좌클릭] 커서 방향으로 던지기{purse}";
+                ? $"{what}{quantity}  [F] 설치{purse}"
+                : $"{what}{quantity}  [좌클릭/F] 조준 후 던지기{purse}";
             slotLabel.color = new Color(1f, 0.92f, 0.72f);
         }
 
         private void Update()
         {
+            if (SuppressIfModernHudExists())
+            {
+                return;
+            }
+
             ResolveLocalPlayer();
             Refresh();
         }

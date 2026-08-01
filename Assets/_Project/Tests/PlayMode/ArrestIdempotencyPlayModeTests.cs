@@ -154,8 +154,24 @@ namespace PawsAndLoot.Tests.PlayMode
             }
 
             Assert.That(succeeded, Is.EqualTo(1));
+            Assert.That(completion.CurrentCatchCount, Is.EqualTo(1));
+            Assert.That(victoryRequests, Is.Zero);
+            Assert.That(completion.IsCompleted, Is.False);
+
+            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
+            Assert.That(completion.TryCompleteArrest(), Is.True);
+            Assert.That(completion.CurrentCatchCount, Is.EqualTo(2));
+            Assert.That(victoryRequests, Is.Zero);
+            Assert.That(completion.IsCompleted, Is.False);
+
+            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
+            Assert.That(completion.TryCompleteArrest(), Is.True);
+            Assert.That(completion.CurrentCatchCount, Is.EqualTo(3));
             Assert.That(victoryRequests, Is.EqualTo(1));
             Assert.That(completion.IsCompleted, Is.True);
+
+            Assert.That(completion.TryCompleteArrest(), Is.False);
+            Assert.That(victoryRequests, Is.EqualTo(1));
 
             Object.DestroyImmediate(completionObject);
             Object.DestroyImmediate(progressObject);

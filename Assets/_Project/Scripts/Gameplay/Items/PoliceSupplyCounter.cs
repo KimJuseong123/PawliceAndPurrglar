@@ -65,8 +65,9 @@ namespace PawsAndLoot.Gameplay.Items
         /// <summary>
         /// Host side, like every other interaction. Refuses for three separate
         /// reasons and each one has to be a refusal rather than a partial sale:
-        /// the wrong role, no money, or a hand that is already full. A sale that
-        /// took the money and delivered nothing would be worse than any of them.
+        /// the wrong role, no money, or quick slots that cannot fit the item. A
+        /// sale that took the money and delivered nothing would be worse than
+        /// any of them.
         /// </summary>
         public bool TryInteract(PlayerInteractionContext context)
         {
@@ -84,9 +85,9 @@ namespace PawsAndLoot.Gameplay.Items
                 return false;
             }
 
-            if (carrier.HasTool)
+            if (!carrier.CanStore(kind))
             {
-                // Hands full. Refused before the money is touched.
+                // Bag full. Refused before the money is touched.
                 return false;
             }
 

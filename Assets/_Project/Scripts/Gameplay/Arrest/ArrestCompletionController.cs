@@ -7,24 +7,35 @@ namespace PawsAndLoot.Gameplay.Arrest
 {
     public sealed class ArrestCompletionController : MonoBehaviour
     {
+        public const int DefaultRequiredCatchCount = 3;
+
         [SerializeField]
         private ArrestProgressController progressController;
 
         [SerializeField]
         private MatchRuntimeState matchRuntime;
 
+        [SerializeField, Min(1)]
+        private int requiredCatchCount = DefaultRequiredCatchCount;
+
         public event Action ArrestCompleted;
+        public event Action<int, int> CatchCountChanged;
         public event Action PoliceVictoryRequested;
 
         public bool IsCompleted { get; private set; }
+        public int CurrentCatchCount { get; private set; }
+        public int RequiredCatchCount => Mathf.Max(1, requiredCatchCount);
 
         public void Configure(
             ArrestProgressController configuredProgressController,
-            MatchRuntimeState configuredMatchRuntime)
+            MatchRuntimeState configuredMatchRuntime,
+            int configuredRequiredCatchCount = DefaultRequiredCatchCount)
         {
             progressController = configuredProgressController;
             matchRuntime = configuredMatchRuntime;
+            requiredCatchCount = Mathf.Max(1, configuredRequiredCatchCount);
             IsCompleted = false;
+            CurrentCatchCount = 0;
             ValidateOrThrow();
         }
 
@@ -39,13 +50,28 @@ namespace PawsAndLoot.Gameplay.Arrest
                 return false;
             }
 
-            IsCompleted = true;
+            CurrentCatchCount++;
+            bool reachedVictory =
+                CurrentCatchCount >= RequiredCatchCount;
+            IsCompleted = reachedVictory;
             GameLogger.Info(
                 GameLogCategory.Arrest,
-                "Arrest completed. Police victory requested.",
+                reachedVictory
+                    ? "Required arrests completed. Police victory requested."
+                    : $"Arrest completed ({CurrentCatchCount}/{RequiredCatchCount}).",
                 this);
+            if (!reachedVictory)
+            {
+                progressController.ResetProgress();
+            }
+
             ArrestCompleted?.Invoke();
-            PoliceVictoryRequested?.Invoke();
+            CatchCountChanged?.Invoke(CurrentCatchCount, RequiredCatchCount);
+            if (reachedVictory)
+            {
+                PoliceVictoryRequested?.Invoke();
+            }
+
             return true;
         }
 

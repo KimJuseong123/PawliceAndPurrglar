@@ -56,7 +56,11 @@ namespace PawsAndLoot.UI
             }
 
             if (selectedFrame != null) selectedFrame.enabled = model.Selected;
-            if (disabledOverlay != null) disabledOverlay.enabled = model.Disabled;
+            if (disabledOverlay != null)
+            {
+                disabledOverlay.enabled = model.Disabled && !model.Selected;
+            }
+
             if (cooldownOverlay != null)
             {
                 cooldownOverlay.enabled = model.Cooldown01 > 0f;

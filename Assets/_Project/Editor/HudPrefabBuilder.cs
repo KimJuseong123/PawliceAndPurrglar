@@ -1,8 +1,8 @@
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.TextCore.LowLevel;
 using UnityEngine.UI;
-using System.IO;
 using PawsAndLoot.UI;
 
 namespace PawsAndLoot.Editor
@@ -19,8 +19,30 @@ namespace PawsAndLoot.Editor
             "Assets/Resources/HudCanvas.prefab";
         private const string RuntimeFontAssetPath =
             "Assets/Resources/PawsAndLootDefaultFont.asset";
+        private const string RuntimeFontSourcePath =
+            "Assets/ThirdParty/DNF_BitBit_v2/TTF/DNFBitBitv2.ttf";
         private const string TmpSettingsAssetPath =
             "Assets/Resources/TMP Settings.asset";
+        private const string RuntimeFontPreloadCharacters =
+            " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            + "\uac00\uac01\uac04\uac10\uac70\uac83\uac8c\uace0\uace8\uad6c\uadf8\uae30\uae4c\ub098\ub2e4\ub2e8\ub300\ub354"
+            + "\ub370\ub3c4\ub3d9\ub4e0\ub4dc\ub4e4\ub4ef\ub530\ub54c\ub5a8\ub610\ub77c\ub7f0\ub7ec\ub839\ub85c\ub97c"
+            + "\ub9d0\ub9ac\uba85\ubaa9\ubaa8\ubb3c\ubb38\ubbf8\ubc14\ubc18\ubc1b\ubc29\ubc30\ubc84\ubc88\ubcf4\ubd99"
+            + "\ube44\uc0ac\uc0c1\uc11c\uc13c\uc138\uc18c\uc190\uc1a1\uc218\uc21c\uc2a4\uc2dc\uc2e4\uc544\uc548\uc54c\uc5b4\uc5c6"
+            + "\uc5d0\uc5ec\uc624\uc644\uc6b0\uc6b4\uc6d0\uc704\uc73c\uc74c\uc758\uc774\uc778\uc785\uc788\uc7a1\uc804\uc810\uc815"
+            + "\uc81c\uc870\uc8fc\uc911\uc9c1\ucc28\ucc30\ucc98\uccb4\ucd08\ucd94\ucd9c\ucda9\ucfe8\ud0c0\ud0dc\ud14c\ud15c"
+            + "\ud3ec\ud45c\ud55c\ud560\ud574\ud589\ud6c4\ud68c\ud69f"
+            + "\ub3c4\ub451\uc744 3\ud68c \uccb4\ud3ec\ud558\uc138\uc694"
+            + "1000\uace8\ub4dc \ubaa8\uc73c\uae30"
+            + "\uace8\ub4dc 0 / 1000"
+            + "\ubd99\uc7a1\ud78c \ud69f\uc218"
+            + "\ub3d9\ubb3c \uba85\ub839 \uc804\uc1a1 \uc2e4\ud589 \uc2e4\ud328"
+            + "\uc544\uc9c1 \uba85\ub839 \ucfe8\ud0c0\uc784"
+            + "\ucd08 \ud6c4 \ub2e4\uc2dc \ub9d0\ud560 \uc218 \uc788\uc5b4\uc694"
+            + "\uc74c\uc131 \uc785\ub825 \uc900\ube44 \uc911"
+            + "\uc74c\uc131 \uba85\ub839 \ub179\uc74c \ucc98\ub9ac \uc644\ub8cc \uc2dc\ub3c4 \uc8fc\uc138\uc694"
+            + "5\ucd08 \ub3d9\uc548 \ub4e3\uace0 \uc788\uc5b4\uc694"
+            + "\uba85\ub839\uc744 \ud574\uc11d\ud558\uace0 \uc788\uc5b4\uc694";
 
         [MenuItem("Paws & Loot/UI/Sync HUD Canvas To Resources")]
         public static void SyncHudCanvasToResources()
@@ -116,7 +138,7 @@ namespace PawsAndLoot.Editor
         private static GameObject CreateAnimalCommandPrefab()
         {
             GameObject root = CreateRoot("AnimalCommandShortcutView");
-            TMP_Text modifier = CreateText(root.transform, "Modifier", "SHIFT +");
+            TMP_Text modifier = CreateText(root.transform, "Modifier", "CTRL +");
             TMP_Text key = CreateText(root.transform, "Key", "1");
             TMP_Text command = CreateText(root.transform, "Command", "TRACK");
             Image disabled = CreateImage(root.transform, "Disabled");
@@ -197,6 +219,7 @@ namespace PawsAndLoot.Editor
             if (font != null)
             {
                 text.font = font;
+                text.fontSharedMaterial = font.material;
             }
             text.text = value;
             text.fontSize = 16f;
@@ -229,46 +252,10 @@ namespace PawsAndLoot.Editor
 
             TMP_Settings.LoadDefaultSettings();
 
-            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(RuntimeFontAssetPath);
-            if (font == null)
-            {
-                string packageFont = null;
-                string packageCache = Path.GetFullPath("Library/PackageCache");
-                foreach (string candidate in Directory.GetFiles(
-                             packageCache,
-                             "Inter-Regular SDF.asset",
-                             SearchOption.AllDirectories))
-                {
-                    packageFont = candidate;
-                    break;
-                }
+            Font sourceFont = LoadRuntimeSourceFont();
+            TMP_FontAsset font = EnsureRuntimeFontAsset(sourceFont);
 
-                if (string.IsNullOrWhiteSpace(packageFont))
-                {
-                    throw new System.InvalidOperationException(
-                        "Could not locate the packaged TextMeshPro font asset.");
-                }
-
-                FileUtil.CopyFileOrDirectory(packageFont, RuntimeFontAssetPath);
-                string packageMeta = packageFont + ".meta";
-                if (File.Exists(packageMeta))
-                {
-                    FileUtil.CopyFileOrDirectory(
-                        packageMeta,
-                        RuntimeFontAssetPath + ".meta");
-                }
-
-                AssetDatabase.ImportAsset(
-                    RuntimeFontAssetPath,
-                    ImportAssetOptions.ForceUpdate);
-                font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
-                    RuntimeFontAssetPath);
-                if (font == null)
-                {
-                    throw new System.InvalidOperationException(
-                        "Could not import the packaged TextMeshPro font asset.");
-                }
-            }
+            ConfigureRuntimeFont(font);
 
             SerializedObject serializedSettings = new(settings);
             SerializedProperty defaultFont = serializedSettings.FindProperty(
@@ -280,9 +267,174 @@ namespace PawsAndLoot.Editor
                 EditorUtility.SetDirty(settings);
             }
 
+            SerializedProperty clearDynamicData =
+                serializedSettings.FindProperty("m_ClearDynamicDataOnBuild");
+            if (clearDynamicData != null && clearDynamicData.boolValue)
+            {
+                clearDynamicData.boolValue = false;
+                serializedSettings.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(settings);
+            }
+
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(RuntimeFontAssetPath, ImportAssetOptions.ForceUpdate);
             AssetDatabase.ImportAsset(TmpSettingsAssetPath, ImportAssetOptions.ForceUpdate);
+        }
+
+        private static Font LoadRuntimeSourceFont()
+        {
+            AssetDatabase.ImportAsset(
+                RuntimeFontSourcePath,
+                ImportAssetOptions.ForceUpdate);
+
+            Font sourceFont = AssetDatabase.LoadAssetAtPath<Font>(
+                RuntimeFontSourcePath);
+            if (sourceFont == null)
+            {
+                throw new System.InvalidOperationException(
+                    $"Configured HUD font is missing or could not be imported: {RuntimeFontSourcePath}");
+            }
+
+            return sourceFont;
+        }
+
+        private static TMP_FontAsset EnsureRuntimeFontAsset(Font sourceFont)
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
+                RuntimeFontAssetPath);
+            if (IsRuntimeFontAssetCurrent(font, sourceFont))
+            {
+                return font;
+            }
+
+            if (font != null && !AssetDatabase.DeleteAsset(RuntimeFontAssetPath))
+            {
+                throw new System.InvalidOperationException(
+                    $"Could not replace generated HUD font asset: {RuntimeFontAssetPath}");
+            }
+
+            font = TMP_FontAsset.CreateFontAsset(
+                sourceFont,
+                90,
+                9,
+                GlyphRenderMode.SDFAA,
+                2048,
+                2048,
+                AtlasPopulationMode.Dynamic,
+                true);
+            if (font == null)
+            {
+                throw new System.InvalidOperationException(
+                    $"Could not create HUD font asset from {RuntimeFontSourcePath}");
+            }
+
+            font.name = "PawsAndLootDefaultFont";
+            font.atlasPopulationMode = AtlasPopulationMode.Dynamic;
+            Texture2D atlasTexture = font.atlasTexture;
+            Material fontMaterial = font.material;
+            AssetDatabase.CreateAsset(font, RuntimeFontAssetPath);
+            if (atlasTexture != null)
+            {
+                AssetDatabase.AddObjectToAsset(atlasTexture, font);
+                EditorUtility.SetDirty(atlasTexture);
+            }
+
+            if (fontMaterial != null)
+            {
+                AssetDatabase.AddObjectToAsset(fontMaterial, font);
+                EditorUtility.SetDirty(fontMaterial);
+            }
+
+            EditorUtility.SetDirty(font);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(
+                RuntimeFontAssetPath,
+                ImportAssetOptions.ForceUpdate);
+
+            font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
+                RuntimeFontAssetPath);
+            if (font == null)
+            {
+                throw new System.InvalidOperationException(
+                    $"Could not import generated HUD font asset: {RuntimeFontAssetPath}");
+            }
+
+            return font;
+        }
+
+        private static bool IsRuntimeFontAssetCurrent(
+            TMP_FontAsset font,
+            Font sourceFont)
+        {
+            return font != null
+                   && font.sourceFontFile == sourceFont
+                   && font.atlasTextures != null
+                   && font.atlasTextures.Length > 0
+                   && font.atlasTextures[0] != null
+                   && font.material != null;
+        }
+
+        private static void RepairFontMaterial(TMP_FontAsset font)
+        {
+            if (font == null || font.material == null)
+            {
+                return;
+            }
+
+            Shader shader =
+                Shader.Find("TextMeshPro/Distance Field")
+                ?? Shader.Find("TextMeshPro/Mobile/Distance Field")
+                ?? Shader.Find("UI/Default")
+                ?? Resources.GetBuiltinResource<Shader>("UI/Default.shader");
+            if (shader == null)
+            {
+                throw new System.InvalidOperationException(
+                    "Could not locate a build-safe UI font shader.");
+            }
+
+            if (font.material.shader != shader)
+            {
+                font.material.shader = shader;
+                EditorUtility.SetDirty(font.material);
+            }
+
+            if (font.atlasTexture != null)
+            {
+                font.material.SetTexture(ShaderUtilities.ID_MainTex, font.atlasTexture);
+                EditorUtility.SetDirty(font.material);
+            }
+
+            EditorUtility.SetDirty(font);
+        }
+
+        private static void ConfigureRuntimeFont(TMP_FontAsset font)
+        {
+            if (font == null)
+            {
+                return;
+            }
+
+            SerializedObject serializedFont = new(font);
+            SerializedProperty clearDynamicData =
+                serializedFont.FindProperty("m_ClearDynamicDataOnBuild");
+            if (clearDynamicData != null && clearDynamicData.boolValue)
+            {
+                clearDynamicData.boolValue = false;
+                serializedFont.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            if (!font.TryAddCharacters(
+                    RuntimeFontPreloadCharacters,
+                    out string missingCharacters)
+                && !string.IsNullOrEmpty(missingCharacters))
+            {
+                Debug.LogWarning(
+                    "HUD font could not preload some glyphs: "
+                    + missingCharacters);
+            }
+
+            RepairFontMaterial(font);
+            EditorUtility.SetDirty(font);
         }
 
         private static void SavePrefab(string path, GameObject root)

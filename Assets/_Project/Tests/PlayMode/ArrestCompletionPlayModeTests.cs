@@ -12,7 +12,7 @@ namespace PawsAndLoot.Tests.PlayMode
     public sealed class ArrestCompletionPlayModeTests
     {
         [UnityTest]
-        public IEnumerator CompletionFiresOnceAndRequestsVictory()
+        public IEnumerator CompletionCountsThreeArrestsAndRequestsVictoryOnce()
         {
             ArrestFixture fixture = CreateFixture();
             int completed = 0;
@@ -29,9 +29,11 @@ namespace PawsAndLoot.Tests.PlayMode
                 fixture.ArrestConfig.ArrestDurationSeconds);
             Assert.That(fixture.Completion.TryCompleteArrest(), Is.True);
 
-            Assert.That(fixture.Completion.IsCompleted, Is.True);
-            Assert.That(fixture.Progress.IsCompleted, Is.True);
-            Assert.That(fixture.Progress.ProgressNormalized, Is.EqualTo(1f));
+            Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(1));
+            Assert.That(fixture.Completion.RequiredCatchCount, Is.EqualTo(3));
+            Assert.That(fixture.Completion.IsCompleted, Is.False);
+            Assert.That(fixture.Progress.IsCompleted, Is.False);
+            Assert.That(fixture.Progress.ProgressNormalized, Is.Zero);
             Assert.That(
                 fixture.MatchRuntime.CurrentState,
                 Is.EqualTo(MatchState.Playing));
@@ -40,10 +42,33 @@ namespace PawsAndLoot.Tests.PlayMode
             fixture.Scanner.RefreshTarget();
             Assert.That(fixture.Scanner.HasTarget, Is.True);
             Assert.That(completed, Is.EqualTo(1));
-            Assert.That(victoryRequests, Is.EqualTo(1));
+            Assert.That(victoryRequests, Is.Zero);
 
             Assert.That(fixture.Completion.TryCompleteArrest(), Is.False);
             Assert.That(completed, Is.EqualTo(1));
+            Assert.That(victoryRequests, Is.Zero);
+
+            fixture.Progress.Tick(
+                fixture.ArrestConfig.ArrestDurationSeconds);
+            Assert.That(fixture.Completion.TryCompleteArrest(), Is.True);
+            Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(2));
+            Assert.That(fixture.Completion.IsCompleted, Is.False);
+            Assert.That(fixture.Progress.IsCompleted, Is.False);
+            Assert.That(completed, Is.EqualTo(2));
+            Assert.That(victoryRequests, Is.Zero);
+
+            fixture.Progress.Tick(
+                fixture.ArrestConfig.ArrestDurationSeconds);
+            Assert.That(fixture.Completion.TryCompleteArrest(), Is.True);
+            Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(3));
+            Assert.That(fixture.Completion.IsCompleted, Is.True);
+            Assert.That(fixture.Progress.IsCompleted, Is.True);
+            Assert.That(fixture.Progress.ProgressNormalized, Is.EqualTo(1f));
+            Assert.That(completed, Is.EqualTo(3));
+            Assert.That(victoryRequests, Is.EqualTo(1));
+
+            Assert.That(fixture.Completion.TryCompleteArrest(), Is.False);
+            Assert.That(completed, Is.EqualTo(3));
             Assert.That(victoryRequests, Is.EqualTo(1));
 
             DestroyFixture(fixture);

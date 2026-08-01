@@ -41,6 +41,16 @@ namespace PawsAndLoot.Gameplay.Items
         /// </summary>
         public event Action<ThrowableKind, PlayerRole, Vector3> Placed;
 
+        public bool HasThrowableSelected =>
+            carrier != null
+            && carrier.HasTool
+            && carrier.HeldUse == ThrowableUse.Thrown;
+
+        public Vector3 ThrowOrigin =>
+            identity != null
+                ? identity.transform.position + Vector3.up * 0.9f
+                : transform.position + Vector3.up * 0.9f;
+
         public void Configure(
             PlayerRoleIdentity configuredIdentity,
             ToolCarrier configuredCarrier,
@@ -59,7 +69,7 @@ namespace PawsAndLoot.Gameplay.Items
         /// </summary>
         public bool TryUse()
         {
-            return TryUse(null);
+            return TryUse(null, 1f);
         }
 
         /// <summary>
@@ -71,6 +81,11 @@ namespace PawsAndLoot.Gameplay.Items
         /// under your own feet wherever the cursor is.
         /// </summary>
         public bool TryUse(Vector3? aimDirection)
+        {
+            return TryUse(aimDirection, 1f);
+        }
+
+        public bool TryUse(Vector3? aimDirection, float charge01)
         {
             if (identity == null || carrier == null)
             {
@@ -108,7 +123,10 @@ namespace PawsAndLoot.Gameplay.Items
             ThrowResolver.Result result = ThrowResolver.Resolve(
                 identity,
                 aimDirection ?? identity.transform.forward,
-                ThrowableCatalog.ThrowRangeMeters,
+                Mathf.Lerp(
+                    ThrowableCatalog.MinimumThrowRangeMeters,
+                    ThrowableCatalog.ThrowRangeMeters,
+                    Mathf.Clamp01(charge01)),
                 obstacleLayers);
 
             // Face the throw. Without this the officer hurls a rock over their

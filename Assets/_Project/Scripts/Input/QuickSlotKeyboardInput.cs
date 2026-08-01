@@ -30,6 +30,24 @@ namespace PawsAndLoot.Input
             carrier ??= GetComponent<ToolCarrier>();
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void InstallForSceneCarriers()
+        {
+            foreach (ToolCarrier candidate in
+                FindObjectsByType<ToolCarrier>(FindObjectsSortMode.None))
+            {
+                if (candidate == null
+                    || candidate.GetComponent<QuickSlotKeyboardInput>() != null)
+                {
+                    continue;
+                }
+
+                QuickSlotKeyboardInput input =
+                    candidate.gameObject.AddComponent<QuickSlotKeyboardInput>();
+                input.Configure(candidate, true);
+            }
+        }
+
         private void OnEnable()
         {
             GameplayInputRouter.QuickSlotPressed += HandleQuickSlotPressed;

@@ -15,6 +15,8 @@ namespace PawsAndLoot.Integration.Voice
         public string animalFeedback;
         public string failureCode;
         public string failureMessage;
+        public string requestId;
+        public bool fallbackUsed;
 
         public string ToJson() => JsonUtility.ToJson(this);
     }

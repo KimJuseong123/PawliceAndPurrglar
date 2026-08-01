@@ -80,6 +80,27 @@ namespace PawsAndLoot.Integration.Network
         private int _nextId = 1;
 
         public int ActiveTrapCount => _traps.Count;
+        public int ActiveThrownPickupCount
+        {
+            get
+            {
+                SubscribeToPickups();
+                PruneMissingPickups();
+
+                int count = 0;
+                foreach (ThrowablePickup pickup in _watchedPickups)
+                {
+                    if (pickup != null
+                        && pickup.PickupId < 0
+                        && !pickup.IsTaken)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
 
         public void Configure(IMatchStateReader configuredMatchState)
         {
@@ -516,6 +537,11 @@ namespace PawsAndLoot.Integration.Network
                 _watchedPickups.Add(pickup);
                 pickup.TakenChanged += HandlePickupChanged;
             }
+        }
+
+        private void PruneMissingPickups()
+        {
+            _watchedPickups.RemoveWhere(pickup => pickup == null);
         }
 
         private void HandlePickupChanged(int id, bool taken)

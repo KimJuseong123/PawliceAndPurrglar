@@ -124,6 +124,10 @@ namespace PawsAndLoot.Companions
             };
         }
 
+        public static CompanionCommandId FromDebugNumberKey(
+            PlayerRole role,
+            int numberKey) => FromNumberKey(role, numberKey);
+
         public static string GetDisplayName(CompanionCommandId commandId)
         {
             return commandId switch

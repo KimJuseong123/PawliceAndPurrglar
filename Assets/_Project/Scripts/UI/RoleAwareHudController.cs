@@ -1,10 +1,13 @@
 using System;
 using System.Text;
 using PawsAndLoot.Companions;
+using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Items;
+using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Input;
 using PawsAndLoot.Integration.Voice;
+using PawsAndLoot.Match;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -34,12 +37,21 @@ namespace PawsAndLoot.UI
         [SerializeField] private Button bagButton;
         [SerializeField] private Button voiceButton;
         [SerializeField] private MinimapHudController minimap;
+        [SerializeField] private TMP_Text objectiveText;
+        [SerializeField] private TMP_Text catchProgressText;
+        [SerializeField] private PoliceCatchProgressView catchProgressView;
 
+        private MatchRuntimeState matchRuntime;
+        private ArrestCompletionController arrestCompletion;
+        private ThiefLootWallet thiefWallet;
         private ToolCarrier carrier;
         private VoiceCommandInput voice;
         private PlayerInteractionScanner scanner;
+        private CompanionCommandDispatcher dispatcher;
+        private CompanionCommandDispatcher subscribedDispatcher;
         private bool inventoryOpen;
         private bool buttonListenersBound;
+        private bool graphicAuditLogged;
 
         public bool IsInventoryOpen => inventoryOpen;
         public bool IsPlayerBound => carrier != null;
@@ -60,7 +72,10 @@ namespace PawsAndLoot.UI
             GameObject configuredInventoryPanel,
             Button configuredBagButton,
             Button configuredVoiceButton,
-            MinimapHudController configuredMinimap)
+            MinimapHudController configuredMinimap,
+            TMP_Text configuredObjectiveText = null,
+            TMP_Text configuredCatchProgressText = null,
+            PoliceCatchProgressView configuredCatchProgressView = null)
         {
             matchTimer = configuredMatchTimer;
             roleStatus = configuredRoleStatus;
@@ -75,6 +90,9 @@ namespace PawsAndLoot.UI
             bagButton = configuredBagButton;
             voiceButton = configuredVoiceButton;
             minimap = configuredMinimap;
+            objectiveText = configuredObjectiveText;
+            catchProgressText = configuredCatchProgressText;
+            catchProgressView = configuredCatchProgressView;
             BindButtonListeners();
         }
 
@@ -83,6 +101,13 @@ namespace PawsAndLoot.UI
             GameplayInputRouter.InventoryTogglePressed += ToggleInventory;
             GameplayInputRouter.EscapePressed += HandleEscape;
             GameplayInputRouter.BindingDisplayChanged += BindBindingLabels;
+            GameplayInputRouter.AnimalCommandPressed += HandleAnimalCommandPressed;
+            GameplayInputRouter.VoicePressed += HandleVoicePressed;
+            ApplyEssentialLayoutDefaults();
+            HideUnusedMatchTimer();
+            HideCentralObjective();
+            HudRuntimeInstaller.SuppressLegacyPresentation();
+            ResolveSerializedTextFallbacks();
             BindButtonListeners();
             if (inventoryPanel != null)
             {
@@ -95,6 +120,9 @@ namespace PawsAndLoot.UI
             GameplayInputRouter.InventoryTogglePressed -= ToggleInventory;
             GameplayInputRouter.EscapePressed -= HandleEscape;
             GameplayInputRouter.BindingDisplayChanged -= BindBindingLabels;
+            GameplayInputRouter.AnimalCommandPressed -= HandleAnimalCommandPressed;
+            GameplayInputRouter.VoicePressed -= HandleVoicePressed;
+            UnsubscribeDispatcher();
             if (buttonListenersBound)
             {
                 bagButton?.onClick.RemoveListener(ToggleInventory);
@@ -119,11 +147,15 @@ namespace PawsAndLoot.UI
         private void Update()
         {
             ResolveSources();
+            BindMatchTimer();
             BindRoleStatus();
+            HideCentralObjective();
+            BindCatchProgress();
             BindBindingLabels();
             BindQuickSlots();
             BindMicrophone();
             BindContextPrompt();
+            LogGraphicAuditOnce();
         }
 
         public void SetMatchTime(float seconds)
@@ -156,13 +188,14 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            if (voice.State == VoiceCommandInputState.Recording)
-            {
-                voice.StopListening();
-            }
-            else
+            if (voice.State != VoiceCommandInputState.Recording
+                && voice.CooldownRemainingSeconds <= 0f)
             {
                 voice.StartListening();
+            }
+            else if (voice.CooldownRemainingSeconds > 0f)
+            {
+                ShowVoiceCooldownFeedback();
             }
         }
 
@@ -176,9 +209,14 @@ namespace PawsAndLoot.UI
 
         private void ResolveSources()
         {
+            matchRuntime ??= FindFirstObjectByType<MatchRuntimeState>();
+            arrestCompletion ??=
+                FindFirstObjectByType<ArrestCompletionController>();
+            thiefWallet ??= FindFirstObjectByType<ThiefLootWallet>();
             PlayerRole role = ResolveRole();
-            if (carrier == null)
+            if (carrier == null || carrier.Role != role)
             {
+                carrier = null;
                 foreach (ToolCarrier candidate in
                     FindObjectsByType<ToolCarrier>(FindObjectsSortMode.None))
                 {
@@ -224,15 +262,49 @@ namespace PawsAndLoot.UI
                     }
                 }
             }
+
+            if (dispatcher == null)
+            {
+                dispatcher =
+                    FindFirstObjectByType<CompanionCommandDispatcher>();
+            }
+
+            SubscribeDispatcherIfNeeded();
+        }
+
+        private void BindMatchTimer()
+        {
+            if (matchRuntime != null && matchTimer != null)
+            {
+                SetMatchTime(matchRuntime.RemainingMatchSeconds);
+            }
         }
 
         private PlayerRole ResolveRole()
         {
+            return TryResolveRole(out PlayerRole role)
+                ? role
+                : PlayerRole.Police;
+        }
+
+        private bool TryResolveRole(out PlayerRole role)
+        {
             LocalPlayerRoleSelector selector =
                 FindFirstObjectByType<LocalPlayerRoleSelector>();
-            return selector != null
-                ? selector.ActiveRole
-                : carrier != null ? carrier.Role : PlayerRole.Police;
+            if (selector != null)
+            {
+                role = selector.ActiveRole;
+                return true;
+            }
+
+            if (carrier != null)
+            {
+                role = carrier.Role;
+                return true;
+            }
+
+            role = PlayerRole.Police;
+            return false;
         }
 
         private void BindRoleStatus()
@@ -243,8 +315,81 @@ namespace PawsAndLoot.UI
             roleStatus.Bind(new RoleStatusPanelViewModel(
                 hudRole,
                 role == PlayerRole.Thief ? "THIEF" : "POLICE",
-                role == PlayerRole.Thief ? "Steal the target loot" : "Protect your animal",
-                "ACTIVE"));
+                GetRoleObjectiveText(role),
+                GetRoleStatusText(role)));
+        }
+
+        private void HideCentralObjective()
+        {
+            if (objectiveText == null)
+            {
+                return;
+            }
+
+            Transform holder = objectiveText.transform.parent;
+            if (holder != null
+                && string.Equals(holder.name, "Objective Text", StringComparison.Ordinal))
+            {
+                holder.gameObject.SetActive(false);
+                return;
+            }
+
+            objectiveText.gameObject.SetActive(false);
+        }
+
+        private void BindCatchProgress()
+        {
+            if (catchProgressView == null && catchProgressText == null)
+            {
+                return;
+            }
+
+            int current = arrestCompletion != null
+                ? arrestCompletion.CurrentCatchCount
+                : 0;
+            int required = arrestCompletion != null
+                ? arrestCompletion.RequiredCatchCount
+                : ArrestCompletionController.DefaultRequiredCatchCount;
+            PlayerRole role = ResolveRole();
+            if (catchProgressView != null)
+            {
+                catchProgressView.Bind(current, required, role);
+            }
+
+            if (catchProgressText == null)
+            {
+                return;
+            }
+
+            catchProgressText.text = role == PlayerRole.Thief
+                ? $"붙잡힌 횟수 {current} / {required}"
+                : $"도둑 체포 {current} / {required}";
+        }
+
+        private string GetRoleObjectiveText(PlayerRole role)
+        {
+            return role == PlayerRole.Thief
+                ? $"{GetThiefTargetAmount()}골드 모으기"
+                : "도둑 3회 체포 또는 골드 저지";
+        }
+
+        private string GetRoleStatusText(PlayerRole role)
+        {
+            return role == PlayerRole.Thief
+                ? $"골드 {GetThiefSoldAmount()} / {GetThiefTargetAmount()}"
+                : $"도둑 골드 {GetThiefSoldAmount()} / {GetThiefTargetAmount()}";
+        }
+
+        private int GetThiefSoldAmount()
+        {
+            return thiefWallet != null ? thiefWallet.SoldAmount : 0;
+        }
+
+        private int GetThiefTargetAmount()
+        {
+            return thiefWallet != null && thiefWallet.TargetAmount > 0
+                ? thiefWallet.TargetAmount
+                : 1000;
         }
 
         private void BindQuickSlots()
@@ -254,11 +399,14 @@ namespace PawsAndLoot.UI
                 ThrowableKind kind = ThrowableKind.Rock;
                 bool hasItem = carrier != null
                     && carrier.TryGetSlot(index, out kind);
+                int quantity = hasItem
+                    ? carrier.GetSlotQuantity(index)
+                    : 0;
                 bool selected = carrier != null && carrier.SelectedSlot == index;
                 QuickSlotViewModel model = new(
                     GameplayInputRouter.GetQuickSlotLabel(index),
                     null,
-                    hasItem ? 1 : 0,
+                    quantity,
                     selected,
                     !hasItem,
                     0f,
@@ -270,7 +418,7 @@ namespace PawsAndLoot.UI
                     inventorySlots[index]?.Bind(new InventorySlotViewModel(
                         GameplayInputRouter.GetQuickSlotLabel(index),
                         null,
-                        hasItem ? 1 : 0,
+                        quantity,
                         selected,
                         !hasItem,
                         hasItem ? GetItemGlyph(kind) : string.Empty));
@@ -286,8 +434,8 @@ namespace PawsAndLoot.UI
                 CompanionCommandId command =
                     CompanionCommandCatalog.FromDebugNumberKey(role, index + 1);
                 animalCommands[index]?.Bind(new AnimalCommandShortcutViewModel(
-                    "SHIFT +",
-                    GameplayInputRouter.GetAnimalCommandLabel(index + 1).Replace("SHIFT + ", string.Empty),
+                    "CTRL +",
+                    GameplayInputRouter.GetAnimalCommandLabel(index + 1).Replace("CTRL + ", string.Empty),
                     CompanionCommandCatalog.GetDisplayName(command),
                     false));
             }
@@ -313,21 +461,22 @@ namespace PawsAndLoot.UI
             }
 
             bool recording = voice.State == VoiceCommandInputState.Recording;
-            bool processing = voice.State == VoiceCommandInputState.PermissionRequested
-                || voice.State == VoiceCommandInputState.Uploading
+            bool processing = voice.State == VoiceCommandInputState.Starting
+                || voice.State == VoiceCommandInputState.Encoding
                 || voice.State == VoiceCommandInputState.Transcribing
                 || voice.State == VoiceCommandInputState.Interpreting;
-            bool permissionFailed = voice.State == VoiceCommandInputState.Failed;
+            bool permissionFailed = voice.State == VoiceCommandInputState.Error;
             float maximum = Mathf.Max(0.1f, voice.MaximumRecordingSeconds);
             string stateLabel = voice.State switch
             {
-                VoiceCommandInputState.PermissionRequested => "PERMISSION",
+                VoiceCommandInputState.Starting => "STARTING",
                 VoiceCommandInputState.Recording => "RECORDING",
-                VoiceCommandInputState.Uploading => "UPLOADING",
+                VoiceCommandInputState.Encoding => "ENCODING",
                 VoiceCommandInputState.Transcribing => "TRANSCRIBING",
                 VoiceCommandInputState.Interpreting => "INTERPRETING",
-                VoiceCommandInputState.Completed => "COMPLETED",
-                VoiceCommandInputState.Failed => "FAILED",
+                VoiceCommandInputState.Executing => "EXECUTING",
+                VoiceCommandInputState.Cooldown => "COOLDOWN",
+                VoiceCommandInputState.Error => "FAILED",
                 _ => "READY"
             };
             microphone.Bind(new MicrophoneStatusViewModel(
@@ -374,12 +523,106 @@ namespace PawsAndLoot.UI
             voiceFeed?.Bind(voice);
             if (voiceButton != null)
             {
-                bool available = voice.State != VoiceCommandInputState.Uploading
+                bool available = voice.State != VoiceCommandInputState.Encoding
                     && voice.State != VoiceCommandInputState.Transcribing
                     && voice.State != VoiceCommandInputState.Interpreting
                     && voice.CooldownRemainingSeconds <= 0f;
                 voiceButton.interactable = available;
             }
+        }
+
+        private void HandleAnimalCommandPressed(int numberKey)
+        {
+            PlayerRole role = ResolveRole();
+            CompanionCommandId command =
+                CompanionCommandCatalog.FromNumberKey(role, numberKey);
+            if (command == CompanionCommandId.None)
+            {
+                return;
+            }
+
+            voiceFeed?.ShowMessage(
+                $"CTRL+{numberKey} 동물 명령",
+                $"{CompanionCommandCatalog.GetDisplayName(command)} 전송");
+        }
+
+        private void HandleVoicePressed()
+        {
+            ResolveSources();
+            if (voice != null && voice.CooldownRemainingSeconds > 0f)
+            {
+                ShowVoiceCooldownFeedback();
+            }
+        }
+
+        private void ShowVoiceCooldownFeedback()
+        {
+            if (voice == null)
+            {
+                return;
+            }
+
+            int seconds = Mathf.CeilToInt(voice.CooldownRemainingSeconds);
+            voiceFeed?.ShowMessage(
+                "아직 명령 쿨타임",
+                $"{seconds}초 후 다시 말할 수 있어요",
+                2.5f);
+        }
+
+        private void SubscribeDispatcherIfNeeded()
+        {
+            if (dispatcher == null || subscribedDispatcher == dispatcher)
+            {
+                return;
+            }
+
+            UnsubscribeDispatcher();
+            subscribedDispatcher = dispatcher;
+            subscribedDispatcher.CommandAccepted += HandleCommandAccepted;
+            subscribedDispatcher.CommandRejected += HandleCommandRejected;
+        }
+
+        private void UnsubscribeDispatcher()
+        {
+            if (subscribedDispatcher == null)
+            {
+                return;
+            }
+
+            subscribedDispatcher.CommandAccepted -= HandleCommandAccepted;
+            subscribedDispatcher.CommandRejected -= HandleCommandRejected;
+            subscribedDispatcher = null;
+        }
+
+        private void HandleCommandAccepted(CompanionCommandRequest request)
+        {
+            if (request.IssuerRole != ResolveRole()
+                || request.InputSource != CompanionCommandInputSource.Keyboard)
+            {
+                return;
+            }
+
+            voiceFeed?.ShowMessage(
+                "동물 명령 실행",
+                CompanionCommandCatalog.GetDisplayName(request.CommandId));
+        }
+
+        private void HandleCommandRejected(
+            CompanionCommandRequest request,
+            CompanionCommandRejection rejection)
+        {
+            if (request.IssuerRole != ResolveRole()
+                || request.InputSource != CompanionCommandInputSource.Keyboard)
+            {
+                return;
+            }
+
+            string second = rejection == CompanionCommandRejection.OnCooldown
+                ? "명령 쿨타임"
+                : $"실패: {rejection}";
+            voiceFeed?.ShowMessage(
+                "동물 명령 실패",
+                second);
         }
 
         private static string GetItemGlyph(ThrowableKind kind)
@@ -390,10 +633,6 @@ namespace PawsAndLoot.UI
                 ThrowableKind.Banana => "B",
                 ThrowableKind.GlueTrap => "G",
                 ThrowableKind.SensorLight => "S",
-                ThrowableKind.Bone => "BN",
-                ThrowableKind.TunaCan => "T",
-                ThrowableKind.RubberChicken => "C",
-                ThrowableKind.NoiseCan => "N",
                 _ => "?"
             };
         }
@@ -408,12 +647,253 @@ namespace PawsAndLoot.UI
                 visible ? scanner.CurrentPrompt : string.Empty,
                 false,
                 0f));
+            PositionContextPrompt(visible);
+        }
+
+        private void PositionContextPrompt(bool visible)
+        {
+            if (!visible
+                || scanner == null
+                || scanner.CurrentTarget == null
+                || scanner.CurrentTarget.InteractionTransform == null
+                || contextPrompt.transform is not RectTransform promptRect)
+            {
+                return;
+            }
+
+            Camera viewCamera = Camera.main;
+            if (viewCamera == null)
+            {
+                return;
+            }
+
+            Vector3 screenPoint = viewCamera.WorldToScreenPoint(
+                scanner.CurrentTarget.InteractionTransform.position
+                + Vector3.up * 1.25f);
+            if (screenPoint.z <= 0f)
+            {
+                return;
+            }
+
+            const float margin = 48f;
+            screenPoint.x = Mathf.Clamp(screenPoint.x, margin, Screen.width - margin);
+            screenPoint.y = Mathf.Clamp(screenPoint.y, margin, Screen.height - margin);
+            promptRect.position = screenPoint;
+        }
+
+        private void ResolveSerializedTextFallbacks()
+        {
+            objectiveText ??= FindText("Objective Text");
+            catchProgressText ??= FindText("Catch Progress");
+            catchProgressView ??= FindView<PoliceCatchProgressView>(
+                "Police Catches");
+        }
+
+        private TMP_Text FindText(string childName)
+        {
+            Transform child = transform.Find(childName);
+            return child != null ? child.GetComponentInChildren<TMP_Text>(true) : null;
+        }
+
+        private T FindView<T>(string childName) where T : Component
+        {
+            Transform child = transform.Find(childName);
+            return child != null ? child.GetComponentInChildren<T>(true) : null;
+        }
+
+        private void ApplyEssentialLayoutDefaults()
+        {
+            ApplyRect(
+                "TopRightMinimap",
+                Vector2.one,
+                Vector2.one,
+                Vector2.one,
+                new Vector2(-24f, -24f),
+                new Vector2(250f, 250f));
+            ApplyRect(
+                "Role Status",
+                Vector2.one,
+                Vector2.one,
+                Vector2.one,
+                new Vector2(-24f, -288f),
+                new Vector2(270f, 96f));
+            ApplyRect(
+                "Quick Slots",
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0f, 24f),
+                new Vector2(286f, 70f));
+            ApplyRect(
+                "Bag Button",
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(-226f, 24f),
+                new Vector2(76f, 60f));
+            ApplyRect(
+                "Voice Button",
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(226f, 24f),
+                new Vector2(86f, 70f));
+            ApplyRect(
+                "Voice Command Feed",
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0f, 104f),
+                new Vector2(360f, 54f));
+            ApplyRect(
+                "Context Interaction",
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0f, 230f),
+                new Vector2(300f, 34f));
+            ApplyRect(
+                "ANIMAL COMMANDS",
+                Vector2.zero,
+                Vector2.zero,
+                Vector2.zero,
+                new Vector2(24f, 126f),
+                new Vector2(292f, 214f));
+            ApplyRect(
+                "Police Catches",
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -16f),
+                new Vector2(330f, 108f));
+            ApplyRect(
+                "Catch Progress",
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -92f),
+                new Vector2(260f, 36f));
+        }
+
+        private void HideUnusedMatchTimer()
+        {
+            matchTimer = null;
+            Transform child = transform.Find("Match Timer");
+            if (child != null)
+            {
+                child.gameObject.SetActive(false);
+            }
+        }
+
+        private void ApplyRect(
+            string childName,
+            Vector2 anchorMin,
+            Vector2 anchorMax,
+            Vector2 pivot,
+            Vector2 anchoredPosition,
+            Vector2 sizeDelta)
+        {
+            Transform child = transform.Find(childName);
+            if (child == null
+                || child is not RectTransform rect)
+            {
+                return;
+            }
+
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.pivot = pivot;
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = sizeDelta;
+            rect.localScale = Vector3.one;
+        }
+
+        private void LogGraphicAuditOnce()
+        {
+            if (graphicAuditLogged
+                || (!Application.isEditor && !Debug.isDebugBuild))
+            {
+                return;
+            }
+
+            graphicAuditLogged = true;
+            bool nullGraphics = string.Equals(
+                SystemInfo.graphicsDeviceType.ToString(),
+                "Null",
+                StringComparison.OrdinalIgnoreCase);
+            int magentaLike = 0;
+            foreach (Graphic graphic in GetComponentsInChildren<Graphic>(true))
+            {
+                Material material = graphic.material;
+                Shader shader = material != null ? material.shader : null;
+                bool unsupported = shader == null
+                    || (!nullGraphics && !shader.isSupported);
+                bool internalError = shader != null
+                    && shader.name.IndexOf(
+                        "InternalError",
+                        StringComparison.OrdinalIgnoreCase) >= 0;
+                if (unsupported || internalError)
+                {
+                    magentaLike++;
+                }
+
+                TMP_Text tmp = graphic as TMP_Text;
+                Image image = graphic as Image;
+                RawImage raw = graphic as RawImage;
+                Canvas canvas = graphic.canvas;
+                Debug.Log(
+                    "[HudGraphicAudit] "
+                    + $"Path:{BuildPath(graphic.transform)} "
+                    + $"Component:{graphic.GetType().Name} "
+                    + $"FontAsset:{(tmp == null || tmp.font == null ? "None" : tmp.font.name)} "
+                    + $"SharedMaterial:{(material == null ? "None" : material.name)} "
+                    + $"Shader:{(shader == null ? "None" : shader.name)} "
+                    + $"ShaderSupported:{(shader != null && shader.isSupported)} "
+                    + $"NullGraphics:{nullGraphics} "
+                    + $"MainTexture:{(graphic.mainTexture == null ? "None" : graphic.mainTexture.name)} "
+                    + $"Sprite:{(image == null || image.sprite == null ? "None" : image.sprite.name)} "
+                    + $"RawTexture:{(raw == null || raw.texture == null ? "None" : raw.texture.name)} "
+                    + $"Active:{graphic.gameObject.activeInHierarchy} "
+                    + $"Color:{graphic.color} "
+                    + $"Canvas:{(canvas == null ? "None" : canvas.name)} "
+                    + $"SortingOrder:{(canvas == null ? 0 : canvas.sortingOrder)}",
+                    graphic);
+            }
+
+            Debug.Log(
+                $"[HudGraphicAuditSummary] MagentaOrUnsupportedGraphics:{magentaLike}",
+                this);
+        }
+
+        private static string BuildPath(Transform leaf)
+        {
+            var builder = new StringBuilder(leaf.name);
+            Transform current = leaf.parent;
+            while (current != null)
+            {
+                builder.Insert(0, current.name + "/");
+                current = current.parent;
+            }
+
+            return builder.ToString();
         }
     }
 
     public static class HudRuntimeInstaller
     {
         private static bool startedFromBootstrap;
+        private static readonly Type[] LegacyPresenterTypes =
+        {
+            typeof(FirstPlayGuidePresenter),
+            typeof(ToolHudPresenter),
+            typeof(CommonHudPresenter),
+            typeof(RoleObjectivePresenter),
+            typeof(PoliceHudPresenter),
+            typeof(ThiefHudPresenter),
+            typeof(ArrestHudPresenter),
+            typeof(CompanionCommandHudPresenter),
+            typeof(VoiceCommandHudPresenter)
+        };
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -439,9 +919,14 @@ namespace PawsAndLoot.UI
 
         private static void InstallForScene(Scene scene)
         {
-            if (!string.Equals(scene.name, "Game", StringComparison.OrdinalIgnoreCase)
-                || UnityEngine.Object.FindFirstObjectByType<RoleAwareHudController>() != null)
+            if (!string.Equals(scene.name, "Game", StringComparison.OrdinalIgnoreCase))
             {
+                return;
+            }
+
+            if (UnityEngine.Object.FindFirstObjectByType<RoleAwareHudController>() != null)
+            {
+                SuppressLegacyPresentation();
                 return;
             }
 
@@ -511,14 +996,24 @@ namespace PawsAndLoot.UI
                 + $"FailureReason:{(string.IsNullOrWhiteSpace(failure) ? "None" : failure)}");
         }
 
-        private static void SuppressLegacyPresentation()
+        internal static void SuppressLegacyPresentation()
         {
             string[] names =
             {
                 "Companion Command HUD",
+                "Arrest HUD",
                 "Police HUD",
                 "Thief HUD",
-                "Common HUD"
+                "Common HUD",
+                "Role Objective",
+                "Command Feedback",
+                "Tool HUD",
+                "Held Tool",
+                "Tool Slot",
+                "Tool Label",
+                "Current Goal",
+                "Held Loot",
+                "First Play Guide"
             };
             int hidden = 0;
             foreach (GameObject root in SceneManager.GetActiveScene().GetRootGameObjects())
@@ -543,6 +1038,27 @@ namespace PawsAndLoot.UI
                 }
             }
 
+            foreach (Type presenterType in LegacyPresenterTypes)
+            {
+                UnityEngine.Object[] presenters =
+                    UnityEngine.Object.FindObjectsByType(
+                        presenterType,
+                        FindObjectsInactive.Include,
+                        FindObjectsSortMode.None);
+                foreach (UnityEngine.Object found in presenters)
+                {
+                    if (found is not Component presenter
+                        || presenter.gameObject.GetComponent<RoleAwareHudController>() != null
+                        || !presenter.gameObject.activeSelf)
+                    {
+                        continue;
+                    }
+
+                    presenter.gameObject.SetActive(false);
+                    hidden++;
+                }
+            }
+
             if (hidden > 0)
             {
                 Debug.Log($"[HUDStartup] Suppressed {hidden} legacy HUD root(s); EssentialHudCanvas is authoritative.");
@@ -552,7 +1068,7 @@ namespace PawsAndLoot.UI
         public static GameObject BuildRuntimeCanvas()
         {
             var canvasObject = new GameObject(
-                "HudCanvas",
+                "EssentialHudCanvas",
                 typeof(Canvas),
                 typeof(CanvasScaler),
                 typeof(GraphicRaycaster),
@@ -578,11 +1094,13 @@ namespace PawsAndLoot.UI
             canvasGroup.interactable = true;
             canvasGroup.blocksRaycasts = true;
 
-            TMP_Text timer = CreateText(canvasObject.transform, "Match Timer", "10:00", 32f, TextAlignmentOptions.Center);
-            Anchor(timer.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(240f, 52f));
+            PoliceCatchProgressView catchProgress =
+                BuildPoliceCatchProgress(canvasObject.transform);
 
             RoleStatusPanelView roleStatus = BuildRoleStatus(canvasObject.transform);
             QuickSlotView[] quickSlots = BuildQuickSlots(canvasObject.transform);
+            AnimalCommandShortcutView[] animalCommands =
+                BuildAnimalCommands(canvasObject.transform);
             MicrophoneStatusView microphone = BuildMicrophone(
                 canvasObject.transform,
                 out Button voiceButton);
@@ -591,13 +1109,14 @@ namespace PawsAndLoot.UI
             GameObject inventoryPanel = BuildInventory(canvasObject.transform, out InventorySlotView[] inventorySlots);
             Button bagButton = BuildBagButton(canvasObject.transform);
             MinimapHudController minimap = BuildMinimap(canvasObject.transform);
+            BuildSensorRadar(canvasObject.transform, canvasObject);
 
             var controller = canvasObject.AddComponent<RoleAwareHudController>();
             controller.Configure(
-                timer,
+                null,
                 roleStatus,
                 quickSlots,
-                Array.Empty<AnimalCommandShortcutView>(),
+                animalCommands,
                 microphone,
                 null,
                 voiceFeed,
@@ -606,7 +1125,10 @@ namespace PawsAndLoot.UI
                 inventoryPanel,
                 bagButton,
                 voiceButton,
-                minimap);
+                minimap,
+                null,
+                null,
+                catchProgress);
             // CanvasScaler can touch a RectTransform while the runtime hierarchy
             // is being assembled in the editor. Reassert the production root
             // scale after all children and components exist.
@@ -616,8 +1138,10 @@ namespace PawsAndLoot.UI
 
         private static RoleStatusPanelView BuildRoleStatus(Transform parent)
         {
-            GameObject panel = CreatePanel(parent, "Role Status", new Vector2(270f, 118f));
-            Anchor(panel.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -162f), new Vector2(270f, 118f));
+            GameObject panel = CreatePanel(parent, "Role Status", new Vector2(270f, 96f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = Vector2.one;
+            Anchor(panelRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -288f), new Vector2(270f, 96f));
             TMP_Text role = CreateText(panel.transform, "Role", "POLICE", 20f, TextAlignmentOptions.TopLeft);
             TMP_Text objective = CreateText(panel.transform, "Objective", "Protect your animal", 14f, TextAlignmentOptions.TopLeft);
             TMP_Text status = CreateText(panel.transform, "Status", "ACTIVE", 13f, TextAlignmentOptions.TopLeft);
@@ -634,7 +1158,9 @@ namespace PawsAndLoot.UI
         private static QuickSlotView[] BuildQuickSlots(Transform parent)
         {
             GameObject panel = CreatePanel(parent, "Quick Slots", new Vector2(286f, 70f));
-            Anchor(panel.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-143f, 28f), new Vector2(286f, 70f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0.5f, 0f);
+            Anchor(panelRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(286f, 70f));
             var layout = panel.AddComponent<HorizontalLayoutGroup>();
             layout.padding = new RectOffset(6, 6, 6, 6);
             layout.spacing = 5f;
@@ -655,7 +1181,7 @@ namespace PawsAndLoot.UI
             TMP_Text quantity = CreateText(slot.transform, "Quantity", string.Empty, 12f, TextAlignmentOptions.BottomRight);
             TMP_Text glyph = CreateText(slot.transform, "Item Glyph", string.Empty, 22f, TextAlignmentOptions.Center);
             Image icon = CreateImage(slot.transform, "Item Icon", Color.white);
-            Image selected = CreateImage(slot.transform, "Selected Frame", new Color(1f, 0.82f, 0.2f, 0.35f));
+            Image selected = CreateImage(slot.transform, "Selected Frame", new Color(1f, 0.82f, 0.2f, 0.58f));
             Image disabled = CreateImage(slot.transform, "Disabled", new Color(0f, 0f, 0f, 0.45f));
             Image cooldown = CreateImage(slot.transform, "Cooldown", new Color(0f, 0f, 0f, 0.6f));
             cooldown.type = Image.Type.Filled;
@@ -673,26 +1199,46 @@ namespace PawsAndLoot.UI
 
         private static AnimalCommandShortcutView[] BuildAnimalCommands(Transform parent)
         {
-            GameObject panel = CreatePanel(parent, "ANIMAL COMMANDS", new Vector2(270f, 196f));
-            Anchor(panel.GetComponent<RectTransform>(), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(24f, 32f), new Vector2(270f, 196f));
-            TMP_Text title = CreateText(panel.transform, "Title", "ANIMAL COMMANDS", 16f, TextAlignmentOptions.TopLeft);
-            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -12f), new Vector2(-32f, 26f));
-            var layout = panel.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(16, 16, 44, 12);
-            layout.spacing = 4f;
-            layout.childForceExpandHeight = true;
-            var labels = new[] { "TRACK", "WAIT", "RETURN", "HIDE" };
+            GameObject panel = CreatePanel(parent, "ANIMAL COMMANDS", new Vector2(292f, 214f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = Vector2.zero;
+            Anchor(panelRect, Vector2.zero, Vector2.zero, new Vector2(24f, 126f), new Vector2(292f, 214f));
+
+            TMP_Text title = CreateText(
+                panel.transform,
+                "Title",
+                "ANIMAL COMMAND",
+                15f,
+                TextAlignmentOptions.Left);
+            title.color = new Color(0.05f, 0.95f, 1f, 1f);
+            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(18f, -14f), new Vector2(-36f, 26f));
+
             var result = new AnimalCommandShortcutView[4];
             for (int index = 0; index < result.Length; index++)
             {
-                GameObject row = new GameObject($"Shift Command {index + 1}", typeof(RectTransform));
-                row.transform.SetParent(panel.transform, false);
-                TMP_Text modifier = CreateText(row.transform, "Modifier", "SHIFT +", 13f, TextAlignmentOptions.Left);
+                GameObject row = CreatePanel(
+                    panel.transform,
+                    $"Ctrl Command {index + 1}",
+                    new Vector2(252f, 32f));
+                Image rowImage = row.GetComponent<Image>();
+                rowImage.color = new Color(0.02f, 0.07f, 0.09f, 0.92f);
+                RectTransform rowRect = row.GetComponent<RectTransform>();
+                rowRect.pivot = new Vector2(0f, 1f);
+                Anchor(
+                    rowRect,
+                    new Vector2(0f, 1f),
+                    new Vector2(0f, 1f),
+                    new Vector2(20f, -54f - index * 38f),
+                    new Vector2(252f, 32f));
+
+                TMP_Text modifier = CreateText(row.transform, "Modifier", "CTRL +", 11f, TextAlignmentOptions.Left);
                 TMP_Text key = CreateText(row.transform, "Key", (index + 1).ToString(), 16f, TextAlignmentOptions.Left);
-                TMP_Text command = CreateText(row.transform, "Command", labels[index], 13f, TextAlignmentOptions.Left);
-                Anchor(modifier.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(58f, 24f));
-                Anchor(key.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(58f, 0f), new Vector2(28f, 24f));
-                Anchor(command.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(94f, 0f), new Vector2(-94f, 24f));
+                TMP_Text command = CreateText(row.transform, "Command", string.Empty, 12f, TextAlignmentOptions.Left);
+                modifier.color = new Color(0.05f, 0.95f, 1f, 1f);
+                key.color = new Color(0.85f, 1f, 1f, 1f);
+                Anchor(modifier.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 0f), new Vector2(52f, 24f));
+                Anchor(key.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(60f, 0f), new Vector2(24f, 24f));
+                Anchor(command.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(92f, 0f), new Vector2(-102f, 24f));
                 result[index] = row.AddComponent<AnimalCommandShortcutView>();
                 result[index].Configure(modifier, key, command, null);
             }
@@ -704,16 +1250,20 @@ namespace PawsAndLoot.UI
             out Button button)
         {
             GameObject panel = CreatePanel(parent, "Voice Button", new Vector2(86f, 70f));
-            Anchor(panel.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(190f, 28f), new Vector2(86f, 70f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0.5f, 0f);
+            Anchor(panelRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(226f, 24f), new Vector2(86f, 70f));
             button = panel.AddComponent<Button>();
             TMP_Text state = CreateText(panel.transform, "State", "READY", 9f, TextAlignmentOptions.Center);
             TMP_Text key = CreateText(panel.transform, "Key", "V", 20f, TextAlignmentOptions.Center);
+            TMP_Text label = CreateText(panel.transform, "Label", "VOICE", 9f, TextAlignmentOptions.Center);
             TMP_Text cooldown = CreateText(panel.transform, "Cooldown", string.Empty, 10f, TextAlignmentOptions.BottomRight);
             Image radial = CreateImage(panel.transform, "Recording Radial", new Color(0.15f, 0.85f, 1f, 0.55f));
             Image disabled = CreateImage(panel.transform, "Disabled", new Color(0f, 0f, 0f, 0.45f));
             radial.type = Image.Type.Filled; radial.fillMethod = Image.FillMethod.Radial360;
             Anchor(state.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(4f, -4f), new Vector2(-8f, 18f));
             Anchor(key.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -2f), new Vector2(36f, 32f));
+            Anchor(label.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(4f, 5f), new Vector2(-8f, 16f));
             Anchor(cooldown.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-26f, 4f), new Vector2(22f, 18f));
             Anchor(radial.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -2f), new Vector2(58f, 58f));
             Stretch(disabled.rectTransform);
@@ -725,7 +1275,9 @@ namespace PawsAndLoot.UI
         private static VoiceCommandFeedView BuildVoiceFeed(Transform parent)
         {
             GameObject panel = CreatePanel(parent, "Voice Command Feed", new Vector2(360f, 54f));
-            Anchor(panel.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-180f, 106f), new Vector2(360f, 54f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0.5f, 0f);
+            Anchor(panelRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 104f), new Vector2(360f, 54f));
             CanvasGroup group = panel.AddComponent<CanvasGroup>();
             TMP_Text input = CreateText(panel.transform, "Input", string.Empty, 12f, TextAlignmentOptions.Center);
             TMP_Text command = CreateText(panel.transform, "Command", string.Empty, 11f, TextAlignmentOptions.Center);
@@ -739,7 +1291,9 @@ namespace PawsAndLoot.UI
         private static Button BuildBagButton(Transform parent)
         {
             GameObject panel = CreatePanel(parent, "Bag Button", new Vector2(76f, 60f));
-            Anchor(panel.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-190f, 33f), new Vector2(76f, 60f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0.5f, 0f);
+            Anchor(panelRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-226f, 24f), new Vector2(76f, 60f));
             Button button = panel.AddComponent<Button>();
             TMP_Text label = CreateText(panel.transform, "Label", "BAG\n[TAB]", 11f, TextAlignmentOptions.Center);
             Stretch(label.rectTransform);
@@ -748,8 +1302,17 @@ namespace PawsAndLoot.UI
 
         private static MinimapHudController BuildMinimap(Transform parent)
         {
-            GameObject panel = CreatePanel(parent, "TopRightMinimap", new Vector2(184f, 184f));
-            Anchor(panel.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(184f, 184f));
+            GameObject panel = CreatePanel(parent, "TopRightMinimap", new Vector2(250f, 250f));
+            Image panelImage = panel.GetComponent<Image>();
+            if (panelImage != null)
+            {
+                panelImage.color = Color.clear;
+                panelImage.raycastTarget = false;
+            }
+
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = Vector2.one;
+            Anchor(panelRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(250f, 250f));
 
             GameObject viewportObject = new(
                 "Viewport",
@@ -797,6 +1360,49 @@ namespace PawsAndLoot.UI
             return controller;
         }
 
+        private static SensorRadarPresenter BuildSensorRadar(
+            Transform parent,
+            GameObject presenterHost)
+        {
+            var rootObject = new GameObject("Sensor Radar", typeof(RectTransform));
+            rootObject.transform.SetParent(parent, false);
+            RectTransform root = rootObject.GetComponent<RectTransform>();
+            Anchor(
+                root,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                Vector2.zero,
+                new Vector2(240f, 240f));
+
+            float[] radii = { 26f, 43f, 60f, 77f, 94f, 111f, 128f };
+            for (int index = 0; index < radii.Length; index++)
+            {
+                var arcObject = new GameObject(
+                    $"Sensor Arc {index + 1}",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(SensorArcGraphic));
+                arcObject.transform.SetParent(rootObject.transform, false);
+                RectTransform arcRect = arcObject.GetComponent<RectTransform>();
+                Anchor(
+                    arcRect,
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    Vector2.zero,
+                    new Vector2(240f, 240f));
+                SensorArcGraphic arc = arcObject.GetComponent<SensorArcGraphic>();
+                arc.Configure(radii[index], 8f, 96f);
+                arc.color = new Color(0.95f, 0.16f, 0.16f, 1f);
+                arc.raycastTarget = false;
+            }
+
+            rootObject.SetActive(false);
+            SensorRadarPresenter presenter =
+                presenterHost.AddComponent<SensorRadarPresenter>();
+            presenter.Configure(root, null);
+            return presenter;
+        }
+
         private static RectTransform CreateMarker(
             Transform parent,
             string name,
@@ -816,7 +1422,9 @@ namespace PawsAndLoot.UI
         private static ContextInteractionPromptView BuildContextPrompt(Transform parent)
         {
             GameObject panel = CreatePanel(parent, "Context Interaction", new Vector2(300f, 34f));
-            Anchor(panel.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-150f, 170f), new Vector2(300f, 34f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0.5f, 0f);
+            Anchor(panelRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 230f), new Vector2(300f, 34f));
             TMP_Text key = CreateText(panel.transform, "Key", "[E]", 13f, TextAlignmentOptions.Center);
             TMP_Text action = CreateText(panel.transform, "Action", "", 12f, TextAlignmentOptions.Left);
             Image progress = CreateImage(panel.transform, "Hold Progress", new Color(0.2f, 0.85f, 1f, 0.6f));
@@ -827,6 +1435,122 @@ namespace PawsAndLoot.UI
             var view = panel.AddComponent<ContextInteractionPromptView>();
             view.Configure(key, action, progress);
             return view;
+        }
+
+        private static TMP_Text BuildObjectiveText(Transform parent)
+        {
+            GameObject panel = CreatePanel(parent, "Objective Text", new Vector2(620f, 42f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0.5f, 0f);
+            Anchor(panelRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 210f), new Vector2(620f, 42f));
+            TMP_Text objective = CreateText(panel.transform, "Label", "목표: 역할 확인 중...", 15f, TextAlignmentOptions.Center);
+            Stretch(objective.rectTransform);
+            return objective;
+        }
+
+        private static PoliceCatchProgressView BuildPoliceCatchProgress(
+            Transform parent)
+        {
+            GameObject panel = CreatePanel(parent, "Police Catches", new Vector2(330f, 108f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0.5f, 1f);
+            Anchor(panelRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(330f, 108f));
+            Image background = panel.GetComponent<Image>();
+            background.color = new Color(0.01f, 0.04f, 0.07f, 0.86f);
+            var outline = panel.AddComponent<Outline>();
+            outline.effectColor = new Color(0f, 0.9f, 1f, 0.9f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
+
+            TMP_Text title = CreateText(
+                panel.transform,
+                "Title",
+                "POLICE CATCHES",
+                18f,
+                TextAlignmentOptions.Center);
+            title.color = new Color(0.05f, 0.95f, 1f, 1f);
+            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -8f), new Vector2(0f, 28f));
+
+            TMP_Text counter = CreateText(
+                panel.transform,
+                "Counter",
+                "0 / 3",
+                11f,
+                TextAlignmentOptions.Center);
+            counter.color = new Color(0.72f, 0.92f, 1f, 0.78f);
+            Anchor(counter.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(76f, 18f));
+
+            var backplates = new Image[3];
+            var rings = new CircleGraphic[3];
+            var fills = new CircleGraphic[3];
+            for (int index = 0; index < backplates.Length; index++)
+            {
+                GameObject slot = CreatePanel(
+                    panel.transform,
+                    $"Catch Slot {index + 1}",
+                    new Vector2(58f, 58f));
+                Image slotImage = slot.GetComponent<Image>();
+                slotImage.color = new Color(0.02f, 0.05f, 0.08f, 0.92f);
+                RectTransform slotRect = slot.GetComponent<RectTransform>();
+                Anchor(
+                    slotRect,
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2((index - 1) * 72f, -10f),
+                    new Vector2(58f, 58f));
+
+                GameObject fillObject = new(
+                    "Fill",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(CircleGraphic));
+                fillObject.transform.SetParent(slot.transform, false);
+                CircleGraphic fill = fillObject.GetComponent<CircleGraphic>();
+                fill.color = new Color(0.05f, 0.08f, 0.10f, 0.85f);
+                fill.raycastTarget = false;
+                Anchor(
+                    fill.rectTransform,
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    Vector2.zero,
+                    new Vector2(38f, 38f));
+
+                GameObject ringObject = new(
+                    "Ring",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(CircleGraphic));
+                ringObject.transform.SetParent(slot.transform, false);
+                CircleGraphic ring = ringObject.GetComponent<CircleGraphic>();
+                ring.RingThickness = 4f;
+                ring.color = new Color(0.20f, 0.28f, 0.34f, 0.9f);
+                ring.raycastTarget = false;
+                Anchor(
+                    ring.rectTransform,
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    Vector2.zero,
+                    new Vector2(42f, 42f));
+
+                backplates[index] = slotImage;
+                rings[index] = ring;
+                fills[index] = fill;
+            }
+
+            var view = panel.AddComponent<PoliceCatchProgressView>();
+            view.Configure(title, counter, backplates, rings, fills);
+            view.Bind(0, ArrestCompletionController.DefaultRequiredCatchCount, PlayerRole.Police);
+            return view;
+        }
+
+        private static TMP_Text BuildCatchProgress(Transform parent)
+        {
+            GameObject panel = CreatePanel(parent, "Catch Progress", new Vector2(260f, 36f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0.5f, 1f);
+            Anchor(panelRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -92f), new Vector2(260f, 36f));
+            TMP_Text progress = CreateText(panel.transform, "Label", "도둑 체포 0 / 3", 16f, TextAlignmentOptions.Center);
+            Stretch(progress.rectTransform);
+            return progress;
         }
 
         private static GameObject BuildInventory(Transform parent, out InventorySlotView[] slots)
@@ -895,6 +1619,7 @@ namespace PawsAndLoot.UI
             if (runtimeFont != null)
             {
                 text.font = runtimeFont;
+                text.fontSharedMaterial = runtimeFont.material;
             }
             text.text = value;
             text.fontSize = size;

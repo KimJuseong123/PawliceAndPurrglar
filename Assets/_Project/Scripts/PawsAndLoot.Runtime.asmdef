@@ -5,7 +5,8 @@
     "Unity.Netcode.Runtime",
     "Unity.Networking.Transport",
     "Unity.InputSystem",
-    "Unity.ugui"
+    "Unity.ugui",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

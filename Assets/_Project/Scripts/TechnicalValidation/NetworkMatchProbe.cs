@@ -957,7 +957,7 @@ namespace PawsAndLoot.TechnicalValidation
             Vector3 aim = victim.ReplicatedPosition
                 - thrower.transform.position;
             aim.y = 0f;
-            thrower.SubmitUseToolRpc(aim);
+            thrower.SubmitUseToolRpc(aim, 1f);
         }
 
         /// <summary>

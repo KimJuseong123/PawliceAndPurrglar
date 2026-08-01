@@ -134,9 +134,13 @@ namespace PawsAndLoot.Tests.PlayMode
 
             // 중복 HUD 없음
             Assert.That(
-                Object.FindObjectsByType<CommonHudPresenter>(
+                Object.FindObjectsByType<RoleAwareHudController>(
                     FindObjectsSortMode.None).Length,
                 Is.EqualTo(1));
+            Assert.That(
+                Object.FindObjectsByType<CommonHudPresenter>(
+                    FindObjectsSortMode.None).Length,
+                Is.EqualTo(0));
             Assert.That(
                 Object.FindObjectsByType<MatchRuntimeState>(
                     FindObjectsSortMode.None).Length,

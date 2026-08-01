@@ -67,9 +67,9 @@ namespace PawsAndLoot.UI
         {
             BindInput();
             if (input == null) return;
-            if (input.State == VoiceCommandInputState.Listening)
+            if (input.State == VoiceCommandInputState.Recording
+                || input.CooldownRemainingSeconds > 0f)
             {
-                input.StopListening();
                 return;
             }
 
@@ -93,12 +93,12 @@ namespace PawsAndLoot.UI
             {
                 stateLabel.text = input.State switch
                 {
-                    VoiceCommandInputState.Listening => "듣는 중",
-                    VoiceCommandInputState.Uploading => "전송 중",
+                    VoiceCommandInputState.Recording => "듣는 중",
+                    VoiceCommandInputState.Encoding => "WAV 변환 중",
                     VoiceCommandInputState.Transcribing => "음성 인식 중",
                     VoiceCommandInputState.Interpreting => "동물이 생각 중",
-                    VoiceCommandInputState.PetReaction => "동물 반응",
                     VoiceCommandInputState.Executing => "행동 중",
+                    VoiceCommandInputState.Cooldown => "명령 완료",
                     VoiceCommandInputState.Error => "다시 말해 주세요",
                     _ => "음성 명령"
                 };
@@ -111,7 +111,7 @@ namespace PawsAndLoot.UI
 
             if (captureGauge != null)
             {
-                captureGauge.value = input.State == VoiceCommandInputState.Listening
+                captureGauge.value = input.State == VoiceCommandInputState.Recording
                     ? Mathf.Clamp01(input.ListeningElapsedSeconds / 5f)
                     : 0f;
             }

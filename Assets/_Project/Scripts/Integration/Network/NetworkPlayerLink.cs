@@ -196,6 +196,24 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
 
+        private readonly NetworkVariable<int> _toolSlots =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<int> _toolQuantities =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<int> _selectedToolSlot =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
         /// <summary>
         /// THROW-007. Seconds of stun left, written only by the host.
         ///
@@ -458,7 +476,7 @@ namespace PawsAndLoot.Integration.Network
         /// corridor — is still decided here.
         /// </summary>
         [Rpc(SendTo.Server)]
-        public void SubmitUseToolRpc(Vector3 aimDirection)
+        public void SubmitUseToolRpc(Vector3 aimDirection, float charge01)
         {
             if (toolUse == null)
             {
@@ -470,7 +488,14 @@ namespace PawsAndLoot.Integration.Network
             toolUse.TryUse(
                 flat.sqrMagnitude > 0.0001f
                     ? flat.normalized
-                    : null);
+                    : null,
+                charge01);
+        }
+
+        [Rpc(SendTo.Server)]
+        public void SubmitSelectToolSlotRpc(int slot)
+        {
+            toolCarrier?.SelectSlot(slot);
         }
 
         /// <summary>
@@ -705,6 +730,9 @@ namespace PawsAndLoot.Integration.Network
                 _heldTool.Value = toolCarrier.HasTool
                     ? (int)toolCarrier.HeldKind
                     : -1;
+                _toolSlots.Value = toolCarrier.EncodedSlots;
+                _toolQuantities.Value = toolCarrier.EncodedQuantities;
+                _selectedToolSlot.Value = toolCarrier.SelectedSlot;
             }
 
             if (policeWallet != null)
@@ -760,12 +788,10 @@ namespace PawsAndLoot.Integration.Network
             // host is actually simulating.
             if (toolCarrier != null)
             {
-                int held = _heldTool.Value;
-                toolCarrier.ApplyReplicated(
-                    held >= 0,
-                    held >= 0
-                        ? (PawsAndLoot.Gameplay.Items.ThrowableKind)held
-                        : PawsAndLoot.Gameplay.Items.ThrowableKind.Rock);
+                toolCarrier.ApplyReplicatedSlots(
+                    _toolSlots.Value,
+                    _toolQuantities.Value,
+                    _selectedToolSlot.Value);
             }
 
             if (wallet != null)

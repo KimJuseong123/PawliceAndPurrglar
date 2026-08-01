@@ -1,0 +1,7 @@
+Qwen3:4b-instruct
+
+The Qwen3 model is used through the local Ollama runtime. Source and license
+information are published by Qwen at https://huggingface.co/Qwen.
+
+The Qwen3 model is distributed under Apache License 2.0 according to its
+upstream model documentation. No model weights are modified by this project.

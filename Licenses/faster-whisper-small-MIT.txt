@@ -1,0 +1,7 @@
+Systran/faster-whisper-small
+
+The downloaded CTranslate2 model is obtained from:
+https://huggingface.co/Systran/faster-whisper-small
+
+Keep the upstream model card and license with any redistributed build. This
+project does not modify model weights.

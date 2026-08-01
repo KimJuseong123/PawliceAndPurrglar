@@ -61,3 +61,13 @@ server/.env.*
 server/audio-debug/
 server/dist/
 server/node_modules/
+LocalAI/models/
+LocalAI/runtime/
+LocalAI/logs/
+LocalAI/.venv/
+LocalAI/service/dist/
+LocalAI/service/build/
+LocalAI/service/__pycache__/
+LocalAI/service/tests/__pycache__/
+__pycache__/
+*.py[cod]

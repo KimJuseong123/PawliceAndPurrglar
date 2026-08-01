@@ -1,3 +1,5 @@
+using PawsAndLoot.Gameplay.Players;
+
 namespace PawsAndLoot.Gameplay.Items
 {
     /// <summary>
@@ -38,6 +40,10 @@ namespace PawsAndLoot.Gameplay.Items
         /// worth more than an alarm, because the officer already cannot see.
         /// </summary>
         SensorLight = 3
+        ,Bone = 4
+        ,TunaCan = 5
+        ,RubberChicken = 6
+        ,NoiseCan = 7
     }
 
     /// <summary>
@@ -67,6 +73,18 @@ namespace PawsAndLoot.Gameplay.Items
         /// thief keeps running — they just do it in the open.
         /// </summary>
         Reveal = 1
+    }
+
+    public readonly struct ThrowableLoadoutItem
+    {
+        public ThrowableLoadoutItem(ThrowableKind kind, int quantity)
+        {
+            Kind = kind;
+            Quantity = quantity;
+        }
+
+        public ThrowableKind Kind { get; }
+        public int Quantity { get; }
     }
 
     public static class ThrowableCatalog
@@ -103,6 +121,7 @@ namespace PawsAndLoot.Gameplay.Items
         /// close the distance, which is the chase.
         /// </summary>
         public const float ThrowRangeMeters = 12f;
+        public const float MinimumThrowRangeMeters = 4f;
 
         /// <summary>
         /// Visual diameter of a thrown prop. The corridor is derived from it, so
@@ -127,6 +146,7 @@ namespace PawsAndLoot.Gameplay.Items
         /// </summary>
         public const float ThrowHitRadiusMeters =
             0.45f + PropDiameterMeters * 2.5f;
+        public const float PoliceThrowHitRadiusBonusMeters = 0.25f;
 
         public static ThrowableUse GetUse(ThrowableKind kind)
         {
@@ -184,6 +204,44 @@ namespace PawsAndLoot.Gameplay.Items
         public static float GetTriggerRadius(ThrowableKind kind)
         {
             return kind == ThrowableKind.SensorLight ? 3.2f : 0.85f;
+        }
+
+        public static float GetThrowHitRadius(
+            PlayerRole thrower,
+            PlayerRole target) => thrower == PlayerRole.Police
+                ? ThrowHitRadiusMeters + PoliceThrowHitRadiusBonusMeters
+                : ThrowHitRadiusMeters;
+
+        public static bool TryGetStartingLoadout(
+            PlayerRole role,
+            int slot,
+            out ThrowableLoadoutItem item)
+        {
+            item = default;
+            if (slot < 0 || slot >= QuickSlotController.SlotCount)
+            {
+                return false;
+            }
+
+            if (role == PlayerRole.Police)
+            {
+                item = slot switch
+                {
+                    0 => new ThrowableLoadoutItem(ThrowableKind.Rock, 2),
+                    1 => new ThrowableLoadoutItem(ThrowableKind.GlueTrap, 1),
+                    2 => new ThrowableLoadoutItem(ThrowableKind.SensorLight, 2),
+                    _ => default
+                };
+                return slot <= 2;
+            }
+
+            item = slot switch
+            {
+                0 => new ThrowableLoadoutItem(ThrowableKind.Rock, 1),
+                1 => new ThrowableLoadoutItem(ThrowableKind.Banana, 2),
+                _ => default
+            };
+            return slot <= 1;
         }
 
         /// <summary>

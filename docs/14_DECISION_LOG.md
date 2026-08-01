@@ -473,3 +473,20 @@
   same local authoritative simulation; network matches keep NGO Host authority.
 - Constraint: OpenAI credentials remain in `server/.env` and keyboard commands
   must remain usable when voice setup or external APIs fail.
+
+### DEC-VOICE-003: Windows local voice runtime
+
+- Status: Accepted
+- Date: 2026-08-01
+- Windows Standalone uses Unity `Microphone`, 16 kHz mono PCM16 WAV, and a
+  bundled loopback FastAPI Gateway at `127.0.0.1`. The Gateway uses local
+  faster-whisper and Ollama Qwen3; no cloud API or key is used.
+- The existing WebGL/Fastify path remains available and is not replaced.
+- Unity validates the structured response and sends only a bounded
+  `CompanionCommandRequest` through `CompanionCommandDispatcher`.
+- The existing command enum remains authoritative. `TRACK_SCENT` and `CHASE`
+  map to `Track`, `STAY` maps to `Stay`, and unsupported `BITE` resolves to
+  `NONE` because this branch has no dog bite executor.
+- Gateway and Ollama processes are stopped only when Unity started them.
+- Models and runtime binaries are installation artifacts, not Git-tracked
+  source files.

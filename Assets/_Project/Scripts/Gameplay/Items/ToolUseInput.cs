@@ -1,5 +1,9 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using PawsAndLoot.Input;
+using PawsAndLoot.Integration.Network;
+using PawsAndLoot.Gameplay.Players;
+using Unity.Netcode;
 
 namespace PawsAndLoot.Gameplay.Items
 {
@@ -19,7 +23,19 @@ namespace PawsAndLoot.Gameplay.Items
         private ToolUseAction action;
 
         [SerializeField]
+        private ThrowChargeController chargeController;
+
+        [SerializeField]
+        private ThrowTrajectoryPreview trajectoryPreview;
+
+        [SerializeField]
+        private LayerMask obstacleLayers = ~0;
+
+        [SerializeField]
         private bool isLocallyControlled;
+
+        private PlayerRoleIdentity identity;
+        private bool isChargingThrow;
 
         public bool IsLocallyControlled
         {
@@ -31,8 +47,26 @@ namespace PawsAndLoot.Gameplay.Items
             ToolUseAction configuredAction,
             bool locallyControlled)
         {
+            Configure(
+                configuredAction,
+                locallyControlled,
+                null,
+                null,
+                Physics.AllLayers);
+        }
+
+        public void Configure(
+            ToolUseAction configuredAction,
+            bool locallyControlled,
+            ThrowChargeController configuredChargeController,
+            ThrowTrajectoryPreview configuredTrajectoryPreview,
+            LayerMask configuredObstacleLayers)
+        {
             action = configuredAction;
             isLocallyControlled = locallyControlled;
+            chargeController = configuredChargeController;
+            trajectoryPreview = configuredTrajectoryPreview;
+            obstacleLayers = configuredObstacleLayers;
         }
 
         /// <summary>
@@ -98,8 +132,9 @@ namespace PawsAndLoot.Gameplay.Items
 
         private void Update()
         {
-            if (!isLocallyControlled || action == null)
+            if (!CanReadLocalInput() || action == null)
             {
+                CancelCharge();
                 return;
             }
 
@@ -112,12 +147,204 @@ namespace PawsAndLoot.Gameplay.Items
                     && Mouse.current.leftButton.wasPressedThisFrame)
                 || (Keyboard.current != null
                     && Keyboard.current.fKey.wasPressedThisFrame);
+            bool held =
+                (Mouse.current != null
+                    && Mouse.current.leftButton.isPressed)
+                || (Keyboard.current != null
+                    && Keyboard.current.fKey.isPressed);
+            bool released =
+                (Mouse.current != null
+                    && Mouse.current.leftButton.wasReleasedThisFrame)
+                || (Keyboard.current != null
+                    && Keyboard.current.fKey.wasReleasedThisFrame);
 
-            if (pressed)
+            if (GameplayInputRouter.GameplayInputSuppressed)
             {
-                action.TryUse(
-                    ReadAimDirection(transform.position));
+                CancelCharge();
+                return;
             }
+
+            if (!action.HasThrowableSelected)
+            {
+                CancelCharge();
+                if (pressed)
+                {
+                    SubmitOrUse(ReadAimDirection(transform.position), 1f);
+                }
+
+                return;
+            }
+
+            EnsureChargeComponents();
+            if (pressed && !isChargingThrow)
+            {
+                isChargingThrow = true;
+                chargeController.Begin();
+            }
+
+            if (!isChargingThrow)
+            {
+                trajectoryPreview.Hide();
+                return;
+            }
+
+            if (released || !held)
+            {
+                Vector3? aim = ReadAimDirection(transform.position);
+                float charge01 = chargeController.Release();
+                isChargingThrow = false;
+                trajectoryPreview.Hide();
+                SubmitOrUse(aim, charge01);
+                return;
+            }
+
+            chargeController.Tick(Time.unscaledDeltaTime);
+            ShowTrajectoryPreview(chargeController.Charge01);
+        }
+
+        private void ShowTrajectoryPreview(float charge01)
+        {
+            Vector3 direction = ReadAimDirection(transform.position)
+                ?? transform.forward;
+            float range = Mathf.Lerp(
+                ThrowableCatalog.MinimumThrowRangeMeters,
+                ThrowableCatalog.ThrowRangeMeters,
+                Mathf.Clamp01(charge01));
+            trajectoryPreview.Show(
+                action.ThrowOrigin,
+                direction,
+                range,
+                obstacleLayers.value);
+        }
+
+        private void Awake()
+        {
+            identity ??= GetComponent<PlayerRoleIdentity>();
+            EnsureChargeComponents();
+        }
+
+        private bool CanReadLocalInput()
+        {
+            if (isLocallyControlled)
+            {
+                return true;
+            }
+
+            identity ??= GetComponent<PlayerRoleIdentity>();
+            if (identity == null)
+            {
+                return false;
+            }
+
+            if (NetworkManager.Singleton?.IsListening == true)
+            {
+                return IsLocalNetworkRole();
+            }
+
+            LocalPlayerRoleSelector selector =
+                FindFirstObjectByType<LocalPlayerRoleSelector>();
+            return selector != null
+                && selector.IsGameplayInputEnabled
+                && selector.ActiveRole == identity.Role;
+        }
+
+        private bool IsLocalNetworkRole()
+        {
+            PlayerRole? assigned = LocalPlayerRoleSelector.OverriddenRole;
+            if (assigned.HasValue)
+            {
+                return assigned.Value == identity.Role;
+            }
+
+            LocalPlayerRoleSelector selector =
+                FindFirstObjectByType<LocalPlayerRoleSelector>();
+            return selector != null
+                && selector.IsGameplayInputEnabled
+                && selector.ActiveRole == identity.Role;
+        }
+
+        private void SubmitOrUse(Vector3? aim, float charge01)
+        {
+            if (NetworkManager.Singleton?.IsListening == true
+                && TryFindNetworkLink(out NetworkPlayerLink link))
+            {
+                Vector3 direction = aim ?? Vector3.zero;
+                direction.y = 0f;
+                link.SubmitUseToolRpc(
+                    direction.sqrMagnitude > 0.0001f
+                        ? direction.normalized
+                        : Vector3.zero,
+                    charge01);
+                return;
+            }
+
+            action.TryUse(aim, charge01);
+        }
+
+        private bool TryFindNetworkLink(out NetworkPlayerLink link)
+        {
+            identity ??= GetComponent<PlayerRoleIdentity>();
+            foreach (NetworkPlayerLink candidate in
+                FindObjectsByType<NetworkPlayerLink>(
+                    FindObjectsSortMode.None))
+            {
+                if (candidate == null
+                    || !candidate.IsSpawned
+                    || identity == null
+                    || candidate.Role != identity.Role)
+                {
+                    continue;
+                }
+
+                link = candidate;
+                return true;
+            }
+
+            link = null;
+            return false;
+        }
+
+        private void OnDisable()
+        {
+            CancelCharge();
+        }
+
+        private void EnsureChargeComponents()
+        {
+            if (chargeController == null)
+            {
+                chargeController = GetComponent<ThrowChargeController>();
+            }
+
+            if (chargeController == null)
+            {
+                chargeController =
+                    gameObject.AddComponent<ThrowChargeController>();
+            }
+
+            if (trajectoryPreview == null)
+            {
+                trajectoryPreview = GetComponent<ThrowTrajectoryPreview>();
+            }
+
+            if (trajectoryPreview == null)
+            {
+                trajectoryPreview =
+                    gameObject.AddComponent<ThrowTrajectoryPreview>();
+            }
+        }
+
+        private void CancelCharge()
+        {
+            if (!isChargingThrow)
+            {
+                trajectoryPreview?.Hide();
+                return;
+            }
+
+            isChargingThrow = false;
+            chargeController?.Cancel();
+            trajectoryPreview?.Hide();
         }
     }
 }

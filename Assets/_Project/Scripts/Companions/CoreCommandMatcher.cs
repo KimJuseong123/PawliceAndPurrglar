@@ -50,44 +50,47 @@ namespace PawsAndLoot.Companions
             {
                 if (ContainsAny(normalized, "냄새", "흔적", "scent", "track"))
                 {
-                    return Match(CompanionCommandId.DogScentTrack, normalized, "추적", "track");
+                    return Match(CompanionCommandId.Track, normalized, "추적", "track");
                 }
 
                 if (ContainsAny(normalized, "경계", "지켜", "guard"))
                 {
-                    return Match(CompanionCommandId.DogGuard, normalized, "경계", "guard");
+                    return Match(CompanionCommandId.Guard, normalized, "경계", "guard");
                 }
 
                 if (ContainsAny(normalized, "쫓아", "추격", "chase"))
                 {
-                    return Match(CompanionCommandId.DogChase, normalized, "쫓아", "chase");
+                    return Match(CompanionCommandId.Track, normalized, "쫓아", "chase");
                 }
 
                 if (ContainsAny(normalized, "물어", "물기", "bite"))
                 {
-                    return Match(CompanionCommandId.DogBite, normalized, "물", "bite");
+                    return new CoreCommandMatch(
+                        CompanionCommandId.None,
+                        VoiceUnderstanding.Misunderstood,
+                        0f);
                 }
             }
             else
             {
                 if (ContainsAny(normalized, "지붕", "옥상", "climb", "roof"))
                 {
-                    return Match(CompanionCommandId.CatClimbRoof, normalized, "지붕", "roof");
+                    return Match(CompanionCommandId.Scout, normalized, "지붕", "roof");
                 }
 
                 if (ContainsAny(normalized, "할퀴", "scratch"))
                 {
-                    return Match(CompanionCommandId.CatScratch, normalized, "할퀴", "scratch");
+                    return Match(CompanionCommandId.Distract, normalized, "할퀴", "scratch");
                 }
 
                 if (ContainsAny(normalized, "소리", "울어", "scream"))
                 {
-                    return Match(CompanionCommandId.CatScream, normalized, "소리", "scream");
+                    return Match(CompanionCommandId.Distract, normalized, "소리", "scream");
                 }
 
                 if (ContainsAny(normalized, "은신처", "숨을 곳", "hideout"))
                 {
-                    return Match(CompanionCommandId.CatFindHideout, normalized, "은신처", "hideout");
+                    return Match(CompanionCommandId.Hide, normalized, "은신처", "hideout");
                 }
             }
 
