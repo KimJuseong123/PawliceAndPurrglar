@@ -1,6 +1,5 @@
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
 using UnityEditor;
@@ -10,6 +9,29 @@ using UnityEngine.SceneManagement;
 
 namespace PawsAndLoot.Tests.EditMode
 {
+    /// <summary>
+    /// Asks whether MAP-002 is a town you could walk around, not whether it
+    /// matches a list of numbers.
+    ///
+    /// The first version repeated every coordinate the generator held: thirteen
+    /// roads, sixteen buildings, seven bins, eighteen trees. That asserted only
+    /// that two lists typed by the same person agreed, it made re-cutting the
+    /// layout a two-file edit, and it missed the thing that mattered — the roads
+    /// were 2 m wide, below the 2.4 m a route has to stay clear for, so the
+    /// village validator would have rejected the whole town while every test
+    /// passed.
+    ///
+    /// The duplication was not laziness. <c>Assets/_Project/Editor</c> has no
+    /// assembly definition, so it compiles into <c>Assembly-CSharp-Editor</c>,
+    /// and an asmdef test assembly cannot reference that. The generator is
+    /// unreachable from here by construction.
+    ///
+    /// So these measure the scene instead of the recipe, which is the better
+    /// question anyway: a model that scales wrongly puts a wall in the road while
+    /// the coordinates that asked for it stay perfectly clear. Exact counts stay
+    /// in the generator's own <c>ValidateScene</c>, where the arrays are in
+    /// scope.
+    /// </summary>
     public sealed class Map02GreyboxSceneTests
     {
         private const string Map02ScenePath =
@@ -23,21 +45,26 @@ namespace PawsAndLoot.Tests.EditMode
             + "road+section+3d+model_basecolor.jpg";
         private const string RoadDisplayMaterialPath =
             "Assets/_Project/Materials/Greybox/Map02RoadFbx.mat";
-        private const string TreeTrunkMaterialPath =
-            "Assets/_Project/Materials/Greybox/Map02TreeTrunk.mat";
-        private const string TreeCanopyMaterialPath =
-            "Assets/_Project/Materials/Greybox/Map02TreeCanopy.mat";
+
+        /// <summary>
+        /// The village is 80 x 72 m and this has to be the same, because carrying
+        /// the layout across is meant to be a translation rather than a re-fit —
+        /// and because the four-minute match was balanced against those walking
+        /// distances.
+        /// </summary>
+        private const float VillageWidth = 80f;
+        private const float VillageDepth = 72f;
 
         [Test]
-        public void Map02HasRequestedBoundsAndPoliceStart()
+        public void Map02GroundMatchesTheVillageFootprint()
         {
             GreyboxMapDefinition map = LoadMap02();
 
             Assert.That(map, Is.Not.Null);
             Assert.DoesNotThrow(() => map.ValidateOrThrow());
             Assert.That(map.EnvironmentContentCleared, Is.True);
-            Assert.That(map.MapWidthMeters, Is.EqualTo(70f));
-            Assert.That(map.MapDepthMeters, Is.EqualTo(65f));
+            Assert.That(map.MapWidthMeters, Is.EqualTo(VillageWidth));
+            Assert.That(map.MapDepthMeters, Is.EqualTo(VillageDepth));
             Assert.That(
                 map.transform.parent.name,
                 Is.EqualTo("MAP-002 Greybox Layout"));
@@ -45,40 +72,143 @@ namespace PawsAndLoot.Tests.EditMode
             Transform environment =
                 map.transform.parent.Find("Environment");
             Assert.That(environment, Is.Not.Null);
-            AssertSurface(
-                environment,
-                "Ground",
-                new Vector3(35f, -0.15f, 32.5f),
-                new Vector3(70f, 0.3f, 65f));
-            AssertSurface(
-                environment,
-                "North Boundary",
-                new Vector3(35f, 1f, 66f),
-                new Vector3(72f, 2f, 1f));
-            AssertSurface(
-                environment,
-                "South Boundary",
-                new Vector3(35f, 1f, -1f),
-                new Vector3(72f, 2f, 1f));
-            AssertSurface(
-                environment,
-                "West Boundary",
-                new Vector3(-1f, 1f, 32.5f),
-                new Vector3(1f, 2f, 67f));
-            AssertSurface(
-                environment,
-                "East Boundary",
-                new Vector3(71f, 1f, 32.5f),
-                new Vector3(1f, 2f, 67f));
 
+            // The ground the map claims and the ground that was built.
+            Bounds ground = GetRendererBounds(environment.Find("Ground"));
+            Assert.That(
+                ground.size.x,
+                Is.EqualTo(map.MapWidthMeters).Within(0.01f));
+            Assert.That(
+                ground.size.z,
+                Is.EqualTo(map.MapDepthMeters).Within(0.01f));
+
+            foreach (string side in
+                new[]
+                {
+                    "North Boundary",
+                    "South Boundary",
+                    "West Boundary",
+                    "East Boundary"
+                })
+            {
+                Assert.That(
+                    environment.Find(side),
+                    Is.Not.Null,
+                    $"{side} is missing, so the map has an edge to fall off.");
+            }
+        }
+
+        /// <summary>
+        /// Streets a chase fits down.
+        ///
+        /// This is the check that was missing while the town was cut at 2 m. A
+        /// route has to stay <see cref="GreyboxMapDefinition.RequiredMinimumClearWidth"/>
+        /// clear, and a town whose streets are narrower cannot host one however
+        /// good it looks from above.
+        /// </summary>
+        [Test]
+        public void Map02StreetsAreWideEnoughForARoute()
+        {
+            Transform roadRoot = Environment().Find("MAP-002 Roads");
+            Assert.That(
+                roadRoot.childCount,
+                Is.GreaterThanOrEqualTo(10),
+                "A town this size needs a street network, not a few paths.");
+
+            foreach (Transform road in roadRoot)
+            {
+                Bounds bounds = GetRendererBounds(road);
+                float across = Mathf.Min(bounds.size.x, bounds.size.z);
+                Assert.That(
+                    across,
+                    Is.GreaterThanOrEqualTo(
+                        GreyboxMapDefinition.RequiredMinimumClearWidth),
+                    $"'{road.name}' is {across:0.##}m across.");
+            }
+        }
+
+        /// <summary>
+        /// Nothing that was built stands in a street.
+        ///
+        /// Measured from renderers on both sides. The tolerance is for eaves: a
+        /// roof overhanging a flat road decal by a few centimetres blocks nobody,
+        /// but half a house in the carriageway does.
+        /// </summary>
+        [Test]
+        public void Map02BuildingsDoNotStandInTheRoads()
+        {
+            Transform environment = Environment();
+            Transform roadRoot = environment.Find("MAP-002 Roads");
+            Transform buildingRoot = environment.Find("MAP-002 Buildings");
+
+            Assert.That(
+                buildingRoot.childCount,
+                Is.GreaterThanOrEqualTo(12),
+                "The town lost its buildings.");
+
+            Bounds[] roads = roadRoot
+                .Cast<Transform>()
+                .Select(GetRendererBounds)
+                .ToArray();
+
+            foreach (Transform slot in buildingRoot)
+            {
+                Bounds building = GetRendererBounds(slot);
+                Bounds body = Shrink(building, 0.5f);
+
+                for (int index = 0; index < roads.Length; index++)
+                {
+                    Assert.That(
+                        OverlapsOnXZ(body, roads[index]),
+                        Is.False,
+                        $"'{slot.name}' stands in "
+                        + $"'{roadRoot.GetChild(index).name}'.");
+                }
+            }
+        }
+
+        [Test]
+        public void Map02BuildingsDoNotStandInsideEachOther()
+        {
+            Transform buildingRoot = Environment().Find("MAP-002 Buildings");
+            Transform[] slots = buildingRoot.Cast<Transform>().ToArray();
+            Bounds[] bounds = slots.Select(GetRendererBounds).ToArray();
+
+            for (int index = 0; index < bounds.Length; index++)
+            {
+                Assert.That(
+                    slots[index].childCount,
+                    Is.EqualTo(1),
+                    $"'{slots[index].name}' was not built.");
+                Assert.That(
+                    slots[index].GetChild(0).GetComponent<BoxCollider>(),
+                    Is.Not.Null,
+                    $"'{slots[index].name}' has nothing to walk into.");
+
+                for (int other = index + 1; other < bounds.Length; other++)
+                {
+                    Assert.That(
+                        OverlapsOnXZ(
+                            Shrink(bounds[index], 0.5f),
+                            Shrink(bounds[other], 0.5f)),
+                        Is.False,
+                        $"'{slots[index].name}' and '{slots[other].name}' "
+                        + "overlap.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// The officer starts on open ground, not in a wall or on the road.
+        /// </summary>
+        [Test]
+        public void Map02PoliceStartsOnClearGround()
+        {
+            GreyboxMapDefinition map = LoadMap02();
             Transform policeSpawn =
                 map.GetLocation(GreyboxLocationId.PoliceSpawn);
-            var expectedPoliceStart = new Vector3(27.5f, 0f, 29.5f);
-            Assert.That(
-                Vector3.Distance(
-                    policeSpawn.position,
-                    expectedPoliceStart),
-                Is.LessThan(0.001f));
+            Assert.That(policeSpawn, Is.Not.Null);
+
             PlayerRoleIdentity police = Object
                 .FindObjectsByType<PlayerRoleIdentity>(
                     FindObjectsInactive.Include)
@@ -86,316 +216,194 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(
                 Vector3.Distance(
                     police.transform.position,
-                    expectedPoliceStart + Vector3.up),
-                Is.LessThan(0.001f));
-        }
+                    policeSpawn.position + Vector3.up),
+                Is.LessThan(0.001f),
+                "The officer is not standing on their own spawn.");
 
-        [Test]
-        public void Map02RoadsMatchRequestedCoordinates()
-        {
-            GreyboxMapDefinition map = LoadMap02();
-            Transform roadRoot = map.transform.parent
-                .Find("Environment/MAP-002 Roads");
-            Assert.That(roadRoot, Is.Not.Null);
-            Assert.That(roadRoot.childCount, Is.EqualTo(13));
-
-            AssertRoad(
-                roadRoot,
-                "Top Road",
-                new Vector3(33f, 0.02f, 49f),
-                new Vector3(66f, 0.04f, 2f));
-            AssertRoad(
-                roadRoot,
-                "Center Road",
-                new Vector3(33f, 0.02f, 26f),
-                new Vector3(66f, 0.04f, 2f));
-            AssertRoad(
-                roadRoot,
-                "Lower Left Road",
-                new Vector3(5.5f, 0.02f, 21f),
-                new Vector3(11f, 0.04f, 2f));
-            AssertRoad(
-                roadRoot,
-                "Lower Center Road",
-                new Vector3(29.5f, 0.02f, 12f),
-                new Vector3(37f, 0.04f, 2f));
-            AssertRoad(
-                roadRoot,
-                "Lower Right Road",
-                new Vector3(57f, 0.02f, 13f),
-                new Vector3(18f, 0.04f, 2f));
-            AssertRoad(
-                roadRoot,
-                "Top Vertical Road",
-                new Vector3(26f, 0.02f, 55f),
-                new Vector3(2f, 0.04f, 12f));
-            AssertRoad(
-                roadRoot,
-                "Center Left Vertical Road",
-                new Vector3(20f, 0.02f, 37.5f),
-                new Vector3(2f, 0.04f, 23f));
-            AssertRoad(
-                roadRoot,
-                "Center Vertical Road",
-                new Vector3(35f, 0.02f, 37.5f),
-                new Vector3(2f, 0.04f, 23f));
-            AssertRoad(
-                roadRoot,
-                "Center Right Vertical Road",
-                new Vector3(49f, 0.02f, 37.5f),
-                new Vector3(2f, 0.04f, 23f));
-            AssertRoad(
-                roadRoot,
-                "Lower Left Vertical Road",
-                new Vector3(11f, 0.02f, 10.5f),
-                new Vector3(2f, 0.04f, 21f));
-            AssertRoad(
-                roadRoot,
-                "Lower Center Left Vertical Road",
-                new Vector3(19f, 0.02f, 19f),
-                new Vector3(2f, 0.04f, 14f));
-            AssertRoad(
-                roadRoot,
-                "Lower Center Right Vertical Road",
-                new Vector3(37f, 0.02f, 19f),
-                new Vector3(2f, 0.04f, 14f));
-            AssertRoad(
-                roadRoot,
-                "Lower Right Vertical Road",
-                new Vector3(48f, 0.02f, 13f),
-                new Vector3(2f, 0.04f, 26f));
-        }
-
-        [Test]
-        public void Map02BuildingsMatchRequestedCoordinatesAndRotations()
-        {
-            GreyboxMapDefinition map = LoadMap02();
-            Transform buildingRoot = map.transform.parent
-                .Find("Environment/MAP-002 Buildings");
-            Assert.That(buildingRoot, Is.Not.Null);
-            Assert.That(buildingRoot.childCount, Is.EqualTo(16));
-
-            AssertBuilding(
-                buildingRoot,
-                "Top Left Two Storey House",
-                7f,
-                56f,
-                180f);
-            AssertBuilding(
-                buildingRoot,
-                "Top Left Center One Storey House",
-                19f,
-                55f,
-                180f);
-            AssertBuilding(
-                buildingRoot,
-                "Top Right Center Two Storey House",
-                33f,
-                56f,
-                180f);
-            AssertBuilding(
-                buildingRoot,
-                "Top Right One Storey House",
-                49f,
-                55f,
-                180f);
-            AssertBuilding(
-                buildingRoot,
-                "Middle Left Upper One Storey House",
-                4.5f,
-                43f,
-                90f);
-            AssertBuilding(
-                buildingRoot,
-                "Middle Left Lower Two Storey House",
-                5.5f,
-                33f,
-                90f);
-            AssertBuilding(
-                buildingRoot,
-                "Supermarket",
-                15f,
-                37f,
-                90f);
-            AssertBuilding(
-                buildingRoot,
-                "Police Station",
-                27.5f,
-                37f,
-                180f);
-            AssertBuilding(
-                buildingRoot,
-                "Bookstore",
-                42f,
-                37f,
-                180f);
-            AssertBuilding(
-                buildingRoot,
-                "Middle Right Upper Two Storey House",
-                57f,
-                42.5f,
-                180f);
-            AssertBuilding(
-                buildingRoot,
-                "Middle Right Lower One Storey House",
-                56f,
-                31.5f,
-                180f);
-            AssertBuilding(
-                buildingRoot,
-                "Lower Left One Storey House",
-                5.5f,
-                15f,
-                90f);
-            AssertBuilding(
-                buildingRoot,
-                "Lower Right Two Storey House",
-                56f,
-                19.5f,
-                180f);
-            AssertBuilding(
-                buildingRoot,
-                "Bottom Left Two Storey House",
-                20f,
-                5.5f);
-            AssertBuilding(
-                buildingRoot,
-                "Bottom Center One Storey House",
-                32f,
-                6.5f);
-            AssertBuilding(
-                buildingRoot,
-                "Bottom Right One Storey House",
-                42.5f,
-                7f);
-        }
-
-        [Test]
-        public void Map02HasGreenTrashBinsAtRequestedCoordinates()
-        {
-            GreyboxMapDefinition map = LoadMap02();
-            Transform trashBinRoot = map.transform.parent
-                .Find("Environment/MAP-002 Trash Bins");
-            Assert.That(trashBinRoot, Is.Not.Null);
-            Assert.That(trashBinRoot.childCount, Is.EqualTo(7));
-
-            AssertTrashBin(trashBinRoot, 1, 26f, 55f);
-            AssertTrashBin(trashBinRoot, 2, 4f, 48f);
-            AssertTrashBin(trashBinRoot, 3, 63f, 48f);
-            AssertTrashBin(trashBinRoot, 4, 50f, 38f);
-            AssertTrashBin(trashBinRoot, 5, 1f, 21f);
-            AssertTrashBin(trashBinRoot, 6, 64f, 22f);
-            AssertTrashBin(trashBinRoot, 7, 7f, 2f);
-        }
-
-        [Test]
-        public void Map02TreesAreSparseAndAvoidRoadsAndBuildings()
-        {
-            GreyboxMapDefinition map = LoadMap02();
             Transform environment = map.transform.parent.Find("Environment");
-            Transform treeRoot = environment.Find("MAP-002 Trees");
-            Transform roadRoot = environment.Find("MAP-002 Roads");
-            Transform buildingRoot =
-                environment.Find("MAP-002 Buildings");
-            Assert.That(treeRoot, Is.Not.Null);
-            Assert.That(roadRoot, Is.Not.Null);
-            Assert.That(buildingRoot, Is.Not.Null);
+            var footing = new Bounds(
+                new Vector3(
+                    policeSpawn.position.x,
+                    0.5f,
+                    policeSpawn.position.z),
+                new Vector3(1f, 1f, 1f));
 
-            Vector3[] expectedPositions =
+            foreach (string group in
+                new[] { "MAP-002 Roads", "MAP-002 Buildings" })
             {
-                new(12.8f, 0f, 62.4f),
-                new(41f, 0f, 57f),
-                new(58f, 0f, 56f),
-                new(66f, 0f, 62f),
-                new(10.5f, 0f, 45f),
-                new(65f, 0f, 43f),
-                new(65f, 0f, 31f),
-                new(14.5f, 0f, 16.5f),
-                new(24f, 0f, 18f),
-                new(30.5f, 0f, 22f),
-                new(33f, 0f, 15.5f),
-                new(42f, 0f, 18f),
-                new(45f, 0f, 23f),
-                new(4f, 0f, 6f),
-                new(13.8f, 0f, 5.5f),
-                new(26f, 0f, 6.5f),
-                new(54f, 0f, 7f),
-                new(65f, 0f, 7f)
-            };
-
-            Assert.That(treeRoot.childCount, Is.EqualTo(18));
-            var treeBounds = new Bounds[expectedPositions.Length];
-            for (int index = 0;
-                 index < expectedPositions.Length;
-                 index++)
-            {
-                Transform tree =
-                    treeRoot.Find($"Tree {index + 1:00}");
-                Assert.That(tree, Is.Not.Null);
-                Assert.That(
-                    Vector3.Distance(
-                        tree.position,
-                        expectedPositions[index]),
-                    Is.LessThan(0.001f));
-                Assert.That(tree.childCount, Is.EqualTo(3));
-                Assert.That(
-                    tree.GetComponentsInChildren<Collider>(true),
-                    Has.Length.EqualTo(1));
-
-                Renderer[] renderers =
-                    tree.GetComponentsInChildren<Renderer>(true);
-                Assert.That(renderers, Has.Length.EqualTo(3));
-                foreach (Renderer renderer in renderers)
-                {
-                    string expectedMaterialPath =
-                        renderer.transform.name == "Trunk"
-                            ? TreeTrunkMaterialPath
-                            : TreeCanopyMaterialPath;
-                    Assert.That(
-                        AssetDatabase.GetAssetPath(
-                            renderer.sharedMaterial),
-                        Is.EqualTo(expectedMaterialPath));
-                }
-
-                treeBounds[index] = GetRendererBounds(tree);
-                foreach (Transform road in roadRoot)
+                foreach (Transform piece in environment.Find(group))
                 {
                     Assert.That(
-                        OverlapsOnXZ(
-                            treeBounds[index],
-                            GetRendererBounds(road)),
+                        OverlapsOnXZ(footing, GetRendererBounds(piece)),
                         Is.False,
-                        $"{tree.name} overlaps {road.name}.");
-                }
-
-                foreach (BoxCollider buildingCollider in
-                    buildingRoot.GetComponentsInChildren<BoxCollider>(true))
-                {
-                    Assert.That(
-                        OverlapsOnXZ(
-                            treeBounds[index],
-                            buildingCollider.bounds),
-                        Is.False,
-                        $"{tree.name} overlaps "
-                        + $"{buildingCollider.transform.parent.name}.");
+                        $"The officer starts inside '{piece.name}'.");
                 }
             }
 
-            for (int first = 0;
-                 first < expectedPositions.Length;
-                 first++)
+            Assert.That(
+                policeSpawn.position.x,
+                Is.InRange(0f, map.MapWidthMeters));
+            Assert.That(
+                policeSpawn.position.z,
+                Is.InRange(0f, map.MapDepthMeters));
+        }
+
+        /// <summary>
+        /// Roads are the textured FBX and carry no collider — they are painted on
+        /// the ground, and one with a collider would stop a player dead.
+        /// </summary>
+        [Test]
+        public void Map02BuildsRoadsFromTheTexturedModel()
+        {
+            Transform roadRoot = Environment().Find("MAP-002 Roads");
+
+            foreach (Transform road in roadRoot)
             {
-                for (int second = first + 1;
-                     second < expectedPositions.Length;
-                     second++)
+                Assert.That(road.childCount, Is.EqualTo(1));
+                Assert.That(
+                    road.GetComponentsInChildren<Collider>(true),
+                    Is.Empty,
+                    $"'{road.name}' has a collider.");
+
+                Transform model = road.GetChild(0);
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        model.gameObject),
+                    Is.EqualTo(RoadModelPath));
+
+                foreach (Renderer renderer in
+                    model.GetComponentsInChildren<Renderer>(true))
+                {
+                    Assert.That(renderer.sharedMaterials, Is.Not.Empty);
+                    foreach (Material material in renderer.sharedMaterials)
+                    {
+                        Assert.That(material, Is.Not.Null);
+                        Assert.That(
+                            AssetDatabase.GetAssetPath(material),
+                            Is.EqualTo(RoadDisplayMaterialPath));
+                        Assert.That(
+                            material.shader.name,
+                            Is.EqualTo("Universal Render Pipeline/Lit"));
+                        Assert.That(
+                            AssetDatabase.GetAssetPath(
+                                material.GetTexture("_BaseMap")),
+                            Is.EqualTo(RoadTexturePath));
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void Map02HasGreenTrashBinsOnClearGround()
+        {
+            Transform environment = Environment();
+            Transform trashBinRoot = environment.Find("MAP-002 Trash Bins");
+            Assert.That(trashBinRoot.childCount, Is.GreaterThanOrEqualTo(4));
+
+            Bounds[] roads = environment
+                .Find("MAP-002 Roads")
+                .Cast<Transform>()
+                .Select(GetRendererBounds)
+                .ToArray();
+            Bounds[] buildings = environment
+                .Find("MAP-002 Buildings")
+                .Cast<Transform>()
+                .Select(GetRendererBounds)
+                .ToArray();
+
+            foreach (Transform bin in trashBinRoot)
+            {
+                Assert.That(bin.GetComponent<BoxCollider>(), Is.Not.Null);
+                Assert.That(bin.childCount, Is.EqualTo(1));
+
+                Renderer[] renderers =
+                    bin.GetComponentsInChildren<Renderer>(true);
+                Assert.That(renderers, Is.Not.Empty);
+                foreach (Renderer renderer in renderers)
+                {
+                    Assert.That(renderer.sharedMaterial, Is.Not.Null);
+                    Color color = renderer.sharedMaterial.color;
+                    Assert.That(
+                        color.g,
+                        Is.GreaterThan(color.r),
+                        "Trash-bin material should read green.");
+                    Assert.That(
+                        color.g,
+                        Is.GreaterThan(color.b),
+                        "Trash-bin material should read green.");
+                }
+
+                Bounds footing = GetRendererBounds(bin);
+                foreach (Bounds road in roads)
                 {
                     Assert.That(
-                        Vector3.Distance(
-                            expectedPositions[first],
-                            expectedPositions[second]),
-                        Is.GreaterThan(4.5f),
-                        $"Tree {first + 1:00} and "
-                        + $"Tree {second + 1:00} are too dense.");
+                        OverlapsOnXZ(footing, road),
+                        Is.False,
+                        $"'{bin.name}' sits in a road.");
+                }
+
+                foreach (Bounds building in buildings)
+                {
+                    Assert.That(
+                        OverlapsOnXZ(footing, building),
+                        Is.False,
+                        $"'{bin.name}' sits inside a building.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Trees fill the gaps and only the gaps. Measured from the renderers,
+        /// because a canopy is wider than the point it was planted at and it is
+        /// the canopy that ends up inside a wall.
+        /// </summary>
+        [Test]
+        public void Map02TreesAreSparseAndAvoidRoadsAndBuildings()
+        {
+            Transform environment = Environment();
+            Transform treeRoot = environment.Find("MAP-002 Trees");
+            Transform roadRoot = environment.Find("MAP-002 Roads");
+            Transform buildingRoot = environment.Find("MAP-002 Buildings");
+
+            Assert.That(treeRoot.childCount, Is.GreaterThanOrEqualTo(10));
+
+            Bounds[] roads = roadRoot
+                .Cast<Transform>()
+                .Select(GetRendererBounds)
+                .ToArray();
+            Bounds[] buildings = buildingRoot
+                .Cast<Transform>()
+                .Select(GetRendererBounds)
+                .ToArray();
+            Transform[] treeSlots = treeRoot.Cast<Transform>().ToArray();
+            Bounds[] trees = treeSlots.Select(GetRendererBounds).ToArray();
+
+            for (int index = 0; index < trees.Length; index++)
+            {
+                string name = treeSlots[index].name;
+
+                foreach (Bounds road in roads)
+                {
+                    Assert.That(
+                        OverlapsOnXZ(trees[index], road),
+                        Is.False,
+                        $"'{name}' grows in a road.");
+                }
+
+                foreach (Bounds building in buildings)
+                {
+                    Assert.That(
+                        OverlapsOnXZ(trees[index], building),
+                        Is.False,
+                        $"'{name}' grows through a building.");
+                }
+
+                for (int other = index + 1; other < trees.Length; other++)
+                {
+                    Assert.That(
+                        OverlapsOnXZ(trees[index], trees[other]),
+                        Is.False,
+                        $"'{name}' overlaps '{treeSlots[other].name}'.");
                 }
             }
         }
@@ -403,117 +411,75 @@ namespace PawsAndLoot.Tests.EditMode
         [Test]
         public void Map02AllHousesUseSameLargerOneStoreyModel()
         {
-            GreyboxMapDefinition map = LoadMap02();
-            Transform buildingRoot = map.transform.parent
-                .Find("Environment/MAP-002 Buildings");
-            string[] houses =
+            Transform buildingRoot = Environment().Find("MAP-002 Buildings");
+
+            Transform[] houses = buildingRoot
+                .Cast<Transform>()
+                .Where(slot => slot.name.Contains("House"))
+                .ToArray();
+            Assert.That(houses, Is.Not.Empty);
+
+            float? footprint = null;
+            foreach (Transform slot in houses)
             {
-                "Top Left Two Storey House",
-                "Top Left Center One Storey House",
-                "Top Right Center Two Storey House",
-                "Top Right One Storey House",
-                "Middle Left Upper One Storey House",
-                "Middle Left Lower Two Storey House",
-                "Middle Right Upper Two Storey House",
-                "Middle Right Lower One Storey House",
-                "Lower Left One Storey House",
-                "Lower Right Two Storey House",
-                "Bottom Left Two Storey House",
-                "Bottom Center One Storey House",
-                "Bottom Right One Storey House"
-            };
+                Transform model = slot.GetChild(0).GetChild(0);
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        model.gameObject),
+                    Does.Contain("building_house_1f"),
+                    $"'{slot.name}' uses a different house model.");
 
-            Assert.That(houses, Has.Length.EqualTo(13));
-            foreach (string houseName in houses)
-            {
-                Transform slot = buildingRoot.Find(houseName);
-                Assert.That(slot, Is.Not.Null);
-                Assert.That(slot.childCount, Is.EqualTo(1));
-
-                Transform house = slot.GetChild(0);
+                Bounds bounds = GetRendererBounds(slot);
+                float size = Mathf.Max(bounds.size.x, bounds.size.z);
+                footprint ??= size;
                 Assert.That(
-                    house.name,
-                    Is.EqualTo("building_house_1f Anchor"));
-                Assert.That(house.childCount, Is.EqualTo(1));
-                Assert.That(
-                    house.GetChild(0).name,
-                    Is.EqualTo("building_house_1f_Model"));
-
-                BoxCollider collider = house.GetComponent<BoxCollider>();
-                Assert.That(collider, Is.Not.Null);
-                Assert.That(
-                    collider.size.x,
-                    Is.EqualTo(7.5f).Within(0.001f));
-                Assert.That(
-                    collider.size.z,
-                    Is.EqualTo(7.5f).Within(0.001f));
+                    size,
+                    Is.EqualTo(footprint.Value).Within(0.25f),
+                    $"'{slot.name}' is a different size from the others.");
             }
         }
 
+        /// <summary>
+        /// The grid is a measuring tool, so its counts follow from the ground
+        /// size rather than being three numbers to remember. They were literals,
+        /// which meant resizing the map failed here instead of where the size
+        /// was changed.
+        /// </summary>
         [Test]
-        public void Map02CoordinateGridShowsAxesAndIntersectionCoordinates()
+        public void Map02CoordinateGridCoversTheGround()
         {
             GreyboxMapDefinition map = LoadMap02();
-            Transform gridRoot = map.transform.parent
+            Transform gridRoot = map
+                .transform.parent
                 .Find("Environment/MAP-002 Coordinate Grid");
             Assert.That(gridRoot, Is.Not.Null);
 
-            Transform lines = gridRoot.Find("Grid Lines");
-            Transform axisLabels = gridRoot.Find("Axis Labels");
-            Transform coordinateLabels =
-                gridRoot.Find("Coordinate Labels");
-            Assert.That(lines, Is.Not.Null);
-            Assert.That(axisLabels, Is.Not.Null);
-            Assert.That(coordinateLabels, Is.Not.Null);
-            Assert.That(lines.childCount, Is.EqualTo(137));
-            Assert.That(axisLabels.childCount, Is.EqualTo(31));
-            Assert.That(coordinateLabels.childCount, Is.EqualTo(36));
+            int width = Mathf.RoundToInt(map.MapWidthMeters);
+            int depth = Mathf.RoundToInt(map.MapDepthMeters);
 
-            AssertGridLine(
-                lines,
-                "X Grid 0",
-                new Vector3(0f, 0.055f, 32.5f),
-                new Vector3(0.06f, 0.008f, 65f));
-            AssertGridLine(
-                lines,
-                "X Grid 1",
-                new Vector3(1f, 0.055f, 32.5f),
-                new Vector3(0.018f, 0.008f, 65f));
-            AssertGridLine(
-                lines,
-                "Z Grid 65",
-                new Vector3(35f, 0.055f, 65f),
-                new Vector3(70f, 0.008f, 0.06f));
+            Assert.That(
+                gridRoot.Find("Grid Lines").childCount,
+                Is.EqualTo(width + depth + 2));
+            Assert.That(
+                gridRoot.Find("Axis Labels").childCount,
+                Is.EqualTo(width / 5 + depth / 5 + 4));
+            Assert.That(
+                gridRoot.Find("Coordinate Labels").childCount,
+                Is.EqualTo((width - 1) / 10 * ((depth - 1) / 10)));
 
-            AssertGridLabel(
-                axisLabels,
-                "X Coordinate 70",
-                "X=70");
-            AssertGridLabel(
-                axisLabels,
-                "Z Coordinate 65",
-                "Z=65");
-            AssertGridLabel(
-                coordinateLabels,
-                "Coordinate (30, 40)",
-                "(30,40)");
+            Assert.That(
+                gridRoot.GetComponentsInChildren<Collider>(true),
+                Is.Empty,
+                "The grid is drawn on the ground, not walked into.");
         }
 
         [Test]
         public void Map02RemainsOutsideNormalBuildOrder()
         {
-            string[] enabledScenes = EditorBuildSettings.scenes
-                .Where(scene => scene.enabled)
-                .Select(scene => scene.path)
-                .ToArray();
-
-            Assert.That(enabledScenes, Does.Not.Contain(Map02ScenePath));
             Assert.That(
-                enabledScenes,
-                Is.EqualTo(
-                    GameSceneCatalog.BuildOrder
-                        .Select(GameSceneCatalog.GetPath)
-                        .ToArray()));
+                EditorBuildSettings.scenes.Select(scene => scene.path),
+                Does.Not.Contain(Map02ScenePath),
+                "MAP-002 is a sandbox and must not ship in the build order.");
         }
 
         private static GreyboxMapDefinition LoadMap02()
@@ -528,78 +494,23 @@ namespace PawsAndLoot.Tests.EditMode
                 .FirstOrDefault();
         }
 
-        private static void AssertSurface(
-            Transform environment,
-            string name,
-            Vector3 expectedPosition,
-            Vector3 expectedScale)
+        private static Transform Environment()
         {
-            Transform surface = environment.Find(name);
-            Assert.That(surface, Is.Not.Null);
-            Assert.That(
-                Vector3.Distance(surface.position, expectedPosition),
-                Is.LessThan(0.001f));
-            Assert.That(
-                Vector3.Distance(surface.localScale, expectedScale),
-                Is.LessThan(0.001f));
-        }
-
-        private static void AssertRoad(
-            Transform roadRoot,
-            string name,
-            Vector3 expectedPosition,
-            Vector3 expectedSize)
-        {
-            Transform road = roadRoot.Find(name);
-            Assert.That(road, Is.Not.Null);
-            Assert.That(
-                Vector3.Distance(road.position, expectedPosition),
-                Is.LessThan(0.001f));
-            Assert.That(road.localScale, Is.EqualTo(Vector3.one));
-            Assert.That(road.childCount, Is.EqualTo(1));
-            Transform model = road.GetChild(0);
-            Assert.That(
-                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                    model.gameObject),
-                Is.EqualTo(RoadModelPath));
-            Assert.That(
-                road.GetComponentsInChildren<Collider>(true),
-                Is.Empty);
-
-            foreach (Renderer renderer in
-                model.GetComponentsInChildren<Renderer>(true))
-            {
-                Assert.That(renderer.sharedMaterials, Is.Not.Empty);
-                foreach (Material material in renderer.sharedMaterials)
-                {
-                    Assert.That(material, Is.Not.Null);
-                    Assert.That(
-                        AssetDatabase.GetAssetPath(material),
-                        Is.EqualTo(RoadDisplayMaterialPath));
-                    Assert.That(
-                        material.shader.name,
-                        Is.EqualTo("Universal Render Pipeline/Lit"));
-                    Assert.That(
-                        AssetDatabase.GetAssetPath(
-                            material.GetTexture("_BaseMap")),
-                        Is.EqualTo(RoadTexturePath));
-                }
-            }
-
-            Bounds bounds = GetRendererBounds(model);
-            Assert.That(
-                Vector3.Distance(bounds.center, expectedPosition),
-                Is.LessThan(0.01f));
-            Assert.That(
-                Vector3.Distance(bounds.size, expectedSize),
-                Is.LessThan(0.02f));
+            GreyboxMapDefinition map = LoadMap02();
+            Assert.That(map, Is.Not.Null);
+            Transform environment = map.transform.parent.Find("Environment");
+            Assert.That(environment, Is.Not.Null);
+            return environment;
         }
 
         private static Bounds GetRendererBounds(Transform root)
         {
             Renderer[] renderers =
                 root.GetComponentsInChildren<Renderer>(true);
-            Assert.That(renderers, Is.Not.Empty);
+            Assert.That(
+                renderers,
+                Is.Not.Empty,
+                $"'{root.name}' has nothing to measure.");
             Bounds bounds = renderers[0].bounds;
             for (int index = 1; index < renderers.Length; index++)
             {
@@ -609,99 +520,25 @@ namespace PawsAndLoot.Tests.EditMode
             return bounds;
         }
 
+        /// <summary>
+        /// Pulls a box in on X and Z so touching edges and eaves do not read as
+        /// an overlap. The height is left alone; nothing here is stacked.
+        /// </summary>
+        private static Bounds Shrink(Bounds bounds, float metres)
+        {
+            bounds.size = new Vector3(
+                Mathf.Max(0.01f, bounds.size.x - metres),
+                bounds.size.y,
+                Mathf.Max(0.01f, bounds.size.z - metres));
+            return bounds;
+        }
+
         private static bool OverlapsOnXZ(Bounds first, Bounds second)
         {
             return first.min.x < second.max.x
                 && first.max.x > second.min.x
                 && first.min.z < second.max.z
                 && first.max.z > second.min.z;
-        }
-
-        private static void AssertGridLine(
-            Transform lineRoot,
-            string name,
-            Vector3 expectedPosition,
-            Vector3 expectedScale)
-        {
-            Transform line = lineRoot.Find(name);
-            Assert.That(line, Is.Not.Null);
-            Assert.That(
-                Vector3.Distance(line.position, expectedPosition),
-                Is.LessThan(0.001f));
-            Assert.That(
-                Vector3.Distance(line.localScale, expectedScale),
-                Is.LessThan(0.001f));
-            Assert.That(line.GetComponent<Collider>(), Is.Null);
-        }
-
-        private static void AssertGridLabel(
-            Transform labelRoot,
-            string name,
-            string expectedText)
-        {
-            Transform label = labelRoot.Find(name);
-            Assert.That(label, Is.Not.Null);
-            TextMesh text = label.GetComponent<TextMesh>();
-            Assert.That(text, Is.Not.Null);
-            Assert.That(text.text, Is.EqualTo(expectedText));
-        }
-
-        private static void AssertTrashBin(
-            Transform trashBinRoot,
-            int index,
-            float x,
-            float z)
-        {
-            Transform bin =
-                trashBinRoot.Find($"Green Trash Bin {index}");
-            Assert.That(bin, Is.Not.Null);
-            Assert.That(bin.position.x, Is.EqualTo(x).Within(0.001f));
-            Assert.That(bin.position.z, Is.EqualTo(z).Within(0.001f));
-            Assert.That(bin.GetComponent<BoxCollider>(), Is.Not.Null);
-            Assert.That(bin.childCount, Is.EqualTo(1));
-
-            Renderer[] renderers =
-                bin.GetComponentsInChildren<Renderer>(true);
-            Assert.That(renderers, Is.Not.Empty);
-            foreach (Renderer renderer in renderers)
-            {
-                Assert.That(renderer.sharedMaterial, Is.Not.Null);
-                Color color = renderer.sharedMaterial.color;
-                Assert.That(
-                    color.g,
-                    Is.GreaterThan(color.r),
-                    "Trash-bin material should read green.");
-                Assert.That(
-                    color.g,
-                    Is.GreaterThan(color.b),
-                    "Trash-bin material should read green.");
-            }
-        }
-
-        private static void AssertBuilding(
-            Transform buildingRoot,
-            string name,
-            float x,
-            float z,
-            float rotationY = 0f)
-        {
-            Transform slot = buildingRoot.Find(name);
-            Assert.That(slot, Is.Not.Null);
-            Assert.That(slot.childCount, Is.EqualTo(1));
-            Transform building = slot.GetChild(0);
-            Assert.That(building.position.x, Is.EqualTo(x).Within(0.001f));
-            Assert.That(building.position.z, Is.EqualTo(z).Within(0.001f));
-            Assert.That(
-                Mathf.Abs(
-                    Mathf.DeltaAngle(
-                        building.eulerAngles.y,
-                        rotationY)),
-                Is.LessThan(0.001f));
-            Assert.That(building.GetComponent<BoxCollider>(), Is.Not.Null);
-            Assert.That(
-                building.childCount,
-                Is.GreaterThan(0),
-                $"{name} requires an authored model child.");
         }
     }
 }

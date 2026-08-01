@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using PawsAndLoot.Companions;
 using PawsAndLoot.Core;
@@ -45,15 +46,35 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Materials/Greybox/Map02TreeTrunk.mat";
         private const string TreeCanopyMaterialPath =
             "Assets/_Project/Materials/Greybox/Map02TreeCanopy.mat";
-        private const float RoadWidth = 2f;
+        /// <summary>
+        /// Street and alley widths, and the reason this layout was re-cut.
+        ///
+        /// The first draft ran 2 m roads, which reads fine from directly above and
+        /// is why nobody noticed. It is below the 2.4 m a route has to stay clear
+        /// for (<see cref="GreyboxMapDefinition.RequiredMinimumClearWidth"/>), so
+        /// the village validator would reject this town outright, and two
+        /// characters chasing each other could not pass. The village runs 4 m
+        /// streets with 3 m alleys and those are the numbers here.
+        /// </summary>
+        private const float StreetWidth = 4f;
+        private const float AlleyWidth = 3f;
         private const float RoadHeight = 0.04f;
-        private const float MapWidth = 70f;
-        private const float MapDepth = 65f;
+
+        /// <summary>
+        /// The ground, sized to the village exactly.
+        ///
+        /// MAP-002 is authored from 0 and the village runs -28..52 by -22..50, so
+        /// carrying this layout across is a single translation rather than a
+        /// re-fit. Matching the area also keeps the walking times comparable, and
+        /// those are what the four-minute match was balanced against.
+        /// </summary>
+        private const float MapWidth = 80f;
+        private const float MapDepth = 72f;
         private const float BoundaryOffset = 1f;
         private const float TrashBinHeight = 1.4f;
         private const float OneStoreyHouseFootprint = 7.5f;
-        private const float PoliceStationX = 27.5f;
-        private const float PoliceStationZ = 37f;
+        private const float PoliceStationX = 32f;
+        private const float PoliceStationZ = 41f;
         private const float PoliceStationFootprint = 12f;
         private const float PoliceStartFrontClearance = 1.5f;
         private static readonly Vector3 PoliceStartGroundPosition = new(
@@ -65,99 +86,103 @@ namespace PawsAndLoot.Editor
 
         private static readonly Vector2[] TrashBinCoordinates =
         {
-            new(26f, 55f),
-            new(4f, 48f),
-            new(63f, 48f),
-            new(50f, 38f),
-            new(1f, 21f),
-            new(64f, 22f),
-            new(7f, 2f)
+            new(33f, 58f),
+            new(5f, 58f),
+            new(77f, 58f),
+            new(18f, 33f),
+            new(77f, 33f),
+            new(50f, 33f),
+            new(8f, 5f)
         };
 
         private static readonly TreeSpec[] Trees =
         {
-            new("Tree 01", 12.8f, 62.4f, 0.9f, 12f),
-            new("Tree 02", 41f, 57f, 1.05f, 68f),
-            new("Tree 03", 58f, 56f, 0.95f, 143f),
-            new("Tree 04", 66f, 62f, 1.1f, 221f),
-            new("Tree 05", 10.5f, 45f, 0.85f, 37f),
-            new("Tree 06", 65f, 43f, 1f, 176f),
-            new("Tree 07", 65f, 31f, 0.9f, 295f),
-            new("Tree 08", 14.5f, 16.5f, 0.85f, 104f),
-            new("Tree 09", 24f, 18f, 1f, 15f),
-            new("Tree 10", 30.5f, 22f, 0.9f, 248f),
-            new("Tree 11", 33f, 15.5f, 0.95f, 132f),
-            new("Tree 12", 42f, 18f, 1.05f, 310f),
-            new("Tree 13", 45f, 23f, 0.85f, 57f),
-            new("Tree 14", 4f, 6f, 1f, 201f),
-            new("Tree 15", 13.8f, 5.5f, 0.9f, 82f),
-            new("Tree 16", 26f, 6.5f, 0.9f, 154f),
-            new("Tree 17", 54f, 7f, 1.05f, 24f),
-            new("Tree 18", 65f, 7f, 0.95f, 266f)
+            new("Tree 01", 15f, 69f, 0.9f, 12f),
+            new("Tree 02", 46f, 68f, 1.05f, 68f),
+            new("Tree 03", 66f, 67f, 0.95f, 143f),
+            new("Tree 04", 77f, 63f, 1.1f, 221f),
+            new("Tree 05", 16f, 50f, 0.85f, 37f),
+            new("Tree 06", 77f, 49f, 1f, 176f),
+            new("Tree 07", 63f, 24f, 0.9f, 295f),
+            new("Tree 08", 26f, 21f, 0.85f, 104f),
+            new("Tree 09", 32f, 25f, 1f, 15f),
+            new("Tree 10", 38f, 20f, 0.9f, 248f),
+            new("Tree 11", 72f, 4f, 0.95f, 132f),
+            new("Tree 12", 48f, 24f, 1.05f, 310f),
+            new("Tree 13", 53f, 20f, 0.85f, 57f),
+            new("Tree 14", 5f, 5f, 1f, 201f),
+            new("Tree 15", 17f, 5f, 0.9f, 82f),
+            new("Tree 16", 31f, 5f, 0.9f, 154f),
+            new("Tree 17", 66f, 7f, 1.05f, 24f),
+            new("Tree 18", 77f, 8f, 0.95f, 266f)
         };
 
+        /// <summary>
+        /// The street plan: three bands, and verticals that do not line up across
+        /// them.
+        ///
+        /// The jogs are the point. Verticals that run straight through from top to
+        /// bottom cut the town into a grid of equal rectangles, which is what the
+        /// first sandbox looked like and why it read as a spreadsheet. Each
+        /// vertical here shifts two to four metres where it crosses the centre
+        /// road, and the lower road steps down nine metres on the left, so no two
+        /// blocks come out the same size.
+        /// </summary>
         private static readonly RoadSpec[] Roads =
         {
-            RoadSpec.Horizontal("Top Road", 49f, 0f, 66f),
-            RoadSpec.Horizontal("Center Road", 26f, 0f, 66f),
-            RoadSpec.Horizontal("Lower Left Road", 21f, 0f, 11f),
-            RoadSpec.Horizontal("Lower Center Road", 12f, 11f, 48f),
-            RoadSpec.Horizontal("Lower Right Road", 13f, 48f, 66f),
-            RoadSpec.Vertical("Top Vertical Road", 26f, 49f, 61f),
-            RoadSpec.Vertical("Center Left Vertical Road", 20f, 26f, 49f),
-            RoadSpec.Vertical("Center Vertical Road", 35f, 26f, 49f),
-            RoadSpec.Vertical("Center Right Vertical Road", 49f, 26f, 49f),
-            RoadSpec.Vertical("Lower Left Vertical Road", 11f, 0f, 21f),
-            RoadSpec.Vertical(
-                "Lower Center Left Vertical Road",
-                19f,
-                12f,
-                26f),
-            RoadSpec.Vertical(
-                "Lower Center Right Vertical Road",
-                37f,
-                12f,
-                26f),
-            RoadSpec.Vertical("Lower Right Vertical Road", 48f, 0f, 26f)
+            RoadSpec.Horizontal("Top Road", 54f, 0f, 76f),
+            RoadSpec.Horizontal("Center Road", 29f, 0f, 76f),
+            RoadSpec.Horizontal("Lower Left Road", 23f, 0f, 13f),
+            RoadSpec.Horizontal("Lower Center Road", 13f, 13f, 56f),
+            RoadSpec.Horizontal("Lower Right Road", 15f, 56f, 76f),
+            RoadSpec.Vertical("Top Vertical Road", 29f, 54f, 68f),
+            RoadSpec.Vertical("Center Left Vertical Road", 22f, 29f, 54f),
+            RoadSpec.Vertical("Center Vertical Road", 42f, 29f, 54f),
+            RoadSpec.Vertical("Center Right Vertical Road", 62f, 29f, 54f),
+            RoadSpec.Vertical("Lower Left Vertical Road", 13f, 0f, 23f),
+            RoadSpec.Alley("Lower Center Left Alley", 19f, 15f, 29f),
+            RoadSpec.Alley("Lower Center Right Alley", 44f, 15f, 29f),
+            RoadSpec.Vertical("Lower Right Vertical Road", 58f, 0f, 29f)
         };
 
+        /// <summary>
+        /// Where the buildings stand, in the blocks the roads leave behind.
+        ///
+        /// Every one of these has to clear the carriageway on all four sides, and
+        /// eyeballing coordinates does not achieve that: four of five rocks placed
+        /// by eye once ended up inside buildings, and the scene still built, still
+        /// validated and still logged success. So the clearance is measured in
+        /// <c>ValidateScene</c> rather than trusted here.
+        /// </summary>
         private static readonly BuildingSpec[] Buildings =
         {
-            BuildingSpec.House2F(
-                "Top Left Two Storey House",
-                7f,
-                56f,
-                180f),
+            BuildingSpec.House2F("Top Left Two Storey House", 9f, 63f, 180f),
             BuildingSpec.House1F(
                 "Top Left Center One Storey House",
-                19f,
-                55f,
+                21f,
+                63f,
                 180f),
             BuildingSpec.House2F(
                 "Top Right Center Two Storey House",
-                33f,
-                56f,
+                38f,
+                63f,
                 180f),
-            BuildingSpec.House1F(
-                "Top Right One Storey House",
-                49f,
-                55f,
-                180f),
+            BuildingSpec.House1F("Top Right One Storey House", 57f, 63f, 180f),
             BuildingSpec.House1F(
                 "Middle Left Upper One Storey House",
-                4.5f,
-                43f,
+                5f,
+                47f,
                 90f),
             BuildingSpec.House2F(
                 "Middle Left Lower Two Storey House",
-                5.5f,
-                33f,
+                5f,
+                37f,
                 90f),
             new BuildingSpec(
                 "Supermarket",
                 "building_supermarket",
                 15f,
-                37f,
+                41f,
                 12f,
                 8f,
                 90f),
@@ -172,43 +197,26 @@ namespace PawsAndLoot.Editor
             new BuildingSpec(
                 "Bookstore",
                 "building_bookstore",
-                42f,
-                37f,
+                52f,
+                41f,
                 12f,
                 10f,
                 180f),
             BuildingSpec.House2F(
                 "Middle Right Upper Two Storey House",
-                57f,
-                42.5f,
+                71f,
+                47f,
                 180f),
             BuildingSpec.House1F(
                 "Middle Right Lower One Storey House",
-                56f,
-                31.5f,
+                71f,
+                37f,
                 180f),
-            BuildingSpec.House1F(
-                "Lower Left One Storey House",
-                5.5f,
-                15f,
-                90f),
-            BuildingSpec.House2F(
-                "Lower Right Two Storey House",
-                56f,
-                19.5f,
-                180f),
-            BuildingSpec.House2F(
-                "Bottom Left Two Storey House",
-                20f,
-                5.5f),
-            BuildingSpec.House1F(
-                "Bottom Center One Storey House",
-                32f,
-                6.5f),
-            BuildingSpec.House1F(
-                "Bottom Right One Storey House",
-                42.5f,
-                7f)
+            BuildingSpec.House1F("Lower Left One Storey House", 5f, 15f, 90f),
+            BuildingSpec.House2F("Lower Right Two Storey House", 70f, 22f, 180f),
+            BuildingSpec.House2F("Bottom Left Two Storey House", 24f, 6f),
+            BuildingSpec.House1F("Bottom Center One Storey House", 38f, 6f),
+            BuildingSpec.House1F("Bottom Right One Storey House", 50f, 6f)
         };
 
         [MenuItem("Paws & Loot/Setup/Create MAP-002 Greybox Layout")]
@@ -406,9 +414,10 @@ namespace PawsAndLoot.Editor
                 || buildingRoot.childCount != Buildings.Length
                 || treeRoot.childCount != Trees.Length
                 || trashBinRoot.childCount != TrashBinCoordinates.Length
-                || gridLines.childCount != 137
-                || axisLabels.childCount != 31
-                || coordinateLabels.childCount != 36)
+                || gridLines.childCount != ExpectedGridLineCount
+                || axisLabels.childCount != ExpectedAxisLabelCount
+                || coordinateLabels.childCount
+                    != ExpectedCoordinateLabelCount)
             {
                 throw new InvalidOperationException(
                     "MAP-002 dimensions or authored layout counts are invalid.");
@@ -427,7 +436,216 @@ namespace PawsAndLoot.Editor
                     roadRoot,
                     buildingRoot);
             }
+
+            ValidateLayoutIsClear();
         }
+
+        /// <summary>
+        /// Measures the authored layout: roads wide enough to walk down, and
+        /// nothing standing in them.
+        ///
+        /// This reads the specs rather than the built scene on purpose, so it
+        /// costs nothing and a test can call it without opening anything. What it
+        /// is guarding is coordinates typed by hand, and those are wrong long
+        /// before a model is ever fitted to them — two houses a metre apart on
+        /// paper are two houses inside each other in the scene, and the scene will
+        /// build, validate and report success anyway.
+        /// </summary>
+        public static void ValidateLayoutIsClear()
+        {
+            foreach (RoadSpec road in Roads)
+            {
+                if (road.Width
+                    < GreyboxMapDefinition.RequiredMinimumClearWidth)
+                {
+                    throw new InvalidOperationException(
+                        $"MAP-002 road '{road.Name}' is {road.Width:0.##}m "
+                        + "wide, below the "
+                        + $"{GreyboxMapDefinition.RequiredMinimumClearWidth:0.##}m"
+                        + " a route has to stay clear for.");
+                }
+            }
+
+            for (int index = 0; index < Buildings.Length; index++)
+            {
+                BuildingSpec building = Buildings[index];
+                Rect area = GroundArea(building);
+
+                if (area.xMin < 0f
+                    || area.yMin < 0f
+                    || area.xMax > MapWidth
+                    || area.yMax > MapDepth)
+                {
+                    throw new InvalidOperationException(
+                        $"MAP-002 building '{building.Name}' reaches outside "
+                        + $"the {MapWidth:0}x{MapDepth:0}m ground.");
+                }
+
+                foreach (RoadSpec road in Roads)
+                {
+                    if (area.Overlaps(GroundArea(road)))
+                    {
+                        throw new InvalidOperationException(
+                            $"MAP-002 building '{building.Name}' stands in "
+                            + $"road '{road.Name}'.");
+                    }
+                }
+
+                for (int other = index + 1;
+                     other < Buildings.Length;
+                     other++)
+                {
+                    if (area.Overlaps(GroundArea(Buildings[other])))
+                    {
+                        throw new InvalidOperationException(
+                            $"MAP-002 buildings '{building.Name}' and "
+                            + $"'{Buildings[other].Name}' overlap.");
+                    }
+                }
+            }
+
+            ValidateDressingIsClear();
+        }
+
+        /// <summary>
+        /// The same measurement for the things planted between the buildings.
+        ///
+        /// Trees earn a wider margin than their geometry asks for. The canopy is
+        /// 2.3 x scale across, so half of it is 1.15 x scale, but the scene test
+        /// measuring real renderers found two trees touching that this figure
+        /// said were 0.8 m apart. Rather than guess at where the extra came from,
+        /// the margin here is set above anything the geometry can produce — a
+        /// tree standing a metre further from its neighbour costs nothing, and
+        /// the alternative is finding out from a screenshot.
+        /// </summary>
+        private static void ValidateDressingIsClear()
+        {
+            var planted = new List<(string Name, Rect Area)>();
+            foreach (TreeSpec tree in Trees)
+            {
+                float reach = CanopyMargin * tree.Scale;
+                planted.Add((
+                    tree.Name,
+                    new Rect(
+                        tree.X - reach,
+                        tree.Z - reach,
+                        reach * 2f,
+                        reach * 2f)));
+            }
+
+            for (int index = 0; index < TrashBinCoordinates.Length; index++)
+            {
+                Vector2 bin = TrashBinCoordinates[index];
+                planted.Add((
+                    $"Green Trash Bin {index + 1}",
+                    new Rect(
+                        bin.x - BinMargin,
+                        bin.y - BinMargin,
+                        BinMargin * 2f,
+                        BinMargin * 2f)));
+            }
+
+            for (int index = 0; index < planted.Count; index++)
+            {
+                (string name, Rect area) = planted[index];
+
+                if (area.xMin < 0f
+                    || area.yMin < 0f
+                    || area.xMax > MapWidth
+                    || area.yMax > MapDepth)
+                {
+                    throw new InvalidOperationException(
+                        $"MAP-002 '{name}' reaches outside the ground.");
+                }
+
+                foreach (RoadSpec road in Roads)
+                {
+                    if (area.Overlaps(GroundArea(road)))
+                    {
+                        throw new InvalidOperationException(
+                            $"MAP-002 '{name}' stands in road "
+                            + $"'{road.Name}'.");
+                    }
+                }
+
+                foreach (BuildingSpec building in Buildings)
+                {
+                    if (area.Overlaps(GroundArea(building)))
+                    {
+                        throw new InvalidOperationException(
+                            $"MAP-002 '{name}' stands inside "
+                            + $"'{building.Name}'.");
+                    }
+                }
+
+                for (int other = index + 1; other < planted.Count; other++)
+                {
+                    if (area.Overlaps(planted[other].Area))
+                    {
+                        throw new InvalidOperationException(
+                            $"MAP-002 '{name}' and "
+                            + $"'{planted[other].Name}' are too close.");
+                    }
+                }
+            }
+        }
+
+        private const float CanopyMargin = 1.7f;
+        private const float BinMargin = 0.6f;
+
+        /// <summary>
+        /// The ground a building covers once it has been turned.
+        ///
+        /// A quarter turn swaps the footprint, and forgetting that is how a
+        /// 12x8 shop ends up measured as though it were still 12 wide. Read from
+        /// the sine so 90 and 270 both count and 0 and 180 both do not.
+        /// </summary>
+        private static Rect GroundArea(BuildingSpec spec)
+        {
+            bool quarterTurned =
+                Mathf.Abs(Mathf.Sin(spec.RotationY * Mathf.Deg2Rad)) > 0.5f;
+            float sizeX = quarterTurned
+                ? spec.FootprintZ
+                : spec.FootprintX;
+            float sizeZ = quarterTurned
+                ? spec.FootprintX
+                : spec.FootprintZ;
+            return new Rect(
+                spec.X - sizeX * 0.5f,
+                spec.Z - sizeZ * 0.5f,
+                sizeX,
+                sizeZ);
+        }
+
+        private static Rect GroundArea(RoadSpec spec)
+        {
+            return spec.IsHorizontal
+                ? new Rect(
+                    spec.Minimum,
+                    spec.NearEdge,
+                    spec.Maximum - spec.Minimum,
+                    spec.Width)
+                : new Rect(
+                    spec.NearEdge,
+                    spec.Minimum,
+                    spec.Width,
+                    spec.Maximum - spec.Minimum);
+        }
+
+        // The grid is drawn from the ground size, so its counts follow from the
+        // ground size too. They were three literals, which meant resizing the map
+        // failed here rather than where the size was changed.
+        private static int ExpectedGridLineCount =>
+            Mathf.RoundToInt(MapWidth) + Mathf.RoundToInt(MapDepth) + 2;
+
+        private static int ExpectedAxisLabelCount =>
+            Mathf.RoundToInt(MapWidth) / 5
+            + Mathf.RoundToInt(MapDepth) / 5
+            + 4;
+
+        private static int ExpectedCoordinateLabelCount =>
+            (Mathf.RoundToInt(MapWidth) - 1) / 10
+            * ((Mathf.RoundToInt(MapDepth) - 1) / 10);
 
         [MenuItem("Paws & Loot/Technical Validation/Build Windows MAP-002")]
         public static void BuildWindows()
@@ -734,7 +952,7 @@ namespace PawsAndLoot.Editor
 
             float length = spec.Maximum - spec.Minimum;
             model.transform.localScale = new Vector3(
-                RoadWidth / sourceBounds.size.x,
+                spec.Width / sourceBounds.size.x,
                 RoadHeight / sourceBounds.size.y,
                 length / sourceBounds.size.z);
             road.transform.rotation = spec.IsHorizontal
@@ -809,8 +1027,8 @@ namespace PawsAndLoot.Editor
 
             float expectedLength = spec.Maximum - spec.Minimum;
             Vector3 expectedSize = spec.IsHorizontal
-                ? new Vector3(expectedLength, RoadHeight, RoadWidth)
-                : new Vector3(RoadWidth, RoadHeight, expectedLength);
+                ? new Vector3(expectedLength, RoadHeight, spec.Width)
+                : new Vector3(spec.Width, RoadHeight, expectedLength);
             if (Vector3.Distance(bounds.center, road.position) > 0.01f
                 || Vector3.Distance(bounds.size, expectedSize) > 0.02f)
             {
@@ -1417,13 +1635,15 @@ namespace PawsAndLoot.Editor
                 bool isHorizontal,
                 float fixedCoordinate,
                 float minimum,
-                float maximum)
+                float maximum,
+                float width)
             {
                 Name = name;
                 IsHorizontal = isHorizontal;
                 FixedCoordinate = fixedCoordinate;
                 Minimum = minimum;
                 Maximum = maximum;
+                Width = width;
             }
 
             public string Name { get; }
@@ -1431,6 +1651,24 @@ namespace PawsAndLoot.Editor
             public float FixedCoordinate { get; }
             public float Minimum { get; }
             public float Maximum { get; }
+
+            /// <summary>
+            /// How wide the carriageway is, which used to be one constant for
+            /// every road. Alleys are the reason it is per-road: a town where
+            /// every street is the same width has no back ways, and the shortcut
+            /// a thief takes has to look different from the road a police car
+            /// would use.
+            /// </summary>
+            public float Width { get; }
+
+            /// <summary>
+            /// The near and far edge, which is what overlap has to be measured
+            /// against. A road is authored by its centre line, so every check
+            /// that asks "is this clear" would otherwise re-derive the same two
+            /// numbers and one of them would eventually be derived wrongly.
+            /// </summary>
+            public float NearEdge => FixedCoordinate - Width * 0.5f;
+            public float FarEdge => FixedCoordinate + Width * 0.5f;
 
             public static RoadSpec Horizontal(
                 string name,
@@ -1443,7 +1681,8 @@ namespace PawsAndLoot.Editor
                     true,
                     z,
                     minimumX,
-                    maximumX);
+                    maximumX,
+                    StreetWidth);
             }
 
             public static RoadSpec Vertical(
@@ -1457,7 +1696,23 @@ namespace PawsAndLoot.Editor
                     false,
                     x,
                     minimumZ,
-                    maximumZ);
+                    maximumZ,
+                    StreetWidth);
+            }
+
+            public static RoadSpec Alley(
+                string name,
+                float x,
+                float minimumZ,
+                float maximumZ)
+            {
+                return new RoadSpec(
+                    name,
+                    false,
+                    x,
+                    minimumZ,
+                    maximumZ,
+                    AlleyWidth);
             }
         }
 
