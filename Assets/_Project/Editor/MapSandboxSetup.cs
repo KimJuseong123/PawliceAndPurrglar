@@ -451,7 +451,7 @@ namespace PawsAndLoot.Editor
 
             Rect[] blocks = NumberedBlocks(out _);
             int placed = BuildBlocks(buildings, sizes, blocks, out int houses);
-            int dressing = 0;
+            int dressing = BuildDressing(environment, sizes, blocks);
 
             BuildPlayer(root, match);
             BuildLight(root);
@@ -753,11 +753,10 @@ namespace PawsAndLoot.Editor
                 Fill.PoliceStation => "building_police_station",
                 Fill.Supermarket => "building_supermarket",
                 Fill.Bookstore => "building_bookstore",
-                // No authored model yet. Two-storey houses borrow the
-                // one-storey one rather than vanishing; the jewellery shop has
-                // none at all and falls back to a grey box.
-                Fill.TwoStorey => "building_house_1f",
+                Fill.Jewellery => "building_jewelry",
+                Fill.TwoStorey => "building_house_2f",
                 Fill.OneStorey => "building_house_1f",
+                Fill.Plaza => "env_fountain_plaza",
                 _ => null
             };
         }
@@ -814,6 +813,7 @@ namespace PawsAndLoot.Editor
         private static bool TryFit(
             Vector2 footprint,
             Rect[] roads,
+            List<Rect> taken,
             ref Vector3 centre)
         {
             const float Step = 1f;
@@ -862,6 +862,23 @@ namespace PawsAndLoot.Editor
                             }
                         }
 
+                        // And not on top of something already placed. Spacing
+                        // items evenly across a block says nothing about
+                        // whether they fit: two twelve-metre buildings nine and
+                        // a half metres apart overlap, and the supermarket was
+                        // standing inside a house because of it.
+                        if (!blocked)
+                        {
+                            foreach (Rect other in taken)
+                            {
+                                if (area.Overlaps(other))
+                                {
+                                    blocked = true;
+                                    break;
+                                }
+                            }
+                        }
+
                         if (!blocked)
                         {
                             centre = candidate;
@@ -885,6 +902,7 @@ namespace PawsAndLoot.Editor
         {
             const float Verge = 2.5f;
             var placements = new List<Placement>();
+            var taken = new List<Rect>();
             Rect[] roads = StreetAreas();
 
             foreach ((int number, Fill[] contents) in Assignments)
@@ -912,19 +930,34 @@ namespace PawsAndLoot.Editor
                         ? block.center.x
                         : block.center.y;
 
-                    float yaw = tall ? 270f : 180f;
+                    // South-facing unless that will not fit.
+                    //
+                    // Turning a building sideways is worth doing when the block
+                    // is long and thin, and costs the entrance facing the
+                    // street. So it is tried second: only when the buildings
+                    // laid out the natural way would not go in. Turning by
+                    // default put two twelve-metre-deep houses in a
+                    // twenty-four-metre block and one of them had nowhere to
+                    // stand.
+                    Vector2 shape = FootprintOf(fill);
+                    float alongIfSouth = tall ? shape.y : shape.x;
+                    float alongIfTurned = tall ? shape.x : shape.y;
+                    float needed = contents.Length * (alongIfSouth + 3f);
+                    float yaw =
+                        needed <= run || alongIfTurned >= alongIfSouth
+                            ? 180f
+                            : 270f;
                     Vector3 centre = tall
                         ? new Vector3(across, 0f, along)
                         : new Vector3(along, 0f, across);
 
                     // Turned footprints are what has to clear the road, not the
                     // authored one.
-                    Vector2 authored = FootprintOf(fill);
-                    Vector2 turned = tall
-                        ? new Vector2(authored.y, authored.x)
-                        : authored;
+                    Vector2 turned = Mathf.Approximately(yaw, 270f)
+                        ? new Vector2(shape.y, shape.x)
+                        : shape;
 
-                    if (!TryFit(turned, roads, ref centre))
+                    if (!TryFit(turned, roads, taken, ref centre))
                     {
                         Debug.LogWarning(
                             $"[SANDBOX] Block {number} has nowhere clear for "
@@ -933,6 +966,11 @@ namespace PawsAndLoot.Editor
                         continue;
                     }
 
+                    taken.Add(new Rect(
+                        centre.x - turned.x * 0.5f,
+                        centre.z - turned.y * 0.5f,
+                        turned.x,
+                        turned.y));
                     placements.Add(new Placement(
                         fill,
                         $"Block {number} {fill}",
@@ -969,13 +1007,6 @@ namespace PawsAndLoot.Editor
 
             foreach (Placement placement in LayOut(blocks))
             {
-                if (placement.Fill == Fill.Plaza)
-                {
-                    BuildPlaza(parent, placement);
-                    specials++;
-                    continue;
-                }
-
                 string stem = StemOf(placement.Fill);
                 if (stem == null
                     || !PlaceBuilding(
@@ -983,6 +1014,7 @@ namespace PawsAndLoot.Editor
                         stem,
                         placement.Centre,
                         placement.Yaw,
+                        FootprintOf(placement.Fill),
                         placement.Label,
                         sizes))
                 {
@@ -1056,18 +1088,27 @@ namespace PawsAndLoot.Editor
             return box;
         }
 
+        /// <summary>
+        /// Fits a model to the footprint it was given.
+        ///
+        /// Everything used to be squeezed into the house lot whatever it was,
+        /// so the police station came out the size of a bungalow and the plan
+        /// and the town disagreed about how much room each thing takes. The
+        /// footprint the layout reserved is the size it should be.
+        /// </summary>
         private static bool PlaceBuilding(
             Transform parent,
             string stem,
             Vector3 centre,
             float yaw,
+            Vector2 footprint,
             string name,
             Measurements sizes)
         {
             Vector3 size = sizes.Of(stem);
             float scale = Mathf.Min(
-                LotX / Mathf.Max(0.01f, size.x),
-                LotZ / Mathf.Max(0.01f, size.z));
+                footprint.x / Mathf.Max(0.01f, size.x),
+                footprint.y / Mathf.Max(0.01f, size.z));
 
             GameObject instance = Instantiate(
                 stem,
@@ -1102,154 +1143,247 @@ namespace PawsAndLoot.Editor
         /// parts by height rather than by name: bark below, leaves above, because one
         /// colour over the whole model gave a tree with a green trunk.
         /// </summary>
+        /// <summary>
+        /// Lays the road surface, the grass and the things that stand beside a
+        /// street.
+        ///
+        /// The roads were flat slabs with one stretched texture. The model is a
+        /// tile a metre across meant to be repeated, so it is repeated: a four
+        /// by sixty-six metre street is a grid of tiles, not one picture blown
+        /// up sixty-six times.
+        ///
+        /// Lamps and trees are spaced along the streets rather than scattered.
+        /// A lamp every fifteen metres reads as a town; a lamp wherever there
+        /// happened to be room reads as a field.
+        /// </summary>
         private static int BuildDressing(
             Transform parent,
-            Measurements sizes)
+            Measurements sizes,
+            Rect[] blocks)
         {
+            Transform surface = Child("Surface", parent);
             Transform dressing = Child("Dressing", parent);
             int count = 0;
 
-            GameObject fountain = Instantiate(
-                "env_fountain_plaza",
-                EnvironmentDirectory,
-                dressing,
-                Blocks.First(block => block.Use == Use.Plaza).Centre
-                    + new Vector3(0f, 0.12f, 0f),
-                Quaternion.identity,
-                Vector3.one * ScaleTo(sizes, "env_fountain_plaza", 8f, true),
-                "Fountain");
-            if (fountain != null)
-            {
-                Paint(
-                    fountain,
-                    Colour("Sandbox_Stone", new Color(0.55f, 0.53f, 0.50f)));
-                count++;
-            }
+            count += LayTiles(
+                surface,
+                sizes,
+                "env_road_tile",
+                StreetAreas(),
+                2f,
+                0.03f);
 
-            Material bark =
-                Colour("Sandbox_Bark", new Color(0.34f, 0.24f, 0.16f));
-            Material leaves =
-                Colour("Sandbox_Leaves", new Color(0.20f, 0.42f, 0.22f));
-            Material metal =
-                Colour("Sandbox_LampPost", new Color(0.20f, 0.21f, 0.24f));
-
-            // On the corners of every block, just outside it, so lamps and trees
-            // line the streets without standing in a lane. Taken from the block table
-            // like everything else, so moving a block moves its planting.
-            foreach (Block block in Blocks)
+            // Grass inside the blocks, pulled in so it does not creep over the
+            // kerb. Blocks that are all building get very little of it, which
+            // is correct.
+            var greens = new List<Rect>();
+            foreach (Rect block in blocks)
             {
-                if (block.Use == Use.Plaza)
+                if (block.width < 8f || block.height < 8f)
                 {
                     continue;
                 }
 
-                var corners = new[]
-                {
-                    new Vector3(block.MinX - 1.4f, 0f, block.MinZ - 1.4f),
-                    new Vector3(block.MaxX + 1.4f, 0f, block.MaxZ + 1.4f)
-                };
-
-                GameObject lamp = Instantiate(
-                    "env_street_lamp",
-                    EnvironmentDirectory,
-                    dressing,
-                    corners[0],
-                    Quaternion.identity,
-                    Vector3.one
-                        * ScaleTo(sizes, "env_street_lamp", 4.5f, false),
-                    $"Lamp ({corners[0].x:0},{corners[0].z:0})");
-                if (lamp != null)
-                {
-                    Paint(lamp, metal);
-                    count++;
-                }
-
-                GameObject tree = Instantiate(
-                    "env_tree",
-                    EnvironmentDirectory,
-                    dressing,
-                    corners[1],
-                    Quaternion.identity,
-                    Vector3.one * ScaleTo(sizes, "env_tree", 6f, false),
-                    $"Tree ({corners[1].x:0},{corners[1].z:0})");
-                if (tree != null)
-                {
-                    PaintTree(tree, bark, leaves);
-                    count++;
-                }
+                greens.Add(new Rect(
+                    block.xMin + 1f,
+                    block.yMin + 1f,
+                    block.width - 2f,
+                    block.height - 2f));
             }
+
+            count += LayTiles(
+                surface,
+                sizes,
+                "env_grass_tile",
+                greens.ToArray(),
+                4f,
+                0.01f);
+
+            count += LineStreets(
+                dressing,
+                sizes,
+                "env_street_lamp",
+                15f,
+                1.4f,
+                3.2f);
+            count += LineStreets(
+                dressing,
+                sizes,
+                "env_tree",
+                11f,
+                2.6f,
+                4.5f);
 
             return count;
         }
 
         /// <summary>
-        /// The scale that makes a model a given size. The environment models come in
-        /// at roughly one unit, so a metre figure is the only thing worth writing
-        /// down: at 1.6x the lamps were ankle height and read as litter.
+        /// Covers a rectangle with copies of a tile, sized so each copy is
+        /// about the requested metres across.
         /// </summary>
-        private static float ScaleTo(
+        private static int LayTiles(
+            Transform parent,
             Measurements sizes,
             string stem,
-            float wanted,
-            bool byFootprint)
+            Rect[] areas,
+            float tileMetres,
+            float height)
         {
-            Vector3 size = sizes.Of(stem);
-            float reference = byFootprint
-                ? Mathf.Max(size.x, size.z)
-                : size.y;
-            return wanted / Mathf.Max(0.01f, reference);
-        }
-
-        private static void Paint(GameObject instance, Material material)
-        {
-            if (material == null)
+            Vector3 native = sizes.Of(stem);
+            if (native.x <= 0.01f || native.z <= 0.01f)
             {
-                return;
+                return 0;
             }
 
-            foreach (Renderer renderer in
-                instance.GetComponentsInChildren<Renderer>(true))
+            int laid = 0;
+            foreach (Rect area in areas)
             {
-                renderer.sharedMaterial = material;
-            }
-        }
+                int columns = Mathf.Max(
+                    1,
+                    Mathf.RoundToInt(area.width / tileMetres));
+                int rows = Mathf.Max(
+                    1,
+                    Mathf.RoundToInt(area.height / tileMetres));
+                float stepX = area.width / columns;
+                float stepZ = area.height / rows;
+                var scale = new Vector3(
+                    stepX / native.x,
+                    height / Mathf.Max(0.01f, native.y),
+                    stepZ / native.z);
 
-        /// <summary>
-        /// Bark low, leaves high, split by where each part sits rather than by what it
-        /// is called. A name list would need the model's own naming and would fail
-        /// silently the day it changed; height is a property of a tree.
-        /// </summary>
-        private static void PaintTree(
-            GameObject tree,
-            Material bark,
-            Material leaves)
-        {
-            Bounds whole = WorldBounds(tree);
-            float split = whole.min.y + whole.size.y * 0.38f;
-            foreach (Renderer renderer in
-                tree.GetComponentsInChildren<Renderer>(true))
-            {
-                Material chosen =
-                    renderer.bounds.center.y < split ? bark : leaves;
-                if (chosen != null)
+                for (int column = 0; column < columns; column++)
                 {
-                    renderer.sharedMaterial = chosen;
+                    for (int row = 0; row < rows; row++)
+                    {
+                        GameObject tile = Instantiate(
+                            stem,
+                            EnvironmentDirectory,
+                            parent,
+                            new Vector3(
+                                area.xMin + stepX * (column + 0.5f),
+                                0f,
+                                area.yMin + stepZ * (row + 0.5f)),
+                            Quaternion.identity,
+                            scale,
+                            $"{stem} {column}_{row}");
+                        if (tile == null)
+                        {
+                            return laid;
+                        }
+
+                        foreach (Collider collider in
+                            tile.GetComponentsInChildren<Collider>(true))
+                        {
+                            Object.DestroyImmediate(collider);
+                        }
+
+                        laid++;
+                    }
                 }
             }
+
+            return laid;
         }
 
         /// <summary>
-        /// One police character with the real motor, controller and camera.
+        /// Puts one model down each side of every street at a fixed spacing,
+        /// set back from the kerb.
         ///
-        /// The controller is centred on its object's origin, not on half its height,
-        /// and that is what stopped the character being buried. The authored model is
-        /// placed with its feet at the object's pivot, and a capsule's bottom sits at
-        /// <c>pivot + center.y - height/2</c> — so a centre of 0.9 put the bottom at
-        /// the pivot, the pivot on the ground, and the feet 0.9 m under it. A centre
-        /// of zero puts the bottom 0.9 m below the pivot instead, which is what the
-        /// real game does: its officer stands with a pivot at 1.08 and foot bones at
-        /// 0.195, a gap of exactly half the capsule.
+        /// Skips anything that would land on another street, which is what
+        /// keeps lamps out of junctions.
         /// </summary>
+        private static int LineStreets(
+            Transform parent,
+            Measurements sizes,
+            string stem,
+            float spacing,
+            float setback,
+            float targetHeight)
+        {
+            Vector3 native = sizes.Of(stem);
+            if (native.y <= 0.01f)
+            {
+                return 0;
+            }
+
+            float scale = targetHeight / native.y;
+            Rect[] roads = StreetAreas();
+            int placed = 0;
+
+            foreach (Street street in Streets)
+            {
+                float length = street.To - street.From;
+                int slots = Mathf.FloorToInt(length / spacing);
+                if (slots < 1)
+                {
+                    continue;
+                }
+
+                float offset = street.Width * 0.5f + setback;
+                for (int slot = 1; slot <= slots; slot++)
+                {
+                    float along = street.From
+                        + length * slot / (slots + 1f);
+                    for (int side = -1; side <= 1; side += 2)
+                    {
+                        Vector3 at = street.Horizontal
+                            ? new Vector3(
+                                along,
+                                0f,
+                                street.FixedCoordinate + offset * side)
+                            : new Vector3(
+                                street.FixedCoordinate + offset * side,
+                                0f,
+                                along);
+
+                        var footing = new Rect(
+                            at.x - 0.8f,
+                            at.z - 0.8f,
+                            1.6f,
+                            1.6f);
+                        if (at.x < MapMinX + 1f
+                            || at.z < MapMinZ + 1f
+                            || at.x > MapMaxX - 1f
+                            || at.z > MapMaxZ - 1f
+                            || Overlaps(footing, roads))
+                        {
+                            continue;
+                        }
+
+                        GameObject piece = Instantiate(
+                            stem,
+                            EnvironmentDirectory,
+                            parent,
+                            at,
+                            Quaternion.Euler(0f, slot * 37f % 360f, 0f),
+                            Vector3.one * scale,
+                            $"{stem} {street.Name} {slot}{side}");
+                        if (piece == null)
+                        {
+                            return placed;
+                        }
+
+                        placed++;
+                    }
+                }
+            }
+
+            return placed;
+        }
+
+        private static bool Overlaps(Rect area, Rect[] others)
+        {
+            foreach (Rect other in others)
+            {
+                if (area.Overlaps(other))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static void BuildPlayer(
             Transform root,
             MatchRuntimeState match)
