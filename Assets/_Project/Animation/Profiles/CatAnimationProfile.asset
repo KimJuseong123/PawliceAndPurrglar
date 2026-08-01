@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8af9b7b58a2148e08e31d04d7c5b02f9, type: 3}
+  m_Name: CatAnimationProfile
+  character: 3
+  rigType: 1
+  animatorController: {fileID: 0}
+  idleClip: {fileID: 0}
+  walkClip: {fileID: 0}
+  runClip: {fileID: 0}
+  commandClip: {fileID: 0}
+  winClip: {fileID: 0}
+  loseClip: {fileID: 0}
+  speedParameter: Speed
+  walkThreshold: 0.12
+  runThreshold: 0.62
+  transitionDuration: 0.12
+  applyRootMotion: 0
+  allowProceduralFallback: 1
+  genericSkeletonSignature: 

@@ -1,0 +1,350 @@
+# 1차 통합 구현 결과 재감사 및 핵심 기능 완성 요청
+
+현재 `19_INTEGRATION_IMPLEMENTATION_AUDIT.md`에는 Windows용 1차 Vertical Slice 구현 결과가 기록되어 있다.
+
+현재 구현을 삭제하거나 처음부터 다시 만들지 말고, 기존 작업을 유지하면서 통합 개발 명세와의 차이를 정확히 조사하고 다음 단계 기능을 보완하라.
+
+기준 문서:
+
+* `경찰과_도둑_게임_통합_개발_명세서.md`
+* `19_INTEGRATION_IMPLEMENTATION_AUDIT.md`
+
+## 1. 현재 결과에 대한 판단 기준
+
+현재 Windows 빌드는 다음 기능의 기반 구현으로 간주한다.
+
+* 4칸 Tool Slot 데이터
+* 1~4 퀵슬롯 선택
+* 차징 투척 입력
+* E/G 입력 분리
+* Shift+1~4 동물 명령 디버그 입력
+* 필수 명령 문자열 매칭
+* MockTranscript 기반 V키 명령
+* 일부 Network RPC
+
+이를 전체 통합 버전 완료로 간주하지 않는다.
+
+특히 다음 항목은 아직 완료되지 않은 것으로 취급하고 실제 코드를 조사한다.
+
+* 실제 물리와 일치하는 투척 궤적
+* 차징 게이지 및 착지 마커
+* 직접 적중과 바닥 범위 효과
+* 동물 유인 아이템
+* 실제 마이크 녹음
+* STT 및 LLM 연결
+* 사용자와 동물 말풍선
+* 동물 감정·상태 아이콘
+* 필수 명령 8개의 실제 월드 행동
+* 인벤토리와 컨테이너
+* 미니맵과 경보
+* Asset Registry
+* 기존 Renderer, Rig, HUD 검증 실패
+
+## 2. 전체 기능 상태표 작성
+
+코드를 수정하기 전에 통합 명세의 모든 기능을 다음 표로 정리한다.
+
+| 기능 | 상태 | 관련 파일·클래스 | Scene·Prefab 연결 | Windows 검증 | WebGL 검증 | 문제 | 다음 작업 |
+| -- | -- | --------- | --------------- | ---------- | -------- | -- | ----- |
+
+상태는 다음 값만 사용한다.
+
+```text
+NOT_FOUND
+CODE_ONLY
+DISCONNECTED
+PARTIAL
+EDITOR_ONLY
+BUILD_TEST_REQUIRED
+WORKING
+BROKEN
+```
+
+다음 항목을 빠뜨리지 않는다.
+
+* 입력
+* 퀵슬롯 UI와 데이터
+* 인벤토리
+* 컨테이너
+* E/G 상호작용
+* 차징 투척
+* 직접 적중
+* 착지 범위 효과
+* 음성 UI
+* 마이크
+* STT
+* 명령 매칭
+* Command Validator
+* 필수 명령 8개
+* 일반 명령 오해
+* 사용자 말풍선
+* 동물 말풍선
+* 감정 아이콘
+* 동물 AI 행동
+* 미니맵
+* 경보
+* 은신
+* 문
+* 창문
+* 사다리
+* Asset Registry
+* 캐릭터 Renderer
+* Rig 및 Animator
+* 건물 Renderer
+* WebGL
+
+## 3. 변경 파일 보고
+
+현재까지 수정 또는 생성된 파일을 다음과 같이 모두 기록한다.
+
+| 파일 | 생성/수정 | 역할 | Scene/Prefab 연결 | 테스트 |
+| -- | ----- | -- | --------------- | --- |
+
+새 Manager를 추가하기 전에 기존 유사 클래스와 중복되는지 조사한다.
+
+## 4. 기존 검증 실패 분류
+
+현재 EditMode 7개와 PlayMode 12개 실패를 각각 조사한다.
+
+각 실패에 대해 다음을 기록한다.
+
+```text
+테스트 이름
+실패 메시지
+관련 Scene 또는 Prefab
+실제 플레이 영향
+BLOCKER / HIGH / MEDIUM / LOW
+수정 대상
+```
+
+다음을 우선 수정한다.
+
+1. 역할별 Player Renderer 누락
+2. HUD 설정 불일치
+3. 현재 플레이 Scene에서 사용하는 건물 Renderer 누락
+4. 강아지·고양이·도둑 Limb Driver 누락
+5. Missing Reference 및 Missing Script
+
+테스트를 통과시키기 위해 검증 조건을 제거하거나 테스트 범위를 임의로 축소하지 않는다.
+
+오래된 테스트라고 판단할 경우 실제 에셋 구조가 변경됐다는 증거와 대체 테스트를 먼저 제시한다.
+
+## 5. 차징 투척 완성
+
+현재 cosmetic preview와 단순 4m~12m 거리 계산을 실제 물리 기반 투척으로 변경한다.
+
+요구사항:
+
+* 차징 게이지
+* 최소·최대 차징
+* 포물선 예상 궤적
+* 예상 착지 마커
+* 장애물 충돌 반영
+* 예상 계산과 실제 Rigidbody 투척이 동일한 계산 사용
+* 사람, 강아지, 고양이 직접 적중
+* 바닥 착지 이벤트
+* 착지 범위 효과
+* 동일 충돌 중복 처리 방지
+
+다음 흐름을 사용한다.
+
+```text
+ThrowChargeController
+→ ThrowTrajectorySolver
+→ Preview
+→ Launch Velocity
+→ Rigidbody Throw
+→ DirectHit / LandingEffect
+```
+
+예상 궤적과 실제 궤적의 허용 오차를 PlayMode 테스트로 검증한다.
+
+## 6. 아이템 유인 효과
+
+아이템은 다음 기준으로 처리한다.
+
+```text
+effectTargets
+activationTypes
+effects
+radius
+duration
+strength
+```
+
+최소 테스트 아이템:
+
+* 뼈다귀: 강아지 유인
+* 참치캔: 고양이 유인
+* 고무닭: 강아지 혼란
+* 깡통 또는 병: 사람 경직 및 소음 발생
+
+직접 맞은 경우와 바닥에 던진 경우를 구분한다.
+
+추격 중인 강아지의 반대 방향에 뼈다귀를 던졌을 때, 설정된 유혹 점수가 추격 집중도보다 높으면 강아지가 추격을 중단하고 뼈다귀 위치로 이동해야 한다.
+
+## 7. Mock 음성 흐름 가시화
+
+실제 API 연결 전에도 다음 흐름이 화면에서 보여야 한다.
+
+```text
+V키
+→ Recording UI
+→ MockTranscript
+→ 사용자 말풍선
+→ CoreCommandMatcher
+→ Command Validator
+→ 동물 해석 말풍선
+→ 실제 동물 행동
+→ 감정 아이콘
+→ 성공 또는 실패 피드백
+```
+
+필수 UI 상태:
+
+```text
+Idle
+Recording
+Transcribing
+Interpreting
+CommandAccepted
+CommandConfused
+Failed
+```
+
+사용자 위에는 인식 문장을 표시한다.
+
+동물 위에는 실제로 실행할 해석을 표시한다.
+
+대상 또는 이동 경로가 없으면 임의 행동하지 말고 실패 이유를 표시한다.
+
+## 8. 필수 명령 8개 행동 테스트
+
+문자열 매칭 테스트만으로 완료 판단하지 않는다.
+
+각 명령에 대해 실제 월드 행동 PlayMode 테스트를 추가한다.
+
+### 강아지
+
+* `DOG_SCENT_TRACK`
+* `DOG_GUARD`
+* `DOG_CHASE`
+* `DOG_BITE`
+
+### 고양이
+
+* `CAT_CLIMB_ROOF`
+* `CAT_SCRATCH`
+* `CAT_SCREAM`
+* `CAT_FIND_HIDEOUT`
+
+각 테스트는 다음을 확인한다.
+
+```text
+명령 매칭
+대상 또는 위치 해석
+AnimalCommandRouter 전달
+상태 전환
+NavMesh 또는 행동 수행
+성공 또는 실패 피드백
+```
+
+`CAT_SCREAM`은 실제로 강아지의 집중도 또는 냄새 추적 상태를 변경해야 한다.
+
+## 9. 감정·상태 아이콘
+
+동물 머리 위에 다음 상태를 표시한다.
+
+```text
+COMMAND_RECEIVED
+CONFUSED
+TRACKING
+GUARDING
+CHASING
+DISTRACTED
+HEARD_NOISE
+FOUND_TARGET
+ATTACKING
+STUNNED
+SEARCHING_HIDEOUT
+```
+
+우선순위:
+
+```text
+STUNNED
+> ATTACKING
+> CONFUSED
+> FOUND_TARGET
+> CHASING
+> DISTRACTED
+> COMMAND_RECEIVED
+> IDLE
+```
+
+일시 아이콘과 상태 유지 아이콘을 구분한다.
+
+## 10. 실제 음성은 별도 Adapter로 연결
+
+Mock 경로를 유지한 상태에서 다음 인터페이스를 확인하거나 추가한다.
+
+```text
+IVoicePlatformAdapter
+ISpeechToTextService
+ILLMCommandService
+```
+
+구현 분리:
+
+```text
+MockVoiceAdapter
+StandaloneVoiceAdapter
+WebGLVoiceAdapter
+```
+
+WebGL 구현에서는 다음을 검증한다.
+
+* 브라우저 마이크 권한
+* HTTPS
+* getUserMedia
+* Unity JavaScript Bridge
+* 오디오 데이터 전달
+* STT 백엔드 요청
+* CORS
+* API 키 비노출
+* 실패와 타임아웃
+
+## 11. 이번 작업의 우선 범위
+
+이번 단계에서는 다음 순서로 진행한다.
+
+1. 전체 기능 상태표와 변경 파일 목록
+2. BLOCKER급 Renderer·HUD·Reference 문제 수정
+3. 차징 투척의 실제 궤적과 UI
+4. 직접 적중과 동물 유인
+5. Mock 음성 말풍선과 상태 UI
+6. 필수 명령 8개 실제 행동 검증
+7. 감정 아이콘
+8. Windows 빌드 및 테스트
+
+인벤토리 전체, 미니맵, 문 따기, 창문, 사다리, 실제 WebGL STT는 위 기능이 안정화된 다음 단계로 남길 수 있다.
+
+## 12. 완료 보고 형식
+
+다음 내용을 포함해 결과를 보고한다.
+
+1. 전체 기능 상태표
+2. 수정·생성 파일 목록
+3. Scene 및 Prefab 연결
+4. 해결한 BLOCKER
+5. 투척 테스트 결과
+6. 명령 8개 행동 테스트 결과
+7. 말풍선과 아이콘 확인 방법
+8. 남은 Mock 기능
+9. 남은 실제 API 기능
+10. Windows 빌드 경로
+11. 테스트 전체 결과
+12. 수동 플레이 테스트 절차
+13. 다음 단계 우선순위
+
+완료라고 표시한 기능은 실행 화면에서 확인할 수 있어야 한다.
