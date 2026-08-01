@@ -371,6 +371,12 @@ namespace PawsAndLoot.Integration.Network
             // same trigger while following replicated positions.
             interiorState?.SetAuthority(IsServer);
 
+            // Same reason as the interior: a client running its own sentence
+            // teleports the thief on its screen only, and its clock drifts from
+            // the host's.
+            GetComponent<PawsAndLoot.Gameplay.Arrest.ThiefJailState>()
+                ?.SetAuthority(IsServer);
+
             // The animal's own presenter decides faces from events the host
             // raises, so on a client it would either say nothing or disagree
             // with what the host sent. Turning it off leaves exactly one writer.

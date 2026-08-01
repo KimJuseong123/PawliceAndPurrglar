@@ -61,8 +61,54 @@ namespace PawsAndLoot.Match
         /// </summary>
         public int ArrestCount => _arbiter.ArrestCount;
 
+        /// <summary>
+        /// Whether this machine gets to decide. Clients are told.
+        ///
+        /// Left true by default so a single-player editor scene and every test
+        /// keeps working untouched; the network layer turns it off on the
+        /// client the same way it does for interiors and the jail.
+        /// </summary>
+        public bool HasAuthority { get; private set; } = true;
+
+        public void SetAuthority(bool hasAuthority)
+        {
+            HasAuthority = hasAuthority;
+        }
+
+        /// <summary>
+        /// Takes the host's verdict as final.
+        ///
+        /// Goes through the same arbiter the local path uses, so everything
+        /// downstream — the ending, the result screen, the rematch — sees one
+        /// kind of decided match rather than two.
+        /// </summary>
+        public bool AdoptDecidedResult(MatchResult result)
+        {
+            if (_arbiter.HasResult)
+            {
+                return false;
+            }
+
+            _arbiter.Adopt(result);
+            GameLogger.Info(
+                GameLogCategory.Match,
+                $"Match result received from host: {result.Winner} / "
+                + $"{result.Reason}.",
+                this);
+            ResultDecided?.Invoke(result);
+            return true;
+        }
+
         public bool EvaluatePendingRequests()
         {
+            // A client that works the result out for itself will eventually
+            // disagree with the host, and did: its arrest count stalls because
+            // the release that re-arms the next catch is a host-side timer.
+            if (!HasAuthority)
+            {
+                return false;
+            }
+
             if (!_arbiter.TryResolve(
                     thiefWallet.SoldAmount,
                     thiefWallet.TargetAmount,

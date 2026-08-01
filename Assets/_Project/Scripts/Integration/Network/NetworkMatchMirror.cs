@@ -33,16 +33,83 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
 
+        /// <summary>
+        /// The decided result, sent rather than recomputed.
+        ///
+        /// Both machines used to work this out for themselves and happened to
+        /// agree, because one arrest ended the match and the arrest itself
+        /// replicates. With three arrests they stopped agreeing: the client
+        /// counts catches from replicated arrest progress but the release that
+        /// re-arms the next one is a host-side timer, so its count stalls and
+        /// the match never ends on its screen. The thief was told NO MATCH
+        /// RESULT while the host showed a winner.
+        ///
+        /// Two machines independently reaching the same verdict is not a rule
+        /// this project makes anywhere else, and this is why.
+        /// </summary>
+        /// <summary>
+        /// Whether a result exists at all, kept separate from the winner.
+        ///
+        /// <see cref="MatchWinner"/> has no "nobody" and Police is zero, so a
+        /// freshly spawned variable reads as a police victory. A client would
+        /// have adopted one the instant it connected.
+        /// </summary>
+        private readonly NetworkVariable<bool> _resultDecided =
+            new(
+                false,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<int> _resultWinner =
+            new(
+                (int)MatchWinner.Police,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<int> _resultReason =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<int> _resultSoldAmount =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<float> _resultRemainingSeconds =
+            new(
+                0f,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
         [SerializeField]
         private MatchRuntimeState matchRuntime;
+
+        [SerializeField]
+        private MatchResultEvaluator evaluator;
+
+        private bool _appliedRemoteResult;
 
         public MatchState ReplicatedState => (MatchState)_state.Value;
         public float ReplicatedRemainingSeconds => _remainingSeconds.Value;
         public float ReplicatedCountdownSeconds => _countdownSeconds.Value;
 
-        public void Configure(MatchRuntimeState runtime)
+        public bool HasReplicatedResult => _resultDecided.Value;
+
+        public MatchResult ReplicatedResult => new(
+            (MatchWinner)_resultWinner.Value,
+            (MatchEndReason)_resultReason.Value,
+            _resultSoldAmount.Value,
+            _resultRemainingSeconds.Value);
+
+        public void Configure(
+            MatchRuntimeState runtime,
+            MatchResultEvaluator configuredEvaluator = null)
         {
             matchRuntime = runtime;
+            evaluator = configuredEvaluator;
         }
 
         private void Awake()
@@ -68,6 +135,13 @@ namespace PawsAndLoot.Integration.Network
             // A client must not simulate the match at all, otherwise two clocks
             // drift apart and the two screens disagree.
             matchRuntime.SetRemoteControlled(!IsServer);
+
+            if (evaluator == null)
+            {
+                evaluator = FindFirstObjectByType<MatchResultEvaluator>();
+            }
+
+            evaluator?.SetAuthority(IsServer);
         }
 
         private void Update()
@@ -84,6 +158,7 @@ namespace PawsAndLoot.Integration.Network
                     matchRuntime.RemainingMatchSeconds;
                 _countdownSeconds.Value =
                     matchRuntime.ReadyCountdownRemainingSeconds;
+                PublishResult();
                 return;
             }
 
@@ -91,6 +166,40 @@ namespace PawsAndLoot.Integration.Network
                 (MatchState)_state.Value,
                 _remainingSeconds.Value,
                 _countdownSeconds.Value);
+            ApplyRemoteResult();
+        }
+        private void PublishResult()
+        {
+            if (evaluator == null || !evaluator.HasResult)
+            {
+                return;
+            }
+
+            MatchResult result = evaluator.CurrentResult;
+            _resultDecided.Value = true;
+            _resultWinner.Value = (int)result.Winner;
+            _resultReason.Value = (int)result.Reason;
+            _resultSoldAmount.Value = result.SoldAmount;
+            _resultRemainingSeconds.Value = result.RemainingSeconds;
+        }
+
+        /// <summary>
+        /// Hands the host's verdict to the client's own evaluator, which then
+        /// runs the same ending it would have run for a locally decided match.
+        /// Reusing that path means the result screen, the rematch and the sound
+        /// all keep one route rather than gaining a networked special case.
+        /// </summary>
+        private void ApplyRemoteResult()
+        {
+            if (_appliedRemoteResult
+                || evaluator == null
+                || !HasReplicatedResult)
+            {
+                return;
+            }
+
+            _appliedRemoteResult = true;
+            evaluator.AdoptDecidedResult(ReplicatedResult);
         }
     }
 }

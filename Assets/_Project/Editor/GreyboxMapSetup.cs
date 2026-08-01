@@ -1452,7 +1452,9 @@ namespace PawsAndLoot.Editor
             syncObject.AddComponent<Unity.Netcode.NetworkObject>();
             NetworkMatchMirror mirror =
                 syncObject.AddComponent<NetworkMatchMirror>();
-            mirror.Configure(matchRuntime);
+            mirror.Configure(
+                matchRuntime,
+                matchRuntime.GetComponent<MatchResultEvaluator>());
 
             var bridgeObject = new GameObject("Network Input Bridge");
             bridgeObject.transform.SetParent(parent);

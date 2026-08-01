@@ -111,6 +111,24 @@ namespace PawsAndLoot.Match
             return false;
         }
 
+        /// <summary>
+        /// Stores a verdict decided elsewhere, for a client mirroring the host.
+        /// Latches exactly like a locally decided one so a late local request
+        /// cannot overwrite it.
+        /// </summary>
+        public void Adopt(MatchResult result)
+        {
+            if (HasResult)
+            {
+                return;
+            }
+
+            CurrentResult = result;
+            HasResult = true;
+            _saleCheckRequested = false;
+            _timeoutRequested = false;
+        }
+
         public void Reset()
         {
             ArrestCount = 0;
