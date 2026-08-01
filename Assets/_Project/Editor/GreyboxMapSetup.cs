@@ -171,6 +171,11 @@ namespace PawsAndLoot.Editor
         /// The cat stays a little under the dog so the two silhouettes are still
         /// distinguishable at a glance.
         /// </summary>
+        private const string ExpressionIconDirectory =
+            "Assets/_Project/Art/Icons";
+        public const string ExpressionAnchorName = "Expression";
+        private const float ExpressionIconHeight = 0.34f;
+        private const float ExpressionDisplaySeconds = 1.6f;
         private const float AuthoredDogHeight = 1.36f;
         private const float AuthoredCatHeight = 1.2f;
 
@@ -1234,6 +1239,8 @@ namespace PawsAndLoot.Editor
                         PawsAndLoot.Animation.
                             CompanionProceduralAnimator>();
                 hop.Configure(agent, visualRoot, legs);
+
+                BuildExpressionIcons(agentObject, agent, kind);
 
                 if (legs.LegCount == 0)
                 {
@@ -2806,6 +2813,114 @@ namespace PawsAndLoot.Editor
                         .FindFirstObjectByType<
                             LocalPlayerRoleSelector>());
             return followCamera;
+        }
+
+        /// <summary>
+        /// The four icons an animal can put above its head, and the anchor that
+        /// carries them.
+        ///
+        /// All four are built now and switched at runtime rather than spawned
+        /// on demand: they fire several times a second during a chase and the
+        /// first of each would otherwise arrive a frame late.
+        ///
+        /// The anchor is excluded from static batching by name. A baked
+        /// renderer does not move when its transform does, and this one turns to
+        /// face the camera every frame — batched, the icons would sit frozen at
+        /// whatever angle the bake caught them.
+        /// </summary>
+        private static void BuildExpressionIcons(
+            GameObject agentObject,
+            CompanionAgent agent,
+            CompanionKind kind)
+        {
+            float headHeight = kind == CompanionKind.Dog
+                ? AuthoredDogHeight
+                : AuthoredCatHeight;
+
+            var anchorObject = new GameObject(ExpressionAnchorName);
+            anchorObject.transform.SetParent(agentObject.transform, false);
+            anchorObject.transform.localPosition =
+                new Vector3(0f, headHeight + 0.45f, 0f);
+
+            (CompanionExpression Face, string Stem)[] icons =
+            {
+                (CompanionExpression.Alert, "icon_alert"),
+                (CompanionExpression.Thinking, "icon_thinking"),
+                (CompanionExpression.Happy, "icon_happy"),
+                (CompanionExpression.Confused, "icon_confused")
+            };
+
+            CompanionExpressionView view =
+                agentObject.AddComponent<CompanionExpressionView>();
+
+            foreach ((CompanionExpression face, string stem) in icons)
+            {
+                var slot = new GameObject(face.ToString());
+                slot.transform.SetParent(anchorObject.transform, false);
+
+                string path = $"{ExpressionIconDirectory}/{stem}.fbx";
+                var source =
+                    AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (source == null)
+                {
+                    Debug.LogWarning(
+                        $"[ART-016] Expression icon missing: {path}. "
+                        + $"{face} will show nothing.");
+                    continue;
+                }
+
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(
+                    source,
+                    slot.transform);
+                instance.transform.localPosition = Vector3.zero;
+                instance.transform.localRotation = Quaternion.identity;
+                FitIconToHeight(instance, ExpressionIconHeight);
+                StripColliders(instance);
+                view.Register(face, slot);
+            }
+
+            view.Configure(anchorObject.transform, ExpressionDisplaySeconds);
+
+            CompanionExpressionPresenter presenter =
+                agentObject.AddComponent<CompanionExpressionPresenter>();
+            presenter.Configure(agent, view);
+        }
+
+        /// <summary>
+        /// Scales an icon so its tallest side is the requested height,
+        /// regardless of what the model was authored at. The four came from
+        /// different sources and a heart three times the size of a light bulb
+        /// reads as a bug.
+        /// </summary>
+        private static void FitIconToHeight(GameObject instance, float height)
+        {
+            if (!PlaceholderModelLibrary.TryGetWorldBounds(
+                    instance,
+                    out Bounds bounds)
+                || bounds.size.y <= 0.0001f)
+            {
+                return;
+            }
+
+            float scale = height / bounds.size.y;
+            instance.transform.localScale = Vector3.one * scale;
+
+            if (PlaceholderModelLibrary.TryGetWorldBounds(
+                    instance,
+                    out Bounds scaled))
+            {
+                instance.transform.position +=
+                    instance.transform.parent.position - scaled.center;
+            }
+        }
+
+        private static void StripColliders(GameObject instance)
+        {
+            foreach (Collider collider in
+                instance.GetComponentsInChildren<Collider>(true))
+            {
+                UnityEngine.Object.DestroyImmediate(collider);
+            }
         }
 
         private static void ConfigureArrestSystem(
