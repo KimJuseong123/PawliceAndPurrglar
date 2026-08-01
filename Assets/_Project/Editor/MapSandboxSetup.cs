@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Camera;
@@ -41,6 +42,15 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Art/Environment";
         private const string MaterialDirectory =
             "Assets/_Project/Materials/Greybox";
+        private const string GeneratedDirectory =
+            "Assets/_Project/Art/Generated";
+
+        /// <summary>
+        /// How far the road tile has to turn before its markings run the way an
+        /// east-west street does. One number, because the whole grid hangs off
+        /// it and getting it wrong turns every centre line sideways.
+        /// </summary>
+        private const float RoadTileYaw = 0f;
 
         // The town, exactly as the real one measures itself.
         private const float MapMinX = -28f;
@@ -311,22 +321,36 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static Rect[] StreetAreas()
         {
-            var areas = new List<Rect>();
+            return StreetLanes().Select(lane => lane.Area).ToArray();
+        }
+
+        /// <summary>
+        /// Each street as a rectangle plus the way it runs.
+        ///
+        /// The road tile has its kerbs, its centre line and its crossing
+        /// stripes painted into its texture, so which way round it lies is the
+        /// difference between a road and a grey smear.
+        /// </summary>
+        private static (Rect Area, bool Horizontal)[] StreetLanes()
+        {
+            var areas = new List<(Rect, bool)>();
             foreach (Street street in Streets)
             {
                 float length = street.To - street.From;
                 float half = street.Width * 0.5f;
-                areas.Add(street.Horizontal
-                    ? new Rect(
-                        street.From,
-                        street.FixedCoordinate - half,
-                        length,
-                        street.Width)
-                    : new Rect(
-                        street.FixedCoordinate - half,
-                        street.From,
-                        street.Width,
-                        length));
+                areas.Add((
+                    street.Horizontal
+                        ? new Rect(
+                            street.From,
+                            street.FixedCoordinate - half,
+                            length,
+                            street.Width)
+                        : new Rect(
+                            street.FixedCoordinate - half,
+                            street.From,
+                            street.Width,
+                            length),
+                    street.Horizontal));
             }
 
             return areas.ToArray();
@@ -1138,9 +1162,13 @@ namespace PawsAndLoot.Editor
                 footprint.x / Mathf.Max(0.01f, size.x),
                 footprint.y / Mathf.Max(0.01f, size.z));
 
+            // Looked for in both folders. The plaza is a fountain, filed with
+            // the environment, and asking only the buildings folder for it
+            // returned nothing: the town got a grey box where its square
+            // should be and no warning that anything was wrong.
             GameObject instance = Instantiate(
                 stem,
-                BuildingDirectory,
+                DirectoryOf(stem),
                 parent,
                 centre,
                 Quaternion.Euler(0f, yaw, 0f),
@@ -1166,6 +1194,10 @@ namespace PawsAndLoot.Editor
             Vector3 local = bounds.size / Mathf.Max(0.0001f, scale);
             box.center = new Vector3(0f, local.y * 0.5f, 0f);
             box.size = local;
+
+            // Nothing in this town moves, so all of it can be batched. The
+            // buildings were the only thing that never said so.
+            MakeBatchable(instance);
             return true;
         }
 
@@ -1203,7 +1235,7 @@ namespace PawsAndLoot.Editor
                 surface,
                 sizes,
                 "env_road_tile",
-                StreetAreas(),
+                StreetLanes(),
                 4f,
                 0.05f);
 
@@ -1229,7 +1261,7 @@ namespace PawsAndLoot.Editor
                 surface,
                 sizes,
                 "env_grass_tile",
-                greens.ToArray(),
+                greens.Select(green => (green, true)).ToArray(),
                 10f,
                 0.02f);
 
@@ -1263,69 +1295,69 @@ namespace PawsAndLoot.Editor
         /// about the requested metres across.
         /// </summary>
         /// <summary>
-        /// The material each environment model is given.
+        /// Marks an object and everything under it as batchable.
         ///
-        /// They import white: the textures live in `.fbm` folders that no
-        /// longer match the renamed files, so the material asks for a map it
-        /// cannot find and draws nothing. Painting them here is what the town
-        /// already does for its trees, bins and roads, and a flat colour reads
-        /// better at this size than a photograph would.
+        /// The flag is per object, not per hierarchy, and these models arrive
+        /// as hundreds of parts under one root. Setting it on the root alone
+        /// left two thousand of the two thousand three hundred renderers in the
+        /// scene outside batching, which is most of the reason the town was
+        /// slow even after its triangle count came down.
         /// </summary>
-        private static Material PaintFor(string stem)
+        private static void MakeBatchable(GameObject root)
         {
-            string name = stem switch
+            foreach (Transform part in
+                root.GetComponentsInChildren<Transform>(true))
             {
-                "env_tree" => "Sandbox_Leaves",
-                "env_street_lamp" => "Sandbox_LampPost",
-                "env_grass_tile" => "Sandbox_Grass",
-                "env_road_tile" => "Road",
-                "env_fountain_plaza" => "Sandbox_Plaza",
-                _ => null
-            };
-            return name == null
-                ? null
-                : Load<Material>($"{MaterialDirectory}/{name}.mat");
-        }
-
-        private static void Paint(GameObject instance, string stem)
-        {
-            Material paint = PaintFor(stem);
-            if (paint == null)
-            {
-                return;
-            }
-
-            foreach (Renderer piece in
-                instance.GetComponentsInChildren<Renderer>(true))
-            {
-                var materials = new Material[
-                    Mathf.Max(1, piece.sharedMaterials.Length)];
-                for (int index = 0; index < materials.Length; index++)
-                {
-                    materials[index] = paint;
-                }
-
-                piece.sharedMaterials = materials;
+                GameObjectUtility.SetStaticEditorFlags(
+                    part.gameObject,
+                    StaticEditorFlags.BatchingStatic);
             }
         }
 
+        /// <summary>
+        /// Which folder a model was filed under.
+        /// </summary>
+        private static string DirectoryOf(string stem)
+        {
+            return stem.StartsWith("env_")
+                ? EnvironmentDirectory
+                : BuildingDirectory;
+        }
+
+        /// <summary>
+        /// Covers a rectangle with flat tiles cut from a model's top face.
+        ///
+        /// The road tile and the grass tile are scanned meshes: a hundred
+        /// thousand triangles each, for a square of ground. A hundred and
+        /// forty-four of them came to fourteen million triangles, two thirds of
+        /// everything the scene drew, and the town crawled.
+        ///
+        /// Nothing of them is visible except the face pointing at the sky, so
+        /// that is all that is laid: two triangles carrying the same corner of
+        /// the same atlas. The markings — kerbs, centre line, crossing stripes
+        /// — are painted into the texture, so they survive intact.
+        /// </summary>
         private static int LayTiles(
             Transform parent,
             Measurements sizes,
             string stem,
-            Rect[] areas,
+            (Rect Area, bool Horizontal)[] areas,
             float tileMetres,
             float height)
         {
-            Vector3 native = sizes.Of(stem);
-            if (native.x <= 0.01f || native.z <= 0.01f)
+            Mesh face = TopFaceOf(stem, out Material paint);
+            if (face == null)
             {
                 return 0;
             }
 
             int laid = 0;
-            foreach (Rect area in areas)
+            foreach ((Rect area, bool horizontal) in areas)
             {
+                // The tile's markings run one way, so it is turned to match the
+                // street rather than dropped down square.
+                float yaw = horizontal ? RoadTileYaw : RoadTileYaw + 90f;
+
                 int columns = Mathf.Max(
                     1,
                     Mathf.RoundToInt(area.width / tileMetres));
@@ -1334,47 +1366,154 @@ namespace PawsAndLoot.Editor
                     Mathf.RoundToInt(area.height / tileMetres));
                 float stepX = area.width / columns;
                 float stepZ = area.height / rows;
-                var scale = new Vector3(
-                    stepX / native.x,
-                    height / Mathf.Max(0.01f, native.y),
-                    stepZ / native.z);
+                Vector3 scale = horizontal
+                    ? new Vector3(stepX, 1f, stepZ)
+                    : new Vector3(stepZ, 1f, stepX);
 
                 for (int column = 0; column < columns; column++)
                 {
                     for (int row = 0; row < rows; row++)
                     {
-                        GameObject tile = Instantiate(
-                            stem,
-                            EnvironmentDirectory,
-                            parent,
+                        var tile = new GameObject($"{stem} {column}_{row}");
+                        tile.transform.SetParent(parent, false);
+                        tile.transform.SetPositionAndRotation(
                             new Vector3(
                                 area.xMin + stepX * (column + 0.5f),
-                                0f,
+                                height,
                                 area.yMin + stepZ * (row + 0.5f)),
-                            Quaternion.identity,
-                            scale,
-                            $"{stem} {column}_{row}");
-                        if (tile == null)
-                        {
-                            return laid;
-                        }
+                            Quaternion.Euler(0f, yaw, 0f));
+                        tile.transform.localScale = scale;
+                        tile.AddComponent<MeshFilter>().sharedMesh = face;
 
-                        foreach (Collider collider in
-                            tile.GetComponentsInChildren<Collider>(true))
-                        {
-                            Object.DestroyImmediate(collider);
-                        }
+                        var renderer = tile.AddComponent<MeshRenderer>();
+                        renderer.sharedMaterial = paint;
 
-                        Paint(tile, stem);
-                        GameObjectUtility.SetStaticEditorFlags(
-                            tile,
-                            StaticEditorFlags.BatchingStatic);
+                        // Ground cannot shadow itself and there is nothing
+                        // under it, so it is taken out of the shadow pass.
+                        renderer.shadowCastingMode =
+                            UnityEngine.Rendering.ShadowCastingMode.Off;
+
+                        MakeBatchable(tile);
                         laid++;
                     }
                 }
             }
 
             return laid;
+        }
+
+        /// <summary>
+        /// A one-metre quad wearing the part of a model's texture that its top
+        /// face wears.
+        ///
+        /// The corner of the atlas is measured off the model rather than
+        /// guessed: the upward-pointing triangles are found, and the box their
+        /// texture coordinates fall in is the box the quad gets. Guessing would
+        /// have put the brick wall on the road, since the atlas holds every
+        /// side of the tile at once.
+        ///
+        /// Saved as an asset, because a mesh built in memory is gone the moment
+        /// the scene is saved — the same trap that made the roads invisible
+        /// when their material was built the same way.
+        /// </summary>
+        private static Mesh TopFaceOf(string stem, out Material paint)
+        {
+            paint = Load<Material>(
+                $"Assets/_Project/Materials/Models/{stem}.mat");
+            string path = $"{GeneratedDirectory}/{stem}_face.asset";
+            var cached = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            if (cached != null && paint != null)
+            {
+                return cached;
+            }
+
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(
+                $"{DirectoryOf(stem)}/{stem}.fbx");
+            if (model == null)
+            {
+                Debug.LogWarning($"[SANDBOX] '{stem}.fbx' not found.");
+                return null;
+            }
+
+            var uvs = new Bounds();
+            bool started = false;
+            foreach (MeshFilter filter in
+                model.GetComponentsInChildren<MeshFilter>(true))
+            {
+                Mesh mesh = filter.sharedMesh;
+                if (mesh == null || mesh.uv.Length == 0)
+                {
+                    continue;
+                }
+
+                Vector3[] normals = mesh.normals;
+                Vector2[] coordinates = mesh.uv;
+
+                foreach (int index in mesh.triangles)
+                {
+                    if (index >= normals.Length
+                        || index >= coordinates.Length
+                        || normals[index].y < 0.9f)
+                    {
+                        continue;
+                    }
+
+                    var point = (Vector3)coordinates[index];
+                    if (started)
+                    {
+                        uvs.Encapsulate(point);
+                    }
+                    else
+                    {
+                        uvs = new Bounds(point, Vector3.zero);
+                        started = true;
+                    }
+                }
+
+                if (paint == null)
+                {
+                    var renderer = filter.GetComponent<MeshRenderer>();
+                    paint = renderer == null ? null : renderer.sharedMaterial;
+                }
+            }
+
+            if (!started)
+            {
+                Debug.LogWarning(
+                    $"[SANDBOX] '{stem}' has no upward face to cut a tile "
+                    + "from.");
+                return null;
+            }
+
+            var quad = new Mesh
+            {
+                name = $"{stem}_face",
+                vertices = new[]
+                {
+                    new Vector3(-0.5f, 0f, -0.5f),
+                    new Vector3(-0.5f, 0f, 0.5f),
+                    new Vector3(0.5f, 0f, 0.5f),
+                    new Vector3(0.5f, 0f, -0.5f)
+                },
+                uv = new[]
+                {
+                    new Vector2(uvs.min.x, uvs.min.y),
+                    new Vector2(uvs.min.x, uvs.max.y),
+                    new Vector2(uvs.max.x, uvs.max.y),
+                    new Vector2(uvs.max.x, uvs.min.y)
+                },
+                normals = new[]
+                {
+                    Vector3.up, Vector3.up, Vector3.up, Vector3.up
+                },
+                triangles = new[] { 0, 1, 2, 0, 2, 3 }
+            };
+            quad.RecalculateBounds();
+
+            Directory.CreateDirectory(GeneratedDirectory);
+            AssetDatabase.CreateAsset(quad, path);
+            AssetDatabase.SaveAssets();
+            return quad;
         }
 
         /// <summary>
@@ -1475,10 +1614,17 @@ namespace PawsAndLoot.Editor
                             Object.DestroyImmediate(collider);
                         }
 
-                        Paint(piece, stem);
-                        GameObjectUtility.SetStaticEditorFlags(
-                            piece,
-                            StaticEditorFlags.BatchingStatic);
+                        // Dense scans, all of them. Their shadows cost a
+                        // second pass over every one of those triangles and buy
+                        // very little at this size.
+                        foreach (Renderer renderer in
+                            piece.GetComponentsInChildren<Renderer>(true))
+                        {
+                            renderer.shadowCastingMode =
+                                UnityEngine.Rendering.ShadowCastingMode.Off;
+                        }
+
+                        MakeBatchable(piece);
                         placed++;
                     }
                 }
