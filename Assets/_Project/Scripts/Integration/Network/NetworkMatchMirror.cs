@@ -142,6 +142,18 @@ namespace PawsAndLoot.Integration.Network
             }
 
             evaluator?.SetAuthority(IsServer);
+
+            // Published the instant it is decided, not on the next Update.
+            //
+            // This component lives in the match scene, and deciding a winner
+            // starts that scene unloading. Waiting for the next frame is a race
+            // against the mirror's own destruction: the host would reach the
+            // result screen while the client sat in Playing forever, which is
+            // exactly the "NO MATCH RESULT" the replication was added to fix.
+            if (IsServer && evaluator != null)
+            {
+                evaluator.ResultDecided += PublishDecided;
+            }
         }
 
         private void Update()
@@ -168,6 +180,27 @@ namespace PawsAndLoot.Integration.Network
                 _countdownSeconds.Value);
             ApplyRemoteResult();
         }
+        public override void OnNetworkDespawn()
+        {
+            if (evaluator != null)
+            {
+                evaluator.ResultDecided -= PublishDecided;
+            }
+        }
+
+        private void PublishDecided(MatchResult result)
+        {
+            _resultDecided.Value = true;
+            _resultWinner.Value = (int)result.Winner;
+            _resultReason.Value = (int)result.Reason;
+            _resultSoldAmount.Value = result.SoldAmount;
+            _resultRemainingSeconds.Value = result.RemainingSeconds;
+
+            // The state goes with it. A client that has the verdict but is
+            // still told the match is Playing will not run its ending.
+            _state.Value = (int)matchRuntime.CurrentState;
+        }
+
         private void PublishResult()
         {
             if (evaluator == null || !evaluator.HasResult)

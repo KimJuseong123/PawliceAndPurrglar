@@ -290,15 +290,15 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 빌드를 두 번 띄우고 결과 JSON을 비교한다. 호스트를 1초 먼저 띄운다.
 
 ```bash
-"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby host   -netScenario full -netMatchSeconds 16
-"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby client -netScenario full -netMatchSeconds 16
+"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby host   -netScenario full -netMatchSeconds 60
+"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby client -netScenario full -netMatchSeconds 60
 ```
 
 `-netScenario` 3종:
 
 | 값 | 검증 대상 | 권장 `-netMatchSeconds` |
 |---|---|---|
-| `full` | NET-005·006·007. 획득 → 판매 연타 → 체포 → 승자 비교 | 16 |
+| `full` | NET-005·006·007. 획득 → 판매 연타 → **체포 3회** → 승자 비교 | 60 |
 | `rematch` | NET-008. 클라이언트만 재경기를 눌러 양쪽 복귀 확인 | 40 |
 | `disconnect` | NET-009. 클라이언트가 먼저 나가고 호스트 처리 1회 확인 | 20 |
 
@@ -317,6 +317,15 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 `full`은 호스트가 캐릭터를 보물·판매처·상대 옆으로 **배치**한다. 이동 경로는
 `MAP-001`이 담당하고 여기서 검증하는 것은 요청이 호스트에 도달하는지와 결과가
 클라이언트로 돌아오는지다.
+
+승리에 체포가 3회 필요하고 그 사이에 감옥 11초가 있으므로 `full`은 **60초**가
+필요하다. 16초는 체포 1회 시절의 값이고, 그대로 두면 승자가 나오지 않아
+`passed=false`가 고정된다 — 회귀가 실패하는 것이 아니라 **꺼진다.**
+
+경찰은 도둑이 감옥에 있는 동안에는 배치하지 않는다. 감옥 안의 도둑 위에 서 있으면
+출소하는 순간 즉시 잡히는데, 그건 게임이 하는 일이 아니다. 결과의
+`peakArrestCount`와 `jailSpells`가 3회까지 갔는지 보여준다 — 없으면 실패가
+"승자 없음"까지만 말하고 체포가 깨진 것인지 감옥이 안 풀린 것인지 구분되지 않는다.
 
 프로브는 경기가 `Playing`에서 벗어나면 즉시 기록한다. 승패가 정해지면 경기 씬이
 언로드되어 프로브가 사라지기 때문이다. 같은 이유로 스폰 수와 원격 제어 여부는

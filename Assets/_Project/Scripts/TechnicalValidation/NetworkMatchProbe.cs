@@ -105,6 +105,9 @@ namespace PawsAndLoot.TechnicalValidation
         private int _peakSoldAmount;
         private float _peakArrestSeconds;
         private bool _sawArrestCompleted;
+        private int _peakArrestCount;
+        private int _jailSpells;
+        private bool _wasJailed;
         private int _interactRequests;
         private bool _placedForPickup;
         private bool _placedForSale;
@@ -212,6 +215,27 @@ namespace PawsAndLoot.TechnicalValidation
                 ReadValue(args, ScenarioArgument)?.ToLowerInvariant()
                 ?? "full";
 
+            // Kept alive across the scene change.
+            //
+            // The probe used to die with the match scene, and that was fine
+            // while no run ever reached a winner. Now that three arrests end a
+            // match inside the run, the client reached the result screen and
+            // was torn down before it could write anything: its file was simply
+            // absent, which reads as a crash rather than a passing run.
+            //
+            // The guard is because Bootstrap and Game both carry one; a second
+            // copy would race the first for the same file.
+            if (_instance != null && _instance != this)
+            {
+                enabled = false;
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
+            transform.SetParent(null);
+            DontDestroyOnLoad(gameObject);
+
             string configured = ReadValue(args, SampleArgument);
             if (float.TryParse(
                     configured,
@@ -223,6 +247,58 @@ namespace PawsAndLoot.TechnicalValidation
             }
         }
 
+        private static NetworkMatchProbe _instance;
+        private MatchResultEvaluator _watchedEvaluator;
+
+        /// <summary>
+        /// Keeps a subscription on whichever evaluator is live.
+        ///
+        /// Done every frame rather than on the sample tick. Sampling runs once
+        /// a second, and on the client the window between the host's verdict
+        /// arriving and the match scene unloading is far shorter than that — so
+        /// the probe kept reporting no winner for a replication that was
+        /// working, which is worse than no check at all.
+        /// </summary>
+        private void WatchEvaluator()
+        {
+            MatchResultEvaluator evaluator =
+                FindFirstObjectByType<MatchResultEvaluator>();
+            if (evaluator == null || evaluator == _watchedEvaluator)
+            {
+                return;
+            }
+
+            if (_watchedEvaluator != null)
+            {
+                _watchedEvaluator.ResultDecided -= HandleResultDecided;
+            }
+
+            _watchedEvaluator = evaluator;
+            _watchedEvaluator.ResultDecided += HandleResultDecided;
+
+            // Already decided before this probe found it.
+            if (evaluator.HasResult)
+            {
+                HandleResultDecided(evaluator.CurrentResult);
+            }
+        }
+
+        private void HandleResultDecided(MatchResult result)
+        {
+            _decidedWinner = result.Winner.ToString();
+            _decidedReason = result.Reason.ToString();
+        }
+
+        /// <summary>
+        /// Consecutive samples with no match runtime before the match counts as
+        /// over. At the probe's sample rate this is a fraction of a second —
+        /// long enough to outlast a transient, far shorter than the delay
+        /// before the host quits.
+        /// </summary>
+        private const int RuntimeMissesForEnd = 20;
+
+        private int _runtimeMisses;
+
         private void Update()
         {
             if (_written)
@@ -231,6 +307,7 @@ namespace PawsAndLoot.TechnicalValidation
             }
 
             _elapsed += Time.unscaledDeltaTime;
+            WatchEvaluator();
             DriveScenario();
             Observe();
 
@@ -262,9 +339,18 @@ namespace PawsAndLoot.TechnicalValidation
                 FindFirstObjectByType<MatchRuntimeState>();
             if (runtime == null)
             {
-                return false;
+                // Gone, rather than not there for a frame.
+                //
+                // Treating the first miss as the end wrote the client's file
+                // seconds into the match with nothing in it: this search skips
+                // inactive objects, so a single frame where the runtime is
+                // disabled looks identical to the scene having been unloaded.
+                // Several samples in a row is the difference.
+                _runtimeMisses++;
+                return _sawPlaying && _runtimeMisses >= RuntimeMissesForEnd;
             }
 
+            _runtimeMisses = 0;
             _lastMatchState = runtime.CurrentState;
             if (runtime.CurrentState == MatchState.Playing)
             {
@@ -434,10 +520,16 @@ namespace PawsAndLoot.TechnicalValidation
                 BuyPolicePropOnHost();
             }
 
-            if (!_placedForArrest && _elapsed >= PlaceForArrestAt)
+            // The officer is kept on the thief from here on rather than put
+            // there once. One catch used to end the match; three are needed
+            // now, and between them the thief is taken to the cells and put
+            // back on the map. Driving this from the jail's own state instead
+            // of a stopwatch means the run does not silently stop testing the
+            // moment the sentence length is rebalanced.
+            if (_elapsed >= PlaceForArrestAt)
             {
                 _placedForArrest = true;
-                PlacePoliceBesideThief();
+                KeepPoliceOnFreeThief();
             }
 
             bool mashing =
@@ -674,12 +766,24 @@ namespace PawsAndLoot.TechnicalValidation
             // "the same victory decision".
             MatchResultEvaluator evaluator =
                 FindFirstObjectByType<MatchResultEvaluator>();
+
             if (evaluator != null && evaluator.HasResult)
             {
                 _decidedWinner =
                     evaluator.CurrentResult.Winner.ToString();
                 _decidedReason =
                     evaluator.CurrentResult.Reason.ToString();
+            }
+            else if (_decidedWinner == "None"
+                && MatchResultSession.TryGet(out MatchResult stored))
+            {
+                // The evaluator lives in the match scene, and on the client
+                // that scene starts unloading the moment the host's verdict is
+                // adopted — often before the next sample. The session is a
+                // static store that outlives the scene precisely so the result
+                // screen can read it, which makes it the reliable place to ask.
+                _decidedWinner = stored.Winner.ToString();
+                _decidedReason = stored.Reason.ToString();
             }
 
             int spawnedLinks = 0;
@@ -731,6 +835,30 @@ namespace PawsAndLoot.TechnicalValidation
                     _peakSoldAmount,
                     wallet.SoldAmount);
             }
+
+            // Latched during the match rather than read at the end: the match
+            // scene unloads the moment a winner exists, and everything on it
+            // reads as zero afterwards.
+            MatchResultEvaluator arrestCounter =
+                FindFirstObjectByType<MatchResultEvaluator>();
+            if (arrestCounter != null)
+            {
+                _peakArrestCount = Mathf.Max(
+                    _peakArrestCount,
+                    arrestCounter.ArrestCount);
+            }
+
+            NetworkPlayerLink thiefLink = FindLink(PlayerRole.Thief);
+            var thiefJail = thiefLink != null
+                ? thiefLink.GetComponent<ThiefJailState>()
+                : null;
+            bool jailedNow = thiefJail != null && thiefJail.IsJailed;
+            if (jailedNow && !_wasJailed)
+            {
+                _jailSpells++;
+            }
+
+            _wasJailed = jailedNow;
 
             foreach (ArrestProgressController arrest in
                 FindObjectsByType<ArrestProgressController>(
@@ -793,10 +921,25 @@ namespace PawsAndLoot.TechnicalValidation
                 zone.transform.position + new Vector3(1f, 0f, 0f));
         }
 
-        private void PlacePoliceBesideThief()
+        /// <summary>
+        /// Puts the officer within arresting distance whenever the thief is out
+        /// of the cells, so the run reaches the third catch.
+        ///
+        /// Does nothing while a sentence is being served: teleporting the
+        /// officer into the station would have them standing on a thief who
+        /// cannot be arrested, and the next catch would land the instant the
+        /// thief reappeared, which is not what the game does.
+        /// </summary>
+        private void KeepPoliceOnFreeThief()
         {
             NetworkPlayerLink thief = FindLink(PlayerRole.Thief);
             if (thief == null)
+            {
+                return;
+            }
+
+            var jail = thief.GetComponent<ThiefJailState>();
+            if (jail != null && jail.IsJailed)
             {
                 return;
             }
@@ -1203,6 +1346,11 @@ namespace PawsAndLoot.TechnicalValidation
             AppendNumber(json, "peakArrestSeconds", _peakArrestSeconds);
             AppendBool(json, "arrestCompleted", arrestCompleted);
             AppendBool(json, "sawArrestCompleted", _sawArrestCompleted);
+            // How far through the three the run actually got. Without it a
+            // failure says only "no winner" and gives no way to tell a broken
+            // arrest from a jail that never releases.
+            AppendNumber(json, "peakArrestCount", _peakArrestCount);
+            AppendNumber(json, "jailSpells", _jailSpells);
             AppendBool(
                 json,
                 "sawArrestRemoteControlled",
@@ -1293,6 +1441,14 @@ namespace PawsAndLoot.TechnicalValidation
                 ? _mode != "host" || _disconnectCount == 1
                 : _sawCarried
                     && _decidedWinner != "None"
+                    // Three catches, but only where they are counted. The
+                    // client adopts the host's verdict rather than counting for
+                    // itself, so its arrest count and jail spells are always
+                    // zero by design — judging them here would demand the
+                    // client duplicate the host's simulation, which is the very
+                    // thing that broke.
+                    && (_mode != "host"
+                        || (_peakArrestCount >= 3 && _jailSpells >= 3))
                     && _sawStun
                     // THROW-005. Both machines have to have seen the rock in
                     // hand and gone from the ground.
