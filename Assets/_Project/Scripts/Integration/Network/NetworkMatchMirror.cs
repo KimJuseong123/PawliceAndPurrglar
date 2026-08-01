@@ -47,43 +47,6 @@ namespace PawsAndLoot.Integration.Network
         /// Two machines independently reaching the same verdict is not a rule
         /// this project makes anywhere else, and this is why.
         /// </summary>
-        /// <summary>
-        /// Whether a result exists at all, kept separate from the winner.
-        ///
-        /// <see cref="MatchWinner"/> has no "nobody" and Police is zero, so a
-        /// freshly spawned variable reads as a police victory. A client would
-        /// have adopted one the instant it connected.
-        /// </summary>
-        private readonly NetworkVariable<bool> _resultDecided =
-            new(
-                false,
-                NetworkVariableReadPermission.Everyone,
-                NetworkVariableWritePermission.Server);
-
-        private readonly NetworkVariable<int> _resultWinner =
-            new(
-                (int)MatchWinner.Police,
-                NetworkVariableReadPermission.Everyone,
-                NetworkVariableWritePermission.Server);
-
-        private readonly NetworkVariable<int> _resultReason =
-            new(
-                0,
-                NetworkVariableReadPermission.Everyone,
-                NetworkVariableWritePermission.Server);
-
-        private readonly NetworkVariable<int> _resultSoldAmount =
-            new(
-                0,
-                NetworkVariableReadPermission.Everyone,
-                NetworkVariableWritePermission.Server);
-
-        private readonly NetworkVariable<float> _resultRemainingSeconds =
-            new(
-                0f,
-                NetworkVariableReadPermission.Everyone,
-                NetworkVariableWritePermission.Server);
-
         [SerializeField]
         private MatchRuntimeState matchRuntime;
 
@@ -95,14 +58,6 @@ namespace PawsAndLoot.Integration.Network
         public MatchState ReplicatedState => (MatchState)_state.Value;
         public float ReplicatedRemainingSeconds => _remainingSeconds.Value;
         public float ReplicatedCountdownSeconds => _countdownSeconds.Value;
-
-        public bool HasReplicatedResult => _resultDecided.Value;
-
-        public MatchResult ReplicatedResult => new(
-            (MatchWinner)_resultWinner.Value,
-            (MatchEndReason)_resultReason.Value,
-            _resultSoldAmount.Value,
-            _resultRemainingSeconds.Value);
 
         public void Configure(
             MatchRuntimeState runtime,
@@ -150,10 +105,7 @@ namespace PawsAndLoot.Integration.Network
             // against the mirror's own destruction: the host would reach the
             // result screen while the client sat in Playing forever, which is
             // exactly the "NO MATCH RESULT" the replication was added to fix.
-            if (IsServer && evaluator != null)
-            {
-                evaluator.ResultDecided += PublishDecided;
-            }
+
         }
 
         private void Update()
@@ -170,7 +122,6 @@ namespace PawsAndLoot.Integration.Network
                     matchRuntime.RemainingMatchSeconds;
                 _countdownSeconds.Value =
                     matchRuntime.ReadyCountdownRemainingSeconds;
-                PublishResult();
                 return;
             }
 
@@ -178,61 +129,6 @@ namespace PawsAndLoot.Integration.Network
                 (MatchState)_state.Value,
                 _remainingSeconds.Value,
                 _countdownSeconds.Value);
-            ApplyRemoteResult();
-        }
-        public override void OnNetworkDespawn()
-        {
-            if (evaluator != null)
-            {
-                evaluator.ResultDecided -= PublishDecided;
-            }
-        }
-
-        private void PublishDecided(MatchResult result)
-        {
-            _resultDecided.Value = true;
-            _resultWinner.Value = (int)result.Winner;
-            _resultReason.Value = (int)result.Reason;
-            _resultSoldAmount.Value = result.SoldAmount;
-            _resultRemainingSeconds.Value = result.RemainingSeconds;
-
-            // The state goes with it. A client that has the verdict but is
-            // still told the match is Playing will not run its ending.
-            _state.Value = (int)matchRuntime.CurrentState;
-        }
-
-        private void PublishResult()
-        {
-            if (evaluator == null || !evaluator.HasResult)
-            {
-                return;
-            }
-
-            MatchResult result = evaluator.CurrentResult;
-            _resultDecided.Value = true;
-            _resultWinner.Value = (int)result.Winner;
-            _resultReason.Value = (int)result.Reason;
-            _resultSoldAmount.Value = result.SoldAmount;
-            _resultRemainingSeconds.Value = result.RemainingSeconds;
-        }
-
-        /// <summary>
-        /// Hands the host's verdict to the client's own evaluator, which then
-        /// runs the same ending it would have run for a locally decided match.
-        /// Reusing that path means the result screen, the rematch and the sound
-        /// all keep one route rather than gaining a networked special case.
-        /// </summary>
-        private void ApplyRemoteResult()
-        {
-            if (_appliedRemoteResult
-                || evaluator == null
-                || !HasReplicatedResult)
-            {
-                return;
-            }
-
-            _appliedRemoteResult = true;
-            evaluator.AdoptDecidedResult(ReplicatedResult);
         }
     }
 }
