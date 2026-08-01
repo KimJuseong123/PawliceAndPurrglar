@@ -112,8 +112,20 @@ namespace PawsAndLoot.Editor
             public float Width { get; }
         }
 
-        private const float StreetWidth = 4f;
-        private const float AlleyWidth = 3f;
+        /// <summary>
+        /// The size of one road tile, and therefore the width of every road.
+        ///
+        /// The pieces are modular — straight, corner, T, crossroads — and they
+        /// only meet if they are laid on one lattice. Four metres because that
+        /// is what the streets already were: at six the two roads five metres
+        /// apart in the south east would have merged into one, and the plan
+        /// would have changed to suit the tiles rather than the other way
+        /// round. The alleys widen from three to four to join the grid.
+        /// </summary>
+        private const float RoadCell = 4f;
+
+        private const float StreetWidth = RoadCell;
+        private const float AlleyWidth = RoadCell;
 
         /// <summary>
         /// The street plan, read off the drawn map.
@@ -178,6 +190,20 @@ namespace PawsAndLoot.Editor
             // the map edge and left a ribbon of ground nothing could stand in.
         };
 
+        /// <summary>
+        /// A street running east to west, snapped onto the tile lattice.
+        ///
+        /// The plan was drawn in metres and the road is built from square
+        /// tiles, so the two have to agree about where a road is. Left
+        /// unsnapped, a street whose middle fell between two rows of tiles
+        /// claimed the row it leant into, and that row was somebody's front
+        /// garden: the police station, the supermarket and the square all lost
+        /// their plots to a road that was not there on the plan.
+        ///
+        /// Snapping moves a street by at most half a tile and settles the
+        /// argument in the plan's favour, since everything downstream — blocks,
+        /// buildings, lamps — is measured from these same numbers.
+        /// </summary>
         private static Street Across(
             string name,
             float z,
@@ -188,10 +214,24 @@ namespace PawsAndLoot.Editor
             return new Street(
                 name,
                 true,
-                z + MapMinZ,
-                fromX + MapMinX,
-                toX + MapMinX,
+                ToLane(z) + MapMinZ,
+                ToEdge(fromX) + MapMinX,
+                ToEdge(toX) + MapMinX,
                 width);
+        }
+
+        /// <summary>The middle of the nearest row of tiles.</summary>
+        private static float ToLane(float coordinate)
+        {
+            return Mathf.Round((coordinate - RoadCell * 0.5f) / RoadCell)
+                * RoadCell
+                + RoadCell * 0.5f;
+        }
+
+        /// <summary>The nearest join between two tiles.</summary>
+        private static float ToEdge(float coordinate)
+        {
+            return Mathf.Round(coordinate / RoadCell) * RoadCell;
         }
 
         private static Street Down(
@@ -204,9 +244,9 @@ namespace PawsAndLoot.Editor
             return new Street(
                 name,
                 false,
-                x + MapMinX,
-                fromZ + MapMinZ,
-                toZ + MapMinZ,
+                ToLane(x) + MapMinX,
+                ToEdge(fromZ) + MapMinZ,
+                ToEdge(toZ) + MapMinZ,
                 width);
         }
 
@@ -683,11 +723,8 @@ namespace PawsAndLoot.Editor
                     ? new Vector3(length, 0.04f, street.Width)
                     : new Vector3(street.Width, 0.04f, length);
 
-                // A marker only: the surface is the tile grid laid over it.
-                // Left as a slab it covered the tiles completely, which is why
-                // the road model was nowhere to be seen.
-                Slab(roads, street.Name, centre - Vector3.up * 0.02f,
-                    size, source, false);
+                // Nothing is drawn here. The road is the tile grid, and a
+                // slab under it only ever covered it up.
             }
 
             return Streets.Length;
@@ -761,18 +798,37 @@ namespace PawsAndLoot.Editor
             { "4:OneStorey", new Vector2(-5f, 0f) }
         };
 
-        private static readonly (int Block, Fill[] Contents)[] Assignments =
+        /// <summary>
+        /// What stands where, keyed by a point inside the plot.
+        ///
+        /// It used to be keyed by the block's number, and the number is not a
+        /// property of the map. Blocks are found by flooding the gaps between
+        /// roads, so moving a street by two metres to sit on the tile grid
+        /// split one plot in two and renumbered every plot after it — the
+        /// police station, the square and the supermarket all found themselves
+        /// assigned to somebody else's garden, and three of them to a plot too
+        /// small to stand in.
+        ///
+        /// A point inside the plot survives that. The same mistake, and the
+        /// same fix, as picking a landmark with FindFirstObjectByType.
+        /// </summary>
+        private static readonly (Vector2 Inside, Fill[] Contents)[]
+            Assignments =
         {
-            (2, new[] { Fill.TwoStorey }),
-            (3, new[] { Fill.TwoStorey, Fill.OneStorey }),
-            (4, new[] { Fill.OneStorey, Fill.Supermarket }),
-            (5, new[] { Fill.PoliceStation }),
-            (6, new[] { Fill.Jewellery }),
-            (7, new[] { Fill.TwoStorey, Fill.OneStorey }),
-            (8, new[] { Fill.OneStorey }),
-            (9, new[] { Fill.Bookstore, Fill.TwoStorey, Fill.OneStorey }),
-            (11, new[] { Fill.Plaza }),
-            (12, new[] { Fill.Supermarket })
+            (new Vector2(-6f, 44f), new[] { Fill.TwoStorey }),
+            (new Vector2(30f, 44f),
+                new[] { Fill.TwoStorey, Fill.OneStorey }),
+            (new Vector2(-16f, 20f),
+                new[] { Fill.OneStorey, Fill.Supermarket }),
+            (new Vector2(6f, 20f), new[] { Fill.PoliceStation }),
+            (new Vector2(22f, 20f), new[] { Fill.Jewellery }),
+            (new Vector2(42f, 20f),
+                new[] { Fill.TwoStorey, Fill.OneStorey }),
+            (new Vector2(-20f, -10f), new[] { Fill.OneStorey }),
+            (new Vector2(10f, -2f), new[] { Fill.Plaza }),
+            (new Vector2(42f, -2f), new[] { Fill.Supermarket }),
+            (new Vector2(22f, -14f),
+                new[] { Fill.Bookstore, Fill.TwoStorey, Fill.OneStorey })
         };
 
         /// <summary>
@@ -948,15 +1004,20 @@ namespace PawsAndLoot.Editor
             const float Verge = 2.5f;
             var placements = new List<Placement>();
             var taken = new List<Rect>();
-            Rect[] roads = StreetAreas();
+            Rect[] roads = RoadCellAreas();
 
-            foreach ((int number, Fill[] contents) in Assignments)
+            foreach ((Vector2 inside, Fill[] contents) in Assignments)
             {
-                if (number < 1 || number > blocks.Length)
+                int number = System.Array.FindIndex(
+                    blocks,
+                    candidate => candidate.Contains(inside)) + 1;
+                if (number < 1)
                 {
                     Debug.LogWarning(
-                        $"[SANDBOX] Block {number} does not exist. The street "
-                        + "plan changed after the assignments were written.");
+                        $"[SANDBOX] No plot contains {inside}, so "
+                        + $"{string.Join(", ", contents)} has nowhere to go. "
+                        + "The street plan moved out from under the "
+                        + "assignments.");
                     continue;
                 }
 
@@ -1222,6 +1283,10 @@ namespace PawsAndLoot.Editor
         /// A lamp every fifteen metres reads as a town; a lamp wherever there
         /// happened to be room reads as a field.
         /// </summary>
+        /// <summary>
+        /// Lays the road surface, the lawns and the things that stand beside a
+        /// street.
+        /// </summary>
         private static int BuildDressing(
             Transform parent,
             Measurements sizes,
@@ -1229,41 +1294,17 @@ namespace PawsAndLoot.Editor
         {
             Transform surface = Child("Surface", parent);
             Transform dressing = Child("Dressing", parent);
-            int count = 0;
+            int count = LayRoads(surface);
 
-            count += LayTiles(
+            count += LayGrass(
                 surface,
-                sizes,
-                "env_road_tile",
-                StreetLanes(),
-                4f,
-                0.05f);
-
-            // Grass inside the blocks, pulled in so it does not creep over the
-            // kerb. Blocks that are all building get very little of it, which
-            // is correct.
-            var greens = new List<Rect>();
-            foreach (Rect block in blocks)
-            {
-                if (block.width < 8f || block.height < 8f)
-                {
-                    continue;
-                }
-
-                greens.Add(new Rect(
-                    block.xMin + 1f,
-                    block.yMin + 1f,
-                    block.width - 2f,
-                    block.height - 2f));
-            }
-
-            count += LayTiles(
-                surface,
-                sizes,
-                "env_grass_tile",
-                greens.Select(green => (green, true)).ToArray(),
-                10f,
-                0.02f);
+                blocks
+                    .Select(block => new Rect(
+                        block.xMin + 0.5f,
+                        block.yMin + 0.5f,
+                        block.width - 1f,
+                        block.height - 1f))
+                    .ToArray());
 
             Rect[] built = LayOut(blocks)
                 .Select(placement =>
@@ -1290,10 +1331,6 @@ namespace PawsAndLoot.Editor
             return count;
         }
 
-        /// <summary>
-        /// Covers a rectangle with copies of a tile, sized so each copy is
-        /// about the requested metres across.
-        /// </summary>
         /// <summary>
         /// Marks an object and everything under it as batchable.
         ///
@@ -1325,77 +1362,79 @@ namespace PawsAndLoot.Editor
         }
 
         /// <summary>
-        /// Covers a rectangle with flat tiles cut from a model's top face.
-        ///
-        /// The road tile and the grass tile are scanned meshes: a hundred
-        /// thousand triangles each, for a square of ground. A hundred and
-        /// forty-four of them came to fourteen million triangles, two thirds of
-        /// everything the scene drew, and the town crawled.
-        ///
-        /// Nothing of them is visible except the face pointing at the sky, so
-        /// that is all that is laid: two triangles carrying the same corner of
-        /// the same atlas. The markings — kerbs, centre line, crossing stripes
-        /// — are painted into the texture, so they survive intact.
+        /// Which way a road tile opens, before it is turned.
         /// </summary>
-        private static int LayTiles(
-            Transform parent,
-            Measurements sizes,
-            string stem,
-            (Rect Area, bool Horizontal)[] areas,
-            float tileMetres,
-            float height)
+        [System.Flags]
+        private enum Ways
         {
-            Mesh face = TopFaceOf(stem, out Material paint);
-            if (face == null)
-            {
-                return 0;
-            }
+            None = 0,
+            North = 1,
+            East = 2,
+            South = 4,
+            West = 8
+        }
 
+        /// <summary>
+        /// Every road piece and the sides its carriageway runs out of.
+        ///
+        /// Measured, not guessed: `Report Road Pieces` photographs each one
+        /// from above and `Capture Model Sheet` puts them side by side. The
+        /// file names do not say — "road tile" is the crossing, "road section"
+        /// is the plain straight, "street intersection" is the T — and laying
+        /// them by name put a pedestrian crossing on every metre of every
+        /// street in the town.
+        /// </summary>
+        private static readonly (string Stem, Ways Open)[] RoadPieces =
+        {
+            ("env_road_crossroad",
+                Ways.North | Ways.East | Ways.South | Ways.West),
+            ("env_road_intersection", Ways.North | Ways.East | Ways.West),
+            ("env_road_corner", Ways.West | Ways.North),
+            ("env_road_section", Ways.North | Ways.South),
+            ("env_road_curve", Ways.North)
+        };
+
+        private const string CrossingStem = "env_road_tile";
+
+        /// <summary>
+        /// Lays the roads as a grid of modular tiles.
+        ///
+        /// Each cell asks its four neighbours whether they are road too, and
+        /// the answer picks the piece and the quarter turn: four neighbours is
+        /// a crossroads, three a T with its closed side facing the gap, two
+        /// opposite a straight, two adjacent a corner, one a dead end.
+        ///
+        /// Crossings are not part of that. They are laid afterwards, one to a
+        /// street, on a straight cell near where the street begins — a town
+        /// where every tile is a crossing is a car park.
+        /// </summary>
+        private static int LayRoads(Transform parent)
+        {
+            HashSet<Vector2Int> cells = RoadCells();
+            HashSet<Vector2Int> crossings = Crossings(cells);
             int laid = 0;
-            foreach ((Rect area, bool horizontal) in areas)
+
+            foreach (Vector2Int cell in cells)
             {
-                // The tile's markings run one way, so it is turned to match the
-                // street rather than dropped down square.
-                float yaw = horizontal ? RoadTileYaw : RoadTileYaw + 90f;
+                Ways open = Ways.None;
+                if (cells.Contains(cell + Vector2Int.up)) open |= Ways.North;
+                if (cells.Contains(cell + Vector2Int.right)) open |= Ways.East;
+                if (cells.Contains(cell + Vector2Int.down)) open |= Ways.South;
+                if (cells.Contains(cell + Vector2Int.left)) open |= Ways.West;
 
-                int columns = Mathf.Max(
-                    1,
-                    Mathf.RoundToInt(area.width / tileMetres));
-                int rows = Mathf.Max(
-                    1,
-                    Mathf.RoundToInt(area.height / tileMetres));
-                float stepX = area.width / columns;
-                float stepZ = area.height / rows;
-                Vector3 scale = horizontal
-                    ? new Vector3(stepX, 1f, stepZ)
-                    : new Vector3(stepZ, 1f, stepX);
-
-                for (int column = 0; column < columns; column++)
+                if (!Choose(open, out string stem, out float yaw))
                 {
-                    for (int row = 0; row < rows; row++)
-                    {
-                        var tile = new GameObject($"{stem} {column}_{row}");
-                        tile.transform.SetParent(parent, false);
-                        tile.transform.SetPositionAndRotation(
-                            new Vector3(
-                                area.xMin + stepX * (column + 0.5f),
-                                height,
-                                area.yMin + stepZ * (row + 0.5f)),
-                            Quaternion.Euler(0f, yaw, 0f));
-                        tile.transform.localScale = scale;
-                        tile.AddComponent<MeshFilter>().sharedMesh = face;
+                    continue;
+                }
 
-                        var renderer = tile.AddComponent<MeshRenderer>();
-                        renderer.sharedMaterial = paint;
+                if (crossings.Contains(cell))
+                {
+                    stem = CrossingStem;
+                }
 
-                        // Ground cannot shadow itself and there is nothing
-                        // under it, so it is taken out of the shadow pass.
-                        renderer.shadowCastingMode =
-                            UnityEngine.Rendering.ShadowCastingMode.Off;
-
-                        MakeBatchable(tile);
-                        laid++;
-                    }
+                if (Lay(parent, stem, cell, yaw, 0.02f))
+                {
+                    laid++;
                 }
             }
 
@@ -1403,117 +1442,257 @@ namespace PawsAndLoot.Editor
         }
 
         /// <summary>
-        /// A one-metre quad wearing the part of a model's texture that its top
-        /// face wears.
-        ///
-        /// The corner of the atlas is measured off the model rather than
-        /// guessed: the upward-pointing triangles are found, and the box their
-        /// texture coordinates fall in is the box the quad gets. Guessing would
-        /// have put the brick wall on the road, since the atlas holds every
-        /// side of the tile at once.
-        ///
-        /// Saved as an asset, because a mesh built in memory is gone the moment
-        /// the scene is saved — the same trap that made the roads invisible
-        /// when their material was built the same way.
+        /// The piece and quarter turn that opens exactly the given sides.
         /// </summary>
-        private static Mesh TopFaceOf(string stem, out Material paint)
+        private static bool Choose(Ways open, out string stem, out float yaw)
         {
-            paint = Load<Material>(
-                $"Assets/_Project/Materials/Models/{stem}.mat");
-            string path = $"{GeneratedDirectory}/{stem}_face.asset";
-            var cached = AssetDatabase.LoadAssetAtPath<Mesh>(path);
-            if (cached != null && paint != null)
+            foreach ((string candidate, Ways sides) in RoadPieces)
             {
-                return cached;
-            }
-
-            var model = AssetDatabase.LoadAssetAtPath<GameObject>(
-                $"{DirectoryOf(stem)}/{stem}.fbx");
-            if (model == null)
-            {
-                Debug.LogWarning($"[SANDBOX] '{stem}.fbx' not found.");
-                return null;
-            }
-
-            var uvs = new Bounds();
-            bool started = false;
-            foreach (MeshFilter filter in
-                model.GetComponentsInChildren<MeshFilter>(true))
-            {
-                Mesh mesh = filter.sharedMesh;
-                if (mesh == null || mesh.uv.Length == 0)
+                for (int quarter = 0; quarter < 4; quarter++)
                 {
-                    continue;
-                }
-
-                Vector3[] normals = mesh.normals;
-                Vector2[] coordinates = mesh.uv;
-
-                foreach (int index in mesh.triangles)
-                {
-                    if (index >= normals.Length
-                        || index >= coordinates.Length
-                        || normals[index].y < 0.9f)
+                    if (Turn(sides, quarter) != open)
                     {
                         continue;
                     }
 
-                    var point = (Vector3)coordinates[index];
-                    if (started)
-                    {
-                        uvs.Encapsulate(point);
-                    }
-                    else
-                    {
-                        uvs = new Bounds(point, Vector3.zero);
-                        started = true;
-                    }
-                }
-
-                if (paint == null)
-                {
-                    var renderer = filter.GetComponent<MeshRenderer>();
-                    paint = renderer == null ? null : renderer.sharedMaterial;
+                    stem = candidate;
+                    yaw = quarter * 90f;
+                    return true;
                 }
             }
 
-            if (!started)
+            // An isolated cell has nothing to join, so it gets a plain piece
+            // rather than nothing at all.
+            stem = "env_road_section";
+            yaw = 0f;
+            return open == Ways.None;
+        }
+
+        /// <summary>
+        /// The sides a piece opens after a quarter turn clockwise.
+        ///
+        /// A yaw of ninety degrees carries north to east, so the flags move the
+        /// same way round.
+        /// </summary>
+        private static Ways Turn(Ways sides, int quarters)
+        {
+            Ways turned = Ways.None;
+            var order = new[] { Ways.North, Ways.East, Ways.South, Ways.West };
+            for (int index = 0; index < 4; index++)
             {
-                Debug.LogWarning(
-                    $"[SANDBOX] '{stem}' has no upward face to cut a tile "
-                    + "from.");
-                return null;
+                if ((sides & order[index]) != 0)
+                {
+                    turned |= order[(index + quarters) % 4];
+                }
             }
 
-            var quad = new Mesh
-            {
-                name = $"{stem}_face",
-                vertices = new[]
-                {
-                    new Vector3(-0.5f, 0f, -0.5f),
-                    new Vector3(-0.5f, 0f, 0.5f),
-                    new Vector3(0.5f, 0f, 0.5f),
-                    new Vector3(0.5f, 0f, -0.5f)
-                },
-                uv = new[]
-                {
-                    new Vector2(uvs.min.x, uvs.min.y),
-                    new Vector2(uvs.min.x, uvs.max.y),
-                    new Vector2(uvs.max.x, uvs.max.y),
-                    new Vector2(uvs.max.x, uvs.min.y)
-                },
-                normals = new[]
-                {
-                    Vector3.up, Vector3.up, Vector3.up, Vector3.up
-                },
-                triangles = new[] { 0, 1, 2, 0, 2, 3 }
-            };
-            quad.RecalculateBounds();
+            return turned;
+        }
 
-            Directory.CreateDirectory(GeneratedDirectory);
-            AssetDatabase.CreateAsset(quad, path);
-            AssetDatabase.SaveAssets();
-            return quad;
+        /// <summary>
+        /// One crossing per street, on a cell where the road runs straight.
+        ///
+        /// Chosen a quarter of the way along rather than at the end, so it
+        /// falls where somebody would actually walk across rather than in the
+        /// middle of a junction.
+        /// </summary>
+        private static HashSet<Vector2Int> Crossings(HashSet<Vector2Int> cells)
+        {
+            var chosen = new HashSet<Vector2Int>();
+            foreach (Street street in Streets)
+            {
+                float length = street.To - street.From;
+                for (int attempt = 0; attempt < 6; attempt++)
+                {
+                    float along = street.From + length * (0.25f + attempt * 0.1f);
+                    Vector3 at = street.Horizontal
+                        ? new Vector3(along, 0f, street.FixedCoordinate)
+                        : new Vector3(street.FixedCoordinate, 0f, along);
+                    Vector2Int cell = CellAt(at.x, at.z);
+
+                    bool northSouth =
+                        cells.Contains(cell + Vector2Int.up)
+                        && cells.Contains(cell + Vector2Int.down)
+                        && !cells.Contains(cell + Vector2Int.left)
+                        && !cells.Contains(cell + Vector2Int.right);
+                    bool eastWest =
+                        cells.Contains(cell + Vector2Int.left)
+                        && cells.Contains(cell + Vector2Int.right)
+                        && !cells.Contains(cell + Vector2Int.up)
+                        && !cells.Contains(cell + Vector2Int.down);
+
+                    if (cells.Contains(cell)
+                        && (northSouth || eastWest)
+                        && chosen.Add(cell))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return chosen;
+        }
+
+        private static Vector2Int CellAt(float x, float z)
+        {
+            return new Vector2Int(
+                Mathf.FloorToInt((x - MapMinX) / RoadCell),
+                Mathf.FloorToInt((z - MapMinZ) / RoadCell));
+        }
+
+        private static Vector3 CentreOf(Vector2Int cell)
+        {
+            return new Vector3(
+                MapMinX + (cell.x + 0.5f) * RoadCell,
+                0f,
+                MapMinZ + (cell.y + 0.5f) * RoadCell);
+        }
+
+        /// <summary>
+        /// Every lattice cell whose middle falls on a street.
+        ///
+        /// The cells are what the town is actually built from, so this is also
+        /// what the buildings are kept off — asking the nominal rectangles
+        /// instead would let a house stand on a tile that the grid rounded into
+        /// the road.
+        /// </summary>
+        private static HashSet<Vector2Int> RoadCells()
+        {
+            var cells = new HashSet<Vector2Int>();
+            foreach (Rect area in StreetAreas())
+            {
+                Vector2Int from = CellAt(area.xMin, area.yMin);
+                Vector2Int to = CellAt(area.xMax, area.yMax);
+                for (int x = from.x; x <= to.x; x++)
+                {
+                    for (int z = from.y; z <= to.y; z++)
+                    {
+                        var cell = new Vector2Int(x, z);
+                        Vector3 centre = CentreOf(cell);
+                        if (area.Contains(new Vector2(centre.x, centre.z)))
+                        {
+                            cells.Add(cell);
+                        }
+                    }
+                }
+            }
+
+            return cells;
+        }
+
+        private static Rect[] RoadCellAreas()
+        {
+            return RoadCells()
+                .Select(cell =>
+                {
+                    Vector3 centre = CentreOf(cell);
+                    return new Rect(
+                        centre.x - RoadCell * 0.5f,
+                        centre.z - RoadCell * 0.5f,
+                        RoadCell,
+                        RoadCell);
+                })
+                .ToArray();
+        }
+
+        private static bool Lay(
+            Transform parent,
+            string stem,
+            Vector2Int cell,
+            float yaw,
+            float height)
+        {
+            Mesh face = FlatTileLibrary.TileFor(
+                stem,
+                EnvironmentDirectory,
+                out Material paint);
+            if (face == null || paint == null)
+            {
+                return false;
+            }
+
+            var tile = new GameObject($"{stem} {cell.x}_{cell.y}");
+            tile.transform.SetParent(parent, false);
+            Vector3 centre = CentreOf(cell);
+            tile.transform.SetPositionAndRotation(
+                new Vector3(centre.x, height, centre.z),
+                Quaternion.Euler(0f, yaw, 0f));
+            tile.transform.localScale =
+                new Vector3(RoadCell, 1f, RoadCell);
+            tile.AddComponent<MeshFilter>().sharedMesh = face;
+
+            var renderer = tile.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = paint;
+
+            // Ground cannot shadow itself and there is nothing under it.
+            renderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            MakeBatchable(tile);
+            return true;
+        }
+
+        /// <summary>
+        /// Fills the blocks with lawn, avoiding the roads.
+        /// </summary>
+        private static int LayGrass(Transform parent, Rect[] blocks)
+        {
+            Mesh face = FlatTileLibrary.TileFor(
+                "env_grass_tile",
+                EnvironmentDirectory,
+                out Material paint);
+            if (face == null || paint == null)
+            {
+                return 0;
+            }
+
+            HashSet<Vector2Int> roads = RoadCells();
+            var lawn = new HashSet<Vector2Int>();
+            foreach (Rect block in blocks)
+            {
+                Vector2Int from = CellAt(block.xMin, block.yMin);
+                Vector2Int to = CellAt(block.xMax, block.yMax);
+                for (int x = from.x; x <= to.x; x++)
+                {
+                    for (int z = from.y; z <= to.y; z++)
+                    {
+                        var cell = new Vector2Int(x, z);
+                        if (roads.Contains(cell))
+                        {
+                            continue;
+                        }
+
+                        Vector3 centre = CentreOf(cell);
+                        if (block.Contains(new Vector2(centre.x, centre.z)))
+                        {
+                            lawn.Add(cell);
+                        }
+                    }
+                }
+            }
+
+            int laid = 0;
+            foreach (Vector2Int cell in lawn)
+            {
+                var tile = new GameObject($"env_grass_tile {cell.x}_{cell.y}");
+                tile.transform.SetParent(parent, false);
+                Vector3 centre = CentreOf(cell);
+                tile.transform.position =
+                    new Vector3(centre.x, 0.01f, centre.z);
+                tile.transform.localScale =
+                    new Vector3(RoadCell, 1f, RoadCell);
+                tile.AddComponent<MeshFilter>().sharedMesh = face;
+
+                var renderer = tile.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = paint;
+                renderer.shadowCastingMode =
+                    UnityEngine.Rendering.ShadowCastingMode.Off;
+
+                MakeBatchable(tile);
+                laid++;
+            }
+
+            return laid;
         }
 
         /// <summary>
@@ -1539,7 +1718,7 @@ namespace PawsAndLoot.Editor
             }
 
             float scale = targetHeight / native.y;
-            Rect[] roads = StreetAreas();
+            Rect[] roads = RoadCellAreas();
             int placed = 0;
 
             foreach (Street street in Streets)
