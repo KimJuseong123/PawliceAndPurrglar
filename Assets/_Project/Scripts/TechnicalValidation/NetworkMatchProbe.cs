@@ -9,6 +9,7 @@ using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Integration.Network;
 using PawsAndLoot.Logging;
+using PawsAndLoot.Companions;
 using PawsAndLoot.Match;
 using UnityEngine;
 
@@ -106,6 +107,11 @@ namespace PawsAndLoot.TechnicalValidation
         private float _peakArrestSeconds;
         private bool _sawArrestCompleted;
         private int _peakArrestCount;
+        private float _dogTravelled;
+        private float _catTravelled;
+        private Vector3 _lastDogPosition;
+        private Vector3 _lastCatPosition;
+        private bool _hasAnimalPositions;
         private int _jailSpells;
         private bool _wasJailed;
         private int _interactRequests;
@@ -839,6 +845,42 @@ namespace PawsAndLoot.TechnicalValidation
             // Latched during the match rather than read at the end: the match
             // scene unloads the moment a winner exists, and everything on it
             // reads as zero afterwards.
+            foreach (CompanionAgent animal in
+                FindObjectsByType<CompanionAgent>(
+                    FindObjectsSortMode.None))
+            {
+                Vector3 now = animal.transform.position;
+                bool isDog = animal.CompanionKind == CompanionKind.Dog;
+                Vector3 last = isDog
+                    ? _lastDogPosition
+                    : _lastCatPosition;
+                if (_hasAnimalPositions)
+                {
+                    float step = Vector3.Distance(
+                        new Vector3(now.x, 0f, now.z),
+                        new Vector3(last.x, 0f, last.z));
+                    if (isDog)
+                    {
+                        _dogTravelled += step;
+                    }
+                    else
+                    {
+                        _catTravelled += step;
+                    }
+                }
+
+                if (isDog)
+                {
+                    _lastDogPosition = now;
+                }
+                else
+                {
+                    _lastCatPosition = now;
+                }
+            }
+
+            _hasAnimalPositions = true;
+
             MatchResultEvaluator arrestCounter =
                 FindFirstObjectByType<MatchResultEvaluator>();
             if (arrestCounter != null)
@@ -1057,13 +1099,20 @@ namespace PawsAndLoot.TechnicalValidation
                     PawsAndLoot.Gameplay.Items.ThrowablePickup>(
                     FindObjectsSortMode.None))
             {
-                // One the thief may actually take. The scene now holds
-                // police-only props too, and the enumeration order is arbitrary:
-                // taking the first available one handed the thief a glue trap it
-                // was refused, so the throw leg silently had nothing to throw.
+                // A rock, named rather than inferred.
+                //
+                // This asked for "anything the thief may take" and that was
+                // already once wrong: police-only props were being handed over
+                // and refused. It went wrong a second way when the thief gained
+                // props of their own — a shelf banana passes the same filter,
+                // and a banana is placed rather than thrown, so the throw leg
+                // silently stopped throwing anything and the stun it exists to
+                // prove disappeared.
+                //
+                // The step is called ArmThiefWithRock. It should ask for a rock.
                 if (!candidate.IsAvailable
-                    || (candidate.IsRoleRestricted
-                        && candidate.RestrictedTo != PlayerRole.Thief))
+                    || candidate.Kind
+                        != PawsAndLoot.Gameplay.Items.ThrowableKind.Rock)
                 {
                     continue;
                 }
@@ -1351,6 +1400,13 @@ namespace PawsAndLoot.TechnicalValidation
             // arrest from a jail that never releases.
             AppendNumber(json, "peakArrestCount", _peakArrestCount);
             AppendNumber(json, "jailSpells", _jailSpells);
+            // How far each animal moved on this machine. The animals were never
+            // replicated: both sides ran their own copy, and since commands only
+            // reach the host, a client's animal followed its owner and did
+            // nothing else. Both files showing movement is what says the client
+            // is being shown the host's animal rather than guessing at one.
+            AppendNumber(json, "dogTravelled", _dogTravelled);
+            AppendNumber(json, "catTravelled", _catTravelled);
             AppendBool(
                 json,
                 "sawArrestRemoteControlled",
@@ -1449,6 +1505,12 @@ namespace PawsAndLoot.TechnicalValidation
                     // thing that broke.
                     && (_mode != "host"
                         || (_peakArrestCount >= 3 && _jailSpells >= 3))
+                    // Both animals moved on this machine. Judged on both sides:
+                    // the host has to walk them and the client has to be shown
+                    // it, and checking only the host passes the case where the
+                    // animals work and nobody else sees them.
+                    && _dogTravelled > 1f
+                    && _catTravelled > 1f
                     && _sawStun
                     // THROW-005. Both machines have to have seen the rock in
                     // hand and gone from the ground.

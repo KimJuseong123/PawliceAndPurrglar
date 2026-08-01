@@ -48,6 +48,44 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableWritePermission.Server);
 
         /// <summary>
+        /// Where this player's animal is, and how fast it is walking.
+        ///
+        /// The animals were never replicated at all. Both machines ran their own
+        /// copy of the agent, and because commands only ever reach the host, the
+        /// client's animal followed its owner and did nothing else — no orders,
+        /// no lures, no scouting. It looked like a pet that had stopped
+        /// listening, and only came to light when a prop made somebody watch it.
+        ///
+        /// Host simulates and the client is shown the result, exactly like the
+        /// players. Two simulations of the same object driven by different
+        /// inputs cannot agree, and this one was not even trying to.
+        /// </summary>
+        private readonly NetworkVariable<Vector3> _companionPosition =
+            new(
+                Vector3.zero,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<float> _companionYaw =
+            new(
+                0f,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        /// <summary>
+        /// Metres per second, sent rather than measured.
+        ///
+        /// A replicated position arrives in steps and sits still between
+        /// packets, so a client measuring frame-to-frame movement reads mostly
+        /// zero and the legs stop. The host knows the real speed.
+        /// </summary>
+        private readonly NetworkVariable<float> _companionSpeed =
+            new(
+                0f,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        /// <summary>
         /// What this player's animal is showing above its head.
         ///
         /// The animals are scene objects rather than spawned network objects,
@@ -139,6 +177,11 @@ namespace PawsAndLoot.Integration.Network
 
         [SerializeField]
         private PawsAndLoot.Animation.CompanionExpressionView companionFace;
+
+        [SerializeField]
+        private PawsAndLoot.Companions.CompanionAgent companionAgent;
+
+        private Vector3 _companionLastPosition;
 
         private int _lastCompanionFaceSequence;
         private int _companionFaceSequence;
@@ -347,6 +390,10 @@ namespace PawsAndLoot.Integration.Network
                 configuredCompanionFace = null)
         {
             companionFace = configuredCompanionFace;
+            companionAgent = configuredCompanionFace != null
+                ? configuredCompanionFace
+                    .GetComponent<PawsAndLoot.Companions.CompanionAgent>()
+                : null;
             interiorState = configuredInteriorState;
             policeWallet = configuredPoliceWallet;
             legAnimator = configuredLegAnimator;
@@ -380,6 +427,14 @@ namespace PawsAndLoot.Integration.Network
             // The animal's own presenter decides faces from events the host
             // raises, so on a client it would either say nothing or disagree
             // with what the host sent. Turning it off leaves exactly one writer.
+            // The client stops simulating its own animal. Left running, it
+            // walks after its owner on that screen while the host walks it
+            // somewhere else, and the two never agree.
+            if (!IsServer && companionAgent != null)
+            {
+                companionAgent.enabled = false;
+            }
+
             if (!IsServer && companionFace != null)
             {
                 var presenter = companionFace
@@ -712,6 +767,59 @@ namespace PawsAndLoot.Integration.Network
         /// one decision about which face to show and the client cannot disagree
         /// with the host about it.
         /// </summary>
+        private void PublishCompanionTransform()
+        {
+            if (companionAgent == null)
+            {
+                return;
+            }
+
+            Transform animal = companionAgent.transform;
+            Vector3 position = animal.position;
+            _companionPosition.Value = position;
+            _companionYaw.Value = animal.eulerAngles.y;
+            _companionSpeed.Value = Time.deltaTime > 0f
+                ? Vector3.Distance(
+                    new Vector3(position.x, 0f, position.z),
+                    new Vector3(
+                        _companionLastPosition.x,
+                        0f,
+                        _companionLastPosition.z))
+                    / Time.deltaTime
+                : 0f;
+            _companionLastPosition = position;
+        }
+
+        /// <summary>
+        /// Places the client's animal where the host says it is.
+        ///
+        /// Eased rather than snapped, because the packets arrive far apart
+        /// compared with the frame rate and a snapped animal reads as a
+        /// stutter. The legs are driven from the sent speed rather than from
+        /// this movement, which is mostly zero between packets.
+        /// </summary>
+        private void ApplyCompanionTransform(float deltaTime)
+        {
+            if (companionAgent == null)
+            {
+                return;
+            }
+
+            Transform animal = companionAgent.transform;
+            animal.position = Vector3.MoveTowards(
+                animal.position,
+                _companionPosition.Value,
+                Mathf.Max(0.5f, _companionSpeed.Value * 2f) * deltaTime);
+            animal.rotation = Quaternion.Slerp(
+                animal.rotation,
+                Quaternion.Euler(0f, _companionYaw.Value, 0f),
+                Mathf.Clamp01(deltaTime * 10f));
+
+            companionAgent
+                .GetComponent<PawsAndLoot.Animation.CompanionLegAnimator>()
+                ?.SetExternalSpeed(_companionSpeed.Value);
+        }
+
         private void PublishCompanionFace()
         {
             if (companionFace == null)
@@ -786,11 +894,13 @@ namespace PawsAndLoot.Integration.Network
                             / motor.EffectiveMoveSpeed)
                         : 0f;
                 PublishCompanionFace();
+                PublishCompanionTransform();
                 PublishGameplayState();
                 return;
             }
 
             ApplyCompanionFace();
+            ApplyCompanionTransform(Time.deltaTime);
             ApplyReplicatedTransform(Time.deltaTime);
             ApplyReplicatedGameplayState();
         }
