@@ -1440,7 +1440,8 @@ namespace PawsAndLoot.Editor
                     player.GetComponent<PoliceWallet>(),
                     player.GetComponent<
                         PawsAndLoot.Animation.CompanionLegAnimator>(),
-                    player.GetComponent<PlayerInteriorState>());
+                    player.GetComponent<PlayerInteriorState>(),
+                    FindCompanionFace(binding.Identity));
                 links.Add(link);
             }
 
@@ -2828,6 +2829,33 @@ namespace PawsAndLoot.Editor
         /// face the camera every frame — batched, the icons would sit frozen at
         /// whatever angle the bake caught them.
         /// </summary>
+        /// <summary>
+        /// The expression view belonging to this player's animal.
+        ///
+        /// The animals are not network objects, so their state has no way home
+        /// on its own — it rides on the owner's link. Found by owner rather
+        /// than by index because the two animals are otherwise identical
+        /// components and picking the first one would give the thief the dog's
+        /// face.
+        /// </summary>
+        private static PawsAndLoot.Animation.CompanionExpressionView
+            FindCompanionFace(PlayerRoleIdentity owner)
+        {
+            foreach (CompanionAgent agent in
+                UnityEngine.Object.FindObjectsByType<CompanionAgent>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None))
+            {
+                if (agent.Owner == owner.transform)
+                {
+                    return agent.GetComponent<
+                        PawsAndLoot.Animation.CompanionExpressionView>();
+                }
+            }
+
+            return null;
+        }
+
         private static void BuildExpressionIcons(
             GameObject agentObject,
             CompanionAgent agent,
@@ -2876,6 +2904,7 @@ namespace PawsAndLoot.Editor
                 instance.transform.localRotation = Quaternion.identity;
                 FitIconToHeight(instance, ExpressionIconHeight);
                 StripColliders(instance);
+                PaintIcon(instance, face);
                 view.Register(face, slot);
             }
 
@@ -2911,6 +2940,51 @@ namespace PawsAndLoot.Editor
             {
                 instance.transform.position +=
                     instance.transform.parent.position - scaled.center;
+            }
+        }
+
+        /// <summary>
+        /// Gives an icon its colour, rather than trusting the model's own.
+        ///
+        /// They imported white. The buildings in this project carry their
+        /// colour in the embedded material and have no texture folder at all;
+        /// these four shipped with a `.fbm` texture that did not bind, and a
+        /// material expecting a map it cannot find renders white.
+        ///
+        /// Painting them here is also the better answer regardless. These are
+        /// read at a third of a metre tall while both players are running, and
+        /// a flat saturated colour survives that where a photographic texture
+        /// turns to mud. It matches how this project already handles trees,
+        /// bins and roads.
+        /// </summary>
+        private static void PaintIcon(
+            GameObject instance,
+            CompanionExpression face)
+        {
+            string path =
+                $"Assets/_Project/Materials/Greybox/Icon_{face}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                Debug.LogWarning(
+                    $"[ART-016] Missing icon material {path}, so {face} "
+                    + "stays white.");
+                return;
+            }
+
+            foreach (Renderer renderer in
+                instance.GetComponentsInChildren<Renderer>(true))
+            {
+                var materials = new Material[
+                    renderer.sharedMaterials.Length == 0
+                        ? 1
+                        : renderer.sharedMaterials.Length];
+                for (int index = 0; index < materials.Length; index++)
+                {
+                    materials[index] = material;
+                }
+
+                renderer.sharedMaterials = materials;
             }
         }
 

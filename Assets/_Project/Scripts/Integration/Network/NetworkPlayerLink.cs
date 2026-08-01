@@ -48,6 +48,27 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableWritePermission.Server);
 
         /// <summary>
+        /// What this player's animal is showing above its head.
+        ///
+        /// The animals are scene objects rather than spawned network objects,
+        /// so nothing about them replicates on its own — their whole state
+        /// lives on the host. That was invisible while they only moved, because
+        /// their positions are driven from the host anyway, and it showed up the
+        /// moment they had something to say: the thief could not see their own
+        /// cat react.
+        ///
+        /// The face and a counter are packed into one int. Without the counter
+        /// the same face twice in a row is not a change, so a dog that fails to
+        /// find a trail twice would look like it heard the second order and
+        /// ignored it — which is the exact confusion these icons exist to fix.
+        /// </summary>
+        private readonly NetworkVariable<int> _companionFace =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        /// <summary>
         /// NET-006. The thief's running total, written only by the host.
         /// </summary>
         private readonly NetworkVariable<int> _soldAmount =
@@ -115,6 +136,12 @@ namespace PawsAndLoot.Integration.Network
 
         [SerializeField]
         private ArrestProgressController arrestProgress;
+
+        [SerializeField]
+        private PawsAndLoot.Animation.CompanionExpressionView companionFace;
+
+        private int _lastCompanionFaceSequence;
+        private int _companionFaceSequence;
 
         [SerializeField]
         private PawsAndLoot.Gameplay.Items.ToolUseAction toolUse;
@@ -315,8 +342,11 @@ namespace PawsAndLoot.Integration.Network
             PawsAndLoot.Animation.CompanionLegAnimator configuredLegAnimator =
                 null,
             PawsAndLoot.Gameplay.Interiors.PlayerInteriorState
-                configuredInteriorState = null)
+                configuredInteriorState = null,
+            PawsAndLoot.Animation.CompanionExpressionView
+                configuredCompanionFace = null)
         {
+            companionFace = configuredCompanionFace;
             interiorState = configuredInteriorState;
             policeWallet = configuredPoliceWallet;
             legAnimator = configuredLegAnimator;
@@ -340,6 +370,20 @@ namespace PawsAndLoot.Integration.Network
             // on one walking into a doorway. A client's capsule passes through the
             // same trigger while following replicated positions.
             interiorState?.SetAuthority(IsServer);
+
+            // The animal's own presenter decides faces from events the host
+            // raises, so on a client it would either say nothing or disagree
+            // with what the host sent. Turning it off leaves exactly one writer.
+            if (!IsServer && companionFace != null)
+            {
+                var presenter = companionFace
+                    .GetComponent<
+                        PawsAndLoot.Companions.CompanionExpressionPresenter>();
+                if (presenter != null)
+                {
+                    presenter.enabled = false;
+                }
+            }
 
             // The host simulates both players. Every other machine only
             // displays them, so its motor and controller are switched off to
@@ -655,6 +699,66 @@ namespace PawsAndLoot.Integration.Network
             motor.Move(_submittedMove, deltaTime);
         }
 
+        /// <summary>
+        /// Sends the face the host's animal is already showing.
+        ///
+        /// Read off the view rather than driven from the events, so there is
+        /// one decision about which face to show and the client cannot disagree
+        /// with the host about it.
+        /// </summary>
+        private void PublishCompanionFace()
+        {
+            if (companionFace == null)
+            {
+                return;
+            }
+
+            int face = companionFace.IsShowing
+                ? (int)companionFace.Current
+                : 0;
+            int current = _companionFace.Value & 0xF;
+            if (face == current)
+            {
+                return;
+            }
+
+            _companionFaceSequence++;
+            _companionFace.Value = (_companionFaceSequence << 4) | face;
+        }
+
+        /// <summary>
+        /// Shows what the host says the animal is showing.
+        ///
+        /// Acts on the counter rather than the face so the same face twice in a
+        /// row still re-triggers, and ignores a repeat of a sequence it has
+        /// already drawn.
+        /// </summary>
+        private void ApplyCompanionFace()
+        {
+            if (companionFace == null)
+            {
+                return;
+            }
+
+            int packed = _companionFace.Value;
+            int sequence = packed >> 4;
+            if (sequence == _lastCompanionFaceSequence)
+            {
+                return;
+            }
+
+            _lastCompanionFaceSequence = sequence;
+            var face = (PawsAndLoot.Companions.CompanionExpression)(packed & 0xF);
+            if (face == PawsAndLoot.Companions.CompanionExpression.None)
+            {
+                companionFace.Hide();
+            }
+            else
+            {
+                companionFace.Show(face);
+            }
+        }
+
         private void Update()
         {
             if (!IsSpawned)
@@ -675,10 +779,12 @@ namespace PawsAndLoot.Integration.Network
                             motor.LastPlanarVelocity.magnitude
                             / motor.EffectiveMoveSpeed)
                         : 0f;
+                PublishCompanionFace();
                 PublishGameplayState();
                 return;
             }
 
+            ApplyCompanionFace();
             ApplyReplicatedTransform(Time.deltaTime);
             ApplyReplicatedGameplayState();
         }
