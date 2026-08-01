@@ -16,7 +16,7 @@
 | 파일 | 이벤트 | 라이선스 | 길이 | 비고 |
 |---|---|---:|---:|---|
 | `sfx_command_ok.wav` | `CommandSucceeded` | CC0 | 0.20초 | 원본 3.0초를 잘랐다 (아래 참고) |
-| `sfx_command_fail.wav` | `CommandFailed` | CC0 | 0.60초 | |
+| `sfx_command_fail.wav` | `CommandFailed` | CC0 | 0.60초 | **볼륨 0.6** (아래 참고) |
 | `sfx_loot_pickup.wav` | `LootAcquired` | CC0 | 1.85초 | |
 | `sfx_loot_sold.wav` | `LootSold` | CC0 | 1.72초 | |
 | `sfx_arrest_start.wav` | `ArrestStarted` | CC0 | 1.52초 | |
@@ -40,6 +40,16 @@
 
 ffmpeg이 없고 scipy는 24비트 WAV를 쓰지 못해서 바이트 단위로 잘랐다 — 헤더가 1초당
 바이트 수를 알려주므로 data 청크를 자르고 크기 필드만 고치면 된다.
+
+### 볼륨을 낮춘 것
+
+`CommandFailed`를 1.0에서 **0.6**으로 낮췄다. 이 소리는 쿨타임 중에 명령을 다시 누를
+때마다 나는데, 그건 플레이어가 가장 자주 하는 실수라 경기 내내 가장 많이 들리는
+소리가 된다. 실기에서 거슬린다는 지적이 나왔다.
+
+볼륨은 `GameSoundBank.asset`의 엔트리별 값이고 `PlayOneShot(clip, GetVolume(id))`으로
+실제 재생에 쓰인다. `EnsureAllSoundIds`가 엔트리를 다시 만들 때도 기존 값을 읽어
+보존하므로 씬을 재생성해도 살아남는다.
 
 ### 지운 것
 
