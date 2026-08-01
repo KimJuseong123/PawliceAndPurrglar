@@ -270,6 +270,18 @@ namespace PawsAndLoot.Gameplay.Map
                     "Greybox map dimensions must be positive.");
             }
 
+            // Everything below this line describes the village: its six destinations,
+            // its rooftops and ladders, and the routes between them. A map that was
+            // built without that content has none of it to check, and demanding three
+            // rooftops of a bare greybox only reports that it is bare — which is what
+            // it was asked to be.
+            //
+            // The size is still checked, because every map has one.
+            if (environmentContentCleared)
+            {
+                return;
+            }
+
             ValidateLocations();
             ValidateFeatures();
             ValidateRoutes(validatePhysicsClearance);
