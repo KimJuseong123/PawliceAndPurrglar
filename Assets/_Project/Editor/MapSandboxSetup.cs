@@ -306,6 +306,61 @@ namespace PawsAndLoot.Editor
         /// here, and a plan drawn from anything other than the numbers the
         /// scene is built from is a second source of truth.
         /// </summary>
+        /// <summary>
+        /// The streets as rectangles, in the order they are written.
+        /// </summary>
+        private static Rect[] StreetAreas()
+        {
+            var areas = new List<Rect>();
+            foreach (Street street in Streets)
+            {
+                float length = street.To - street.From;
+                float half = street.Width * 0.5f;
+                areas.Add(street.Horizontal
+                    ? new Rect(
+                        street.From,
+                        street.FixedCoordinate - half,
+                        length,
+                        street.Width)
+                    : new Rect(
+                        street.FixedCoordinate - half,
+                        street.From,
+                        street.Width,
+                        length));
+            }
+
+            return areas.ToArray();
+        }
+
+        /// <summary>
+        /// The blocks, numbered north-west first.
+        ///
+        /// Both the scene and the blueprint call this rather than each finding
+        /// blocks their own way. Two flood fills that disagree about ordering
+        /// would put the police station in a different place from the one the
+        /// plan says, and nothing would report it.
+        /// </summary>
+        private static Rect[] NumberedBlocks(out int[] areas)
+        {
+            Rect[] found = MapBlueprint.FindBlocks(
+                MapMinX,
+                MapMinZ,
+                MapWidth,
+                MapDepth,
+                StreetAreas(),
+                24f,
+                out int[] sizes);
+
+            int[] order = Enumerable
+                .Range(0, found.Length)
+                .OrderByDescending(index => Mathf.RoundToInt(found[index].yMax))
+                .ThenBy(index => Mathf.RoundToInt(found[index].xMin))
+                .ToArray();
+
+            areas = order.Select(index => sizes[index]).ToArray();
+            return order.Select(index => found[index]).ToArray();
+        }
+
         [MenuItem("Paws & Loot/Sandbox/Capture Sandbox Blueprint")]
         public static void CaptureBlueprint()
         {
@@ -331,13 +386,50 @@ namespace PawsAndLoot.Editor
                     MapBlueprint.RoadColour(street.Width < StreetWidth)));
             }
 
+            // The ground the streets leave behind, numbered the same way the
+            // scene numbers it.
+            Rect[] blocks = NumberedBlocks(out int[] areas);
+            var labels = new List<MapBlueprint.Label>();
+            for (int rank = 0; rank < blocks.Length; rank++)
+            {
+                Rect block = blocks[rank];
+                pieces.Add(new MapBlueprint.Piece(
+                    block,
+                    MapBlueprint.BlockColour(rank)));
+                labels.Add(new MapBlueprint.Label(
+                    (rank + 1).ToString(),
+                    block.center));
+
+                Debug.Log(
+                    $"[BLOCK {rank + 1,2}] x {block.xMin,6:0} .. "
+                    + $"{block.xMax,3:0}   z {block.yMin,4:0} .. "
+                    + $"{block.yMax,3:0}   {block.width,3:0} x "
+                    + $"{block.height,2:0} m   usable {areas[rank],4} m2");
+            }
+
+            foreach (Placement placement in LayOut(blocks))
+            {
+                pieces.Add(new MapBlueprint.Piece(
+                    placement.Area(FootprintOf(placement.Fill)),
+                    MapBlueprint.BuildingColour(
+                        placement.Fill == Fill.Plaza)));
+            }
+
+            // Roads drawn last so the block tints do not cover them.
+            var ordered = new List<MapBlueprint.Piece>();
+            ordered.AddRange(pieces.Skip(Streets.Length));
+            ordered.AddRange(pieces.Take(Streets.Length));
+            ordered.AddRange(pieces
+                .Skip(Streets.Length + blocks.Length));
+
             MapBlueprint.Write(
                 "Logs/sandbox-blueprint.png",
                 MapMinX,
                 MapMinZ,
                 MapWidth,
                 MapDepth,
-                pieces.ToArray());
+                ordered.ToArray(),
+                labels.ToArray());
         }
 
         [MenuItem("Paws & Loot/Sandbox/Rebuild Map Sandbox")]
@@ -357,19 +449,9 @@ namespace PawsAndLoot.Editor
             BuildGround(environment);
             int roads = BuildRoadNetwork(environment);
 
-            // Buildings and dressing are off while the street plan is being
-            // matched to the drawing. A town full of houses hides whether the
-            // roads are where they were asked to be, and the roads are the part
-            // being decided.
-            const bool buildingsEnabled = false;
-            int placed = 0;
-            int houses = 0;
+            Rect[] blocks = NumberedBlocks(out _);
+            int placed = BuildBlocks(buildings, sizes, blocks, out int houses);
             int dressing = 0;
-            if (buildingsEnabled)
-            {
-                placed = BuildBlocks(buildings, sizes, out houses);
-                dressing = BuildDressing(environment, sizes);
-            }
 
             BuildPlayer(root, match);
             BuildLight(root);
@@ -615,122 +697,365 @@ namespace PawsAndLoot.Editor
         /// turned sideways — which is what puts the rows down the map's edges facing
         /// inward, as the reference has them.
         /// </summary>
-        private static int BuildBlocks(
-            Transform parent,
-            Measurements sizes,
-            out int houses)
+        /// <summary>
+        /// What stands in each numbered block.
+        ///
+        /// Numbers are the ones on the blueprint, ordered north-west first.
+        /// Written down rather than inferred from block size: which building
+        /// goes where is a design decision, and the police station happening to
+        /// be the biggest thing is not a reason to drop it in the biggest gap.
+        /// </summary>
+        private enum Fill
         {
-            const float Verge = 2f;
-            int specials = 0;
-            houses = 0;
+            OneStorey,
+            TwoStorey,
+            Supermarket,
+            PoliceStation,
+            Jewellery,
+            Bookstore,
+            Plaza
+        }
 
-            foreach (Block block in Blocks)
+        private static readonly (int Block, Fill[] Contents)[] Assignments =
+        {
+            (2, new[] { Fill.TwoStorey }),
+            (3, new[] { Fill.TwoStorey, Fill.OneStorey }),
+            (4, new[] { Fill.OneStorey, Fill.Supermarket }),
+            (5, new[] { Fill.PoliceStation }),
+            (6, new[] { Fill.Jewellery }),
+            (7, new[] { Fill.TwoStorey, Fill.OneStorey }),
+            (8, new[] { Fill.OneStorey }),
+            (9, new[] { Fill.Bookstore, Fill.TwoStorey, Fill.OneStorey }),
+            (11, new[] { Fill.Plaza }),
+            (12, new[] { Fill.Supermarket })
+        };
+
+        /// <summary>
+        /// Footprints in metres. Houses use the village's own 12 x 8 lot.
+        /// </summary>
+        private static Vector2 FootprintOf(Fill fill)
+        {
+            return fill switch
             {
-                switch (block.Use)
+                Fill.PoliceStation => new Vector2(12f, 12f),
+                Fill.Bookstore => new Vector2(12f, 10f),
+                Fill.Jewellery => new Vector2(10f, 8f),
+                Fill.Supermarket => new Vector2(12f, 8f),
+                Fill.Plaza => new Vector2(16f, 8f),
+                _ => new Vector2(LotX, LotZ)
+            };
+        }
+
+        private static string StemOf(Fill fill)
+        {
+            return fill switch
+            {
+                Fill.PoliceStation => "building_police_station",
+                Fill.Supermarket => "building_supermarket",
+                Fill.Bookstore => "building_bookstore",
+                // No authored model yet. Two-storey houses borrow the
+                // one-storey one rather than vanishing; the jewellery shop has
+                // none at all and falls back to a grey box.
+                Fill.TwoStorey => "building_house_1f",
+                Fill.OneStorey => "building_house_1f",
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// Where one building ends up.
+        /// </summary>
+        private readonly struct Placement
+        {
+            public Placement(Fill fill, string label, Vector3 centre, float yaw)
+            {
+                Fill = fill;
+                Label = label;
+                Centre = centre;
+                Yaw = yaw;
+            }
+
+            public Fill Fill { get; }
+            public string Label { get; }
+            public Vector3 Centre { get; }
+            public float Yaw { get; }
+
+            /// <summary>
+            /// Ground covered once turned. A quarter turn swaps the footprint,
+            /// and forgetting that draws a plan that disagrees with the town.
+            /// </summary>
+            public Rect Area(Vector2 footprint)
+            {
+                bool quarterTurned =
+                    Mathf.Abs(Mathf.Sin(Yaw * Mathf.Deg2Rad)) > 0.5f;
+                float sizeX = quarterTurned ? footprint.y : footprint.x;
+                float sizeZ = quarterTurned ? footprint.x : footprint.y;
+                return new Rect(
+                    Centre.x - sizeX * 0.5f,
+                    Centre.z - sizeZ * 0.5f,
+                    sizeX,
+                    sizeZ);
+            }
+        }
+
+        /// <summary>
+        /// Moves a building until it is standing on ground rather than road.
+        ///
+        /// Blocks are reported by their bounding box, and two of them are
+        /// L-shaped: spacing buildings evenly across that box puts some of them
+        /// in the notch, which is road. They were drawn sitting on the street
+        /// and nothing objected, because nothing was asking.
+        ///
+        /// Searches outward from the ideal spot and takes the first place that
+        /// fits, so a building moves as little as the shape allows. Refusing to
+        /// place it at all is better than placing it in a road — a missing
+        /// building is obvious and a building in the carriageway is not.
+        /// </summary>
+        private static bool TryFit(
+            Vector2 footprint,
+            Rect[] roads,
+            ref Vector3 centre)
+        {
+            const float Step = 1f;
+            const float Reach = 10f;
+
+            for (float radius = 0f; radius <= Reach; radius += Step)
+            {
+                for (float dx = -radius; dx <= radius; dx += Step)
                 {
-                    case Use.Plaza:
-                    case Use.Green:
-                        continue;
-
-                    case Use.Civic when block.Stem == null:
-                        // The jewellery shop exists only as a .blend, and Unity is not
-                        // asked to import those — that would make the build depend on
-                        // Blender being installed. A greybox of the store footprint,
-                        // which is what the real town uses for it too.
-                        Slab(
-                            parent,
-                            $"{block.Label} (greybox, no FBX)",
-                            block.Centre + new Vector3(0f, 1.8f, 0f),
-                            new Vector3(LotX, 3.6f, LotZ),
-                            Load<Material>(
-                                $"{MaterialDirectory}/JewelryStore.mat"),
-                            true);
-                        specials++;
-                        continue;
-
-                    case Use.Civic:
-                        if (PlaceBuilding(
-                                parent,
-                                block.Stem,
-                                block.Centre,
-                                block.Centre.z > MapCentreZ ? 180f : 0f,
-                                block.Label,
-                                sizes))
+                    for (float dz = -radius; dz <= radius; dz += Step)
+                    {
+                        // Only the ring being tested, so nearer places are
+                        // always tried first.
+                        if (radius > 0f
+                            && Mathf.Abs(dx) < radius
+                            && Mathf.Abs(dz) < radius)
                         {
-                            specials++;
+                            continue;
                         }
 
-                        continue;
-                }
+                        var candidate = new Vector3(
+                            centre.x + dx,
+                            centre.y,
+                            centre.z + dz);
+                        var area = new Rect(
+                            candidate.x - footprint.x * 0.5f,
+                            candidate.z - footprint.y * 0.5f,
+                            footprint.x,
+                            footprint.y);
 
-                // Houses. Rotated when the block is deeper than it is wide, so the lot
-                // runs along the block rather than across it.
-                bool sideways = block.Depth > block.Width;
-                float lotAlong = sideways ? LotZ : LotX;
-                float lotAcross = sideways ? LotX : LotZ;
-                float along = (sideways ? block.Width : block.Width)
-                    - Verge * 2f;
-                float across = block.Depth - Verge * 2f;
-                if (sideways)
-                {
-                    along = block.Depth - Verge * 2f;
-                    across = block.Width - Verge * 2f;
-                }
+                        if (area.xMin < MapMinX
+                            || area.yMin < MapMinZ
+                            || area.xMax > MapMaxX
+                            || area.yMax > MapMaxZ)
+                        {
+                            continue;
+                        }
 
-                if (along < lotAlong || across < lotAcross)
+                        bool blocked = false;
+                        foreach (Rect road in roads)
+                        {
+                            if (area.Overlaps(road))
+                            {
+                                blocked = true;
+                                break;
+                            }
+                        }
+
+                        if (!blocked)
+                        {
+                            centre = candidate;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Works out where everything goes, without building any of it.
+        ///
+        /// Shared by the scene and the plan. Two copies of this arithmetic would
+        /// drift, and a plan that draws the police station somewhere the town
+        /// does not put it is worse than no plan.
+        /// </summary>
+        private static List<Placement> LayOut(Rect[] blocks)
+        {
+            const float Verge = 2.5f;
+            var placements = new List<Placement>();
+            Rect[] roads = StreetAreas();
+
+            foreach ((int number, Fill[] contents) in Assignments)
+            {
+                if (number < 1 || number > blocks.Length)
                 {
+                    Debug.LogWarning(
+                        $"[SANDBOX] Block {number} does not exist. The street "
+                        + "plan changed after the assignments were written.");
                     continue;
                 }
 
-                int fit = Mathf.Max(
-                    1,
-                    Mathf.FloorToInt(along / (lotAlong + 2f)));
-                int rows = Mathf.Max(
-                    1,
-                    Mathf.FloorToInt(across / (lotAcross + 2f)));
-                for (int row = 0; row < rows; row++)
-                {
-                    float rowOffset =
-                        (row - (rows - 1) * 0.5f) * (lotAcross + 2f);
-                    for (int slot = 0; slot < fit; slot++)
-                    {
-                        float slotOffset =
-                            (slot - (fit - 1) * 0.5f) * (lotAlong + 2f);
-                        Vector3 at = block.Centre + (sideways
-                            ? new Vector3(rowOffset, 0f, slotOffset)
-                            : new Vector3(slotOffset, 0f, rowOffset));
+                Rect block = blocks[number - 1];
+                bool tall = block.height > block.width;
 
-                        // Facing the nearer long edge of its own block.
-                        float yaw = sideways
-                            ? (rowOffset <= 0f ? 270f : 90f)
-                            : (rowOffset <= 0f ? 0f : 180f);
-                        if (PlaceBuilding(
-                                parent,
-                                "building_house_1f",
-                                at,
-                                yaw,
-                                $"House ({at.x:0},{at.z:0})",
-                                sizes))
-                        {
-                            houses++;
-                        }
+                for (int index = 0; index < contents.Length; index++)
+                {
+                    Fill fill = contents[index];
+                    float run = tall ? block.height : block.width;
+                    float share = (run - Verge * 2f) / contents.Length;
+                    float along = (tall ? block.yMin : block.xMin)
+                        + Verge
+                        + share * (index + 0.5f);
+                    float across = tall
+                        ? block.center.x
+                        : block.center.y;
+
+                    float yaw = tall ? 270f : 180f;
+                    Vector3 centre = tall
+                        ? new Vector3(across, 0f, along)
+                        : new Vector3(along, 0f, across);
+
+                    // Turned footprints are what has to clear the road, not the
+                    // authored one.
+                    Vector2 authored = FootprintOf(fill);
+                    Vector2 turned = tall
+                        ? new Vector2(authored.y, authored.x)
+                        : authored;
+
+                    if (!TryFit(turned, roads, ref centre))
+                    {
+                        Debug.LogWarning(
+                            $"[SANDBOX] Block {number} has nowhere clear for "
+                            + $"{fill}. It was left out rather than dropped in "
+                            + "a road.");
+                        continue;
                     }
+
+                    placements.Add(new Placement(
+                        fill,
+                        $"Block {number} {fill}",
+                        centre,
+                        yaw));
+                }
+            }
+
+            return placements;
+        }
+
+        /// <summary>
+        /// Fills each block with what it was assigned, evenly spaced along
+        /// whichever way the block runs longer.
+        ///
+        /// Two buildings in a block that is deeper than it is wide are laid out
+        /// down it and turned a quarter, so they read as a pair of long
+        /// buildings rather than two squares stacked. Everything else is spread
+        /// along the block with the same gap between neighbours, which is what
+        /// stops a wide block reading as one building beside dead ground.
+        ///
+        /// Houses face south. The model's front is at +Z, so they are turned
+        /// 180 degrees: the front door meets the street below and the back door
+        /// opens onto whatever is behind.
+        /// </summary>
+        private static int BuildBlocks(
+            Transform parent,
+            Measurements sizes,
+            Rect[] blocks,
+            out int houses)
+        {
+            int specials = 0;
+            houses = 0;
+
+            foreach (Placement placement in LayOut(blocks))
+            {
+                if (placement.Fill == Fill.Plaza)
+                {
+                    BuildPlaza(parent, placement);
+                    specials++;
+                    continue;
+                }
+
+                string stem = StemOf(placement.Fill);
+                if (stem == null
+                    || !PlaceBuilding(
+                        parent,
+                        stem,
+                        placement.Centre,
+                        placement.Yaw,
+                        placement.Label,
+                        sizes))
+                {
+                    Vector2 footprint = FootprintOf(placement.Fill);
+                    GameObject box = CreateBox(
+                        parent,
+                        placement.Label,
+                        placement.Centre + Vector3.up * 3f,
+                        new Vector3(footprint.x, 6f, footprint.y),
+                        Load<Material>(
+                            $"{MaterialDirectory}/Sandbox_Stone.mat"));
+                    box.transform.rotation =
+                        Quaternion.Euler(0f, placement.Yaw, 0f);
+                }
+
+                if (placement.Fill == Fill.OneStorey
+                    || placement.Fill == Fill.TwoStorey)
+                {
+                    houses++;
+                }
+                else
+                {
+                    specials++;
                 }
             }
 
             return specials;
         }
 
-
-
         /// <summary>
-        /// One building on the town's lot, dropped onto the ground and boxed.
-        ///
-        /// Boxed from what the model actually became rather than from the lot it was
-        /// asked to fill: the two differ on the shorter axis of every fitted building,
-        /// and that difference used to be an invisible wall standing off the side of
-        /// it.
+        /// A flat square with a fountain in the middle, rather than a building.
         /// </summary>
+        private static void BuildPlaza(
+            Transform parent,
+            Placement placement)
+        {
+            Vector2 footprint = FootprintOf(Fill.Plaza);
+            Slab(
+                parent,
+                placement.Label,
+                new Vector3(placement.Centre.x, 0.03f, placement.Centre.z),
+                new Vector3(footprint.x, 0.06f, footprint.y),
+                Load<Material>($"{MaterialDirectory}/Plaza.mat"),
+                false);
+
+            CreateBox(
+                parent,
+                placement.Label + " Fountain",
+                new Vector3(placement.Centre.x, 0.6f, placement.Centre.z),
+                new Vector3(3f, 1.2f, 3f),
+                Load<Material>($"{MaterialDirectory}/Sandbox_Stone.mat"));
+        }
+
+        private static GameObject CreateBox(
+            Transform parent,
+            string name,
+            Vector3 centre,
+            Vector3 size,
+            Material material)
+        {
+            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.name = name;
+            box.transform.SetParent(parent, false);
+            box.transform.position = centre;
+            box.transform.localScale = size;
+            if (material != null)
+            {
+                box.GetComponent<Renderer>().sharedMaterial = material;
+            }
+
+            return box;
+        }
+
         private static bool PlaceBuilding(
             Transform parent,
             string stem,
