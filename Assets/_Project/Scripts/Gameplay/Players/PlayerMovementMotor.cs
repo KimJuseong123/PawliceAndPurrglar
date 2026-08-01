@@ -1,5 +1,6 @@
 using System;
 using PawsAndLoot.Config;
+using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Match;
 using UnityEngine;
 
@@ -57,7 +58,8 @@ namespace PawsAndLoot.Gameplay.Players
         /// </summary>
         public bool CanMove =>
             _matchState?.IsGameplayActive == true
-            && !IsStunned;
+            && !IsStunned
+            && !IsJailed;
 
         /// <summary>
         /// False when there is no stun component at all, so a player without one
@@ -70,6 +72,41 @@ namespace PawsAndLoot.Gameplay.Players
                 StunState stun = ResolveStun();
                 return stun != null && stun.IsStunned;
             }
+        }
+
+        /// <summary>
+        /// Held in the cells after an arrest.
+        ///
+        /// Kept separate from the stun rather than reusing it. A stun has an
+        /// immunity window afterwards so a thief cannot be chain-stunned, and
+        /// borrowing that here would hand the thief immunity for coming out of
+        /// jail. They are also different on screen — one is a few seconds of
+        /// stars, the other is being taken off the map.
+        ///
+        /// Only the thief carries the component, so the police never resolve one
+        /// and never stop moving.
+        /// </summary>
+        public bool IsJailed
+        {
+            get
+            {
+                ThiefJailState jail = ResolveJail();
+                return jail != null && jail.IsJailed;
+            }
+        }
+
+        private ThiefJailState _jail;
+        private bool _lookedForJail;
+
+        private ThiefJailState ResolveJail()
+        {
+            if (!_lookedForJail)
+            {
+                _jail = GetComponent<ThiefJailState>();
+                _lookedForJail = true;
+            }
+
+            return _jail;
         }
         /// <summary>
         /// Cached after the first look so the lookup is not repeated every

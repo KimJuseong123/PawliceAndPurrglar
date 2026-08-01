@@ -54,11 +54,19 @@ namespace PawsAndLoot.Match
             return CanAcceptRequest() && _arbiter.RequestTimeout();
         }
 
+        /// <summary>
+        /// Arrests recorded so far, for the HUD to show and the jail to react
+        /// to. Reading it from the arbiter keeps one count rather than two that
+        /// can disagree.
+        /// </summary>
+        public int ArrestCount => _arbiter.ArrestCount;
+
         public bool EvaluatePendingRequests()
         {
             if (!_arbiter.TryResolve(
                     thiefWallet.SoldAmount,
                     thiefWallet.TargetAmount,
+                    matchRuntime.ArrestsToWin,
                     matchRuntime.RemainingMatchSeconds,
                     out MatchResult result))
             {

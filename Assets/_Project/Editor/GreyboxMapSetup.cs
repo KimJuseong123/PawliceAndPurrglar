@@ -364,7 +364,7 @@ namespace PawsAndLoot.Editor
                     playerConfig,
                     false)
             };
-            ConfigureArrestSystem(controlBindings, matchRuntime);
+            ConfigureArrestSystem(controlBindings, matchRuntime, map);
             ConfigureMatchResultEvaluator(
                 controlBindings,
                 matchRuntime);
@@ -2810,7 +2810,8 @@ namespace PawsAndLoot.Editor
 
         private static void ConfigureArrestSystem(
             IReadOnlyList<PlayerRoleControlBinding> bindings,
-            MatchRuntimeState matchRuntime)
+            MatchRuntimeState matchRuntime,
+            GreyboxMapDefinition map)
         {
             PlayerRoleIdentity police = null;
             PlayerRoleIdentity thief = null;
@@ -2846,6 +2847,25 @@ namespace PawsAndLoot.Editor
             ArrestCompletionController completion =
                 police.gameObject.AddComponent<ArrestCompletionController>();
             completion.Configure(progress, matchRuntime);
+
+            // The cells and the way out. The station is where a caught thief is
+            // taken; the release is their own spawn rather than the station
+            // door, which would put them back within arm's reach of the officer
+            // who just caught them and hand over the next two arrests.
+            Transform cell = map.GetLocation(GreyboxLocationId.PoliceSpawn);
+            Transform release = map.GetLocation(GreyboxLocationId.ThiefSpawn);
+            if (cell == null || release == null)
+            {
+                throw new InvalidOperationException(
+                    "ARREST-007 requires the police station and thief spawn "
+                    + "anchors for the jail.");
+            }
+
+            ThiefJailState jail =
+                thief.gameObject.AddComponent<ThiefJailState>();
+            ArrestJailCoordinator coordinator =
+                police.gameObject.AddComponent<ArrestJailCoordinator>();
+            coordinator.Configure(completion, jail, cell, release, config);
         }
 
         private static void ConfigureMatchResultEvaluator(

@@ -6,6 +6,13 @@
 
 ### Added
 
+- 승리 조건 확정 (`DEC-032`). 경찰은 **체포 3회**, 도둑은 누적 판매 1,000골드,
+  시간 만료는 경찰 승리. `MatchConfig.arrestsToWin`으로 조정한다
+- 감옥 (`THROW-012`). 체포 1회는 경기를 끝내지 않고 경찰서에 11초 구금한 뒤
+  도둑 스폰에 재배치한다. `ArrestConfig.jailSeconds` (4~20초)
+- `ThiefJailState`와 `ArrestJailCoordinator`. 구금은 호스트만 판정하고 위치는
+  기존 복제를 탄다
+
 - 프로젝트 루트 `AGENTS.md`
 - 프로젝트 소개와 목표 구조를 담은 `README.md`
 - `docs/00_PROJECT_BRIEF.md`부터 `docs/15_KNOWN_ISSUES.md`까지의 문서 패키지
@@ -499,6 +506,11 @@
   모델이 실제 위치가 아닌 맵 중앙에 그려지던 문제 (`ISSUE-012`)
 
 ### Changed
+
+- 체포 중복 제거가 `MatchResultArbiter`에서 `ArrestCompletionController`로
+  옮겨갔다. 판정기는 호출마다 세야 하므로, 한 번의 체포가 두 번 세어지는 것은
+  래치를 가진 호출자가 막는다. 래치는 타이머가 아니라 **석방 시점**에 풀린다
+- `MatchResultArbiter.TryResolve`가 `arrestsToWin`을 받는다
 
 - 추격 카메라를 두 번에 걸쳐 당겼다. 오프셋 `(0, 16, -14)` →
   `(0, 12.36, -10.82)`로, 화면상 크기가 처음 대비 약 29% 커진다. 각도는
