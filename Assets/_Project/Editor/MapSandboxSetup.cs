@@ -120,15 +120,52 @@ namespace PawsAndLoot.Editor
         {
             Across("North Street", 56f, 0f, 80f, StreetWidth),
             Across("Center Street", 28f, 0f, 80f, StreetWidth),
-            Across("South Street", 13f, 0f, 80f, StreetWidth),
+
+            // The south road stops well short of the east alley, and a second
+            // one takes over on the far side of it. Two roads on the same line
+            // with ground between them rather than one that runs the width:
+            // the south-east has its own way out to the east edge, and getting
+            // there from the west means going round instead of straight along.
+            Across("South Street", 13f, 15f, 50f, StreetWidth),
+            Across("South East Street", 13f, 54f, 80f, StreetWidth),
+
+            // Sits flush on the centre road rather than floating above it, so
+            // the two read as one wider opening behind the supermarket instead
+            // of a lane with a one-metre ribbon of ground trapped under it.
+            //
+            // Dropping it also removed the need for a link down to the road:
+            // touching along its whole length is a better connection than a
+            // stub at one end.
+            Across("Market Lane", 32f, 12f, 24f, StreetWidth),
 
             Down("North West Alley", 9f, 56f, 72f, AlleyWidth),
             Down("North Alley", 33f, 56f, 72f, AlleyWidth),
 
             Down("Market Street", 25f, 13f, 56f, StreetWidth),
-            Down("Station Street", 42f, 0f, 56f, StreetWidth),
-            Down("Bookstore Street", 59f, 13f, 56f, StreetWidth),
-            Down("East Street", 71f, 13f, 56f, StreetWidth)
+
+            // Stops at the centre road now. Running it to the south edge made
+            // the plaza block a corridor rather than a place.
+            Down("Station Street", 42f, 28f, 56f, StreetWidth),
+
+            // The south band's own ways down, offset from the ones above so the
+            // two bands do not line up into one long straight.
+            // Runs off the south edge, so the south-west corner has a way out
+            // of its own rather than only the road it came in on.
+            Down("West Lower Street", 17f, 0f, 27f, StreetWidth),
+            // Its east edge lines up with where the south road stops, so the
+            // junction is a clean corner instead of a metre of road carrying on
+            // past the turn.
+            Down("Plaza East Street", 48f, 15f, 27f, StreetWidth),
+            // Runs to the far side of the road rather than stopping on its
+            // centre line. Ending halfway across left the alley's lighter
+            // surface as a tongue poking into the road, which reads as a
+            // mistake rather than a junction.
+            Down("South East Alley", 54f, 11f, 22f, AlleyWidth),
+
+            Down("Bookstore Street", 59f, 13f, 56f, StreetWidth)
+
+            // The east street is gone. It ran the full height a few metres from
+            // the map edge and left a ribbon of ground nothing could stand in.
         };
 
         private static Street Across(
