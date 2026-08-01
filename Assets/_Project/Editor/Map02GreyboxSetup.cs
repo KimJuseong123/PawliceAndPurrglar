@@ -912,12 +912,15 @@ namespace PawsAndLoot.Editor
             anchor.position = groundCenter;
             anchor.rotation = Quaternion.identity;
 
-            float height = PlaceholderModelLibrary.TryInstantiateBuilding(
+            // The library reports the placed size, and zero when it could not place
+            // the model at all. Only the height is wanted here — the footprint is
+            // what was asked for, not what came back.
+            float height = PlaceholderModelLibrary.TryInstantiateBuildingSized(
                 spec.ModelStem,
                 anchor,
                 groundCenter,
                 spec.FootprintX,
-                spec.FootprintZ);
+                spec.FootprintZ).y;
             if (height <= 0f)
             {
                 UnityEngine.Object.DestroyImmediate(slot.gameObject);
