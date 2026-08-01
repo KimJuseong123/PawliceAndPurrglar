@@ -49,18 +49,18 @@
 |---|---|---|---|
 | TECH-001 | P0 | DONE | Windows 목표 플랫폼 빌드와 키보드 이동 검증 |
 | TECH-002 | P0 | DONE | Blender 모델, 리그, 애니메이션 연동 검증 |
-| TECH-003 | P1 | BLOCKED | Windows 마이크와 음성 텍스트 변환 격리 검증 |
+| TECH-003 | P1 | 우회됨 | Windows 마이크는 여전히 막혀 있고, 브라우저 녹음(WebGL)으로 우회했다 |
 
 ## Epic 2. 카메라와 맵
 
 | ID | 우선순위 | 상태 | 작업 |
 |---|---|---|---|
-| CAMERA-001 | P0 | TODO | 3D 기울어진 탑다운 추적 카메라 |
+| CAMERA-001 | P0 | DONE | 3D 기울어진 탑다운 추적 카메라 (`TopDownFollowCamera`) |
 | CAMERA-002 | P1 | TODO | 추격 속도 기반 줌 |
-| CAMERA-003 | P1 | TODO | 지붕과 벽 가림 처리 |
+| CAMERA-003 | P1 | DONE | 실내 벽 가림 (`InteriorCutawayView`). **실외 가림은 미구현** |
 | MAP-001 | P0 | DONE | 순환형 그레이박스 마을 |
 | MAP-002 | P1 | TODO | 주요 장소별 복수 경로 |
-| MAP-003 | P2 | TODO | 지붕과 사다리 경로 |
+| MAP-003 | P2 | DONE | 지붕·사다리 경로 (`LadderTraversal`, 씬 배치 9곳) |
 
 ## Epic 3. 경찰 리깅 스파이크
 
@@ -107,7 +107,7 @@
 | LOOT-002 | P0 | DONE | 보물 획득 |
 | LOOT-003 | P0 | DONE | 운반 |
 | LOOT-004 | P1 | DONE | 드롭 |
-| LOOT-005 | P2 | TODO | 숨기기 |
+| LOOT-005 | P2 | DONE | 보물 숨기기 (`LootHidingSpot`, 씬 배치 4곳) |
 | LOOT-006 | P0 | DONE | 보물 판매 |
 | LOOT-007 | P0 | DONE | 중복 획득·판매 방지 |
 | MERCHANT-001 | P0 | TODO | 너구리 상인 판매 범위 |
@@ -129,7 +129,7 @@
 | THROW-006 | P1 | TODO | **바나나를 상점에서 훔치기** — 슈퍼마켓 진열대에 도둑 전용 획득 지점 |
 | THROW-007 | P1 | DONE | 네트워크 라우팅 (호스트 기준) — 던지기 RPC, 기절 복제, 덫 명명 메시지 |
 | THROW-008 | P2 | DONE | 던지기 연출: 팔 스윙 + 날아가는 돌 + 기절 별. 팔 축은 리그에서 측정 |
-| THROW-002 | P1 | TODO | 투척 궤적과 착탄 |
+| THROW-002 | P1 | DONE | 투척 궤적과 착탄 (`ThrowFlightTracker`) |
 | THROW-003 | P1 | DONE | 바나나 미끄러짐 (`PlacedTrap`, 설치자는 안 걸림) |
 | THROW-004 | P2 | TODO | 동물 혼란용 소품 (참치캔·개껌) |
 | THROW-009 | P1 | DONE | **경찰 설치물 2종** — 끈끈이(3초 고정), 센서등(2.5초 노출) |
@@ -318,11 +318,11 @@ HUD 표시가 동작하고 테스트로 고정돼 있다.
 | UI-001 | P0 | DONE | 공통 HUD |
 | UI-002 | P0 | DONE | 경찰 HUD |
 | UI-003 | P0 | DONE | 도둑 HUD |
-| UI-004 | P0 | TODO | 명령 슬롯과 쿨타임 |
-| UI-005 | P0 | TODO | 명령 성공과 실패 |
+| UI-004 | P0 | DONE | 명령 슬롯과 쿨타임 (`CompanionCommandHudPresenter`) |
+| UI-005 | P0 | DONE | 명령 성공과 실패 (같은 프레젠터) |
 | UI-006 | P0 | DONE | 체포 게이지 (`ARREST-005`에 통합) |
 | UI-007 | P0 | DONE | 역할별 목표 안내 |
-| UI-008 | P1 | TODO | 첫 경기 안내 |
+| UI-008 | P1 | DONE | 첫 경기 안내 (`FirstPlayGuidePresenter`). 동물 명령만 안내하므로 조작 전체 안내는 별건 |
 | UI-009 | P1 | TODO | **체포 횟수 `X/3`과 구금 카운트다운** — `DEC-032` 후속 |
 
 ## Epic 10. 멀티플레이
@@ -402,13 +402,13 @@ NET-001과 NET-002는 본격 멀티플레이가 아니라 패키지와 권한 �
 
 | ID | 우선순위 | 상태 | 작업 |
 |---|---|---|---|
-| VOICE-001 | P2 | BLOCKED | STT 인터페이스 |
-| VOICE-002 | P2 | BLOCKED | 텍스트 정규화 |
-| VOICE-003 | P2 | BLOCKED | 경찰 명령 분류 |
-| VOICE-004 | P2 | BLOCKED | 도둑 명령 분류 |
-| VOICE-005 | P2 | BLOCKED | 신뢰도 처리 |
-| VOICE-006 | P2 | BLOCKED | 음성 피드백 UI |
-| VOICE-007 | P2 | BLOCKED | 마이크 거부와 실패 대응 |
+| VOICE-001 | P2 | DONE (WebGL) | STT 인터페이스 — 브라우저 녹음 + 서버 경유 |
+| VOICE-002 | P2 | DONE (WebGL) | 텍스트 정규화 — 브라우저 녹음 + 서버 경유 |
+| VOICE-003 | P2 | DONE (WebGL) | 경찰 명령 분류 — 브라우저 녹음 + 서버 경유 |
+| VOICE-004 | P2 | DONE (WebGL) | 도둑 명령 분류 — 브라우저 녹음 + 서버 경유 |
+| VOICE-005 | P2 | 확인 필요 | 신뢰도 처리 — 서버 쪽에 있는지 대조 안 됨 |
+| VOICE-006 | P2 | DONE (WebGL) | 음성 피드백 UI — 브라우저 녹음 + 서버 경유 |
+| VOICE-007 | P2 | DONE (WebGL) | 마이크 거부와 실패 대응 — 브라우저 녹음 + 서버 경유 |
 
 ## Epic 12. Blender 최종 모델 제작과 적용
 
@@ -455,7 +455,7 @@ Blender 모델 자체는 작업자가 제작한다. 이 저장소의 작업은 U
 실제 검증은 그때 한다.
 | MAP-004 | P2 | TODO | 맵 루트 밸런스 측정 |
 | MAP-005 | P2 | DONE | 보물 6개 맵 전역 배치, 스폰 유지 (`ISSUE-011` 해소) |
-| ART-011 | P2 | TODO | 시각 효과 |
+| ART-011 | P2 | DONE | 시각 효과 (투척 궤적·기절 별·설치물 표시) |
 | ART-012 | P2 | DONE | 머티리얼 통합·정적 배칭·그림자 정리 (아틀라스·LOD 미실시) |
 
 `MODEL-002`~`007`의 모델 제작 자체는 작업자 몫이다. 이 저장소가 담당하는 것은
@@ -485,7 +485,7 @@ Blender 모델 자체는 작업자가 제작한다. 이 저장소의 작업은 U
 | ID | 우선순위 | 상태 | 작업 |
 |---|---|---|---|
 | ART-001 | P2 | DONE | 캐릭터 VisualRoot 교체 구조 |
-| AUDIO-001 | P2 | TODO | 임시 규칙 피드백 효과음 |
+| AUDIO-001 | P2 | DONE | 효과음 10종 배선·클립 완료 (CC0) |
 | SUBMIT-001 | P2 | TODO | 목표 플랫폼 빌드 |
 | SUBMIT-002 | P2 | TODO | 플레이 영상 |
 | SUBMIT-003 | P2 | TODO | 게임 소개 문서 |
