@@ -475,7 +475,7 @@ Blender 모델 자체는 작업자가 제작한다. 이 저장소의 작업은 U
 | SUBMIT-002 | P2 | TODO | 플레이 영상 |
 | SUBMIT-003 | P2 | TODO | 게임 소개 문서 |
 | SUBMIT-004 | P2 | TODO | AI 활용 문서 |
-| SUBMIT-005 | P2 | TODO | 라이선스 정리 |
+| SUBMIT-005 | P2 | WIP | 라이선스 정리 — `THIRD_PARTY_NOTICES.md`에 모델·효과음·폰트·엔진 기록 완료. **남은 것: BGM 미정, Tripo 증빙 4종 보관** |
 
 ## 프로토타입 관문 B: 첫 번째 수직 슬라이스
 
