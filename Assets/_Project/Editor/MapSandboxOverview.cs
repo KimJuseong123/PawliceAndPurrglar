@@ -50,6 +50,44 @@ namespace PawsAndLoot.Editor
             bool previousTemperature = UnityEngine.Rendering
                 .GraphicsSettings.lightsUseColorTemperature;
 
+            // What the shot actually contains. The picture came out a flat
+            // colour twice and there was no way to tell whether the roads were
+            // missing, buried, or simply off frame.
+            int roadCount = 0;
+            var roadArea = new Bounds();
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (Renderer piece in
+                    root.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (piece.transform.parent == null
+                        || piece.transform.parent.name != "Roads")
+                    {
+                        continue;
+                    }
+
+                    if (roadCount == 0)
+                    {
+                        roadArea = piece.bounds;
+                    }
+                    else
+                    {
+                        roadArea.Encapsulate(piece.bounds);
+                    }
+
+                    roadCount++;
+                }
+            }
+
+            Debug.Log(
+                $"[SANDBOX-OVERVIEW] frame {width}x{height}px covering "
+                + $"{bounds.size.x:0}x{bounds.size.z:0}m centred "
+                + $"({bounds.center.x:0.0}, {bounds.center.z:0.0}); "
+                + $"{roadCount} road renderers spanning "
+                + $"({roadArea.min.x:0.0}, {roadArea.min.z:0.0}) to "
+                + $"({roadArea.max.x:0.0}, {roadArea.max.z:0.0}) at y "
+                + $"{roadArea.min.y:0.00}..{roadArea.max.y:0.00}.");
+
             var target = new RenderTexture(width, height, 24);
             camera.targetTexture = target;
             camera.Render();

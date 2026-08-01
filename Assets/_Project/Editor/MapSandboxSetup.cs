@@ -69,6 +69,101 @@ namespace PawsAndLoot.Editor
         private const float LotZ = 8f;
 
         /// <summary>
+        /// One street, by its centre line.
+        ///
+        /// Written down rather than derived from the blocks. The blocks came
+        /// first while the town was being invented; now there is a drawing of
+        /// the streets to match, and deriving them from something else would
+        /// mean editing that something else and hoping the roads followed.
+        /// </summary>
+        private readonly struct Street
+        {
+            public Street(
+                string name,
+                bool horizontal,
+                float fixedCoordinate,
+                float from,
+                float to,
+                float width)
+            {
+                Name = name;
+                Horizontal = horizontal;
+                FixedCoordinate = fixedCoordinate;
+                From = from;
+                To = to;
+                Width = width;
+            }
+
+            public string Name { get; }
+            public bool Horizontal { get; }
+            public float FixedCoordinate { get; }
+            public float From { get; }
+            public float To { get; }
+            public float Width { get; }
+        }
+
+        private const float StreetWidth = 4f;
+        private const float AlleyWidth = 3f;
+
+        /// <summary>
+        /// The street plan, read off the drawn map.
+        ///
+        /// Three bands across and six ways down, and the ways down do not all
+        /// run the full height — that is what makes T-junctions instead of a
+        /// grid, and it is what the drawing shows.
+        /// </summary>
+        /// Written in the town's own coordinates, which run -28..52 by -22..50
+        /// rather than from zero. Read off the drawing as 0..80 by 0..72 and
+        /// shifted once here, so the drawing stays readable next to the numbers
+        /// instead of every line carrying the offset in its head.
+        private static readonly Street[] Streets =
+        {
+            Across("North Street", 56f, 0f, 80f, StreetWidth),
+            Across("Center Street", 28f, 0f, 80f, StreetWidth),
+            Across("South Street", 13f, 0f, 80f, StreetWidth),
+
+            Down("North West Alley", 9f, 56f, 72f, AlleyWidth),
+            Down("North Alley", 33f, 56f, 72f, AlleyWidth),
+
+            Down("Market Street", 25f, 13f, 56f, StreetWidth),
+            Down("Station Street", 42f, 0f, 56f, StreetWidth),
+            Down("Bookstore Street", 59f, 13f, 56f, StreetWidth),
+            Down("East Street", 71f, 13f, 56f, StreetWidth)
+        };
+
+        private static Street Across(
+            string name,
+            float z,
+            float fromX,
+            float toX,
+            float width)
+        {
+            return new Street(
+                name,
+                true,
+                z + MapMinZ,
+                fromX + MapMinX,
+                toX + MapMinX,
+                width);
+        }
+
+        private static Street Down(
+            string name,
+            float x,
+            float fromZ,
+            float toZ,
+            float width)
+        {
+            return new Street(
+                name,
+                false,
+                x + MapMinX,
+                fromZ + MapMinZ,
+                toZ + MapMinZ,
+                width);
+        }
+
+        /// <summary>
         /// What fills a block.
         /// </summary>
         private enum Use
@@ -167,6 +262,47 @@ namespace PawsAndLoot.Editor
         };
 
 
+        /// <summary>
+        /// Draws the street plan next to the drawing it is copied from.
+        ///
+        /// Lives here rather than in the capture tool because the arrays are
+        /// here, and a plan drawn from anything other than the numbers the
+        /// scene is built from is a second source of truth.
+        /// </summary>
+        [MenuItem("Paws & Loot/Sandbox/Capture Sandbox Blueprint")]
+        public static void CaptureBlueprint()
+        {
+            var pieces = new List<MapBlueprint.Piece>();
+
+            foreach (Street street in Streets)
+            {
+                float length = street.To - street.From;
+                float half = street.Width * 0.5f;
+                Rect area = street.Horizontal
+                    ? new Rect(
+                        street.From,
+                        street.FixedCoordinate - half,
+                        length,
+                        street.Width)
+                    : new Rect(
+                        street.FixedCoordinate - half,
+                        street.From,
+                        street.Width,
+                        length);
+                pieces.Add(new MapBlueprint.Piece(
+                    area,
+                    MapBlueprint.RoadColour(street.Width < StreetWidth)));
+            }
+
+            MapBlueprint.Write(
+                "Logs/sandbox-blueprint.png",
+                MapMinX,
+                MapMinZ,
+                MapWidth,
+                MapDepth,
+                pieces.ToArray());
+        }
+
         [MenuItem("Paws & Loot/Sandbox/Rebuild Map Sandbox")]
         public static void RebuildSandbox()
         {
@@ -183,8 +319,20 @@ namespace PawsAndLoot.Editor
 
             BuildGround(environment);
             int roads = BuildRoadNetwork(environment);
-            int placed = BuildBlocks(buildings, sizes, out int houses);
-            int dressing = BuildDressing(environment, sizes);
+
+            // Buildings and dressing are off while the street plan is being
+            // matched to the drawing. A town full of houses hides whether the
+            // roads are where they were asked to be, and the roads are the part
+            // being decided.
+            const bool buildingsEnabled = false;
+            int placed = 0;
+            int houses = 0;
+            int dressing = 0;
+            if (buildingsEnabled)
+            {
+                placed = BuildBlocks(buildings, sizes, out houses);
+                dressing = BuildDressing(environment, sizes);
+            }
 
             BuildPlayer(root, match);
             BuildLight(root);
@@ -363,100 +511,40 @@ namespace PawsAndLoot.Editor
         /// where the reference's hiding places are — and the space between bands
         /// becomes a road across the whole map.
         /// </summary>
+        /// <summary>
+        /// Lays the streets exactly where the plan says.
+        ///
+        /// Each one is a single slab, sharing one material for now.
+        ///
+        /// Per-street texture tiling was tried first and made every road
+        /// invisible: a material built with `new Material(...)` in an editor
+        /// script lives in memory only, so saving the scene left each renderer
+        /// pointing at nothing. Same family as the listener and the list that
+        /// do not survive a save. Tiling needs real material assets, and that
+        /// is worth doing once the street plan is settled rather than while it
+        /// is being moved around.
+        /// </summary>
         private static int BuildRoadNetwork(Transform parent)
         {
             Transform roads = Child("Roads", parent);
-            Material road = Load<Material>($"{MaterialDirectory}/Road.mat");
-            Material plaza = Load<Material>($"{MaterialDirectory}/Plaza.mat");
-            int count = 0;
+            Material source = Load<Material>($"{MaterialDirectory}/Road.mat");
 
-            // Across, between the bands. Taken from the distinct band edges so the
-            // count follows the table.
-            float[] bandEdges = Blocks
-                .SelectMany(block => new[] { block.MinZ, block.MaxZ })
-                .Distinct()
-                .OrderBy(value => value)
-                .ToArray();
-            for (int edge = 0; edge < bandEdges.Length - 1; edge++)
+            foreach (Street street in Streets)
             {
-                float gap = bandEdges[edge + 1] - bandEdges[edge];
-                if (gap < 1f || gap > 8f)
-                {
-                    // Either a band itself, or two bands that touch.
-                    continue;
-                }
+                float length = street.To - street.From;
+                float middle = (street.From + street.To) * 0.5f;
+                Vector3 centre = street.Horizontal
+                    ? new Vector3(middle, 0.02f, street.FixedCoordinate)
+                    : new Vector3(street.FixedCoordinate, 0.02f, middle);
+                Vector3 size = street.Horizontal
+                    ? new Vector3(length, 0.04f, street.Width)
+                    : new Vector3(street.Width, 0.04f, length);
 
-                Slab(
-                    roads,
-                    $"Street z {(bandEdges[edge] + bandEdges[edge + 1]) * 0.5f:0}",
-                    new Vector3(
-                        MapCentreX,
-                        0.02f,
-                        (bandEdges[edge] + bandEdges[edge + 1]) * 0.5f),
-                    new Vector3(MapWidth, 0.04f, gap),
-                    road,
-                    false);
-                count++;
+                Slab(roads, street.Name, centre, size, source, false);
             }
 
-            // Along, between neighbours in the same band, and only as long as the band
-            // is deep. That is what stops the verticals running the whole way through
-            // and gives the T-junctions.
-            foreach (var band in Blocks.GroupBy(block => block.MinZ))
-            {
-                Block[] ordered = band
-                    .OrderBy(block => block.MinX)
-                    .ToArray();
-                float depth = ordered[0].Depth;
-                float centre = (ordered[0].MinZ + ordered[0].MaxZ) * 0.5f;
-
-                // The map edge to the first block, then between each pair.
-                var edges = new List<(float From, float To)>
-                {
-                    (MapMinX, ordered[0].MinX)
-                };
-                for (int index = 0; index < ordered.Length - 1; index++)
-                {
-                    edges.Add((ordered[index].MaxX, ordered[index + 1].MinX));
-                }
-
-                edges.Add((ordered[^1].MaxX, MapMaxX));
-
-                foreach ((float from, float to) in edges)
-                {
-                    float gap = to - from;
-                    if (gap < 1f)
-                    {
-                        continue;
-                    }
-
-                    bool alley = gap < 3.5f;
-                    Slab(
-                        roads,
-                        alley
-                            ? $"Alley x {(from + to) * 0.5f:0}"
-                            : $"Street x {(from + to) * 0.5f:0}",
-                        new Vector3((from + to) * 0.5f, 0.03f, centre),
-                        new Vector3(gap, 0.06f, depth),
-                        road,
-                        false);
-                    count++;
-                }
-            }
-
-            // The plaza floor, under the fountain.
-            Block plazaBlock = Blocks.First(block => block.Use == Use.Plaza);
-            Slab(
-                roads,
-                "Central Plaza",
-                new Vector3(plazaBlock.Centre.x, 0.05f, plazaBlock.Centre.z),
-                new Vector3(plazaBlock.Width, 0.1f, plazaBlock.Depth),
-                plaza,
-                false);
-            count++;
-            return count;
+            return Streets.Length;
         }
-
 
         private static void Slab(
             Transform parent,
