@@ -659,7 +659,11 @@ namespace PawsAndLoot.Editor
                     ? new Vector3(length, 0.04f, street.Width)
                     : new Vector3(street.Width, 0.04f, length);
 
-                Slab(roads, street.Name, centre, size, source, false);
+                // A marker only: the surface is the tile grid laid over it.
+                // Left as a slab it covered the tiles completely, which is why
+                // the road model was nowhere to be seen.
+                Slab(roads, street.Name, centre - Vector3.up * 0.02f,
+                    size, source, false);
             }
 
             return Streets.Length;
@@ -715,6 +719,23 @@ namespace PawsAndLoot.Editor
             Bookstore,
             Plaza
         }
+
+        /// <summary>
+        /// A nudge for one building, in metres, applied after the even spacing.
+        ///
+        /// The layout spreads things down the middle of a block, which is right
+        /// for a plain rectangle and wrong for block 4: the market lane bites a
+        /// notch out of its south-east, so the two buildings ended up shoulder
+        /// to shoulder on the west side with the north-east corner empty. Rather
+        /// than teach the spacing about notches, the two that need it say so.
+        /// </summary>
+        private static readonly Dictionary<string, Vector2> Nudges = new()
+        {
+            // The supermarket goes to the corner the trees had.
+            { "4:Supermarket", new Vector2(7f, 4f) },
+            // And the house it was leaning on moves west.
+            { "4:OneStorey", new Vector2(-5f, 0f) }
+        };
 
         private static readonly (int Block, Fill[] Contents)[] Assignments =
         {
@@ -957,6 +978,13 @@ namespace PawsAndLoot.Editor
                         ? new Vector2(shape.y, shape.x)
                         : shape;
 
+                    if (Nudges.TryGetValue(
+                            $"{number}:{fill}",
+                            out Vector2 nudge))
+                    {
+                        centre += new Vector3(nudge.x, 0f, nudge.y);
+                    }
+
                     if (!TryFit(turned, roads, taken, ref centre))
                     {
                         Debug.LogWarning(
@@ -1129,9 +1157,15 @@ namespace PawsAndLoot.Editor
                 -bounds.min.y,
                 centre.z - bounds.center.z);
 
+            // Local space, because the transform is scaled and Unity scales
+            // the collider with it. Handing it the world size meant the box was
+            // scaled twice: the buildings were wrapped in colliders several
+            // times their own size, and walking near one pushed the player out
+            // of the world through the ground.
             BoxCollider box = instance.AddComponent<BoxCollider>();
-            box.center = new Vector3(0f, bounds.size.y * 0.5f, 0f);
-            box.size = bounds.size;
+            Vector3 local = bounds.size / Mathf.Max(0.0001f, scale);
+            box.center = new Vector3(0f, local.y * 0.5f, 0f);
+            box.size = local;
             return true;
         }
 
@@ -1170,8 +1204,8 @@ namespace PawsAndLoot.Editor
                 sizes,
                 "env_road_tile",
                 StreetAreas(),
-                2f,
-                0.03f);
+                4f,
+                0.05f);
 
             // Grass inside the blocks, pulled in so it does not creep over the
             // kerb. Blocks that are all building get very little of it, which
@@ -1196,23 +1230,30 @@ namespace PawsAndLoot.Editor
                 sizes,
                 "env_grass_tile",
                 greens.ToArray(),
-                4f,
-                0.01f);
+                10f,
+                0.02f);
+
+            Rect[] built = LayOut(blocks)
+                .Select(placement =>
+                    placement.Area(FootprintOf(placement.Fill)))
+                .ToArray();
 
             count += LineStreets(
                 dressing,
                 sizes,
                 "env_street_lamp",
-                15f,
+                18f,
                 1.4f,
-                3.2f);
+                3.2f,
+                built);
             count += LineStreets(
                 dressing,
                 sizes,
                 "env_tree",
-                11f,
-                2.6f,
-                4.5f);
+                16f,
+                2.8f,
+                4.5f,
+                built);
 
             return count;
         }
@@ -1221,6 +1262,53 @@ namespace PawsAndLoot.Editor
         /// Covers a rectangle with copies of a tile, sized so each copy is
         /// about the requested metres across.
         /// </summary>
+        /// <summary>
+        /// The material each environment model is given.
+        ///
+        /// They import white: the textures live in `.fbm` folders that no
+        /// longer match the renamed files, so the material asks for a map it
+        /// cannot find and draws nothing. Painting them here is what the town
+        /// already does for its trees, bins and roads, and a flat colour reads
+        /// better at this size than a photograph would.
+        /// </summary>
+        private static Material PaintFor(string stem)
+        {
+            string name = stem switch
+            {
+                "env_tree" => "Sandbox_Leaves",
+                "env_street_lamp" => "Sandbox_LampPost",
+                "env_grass_tile" => "Sandbox_Grass",
+                "env_road_tile" => "Road",
+                "env_fountain_plaza" => "Sandbox_Plaza",
+                _ => null
+            };
+            return name == null
+                ? null
+                : Load<Material>($"{MaterialDirectory}/{name}.mat");
+        }
+
+        private static void Paint(GameObject instance, string stem)
+        {
+            Material paint = PaintFor(stem);
+            if (paint == null)
+            {
+                return;
+            }
+
+            foreach (Renderer piece in
+                instance.GetComponentsInChildren<Renderer>(true))
+            {
+                var materials = new Material[
+                    Mathf.Max(1, piece.sharedMaterials.Length)];
+                for (int index = 0; index < materials.Length; index++)
+                {
+                    materials[index] = paint;
+                }
+
+                piece.sharedMaterials = materials;
+            }
+        }
+
         private static int LayTiles(
             Transform parent,
             Measurements sizes,
@@ -1277,6 +1365,10 @@ namespace PawsAndLoot.Editor
                             Object.DestroyImmediate(collider);
                         }
 
+                        Paint(tile, stem);
+                        GameObjectUtility.SetStaticEditorFlags(
+                            tile,
+                            StaticEditorFlags.BatchingStatic);
                         laid++;
                     }
                 }
@@ -1298,7 +1390,8 @@ namespace PawsAndLoot.Editor
             string stem,
             float spacing,
             float setback,
-            float targetHeight)
+            float targetHeight,
+            Rect[] buildings)
         {
             Vector3 native = sizes.Of(stem);
             if (native.y <= 0.01f)
@@ -1341,11 +1434,20 @@ namespace PawsAndLoot.Editor
                             at.z - 0.8f,
                             1.6f,
                             1.6f);
+                        // Kept clear of the buildings as well as the roads. A
+                        // tree at the shop door hides the shop, which is the one
+                        // thing on the block anybody is looking for.
+                        var elbow = new Rect(
+                            at.x - 2.5f,
+                            at.z - 2.5f,
+                            5f,
+                            5f);
                         if (at.x < MapMinX + 1f
                             || at.z < MapMinZ + 1f
                             || at.x > MapMaxX - 1f
                             || at.z > MapMaxZ - 1f
-                            || Overlaps(footing, roads))
+                            || Overlaps(footing, roads)
+                            || Overlaps(elbow, buildings))
                         {
                             continue;
                         }
@@ -1363,6 +1465,20 @@ namespace PawsAndLoot.Editor
                             return placed;
                         }
 
+                        // Scenery, not obstacles. Their own colliders are
+                        // wrongly sized for the same reason the buildings' were,
+                        // and a lamp post that shoves the player is worse than
+                        // one you can walk through.
+                        foreach (Collider collider in
+                            piece.GetComponentsInChildren<Collider>(true))
+                        {
+                            Object.DestroyImmediate(collider);
+                        }
+
+                        Paint(piece, stem);
+                        GameObjectUtility.SetStaticEditorFlags(
+                            piece,
+                            StaticEditorFlags.BatchingStatic);
                         placed++;
                     }
                 }
