@@ -314,6 +314,23 @@ namespace PawsAndLoot.Companions
                 return;
             }
 
+            ResolveLure();
+
+            // A lure overrides whatever the animal was doing, including a
+            // command it is halfway through. That is the whole value of the
+            // prop: an order the owner gave can be spoiled, which is the only
+            // counterplay either player has against the other's animal.
+            //
+            // Checked before the state switch rather than added as a state, so
+            // the animal returns to exactly what it was doing when the smell
+            // wears off instead of being dropped back to Idle.
+            if (_lure != null && _lure.IsActive)
+            {
+                StepTowards(_lure.Point, step);
+                _lastPosition = transform.position;
+                return;
+            }
+
             switch (_stateMachine.CurrentState)
             {
                 case CompanionState.Idle:
@@ -372,6 +389,25 @@ namespace PawsAndLoot.Companions
             {
                 _stateMachine.TryTransitionTo(CompanionState.Idle);
             }
+        }
+
+        private CompanionLure _lure;
+        private bool _lookedForLure;
+
+        /// <summary>
+        /// Resolved lazily and cached, because an animal built without one
+        /// simply can never be lured rather than being searched for every
+        /// frame.
+        /// </summary>
+        private CompanionLure ResolveLure()
+        {
+            if (!_lookedForLure)
+            {
+                _lure = GetComponent<CompanionLure>();
+                _lookedForLure = true;
+            }
+
+            return _lure;
         }
 
         private void TickMoveToTarget(float deltaTime)

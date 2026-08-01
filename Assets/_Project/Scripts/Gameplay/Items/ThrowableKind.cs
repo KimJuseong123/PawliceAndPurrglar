@@ -1,3 +1,5 @@
+using PawsAndLoot.Companions;
+
 namespace PawsAndLoot.Gameplay.Items
 {
     /// <summary>
@@ -37,7 +39,21 @@ namespace PawsAndLoot.Gameplay.Items
         /// corridor sensor light every apartment block has — at night a light is
         /// worth more than an alarm, because the officer already cannot see.
         /// </summary>
-        SensorLight = 3
+        SensorLight = 3,
+
+        /// <summary>
+        /// Police. Placed on the ground; the thief's cat goes to it and stays.
+        /// The cat scouts and steals, so pulling it away denies information —
+        /// which is what the officer's props are for.
+        /// </summary>
+        TunaCan = 4,
+
+        /// <summary>
+        /// Thief. Placed on the ground; the police's dog goes to it and stays.
+        /// The dog tracks, so pulling it away buys seconds — which is what the
+        /// thief's props are for.
+        /// </summary>
+        DogTreat = 5
     }
 
     /// <summary>
@@ -66,7 +82,16 @@ namespace PawsAndLoot.Gameplay.Items
         /// Makes them visible for a while and does not slow them at all. The
         /// thief keeps running — they just do it in the open.
         /// </summary>
-        Reveal = 1
+        Reveal = 1,
+
+        /// <summary>
+        /// Pulls the opponent's animal to the spot and keeps it there.
+        ///
+        /// Applies to the animal, never to a player, and it is the only effect
+        /// that fires on being placed rather than on being trodden on: a smell
+        /// that only works if the dog happens to step on it is not a lure.
+        /// </summary>
+        Lure = 2
     }
 
     public static class ThrowableCatalog
@@ -93,6 +118,16 @@ namespace PawsAndLoot.Gameplay.Items
         /// end of the run.
         /// </summary>
         public const float RevealSeconds = 2.5f;
+
+        /// <summary>
+        /// How long an animal stays with the food.
+        ///
+        /// Four seconds is a corner and a half at a run. Long enough that
+        /// losing the dog matters, short enough that the officer is not simply
+        /// without a dog for the rest of the chase — the props buy a moment,
+        /// they do not remove a character.
+        /// </summary>
+        public const float LureSeconds = 4f;
 
         /// <summary>
         /// How far a thrown prop travels before it drops. Short on purpose:
@@ -146,6 +181,10 @@ namespace PawsAndLoot.Gameplay.Items
             {
                 ThrowableKind.Banana =>
                     PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                ThrowableKind.DogTreat =>
+                    PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                ThrowableKind.TunaCan =>
+                    PawsAndLoot.Gameplay.Players.PlayerRole.Police,
                 ThrowableKind.GlueTrap =>
                     PawsAndLoot.Gameplay.Players.PlayerRole.Police,
                 ThrowableKind.SensorLight =>
@@ -157,9 +196,26 @@ namespace PawsAndLoot.Gameplay.Items
 
         public static TrapEffect GetEffect(ThrowableKind kind)
         {
-            return kind == ThrowableKind.SensorLight
-                ? TrapEffect.Reveal
-                : TrapEffect.Hold;
+            return kind switch
+            {
+                ThrowableKind.SensorLight => TrapEffect.Reveal,
+                ThrowableKind.TunaCan => TrapEffect.Lure,
+                ThrowableKind.DogTreat => TrapEffect.Lure,
+                _ => TrapEffect.Hold
+            };
+        }
+
+        /// <summary>
+        /// Which animal a lure calls. Null for everything that is not one.
+        /// </summary>
+        public static CompanionKind? GetLuredCompanion(ThrowableKind kind)
+        {
+            return kind switch
+            {
+                ThrowableKind.TunaCan => CompanionKind.Cat,
+                ThrowableKind.DogTreat => CompanionKind.Dog,
+                _ => null
+            };
         }
 
         public static float GetStunSeconds(ThrowableKind kind)
@@ -170,6 +226,10 @@ namespace PawsAndLoot.Gameplay.Items
                 ThrowableKind.GlueTrap => GlueHoldSeconds,
                 // A sensor light does not slow anybody down. It only tells.
                 ThrowableKind.SensorLight => 0f,
+                // Food does nothing to a person. Stepping over a tuna can is
+                // stepping over a tuna can.
+                ThrowableKind.TunaCan => 0f,
+                ThrowableKind.DogTreat => 0f,
                 _ => RockStunSeconds
             };
         }
@@ -197,6 +257,8 @@ namespace PawsAndLoot.Gameplay.Items
                 ThrowableKind.Banana => "바나나",
                 ThrowableKind.GlueTrap => "끈끈이",
                 ThrowableKind.SensorLight => "센서등",
+                ThrowableKind.TunaCan => "참치캔",
+                ThrowableKind.DogTreat => "개껌",
                 _ => "돌"
             };
         }

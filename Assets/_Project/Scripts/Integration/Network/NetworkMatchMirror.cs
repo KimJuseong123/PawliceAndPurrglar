@@ -98,6 +98,16 @@ namespace PawsAndLoot.Integration.Network
 
             evaluator?.SetAuthority(IsServer);
 
+            // The animals are scene objects with no link of their own, so their
+            // authority is set from the one component that knows whether this
+            // machine is the host.
+            foreach (PawsAndLoot.Companions.CompanionLure lure in
+                FindObjectsByType<PawsAndLoot.Companions.CompanionLure>(
+                    FindObjectsSortMode.None))
+            {
+                lure.SetAuthority(IsServer);
+            }
+
             // Published the instant it is decided, not on the next Update.
             //
             // This component lives in the match scene, and deciding a winner

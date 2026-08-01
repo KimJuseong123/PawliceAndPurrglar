@@ -1242,6 +1242,10 @@ namespace PawsAndLoot.Editor
 
                 BuildExpressionIcons(agentObject, agent, kind);
 
+                // THROW-004. What the other player's food acts on. Host side,
+                // like everything else the animals do.
+                agentObject.AddComponent<CompanionLure>();
+
                 if (legs.LegCount == 0)
                 {
                     Debug.LogWarning(
@@ -3198,6 +3202,7 @@ namespace PawsAndLoot.Editor
                 $"[ISSUE-011] {lootSpots.Length} loot pieces placed.");
 
             CreateRockPickups(root, matchRuntime);
+            CreateShopShelfPickups(root);
             CreateSaleZone(
                 "Prototype Sale Point",
                 locations[GreyboxLocationId.RaccoonMarket].position
@@ -3315,6 +3320,78 @@ namespace PawsAndLoot.Editor
         /// tool. Spots sit in road gaps that the loot placement already proved
         /// clear of the validated routes.
         /// </summary>
+        /// <summary>
+        /// The supermarket shelf the thief steals from.
+        ///
+        /// Until now the only thing anybody could throw was a rock off the
+        /// street, so both sides had the same one option and the thief's half of
+        /// the item layer existed in the enum and nowhere else. These are the
+        /// two props that are the thief's, and they come from a shop rather than
+        /// the ground because taking them is itself a thing a thief does.
+        ///
+        /// Role-restricted, unlike the rocks. A rock in the road is nobody's;
+        /// a shelf inside a shop is not something the officer helps themselves
+        /// to.
+        /// </summary>
+        private static void CreateShopShelfPickups(Transform parent)
+        {
+            // In front of the supermarket, on the side away from the police
+            // counters so the two shops do not read as one.
+            Vector3 shelf = new Vector3(-20.5f, 0.5f, -16.5f);
+            (ThrowableKind Kind, Vector3 Offset, Color Tint)[] shelves =
+            {
+                (ThrowableKind.Banana, Vector3.zero,
+                    new Color(0.94f, 0.86f, 0.28f)),
+                (ThrowableKind.DogTreat, new Vector3(2.2f, 0f, 0f),
+                    new Color(0.66f, 0.5f, 0.32f))
+            };
+
+            int id = 101;
+            foreach ((ThrowableKind kind, Vector3 offset, Color tint)
+                in shelves)
+            {
+                Vector3 spot = shelf + offset;
+                var pickup = new GameObject($"{kind} Shelf");
+                pickup.transform.SetParent(parent);
+                pickup.transform.position = spot;
+
+                var trigger = pickup.AddComponent<SphereCollider>();
+                trigger.radius = 0.6f;
+                trigger.isTrigger = true;
+
+                Transform presentation = CreateChild(
+                    "PresentationRoot",
+                    pickup.transform);
+                presentation.localPosition = Vector3.zero;
+
+                Material tinted = LoadOrCreateMaterial(
+                    $"Greybox_Shelf_{kind}",
+                    tint);
+                GameObject marker = CreateCube(
+                    $"{kind} Marker",
+                    spot + Vector3.up * 0.15f,
+                    new Vector3(0.4f, 0.3f, 0.4f),
+                    tinted,
+                    presentation,
+                    false);
+                UnityEngine.Object.DestroyImmediate(
+                    marker.GetComponent<Collider>());
+
+                pickup.AddComponent<ThrowablePickup>().Configure(
+                    kind,
+                    presentation,
+                    true,
+                    PlayerRole.Thief,
+                    14f,
+                    id++);
+
+                CheckSpotIsClear(pickup.transform, spot);
+            }
+
+            Debug.Log(
+                $"[THROW-006] {shelves.Length} shop shelf pickups placed.");
+        }
+
         private static void CreateRockPickups(
             Transform parent,
             MatchRuntimeState matchRuntime)
@@ -3431,7 +3508,10 @@ namespace PawsAndLoot.Editor
             (ThrowableKind kind, int price, Vector3 offset)[] counters =
             {
                 (ThrowableKind.GlueTrap, 60, new Vector3(0f, 0f, 0f)),
-                (ThrowableKind.SensorLight, 90, new Vector3(2.2f, 0f, 0f))
+                (ThrowableKind.SensorLight, 90, new Vector3(2.2f, 0f, 0f)),
+                // Cheapest of the three. It buys a few seconds of the cat not
+                // scouting, which is worth less than holding the thief still.
+                (ThrowableKind.TunaCan, 40, new Vector3(4.4f, 0f, 0f))
             };
 
             foreach ((ThrowableKind kind, int price, Vector3 offset)
@@ -3448,9 +3528,14 @@ namespace PawsAndLoot.Editor
 
                 Material counterMaterial = LoadOrCreateMaterial(
                     $"Greybox_{kind}",
-                    kind == ThrowableKind.GlueTrap
-                        ? new Color(0.24f, 0.2f, 0.16f)
-                        : new Color(0.86f, 0.88f, 0.9f));
+                    kind switch
+                    {
+                        ThrowableKind.GlueTrap =>
+                            new Color(0.24f, 0.2f, 0.16f),
+                        ThrowableKind.TunaCan =>
+                            new Color(0.55f, 0.62f, 0.72f),
+                        _ => new Color(0.86f, 0.88f, 0.9f)
+                    });
                 GameObject marker = CreateCube(
                     $"{kind} Counter Marker",
                     spot + Vector3.up * 0.2f,

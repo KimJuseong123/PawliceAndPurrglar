@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PawsAndLoot.Companions;
 using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Logging;
@@ -166,6 +167,45 @@ namespace PawsAndLoot.Integration.Network
             trapObject.AddComponent<PawsAndLoot.Animation.PlacedTrapView>()
                 .Configure(kind, ResolveTrapMaterial(kind), placedBy);
             _traps[id] = trap;
+
+            // Food works on being put down, not on being trodden on. Applied
+            // where the trap is created so it happens on the host and on the
+            // client alike — both machines draw the animal walking over, and
+            // only the host's movement is the one that counts.
+            ApplyLure(kind, position);
+        }
+
+        /// <summary>
+        /// Calls the animal the prop is meant for.
+        ///
+        /// Matched by companion kind rather than by owner, because the prop
+        /// names the animal it smells like: a tuna can pulls the cat wherever
+        /// the cat came from. That also means a thief who somehow got hold of a
+        /// tuna can would pull their own cat, which is the correct outcome
+        /// rather than a special case.
+        /// </summary>
+        private void ApplyLure(ThrowableKind kind, Vector3 position)
+        {
+            CompanionKind? wanted =
+                ThrowableCatalog.GetLuredCompanion(kind);
+            if (!wanted.HasValue)
+            {
+                return;
+            }
+
+            foreach (CompanionAgent agent in
+                FindObjectsByType<CompanionAgent>(
+                    FindObjectsSortMode.None))
+            {
+                if (agent.CompanionKind != wanted.Value)
+                {
+                    continue;
+                }
+
+                agent.GetComponent<CompanionLure>()?.TryLure(
+                    position,
+                    ThrowableCatalog.LureSeconds);
+            }
         }
 
         private void Clear(int id)
