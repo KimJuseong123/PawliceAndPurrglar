@@ -298,6 +298,8 @@ namespace PawsAndLoot.Editor
                     PoliceBlue,
                     ThiefRed,
                     MarketGold);
+            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints thiefSpawns =
+                CreateThiefSpawnPoints(locationsRoot, ThiefRed);
             List<GreyboxRouteReference> routes =
                 CreateRoutes(routesRoot, locations);
 
@@ -351,7 +353,11 @@ namespace PawsAndLoot.Editor
                     playerConfig,
                     false)
             };
-            ConfigureArrestSystem(controlBindings, matchRuntime, map);
+            ConfigureArrestSystem(
+                controlBindings,
+                matchRuntime,
+                map,
+                thiefSpawns);
             ConfigureMatchResultEvaluator(
                 controlBindings,
                 matchRuntime);
@@ -2209,17 +2215,29 @@ namespace PawsAndLoot.Editor
                 Color marketColor)
         {
             var result = new Dictionary<GreyboxLocationId, Transform>();
+            // On the pavement outside the station's front door, facing the
+            // street. The old spot was (-24, 0), which the new town put inside
+            // somebody's living room — an officer who starts in a wall reads as
+            // a broken game before the match has begun.
+            //
+            // The station stands at (5.7, 20.2) on a twelve metre plot and
+            // faces south like every building here, so its door is six metres
+            // down plus room to stand.
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.PoliceSpawn,
-                new Vector3(-24f, 0f, 0f),
+                PoliceSpawnPoint,
                 policeColor);
+
+            // The thief's first corner. Which one is drawn per match rather
+            // than chosen here — this anchor is the one the map contract wants
+            // and the one anything unaware of the draw falls back to.
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.ThiefSpawn,
-                new Vector3(24f, 0f, -18f),
+                ThiefSpawnPoints[0],
                 thiefColor);
             AddLocation(
                 result,
@@ -2252,6 +2270,62 @@ namespace PawsAndLoot.Editor
                 new Vector3(0f, 0f, -3f),
                 Color.white);
             return result;
+        }
+
+        /// <summary>
+        /// Where the officer starts, and which way they are looking.
+        ///
+        /// Facing the street rather than the building. Starting a player nose
+        /// to a wall costs them the first second of every match working out
+        /// which way is out.
+        /// </summary>
+        private static readonly Vector3 PoliceSpawnPoint =
+            new(5.7f, 0f, 12.5f);
+
+        private const float PoliceSpawnFacing = 180f;
+
+        /// <summary>
+        /// The five corners the thief may start at, and come back to.
+        ///
+        /// Out at the edges, and spread so that no two are a short run apart —
+        /// five spawns clustered on one side would be one spawn with extra
+        /// steps. Kept off the lake garden in the south-west and off the forest
+        /// in the north-west, both of which fill their plots.
+        /// </summary>
+        private static readonly Vector3[] ThiefSpawnPoints =
+        {
+            new(-24f, 0f, 45f),
+            new(48f, 0f, 45f),
+            new(48f, 0f, 6f),
+            new(48f, 0f, -18f),
+            new(-8f, 0f, -19f)
+        };
+
+        /// <summary>
+        /// Builds the five corners and the draw between them.
+        /// </summary>
+        private static PawsAndLoot.Gameplay.Players.ThiefSpawnPoints
+            CreateThiefSpawnPoints(Transform parent, Color thiefColor)
+        {
+            var holder = new GameObject("Thief Spawn Points");
+            holder.transform.SetParent(parent, false);
+
+            var anchors = new List<Transform>();
+            for (int index = 0; index < ThiefSpawnPoints.Length; index++)
+            {
+                var anchor = new GameObject($"Thief Spawn {index + 1}");
+                anchor.transform.SetParent(holder.transform, false);
+                anchor.transform.position = ThiefSpawnPoints[index];
+                anchors.Add(anchor.transform);
+            }
+
+            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints draw =
+                holder.AddComponent<
+                    PawsAndLoot.Gameplay.Players.ThiefSpawnPoints>();
+            draw.Configure(anchors);
+            Debug.Log(
+                $"[MAP-001] {anchors.Count} thief spawn corners placed.");
+            return draw;
         }
 
         private static List<GreyboxRouteReference> CreateRoutes(
@@ -2465,6 +2539,16 @@ namespace PawsAndLoot.Editor
             marker.transform.position =
                 PlayerRoleSpawnResolver.Resolve(map, role).position
                 + Vector3.up;
+
+            // The officer faces the street rather than the station they came
+            // out of. Everything spawns looking down +Z by default, and the
+            // station is north of its own door, so the officer started nose to
+            // the wall.
+            if (role == PlayerRole.Police)
+            {
+                marker.transform.rotation =
+                    Quaternion.Euler(0f, PoliceSpawnFacing, 0f);
+            }
 
             Transform visualRoot = CreateChild(
                 "VisualRoot",
@@ -3048,7 +3132,8 @@ namespace PawsAndLoot.Editor
         private static void ConfigureArrestSystem(
             IReadOnlyList<PlayerRoleControlBinding> bindings,
             MatchRuntimeState matchRuntime,
-            GreyboxMapDefinition map)
+            GreyboxMapDefinition map,
+            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints thiefSpawns)
         {
             PlayerRoleIdentity police = null;
             PlayerRoleIdentity thief = null;
@@ -3102,7 +3187,13 @@ namespace PawsAndLoot.Editor
                 thief.gameObject.AddComponent<ThiefJailState>();
             ArrestJailCoordinator coordinator =
                 police.gameObject.AddComponent<ArrestJailCoordinator>();
-            coordinator.Configure(completion, jail, cell, release, config);
+            coordinator.Configure(
+                completion,
+                jail,
+                cell,
+                release,
+                config,
+                thiefSpawns);
         }
 
         private static void ConfigureMatchResultEvaluator(

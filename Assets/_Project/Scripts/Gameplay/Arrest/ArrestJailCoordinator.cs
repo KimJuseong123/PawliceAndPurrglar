@@ -31,6 +31,14 @@ namespace PawsAndLoot.Gameplay.Arrest
         [SerializeField]
         private ArrestConfig arrestConfig;
 
+        /// <summary>
+        /// Where a released thief may come back, when there is more than one
+        /// place. Optional: without it the single release point is used, which
+        /// is what every test fixture builds.
+        /// </summary>
+        [SerializeField]
+        private PawsAndLoot.Gameplay.Players.ThiefSpawnPoints releasePoints;
+
         private bool _subscribed;
 
         public void Configure(
@@ -38,8 +46,11 @@ namespace PawsAndLoot.Gameplay.Arrest
             ThiefJailState configuredJail,
             Transform configuredCellPoint,
             Transform configuredReleasePoint,
-            ArrestConfig configuredArrestConfig)
+            ArrestConfig configuredArrestConfig,
+            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints configuredReleasePoints
+                = null)
         {
+            releasePoints = configuredReleasePoints;
             Unsubscribe();
             arrestCompletion = configuredArrestCompletion;
             jail = configuredJail;
@@ -70,10 +81,22 @@ namespace PawsAndLoot.Gameplay.Arrest
                 return;
             }
 
+            // Drawn here rather than when the jail term ends, so the whole
+            // sentence has one answer. Deciding at release would let the same
+            // arrest resolve differently if this ran twice.
+            //
+            // And drawn on this machine only. This handler fires from the
+            // arrest being completed, which is a host decision; the client's
+            // thief arrives at the drawn corner by the position replication
+            // that was already carrying it.
+            Vector3 release = releasePoints != null
+                ? releasePoints.Draw(releasePoint.position)
+                : releasePoint.position;
+
             jail.TryJail(
                 arrestConfig.JailSeconds,
                 cellPoint.position,
-                releasePoint.position);
+                release);
         }
 
         /// <summary>
