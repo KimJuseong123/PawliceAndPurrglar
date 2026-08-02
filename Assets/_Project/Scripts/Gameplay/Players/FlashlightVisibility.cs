@@ -133,12 +133,71 @@ namespace PawsAndLoot.Gameplay.Players
                 }
 
                 _target = candidate;
-                _targetRenderers =
-                    candidate.GetComponentsInChildren<Renderer>(true);
+                _targetRenderers = CollectRenderers(candidate);
                 return true;
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Everything drawn for the opposing side: the player, and the animal
+        /// that follows them.
+        ///
+        /// The animal is not a child of the player. It is parented to the
+        /// town's own Companions node so it can be left behind, sent ahead and
+        /// lured away, none of which works from inside somebody's hierarchy.
+        /// Asking the player for its children therefore returned the player and
+        /// nothing else — and the cat stayed lit in the dark, twelve metres
+        /// outside the torch, pointing at exactly where the thief was.
+        ///
+        /// Matched by owner rather than by name or by tag. An animal knows
+        /// whose it is; a name is a thing somebody renames.
+        /// </summary>
+        private static Renderer[] CollectRenderers(PlayerRoleIdentity target)
+        {
+            var found = new System.Collections.Generic.List<Renderer>(
+                target.GetComponentsInChildren<Renderer>(true));
+
+            foreach (PawsAndLoot.Companions.CompanionAgent animal in
+                FindObjectsByType<PawsAndLoot.Companions.CompanionAgent>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None))
+            {
+                if (!BelongsTo(animal, target))
+                {
+                    continue;
+                }
+
+                found.AddRange(
+                    animal.GetComponentsInChildren<Renderer>(true));
+            }
+
+            return found.ToArray();
+        }
+
+        /// <summary>
+        /// Whether an animal follows the given player.
+        ///
+        /// Asked of the animal's own owner reference when it has one, and
+        /// otherwise settled by role: the dog is the officer's and the cat is
+        /// the thief's, which is a rule of the game rather than of the scene.
+        /// </summary>
+        private static bool BelongsTo(
+            PawsAndLoot.Companions.CompanionAgent animal,
+            PlayerRoleIdentity target)
+        {
+            PlayerRoleIdentity owner =
+                animal.GetComponentInParent<PlayerRoleIdentity>();
+            if (owner != null)
+            {
+                return owner == target;
+            }
+
+            return animal.CompanionKind
+                == PawsAndLoot.Companions.CompanionKind.Cat
+                ? target.Role == PlayerRole.Thief
+                : target.Role == PlayerRole.Police;
         }
 
         private void SetVisible(bool visible)

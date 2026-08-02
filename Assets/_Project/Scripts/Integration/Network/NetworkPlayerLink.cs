@@ -851,6 +851,23 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
+            // The local brain is switched off first, and only here.
+            //
+            // Position was already being replicated and the animal still stood
+            // somewhere else on the client, because the client was *also*
+            // running its own CompanionAgent: two writers to one transform,
+            // every frame, one easing toward the host's answer and the other
+            // walking off to its own. Neither is wrong on its own and the
+            // result is an animal in two places.
+            //
+            // Whoever is being told where the animal is does not get to decide
+            // where the animal is. The same rule as every other divergence this
+            // project has met.
+            if (companionAgent.enabled)
+            {
+                companionAgent.enabled = false;
+            }
+
             Transform animal = companionAgent.transform;
             animal.position = Vector3.MoveTowards(
                 animal.position,
