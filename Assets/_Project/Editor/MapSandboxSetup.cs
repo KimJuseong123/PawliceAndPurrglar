@@ -1370,6 +1370,7 @@ namespace PawsAndLoot.Editor
             Transform surface = Child("Surface", parent);
             Transform dressing = Child("Dressing", parent);
             int count = LayRoads(surface);
+            count += BuildBoundary(parent);
 
             count += LayGrass(
                 surface,
@@ -1404,6 +1405,199 @@ namespace PawsAndLoot.Editor
                 built);
 
             return count;
+        }
+
+        /// <summary>
+        /// How tall the boundary stands.
+        ///
+        /// Three metres. The character jumps, and a two metre wall is one a
+        /// determined player gets on top of and then walks off the edge of the
+        /// world from — which is not a bug anybody reports, it just looks like
+        /// the map ending.
+        /// </summary>
+        private const float BoundaryHeight = 3f;
+
+        /// <summary>
+        /// How thick. Enough that the far face is visible from inside at this
+        /// camera angle, so the wall reads as stone rather than as a sheet.
+        /// </summary>
+        private const float BoundaryThickness = 1.2f;
+
+        /// <summary>
+        /// Walls the town in on all four sides.
+        ///
+        /// Solid, and the only solid thing in the dressing — everything else
+        /// laid down here has its colliders stripped. The point of it is that
+        /// the player cannot leave.
+        ///
+        /// Four plain boxes in the same grey the real map uses, not three
+        /// hundred copies of the stone model. The model is forty-seven thousand
+        /// triangles for a metre of wall and the perimeter is three hundred
+        /// metres — repeating it would cost twice what the entire town costs,
+        /// at the edge of the map, for something nobody walks up to.
+        ///
+        /// Plain on purpose rather than for want of a texture. It is the edge
+        /// of the world; anything decorative there is asking the player to look
+        /// at the one place there is nothing to find.
+        /// </summary>
+        private static int BuildBoundary(Transform parent)
+        {
+            // The same grey the real map's boundary uses, so the two towns
+            // end the same way.
+            Material stone = Colour(
+                "Sandbox_Boundary",
+                new Color(0.22f, 0.24f, 0.27f));
+            if (stone == null)
+            {
+                return 0;
+            }
+
+            Transform walls = Child("Boundary", parent);
+            float halfThickness = BoundaryThickness * 0.5f;
+
+            // Placed so the inside face sits exactly on the map edge. Centred
+            // on the edge instead, half the wall would stand on the last row of
+            // tiles and the town would lose a metre all the way round.
+            (string Name, Vector3 Centre, Vector3 Size)[] runs =
+            {
+                ("North Boundary",
+                    new Vector3(
+                        (MapMinX + MapMaxX) * 0.5f,
+                        BoundaryHeight * 0.5f,
+                        MapMaxZ + halfThickness),
+                    new Vector3(
+                        MapWidth + BoundaryThickness * 2f,
+                        BoundaryHeight,
+                        BoundaryThickness)),
+                ("South Boundary",
+                    new Vector3(
+                        (MapMinX + MapMaxX) * 0.5f,
+                        BoundaryHeight * 0.5f,
+                        MapMinZ - halfThickness),
+                    new Vector3(
+                        MapWidth + BoundaryThickness * 2f,
+                        BoundaryHeight,
+                        BoundaryThickness)),
+                ("West Boundary",
+                    new Vector3(
+                        MapMinX - halfThickness,
+                        BoundaryHeight * 0.5f,
+                        (MapMinZ + MapMaxZ) * 0.5f),
+                    new Vector3(
+                        BoundaryThickness,
+                        BoundaryHeight,
+                        MapDepth)),
+                ("East Boundary",
+                    new Vector3(
+                        MapMaxX + halfThickness,
+                        BoundaryHeight * 0.5f,
+                        (MapMinZ + MapMaxZ) * 0.5f),
+                    new Vector3(
+                        BoundaryThickness,
+                        BoundaryHeight,
+                        MapDepth))
+            };
+
+            int built = 0;
+            foreach ((string name, Vector3 centre, Vector3 size) in runs)
+            {
+                var run = new GameObject(name);
+                run.transform.SetParent(walls, false);
+                run.transform.position = centre;
+
+                run.AddComponent<MeshFilter>().sharedMesh =
+                    BoundaryMesh(name, size);
+                run.AddComponent<MeshRenderer>().sharedMaterial = stone;
+
+                var solid = run.AddComponent<BoxCollider>();
+                solid.size = size;
+
+                MakeBatchable(run);
+                built++;
+            }
+
+            return built;
+        }
+
+        /// <summary>
+        /// A five-sided box: four walls and a lid, no floor.
+        ///
+        /// Written as an asset, not built in memory. A mesh made at edit time
+        /// and handed to a renderer is gone the moment the scene is saved,
+        /// which is the same trap that once left every road in the town
+        /// invisible.
+        /// </summary>
+        private static Mesh BoundaryMesh(string name, Vector3 size)
+        {
+            string path =
+                $"{GeneratedDirectory}/{name.Replace(' ', '_')}.asset";
+            var cached = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            if (cached != null)
+            {
+                return cached;
+            }
+
+            Vector3 half = size * 0.5f;
+            var vertices = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var triangles = new List<int>();
+
+            void Face(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+            {
+                int start = vertices.Count;
+                vertices.Add(a);
+                vertices.Add(b);
+                vertices.Add(c);
+                vertices.Add(d);
+                uvs.Add(new Vector2(0f, 0f));
+                uvs.Add(new Vector2(0f, 1f));
+                uvs.Add(new Vector2(1f, 1f));
+                uvs.Add(new Vector2(1f, 0f));
+                triangles.AddRange(new[]
+                {
+                    start, start + 1, start + 2,
+                    start, start + 2, start + 3
+                });
+            }
+
+            Face(new Vector3(-half.x, -half.y, -half.z),
+                new Vector3(-half.x, half.y, -half.z),
+                new Vector3(half.x, half.y, -half.z),
+                new Vector3(half.x, -half.y, -half.z));
+            Face(new Vector3(half.x, -half.y, half.z),
+                new Vector3(half.x, half.y, half.z),
+                new Vector3(-half.x, half.y, half.z),
+                new Vector3(-half.x, -half.y, half.z));
+            Face(new Vector3(half.x, -half.y, -half.z),
+                new Vector3(half.x, half.y, -half.z),
+                new Vector3(half.x, half.y, half.z),
+                new Vector3(half.x, -half.y, half.z));
+            Face(new Vector3(-half.x, -half.y, half.z),
+                new Vector3(-half.x, half.y, half.z),
+                new Vector3(-half.x, half.y, -half.z),
+                new Vector3(-half.x, -half.y, -half.z));
+
+            // The top, so the wall is not hollow when seen from a rooftop.
+            Face(new Vector3(-half.x, half.y, -half.z),
+                new Vector3(-half.x, half.y, half.z),
+                new Vector3(half.x, half.y, half.z),
+                new Vector3(half.x, half.y, -half.z));
+
+            var mesh = new Mesh
+            {
+                name = name,
+                vertices = vertices.ToArray(),
+                uv = uvs.ToArray(),
+                triangles = triangles.ToArray()
+            };
+            mesh.RecalculateNormals();
+            mesh.RecalculateTangents();
+            mesh.RecalculateBounds();
+
+            Directory.CreateDirectory(GeneratedDirectory);
+            AssetDatabase.CreateAsset(mesh, path);
+            AssetDatabase.SaveAssets();
+            return mesh;
         }
 
         /// <summary>

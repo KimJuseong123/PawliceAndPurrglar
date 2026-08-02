@@ -25,7 +25,7 @@ namespace PawsAndLoot.Editor
             foreach (string path in AssetDatabase
                 .FindAssets("t:Model", new[] { EnvironmentDirectory })
                 .Select(AssetDatabase.GUIDToAssetPath)
-                .Where(path => path.Contains("env_road"))
+                .Where(path => path.Contains("env_road") || path.Contains("env_stone_wall"))
                 .Distinct()
                 .OrderBy(path => path))
             {

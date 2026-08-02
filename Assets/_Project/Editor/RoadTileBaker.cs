@@ -166,6 +166,7 @@ namespace PawsAndLoot.Editor
                 MakeMaterial(stem);
             }
 
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log(
@@ -496,6 +497,10 @@ namespace PawsAndLoot.Editor
             if (importer != null)
             {
                 importer.textureType = TextureImporterType.Default;
+
+                // Clamped. Ground tiles are placed one per cell, and a
+                // wrapping tile bleeds its far edge into its near one at every
+                // seam.
                 importer.wrapMode = TextureWrapMode.Clamp;
                 importer.mipmapEnabled = true;
                 importer.SaveAndReimport();
