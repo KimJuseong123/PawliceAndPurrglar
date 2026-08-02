@@ -1,5 +1,15 @@
 # 20. 감면(Decimate) 목록
 
+**1·2·4순위는 완료했다** (2026-08-02). 이 PC의 Blender 5.2로
+`Tools/decimate_fbx.py`를 헤드리스로 돌렸다. 남은 것은 3순위(실내·미사용 외관)이고,
+그건 임포트될 때 하면 된다.
+
+| | 이전 | 이후 |
+|---|---:|---:|
+| 샌드박스 씬 삼각형 | 3,061,747 | **396,852** |
+| 샌드박스 빌드 에셋 | 140 MB | **35 MB** |
+| 본 게임 빌드 에셋 | — | **41 MB** |
+
 측정일: 2026-08-02. 모든 수치는 `Paws & Loot / Setup / Report Model Weights`가
 실제 임포트된 메시를 세어 얻은 것이다. 파일 크기 짐작이 아니다.
 
@@ -17,12 +27,12 @@
 
 `Game.unity`가 실제로 배치하는 모델이다. 여기가 가장 급하다.
 
-| 모델 | 지금 | Blender 파일 |
+| 모델 | 이전 → 이후 | Blender 파일 |
 |---|---:|---|
-| 느낌표 아이콘 | 983,743 | `expression icon 3d/warning 3d model/orange+exclamation+mark+3d+model.fbx` |
-| 하트 아이콘 | 959,014 | `expression icon 3d/pink heart 3d model/pink+heart+3d+model.fbx` |
-| 전구 아이콘 | 953,378 | `expression icon 3d/light bulb 3d model/light+bulb+3d+model.fbx` |
-| 소용돌이 아이콘 | 951,894 | `expression icon 3d/dizzy 3d model/spiral+badge+3d+model.fbx` |
+| 느낌표 아이콘 | 983,743 → **2,000** | `expression icon 3d/warning 3d model/orange+exclamation+mark+3d+model.fbx` |
+| 하트 아이콘 | 958,854 → **2,000** | `expression icon 3d/pink heart 3d model/pink+heart+3d+model.fbx` |
+| 전구 아이콘 | 953,166 → **2,000** | `expression icon 3d/light bulb 3d model/light+bulb+3d+model.fbx` |
+| 소용돌이 아이콘 | 951,692 → **2,000** | `expression icon 3d/dizzy 3d model/spiral+badge+3d+model.fbx` |
 
 **합계 385만 삼각형.** 동물 머리 위에 뜨는 한 뼘짜리 아이콘 넷이다. 화면에서 차지하는
 크기를 생각하면 **각 1,000~3,000 삼각형이면 충분하다** — 비율 0.002. 이 넷이 이
@@ -32,9 +42,9 @@
 
 | 모델 | 지금 | Blender 파일 |
 |---|---:|---|
-| 보석상 | 954,546 | `Buildings/jewelry shop 3d model/jewelry+shop+3d+model.fbx` |
-| 분수 광장 | 945,576 | `environment/fountain plaza 3d model/fountain+plaza+3d+model.fbx` |
-| 2층집 | 920,026 | `Buildings/two-story house 3d model/two-story+house+3d+model.fbx` |
+| 보석상 | 954,434 → **40,000** | `Buildings/jewelry shop 3d model/jewelry+shop+3d+model.fbx` |
+| 분수 광장 | 945,538 → **40,000** | `environment/fountain plaza 3d model/fountain+plaza+3d+model.fbx` |
+| 2층집 | 919,926 → **40,000** | `Buildings/two-story house 3d model/two-story+house+3d+model.fbx` |
 
 **합계 282만.** 지금 샌드박스 빌드 에셋의 32MB가 이 셋이다.
 
@@ -72,11 +82,11 @@
 
 | 모델 | 지금 | Blender 파일 |
 |---|---:|---|
-| 가로등 | 96,594 | `environment/street lamp 3d model/street+lamp+3d+model.fbx` |
-| 나무 (로우폴리) | 89,780 | `environment/low poly tree 3d model/low+poly+tree+3d+model.fbx` |
-| 나무 (양식화) | 93,725 | `environment/stylized tree 3d model/stylized+tree+3d+model.fbx` |
-| 외벽 돌담 | 46,984 | `environment/outer wall 3d model/stone+wall+3d+model.fbx` |
-| 소화전 | 46,514 | `environment/fire hydrant 3d model/fire+hydrant+3d+model.fbx` |
+| 가로등 | 96,594 → **5,000** | `environment/street lamp 3d model/street+lamp+3d+model.fbx` |
+| 나무 (로우폴리) | 89,780 → **5,000** | `environment/low poly tree 3d model/low+poly+tree+3d+model.fbx` |
+| 나무 (양식화) | 93,728 → **5,000** | `environment/stylized tree 3d model/stylized+tree+3d+model.fbx` |
+| 외벽 돌담 | 46,980 → **3,000** | `environment/outer wall 3d model/stone+wall+3d+model.fbx` |
+| 소화전 | 46,476 → **3,000** | `environment/fire hydrant 3d model/fire+hydrant+3d+model.fbx` |
 
 이미 10만 이하라 급하지 않다. 다만 **가로등과 나무는 개수가 많다** — 지금 12개지만
 맵이 커지면 늘어난다. 각 5,000으로 내리면 좋다.
@@ -116,11 +126,30 @@
 
 ---
 
-## 작업 순서 제안
+## 어떻게 돌렸나
 
-1. **아이콘 4개** — 385만 → 1만 미만. 반나절이면 되고 효과가 가장 크다
-2. **보석상 · 분수 광장 · 2층집** — 282만 → 15만. 샌드박스 빌드 32MB → 2MB
-3. 실내 7개 (들여올 때)
-4. 가로등 · 나무
+```bash
+blender --background --python Tools/decimate_fbx.py -- <in.fbx> <out.fbx> <목표 삼각형>
+```
 
-1과 2만 해도 빌드 에셋이 **80MB → 25MB 내외**가 된다. WebGL에서 편한 크기다.
+비율이 아니라 **목표 삼각형 수**를 받는다. Decimate는 비율을 받지만 모델마다 밀도가
+제각각이라, 고정 비율은 아이콘을 뭉개면서 건물은 무겁게 남긴다. 비율은 목표에 닿는
+값으로 계산한다.
+
+UV는 `use_collapse_triangulate`로 지킨다. 이 메시들은 구워진 아틀라스 하나만 들고
+있어서, 텍스처 좌표를 잃으면 모델이 회색이 된다. 결과를 옆에서 찍어 확인했고 창문·문·
+지붕 타일까지 그대로 남았다.
+
+결과는 `ArtSource/Decimated/`에 남아 있다. 원본은 건드리지 않았다.
+
+**교체는 제자리 덮어쓰기로 했다.** 새 파일로 넣으면 GUID가 새로 생겨서 씬의 모든
+참조가 끊긴다.
+
+## 남은 것
+
+3순위(실내 7개, 아직 안 쓰는 건물 외관 6개)뿐이다. 임포트할 때 같은 명령을 돌리면
+된다. 실내는 목표를 10만으로 잡는다 — 플레이어가 가장 가까이서 오래 보는 곳이다.
+
+```bash
+blender --background --python Tools/decimate_fbx.py --   "ArtSource/Blender/building_inside/house01 interior 3d model/house+interior+3d+model.fbx"   "ArtSource/Decimated/interior_house01.fbx" 100000
+```
