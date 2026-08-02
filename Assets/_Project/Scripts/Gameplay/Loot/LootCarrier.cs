@@ -67,10 +67,36 @@ namespace PawsAndLoot.Gameplay.Loot
             }
 
             LootItem previous = HeldLoot;
+            Vector3 liftedFrom = loot.transform.position;
             HeldLoot = loot;
             _completedRequests.Add(requestId);
             HeldLootChanged?.Invoke(previous, HeldLoot);
+            RaiseAlarmIfWatched(loot, liftedFrom);
             return true;
+        }
+
+        /// <summary>
+        /// Sounds the shop's alarm if this piece is one of the watched ones.
+        ///
+        /// Done on acquisition rather than at the case, because the two are not
+        /// the same moment: the glass going is loud, and the ring leaving its
+        /// cushion is what the shop is actually wired to notice. A thief who
+        /// breaks a case and takes nothing has made a noise; a thief who takes
+        /// the ring has set off an alarm.
+        ///
+        /// The position is where the piece was, not where the thief is. The
+        /// mark on the officer's screen should point at the empty cushion —
+        /// pointing it at the thief would make the alarm a tracker, and there
+        /// is a separate, shorter reveal for that.
+        /// </summary>
+        private void RaiseAlarmIfWatched(LootItem loot, Vector3 liftedFrom)
+        {
+            if (loot.Definition == null || !loot.Definition.RaisesAlarm)
+            {
+                return;
+            }
+
+            FindFirstObjectByType<LootAlarm>()?.Raise(liftedFrom, identity);
         }
 
         public bool TryDrop()

@@ -16,3 +16,4 @@ MonoBehaviour:
   displayName: Common Trinket
   rarity: 0
   carryType: 2
+  raisesAlarm: 0

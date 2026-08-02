@@ -516,7 +516,8 @@ namespace PawsAndLoot.TechnicalValidation
         {
             LootItem loot = FindObjectsByType<LootItem>(
                     FindObjectsSortMode.None)
-                .Where(item => item.CurrentState != LootState.Sold
+                .Where(item => item.isActiveAndEnabled
+                    && item.CurrentState != LootState.Sold
                     && item.CurrentState != LootState.Carried)
                 .OrderBy(item => item.name, StringComparer.Ordinal)
                 .FirstOrDefault();
@@ -1068,10 +1069,22 @@ namespace PawsAndLoot.TechnicalValidation
         /// reproducible and the failure, when there is one, about the thing under
         /// test.
         /// </summary>
+        /// <summary>
+        /// Stands the thief beside a piece they can actually take.
+        ///
+        /// Sorted by name so the choice is a property of the map rather than of
+        /// whatever order the objects were created in (`ISSUE-041`) — and
+        /// filtered to pieces that are reachable, which is the same lesson
+        /// arriving a second time. A treasure was added that sorts first and
+        /// stands inside a glass case, so the run walked the thief up to the
+        /// jeweller's window and asked for it every frame for a minute. The
+        /// purse read zero and the failure said only "no winner".
+        /// </summary>
         private void PlaceThiefBesideLoot()
         {
             LootItem loot = FindObjectsByType<LootItem>(
                     FindObjectsSortMode.None)
+                .Where(item => item.isActiveAndEnabled)
                 .OrderBy(item => item.name, StringComparer.Ordinal)
                 .FirstOrDefault();
             if (loot == null)
@@ -1639,10 +1652,19 @@ namespace PawsAndLoot.TechnicalValidation
             // nothing bought, and demanding those would fail a run that did
             // exactly what it set out to do.
             //
-            // The clash asks for the same, minus the winner's name. Which of
-            // the two lands first is a race and naming it would make the test a
-            // lottery; what must hold is that both machines say the same thing
-            // and that exactly one verdict was handed down.
+            // The clash asks something different, and the first version of it
+            // asked wrongly: it demanded the purse reach the target, which
+            // means it demanded the sale win the race. It passed twice by luck
+            // and then failed the first time the officer got there first — a
+            // correct outcome reported as a regression, which is worse than no
+            // test at all.
+            //
+            // What has to hold is that the race resolved coherently. Whichever
+            // side won, the thing that makes them the winner must have actually
+            // happened: three catches for the officer, or a full purse for the
+            // thief. Never both, never neither. Whether the two machines agree
+            // is compared between the two result files, because neither process
+            // can see the other's.
             bool sellingPassed =
                 _sawCarried
                 && _decidedWinner != "None"
@@ -1657,7 +1679,12 @@ namespace PawsAndLoot.TechnicalValidation
             {
                 "disconnect" => _mode != "host" || _disconnectCount == 1,
                 "steal" => sellingPassed && _decidedWinner == "Thief",
-                "clash" => sellingPassed,
+                "clash" => _sawCarried
+                    && _decidedWinner != "None"
+                    && (_mode != "host"
+                        || (_decidedWinner == "Police"
+                            ? _peakArrestCount >= 3
+                            : _peakSoldAmount >= targetAmount)),
                 _ => _sawCarried
                     && _decidedWinner != "None"
                     // Three catches, but only where they are counted. The

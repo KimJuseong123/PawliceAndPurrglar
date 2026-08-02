@@ -79,6 +79,29 @@ namespace PawsAndLoot.Tests.PlayMode
                     + $"{Vector3.Distance(stolenBy != null ? stolenBy.transform.position : Vector3.zero, thief.transform.position):0.00} m "
                     + "away wins over the treasure underfoot.");
 
+                // The treasure itself, or the glass in front of that same
+                // treasure. A sealed case winning is the design — the piece
+                // behind it is out of reach until the glass goes, and the press
+                // has to reach the glass. What must never happen is the press
+                // landing on some third thing, or on a case guarding a
+                // different piece two shops away.
+                var guardedBy = target as LootDisplayCase;
+                if (guardedBy != null)
+                {
+                    Assert.That(
+                        guardedBy.Contents,
+                        Is.SameAs(treasure),
+                        $"Standing next to '{treasure.name}' the press goes to "
+                        + $"a case holding "
+                        + $"'{guardedBy.Contents?.name ?? "nothing"}'.");
+                    Assert.That(
+                        guardedBy.IsSealed,
+                        Is.True,
+                        $"An open case should stop answering and let "
+                        + $"'{treasure.name}' be picked up.");
+                    continue;
+                }
+
                 Assert.That(
                     target,
                     Is.InstanceOf<LootItem>(),

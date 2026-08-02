@@ -16,3 +16,4 @@ MonoBehaviour:
   displayName: Rare Jewel
   rarity: 2
   carryType: 3
+  raisesAlarm: 1

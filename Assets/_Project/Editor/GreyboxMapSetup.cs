@@ -45,6 +45,8 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Settings/Configs/LootConfig.asset";
         private const string CommonLootDefinitionPath =
             "Assets/_Project/Data/Loot/common-trinket.asset";
+        private const string RareLootDefinitionPath =
+            "Assets/_Project/Data/Loot/rare-jewel.asset";
 
         private static readonly Color GroundColor =
             new(0.28f, 0.34f, 0.31f);
@@ -3223,8 +3225,27 @@ namespace PawsAndLoot.Editor
                         : $"Loot {index + 1}",
                     lootSpots[index],
                     new Color(0.75f, 0.3f, 0.95f),
-                    root);
+                    root,
+                    CommonLootDefinitionPath,
+                    matchRuntime);
             }
+
+            // The flagship piece, at the jeweller's, behind glass. One of them
+            // rather than several: an alarm on everything is an alarm on
+            // nothing, and the decision it creates only exists while the quiet
+            // options are still there.
+            CreateLootTarget(
+                "Crown Jewel",
+                locations[GreyboxLocationId.JewelryStore].position
+                    + new Vector3(-1.8f, 0.5f, 0f),
+                new Color(0.98f, 0.83f, 0.35f),
+                root,
+                RareLootDefinitionPath,
+                matchRuntime);
+
+            var alarmObject = new GameObject("Loot Alarm");
+            alarmObject.transform.SetParent(root);
+            alarmObject.AddComponent<LootAlarm>();
 
             Debug.Log(
                 $"[ISSUE-011] {lootSpots.Length} loot pieces placed.");
@@ -3640,6 +3661,23 @@ namespace PawsAndLoot.Editor
             Color color,
             Transform parent)
         {
+            CreateLootTarget(
+                name,
+                position,
+                color,
+                parent,
+                CommonLootDefinitionPath,
+                null);
+        }
+
+        private static void CreateLootTarget(
+            string name,
+            Vector3 position,
+            Color color,
+            Transform parent,
+            string definitionPath,
+            MatchRuntimeState matchRuntime)
+        {
             var target = new GameObject(name);
             target.name = name;
             target.transform.SetParent(parent);
@@ -3678,17 +3716,67 @@ namespace PawsAndLoot.Editor
 
             LootDefinition definition =
                 AssetDatabase.LoadAssetAtPath<LootDefinition>(
-                    CommonLootDefinitionPath);
+                    definitionPath);
             if (definition == null)
             {
                 throw new GameConfigurationException(
                     $"Game scene requires LootDefinition at "
-                    + $"'{CommonLootDefinitionPath}'.");
+                    + $"'{definitionPath}'.");
             }
 
             definition.ValidateOrThrow();
             LootItem loot = target.AddComponent<LootItem>();
             loot.Configure(definition, presentationRoot);
+
+            // Anything the town is wired to notice goes behind glass. The two
+            // belong together: the alarm is what makes the piece worth taking
+            // loudly, and the case is what makes taking it loud.
+            if (definition.RaisesAlarm && matchRuntime != null)
+            {
+                BuildDisplayCase(loot, parent, matchRuntime);
+            }
+        }
+
+        /// <summary>
+        /// Puts a piece behind glass the thief has to break.
+        ///
+        /// The glass is a separate object rather than a material on the case,
+        /// because the case has to be able to take it away — and a renderer
+        /// switched off is easier to be sure about than a material swapped for
+        /// a transparent one.
+        /// </summary>
+        private static void BuildDisplayCase(
+            LootItem contents,
+            Transform parent,
+            MatchRuntimeState matchRuntime)
+        {
+            var caseObject = new GameObject($"{contents.name} Case");
+            caseObject.transform.SetParent(parent);
+            caseObject.transform.position = contents.transform.position;
+
+            // A trigger, so the thief can stand inside it to break it. Solid,
+            // they would be held at arm's length by the very thing they are
+            // trying to reach.
+            var reach = caseObject.AddComponent<BoxCollider>();
+            reach.size = new Vector3(1.6f, 1.8f, 1.6f);
+            reach.center = new Vector3(0f, 0.5f, 0f);
+            reach.isTrigger = true;
+
+            GameObject pane = CreateCube(
+                "Glass",
+                contents.transform.position + Vector3.up * 0.45f,
+                new Vector3(1.1f, 1.3f, 1.1f),
+                LoadOrCreateMaterial(
+                    "Greybox_DisplayGlass",
+                    new Color(0.62f, 0.86f, 0.95f)),
+                caseObject.transform,
+                false);
+            UnityEngine.Object.DestroyImmediate(pane.GetComponent<Collider>());
+
+            caseObject.AddComponent<LootDisplayCase>().Configure(
+                contents,
+                pane.transform,
+                matchRuntime);
         }
 
         private static void CreateSaleZone(

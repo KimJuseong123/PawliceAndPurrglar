@@ -172,12 +172,26 @@ namespace PawsAndLoot.Gameplay.Players
         public LootCarryType CarriedWeight { get; private set; } =
             LootCarryType.OneHand;
 
+        /// <summary>
+        /// A temporary change to this character's pace, on top of whatever they
+        /// are carrying.
+        ///
+        /// Multiplied with the carry penalty rather than replacing it, because
+        /// the two are different facts: an alarm makes the officer faster and a
+        /// gold bar makes the thief slower, and a thief who is both alarmed and
+        /// laden is both. Written as a multiplier so nothing has to know what
+        /// else is already applied.
+        /// </summary>
+        public float BoostMultiplier { get; private set; } = 1f;
+        public float BoostRemainingSeconds { get; private set; }
+
         public float MovementSpeedMultiplier =>
-            _lootCarryPenaltyActive && playerConfig != null
+            (_lootCarryPenaltyActive && playerConfig != null
                 ? LootCarryRules.SpeedMultiplier(
                     CarriedWeight,
                     playerConfig.LootCarrySpeedMultiplier)
-                : 1f;
+                : 1f)
+            * BoostMultiplier;
         public float EffectiveMoveSpeed =>
             playerConfig != null
                 ? playerConfig.MoveSpeed * MovementSpeedMultiplier
@@ -200,6 +214,7 @@ namespace PawsAndLoot.Gameplay.Players
             matchStateSource = matchStateReader as MonoBehaviour;
             orientationReference = movementOrientation;
             _lootCarryPenaltyActive = false;
+            ClearBoost();
         }
 
         public void SetLootCarryPenalty(bool active)
@@ -215,9 +230,53 @@ namespace PawsAndLoot.Gameplay.Players
             CarriedWeight = carryType;
         }
 
+        /// <summary>
+        /// Speeds this character up, or slows them down, for a while.
+        ///
+        /// Replaces rather than stacks. Two alarms going off should not make
+        /// the officer twice as fast, and the second one should not be ignored
+        /// either — it restarts the clock, which is what an alarm going off
+        /// again means.
+        /// </summary>
+        public void ApplyBoost(float multiplier, float seconds)
+        {
+            if (seconds <= 0f || multiplier <= 0f)
+            {
+                return;
+            }
+
+            BoostMultiplier = multiplier;
+            BoostRemainingSeconds = seconds;
+        }
+
+        public void ClearBoost()
+        {
+            BoostMultiplier = 1f;
+            BoostRemainingSeconds = 0f;
+        }
+
+        public void TickBoost(float deltaTime)
+        {
+            if (BoostRemainingSeconds <= 0f || deltaTime <= 0f)
+            {
+                return;
+            }
+
+            BoostRemainingSeconds -= deltaTime;
+            if (BoostRemainingSeconds <= 0f)
+            {
+                ClearBoost();
+            }
+        }
+
         public void Move(Vector2 input, float deltaTime)
         {
             ValidateDependencies();
+
+            // Counted down here rather than in Update, so a character whose
+            // simulation is paused does not quietly burn through an alarm they
+            // were never able to run during.
+            TickBoost(deltaTime);
             if (deltaTime <= 0f)
             {
                 LastPlanarVelocity = Vector3.zero;

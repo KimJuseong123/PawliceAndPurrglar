@@ -30,11 +30,15 @@ namespace PawsAndLoot.Editor
                 "Fine Watch",
                 LootRarity.Uncommon,
                 LootCarryType.Pocket);
+            // The one the whole town is wired to notice. Alarmed, and the
+            // heaviest thing on the map, so taking it is a decision about the
+            // rest of the match rather than about one room.
             CreateOrUpdate(
                 "rare-jewel",
                 "Rare Jewel",
                 LootRarity.Rare,
-                LootCarryType.Bulky);
+                LootCarryType.Bulky,
+                true);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             ValidateDefaultLootData();
@@ -72,7 +76,8 @@ namespace PawsAndLoot.Editor
             string stableId,
             string displayName,
             LootRarity rarity,
-            LootCarryType carryType)
+            LootCarryType carryType,
+            bool raisesAlarm = false)
         {
             string path =
                 $"{LootDataRoot}/{stableId}.asset";
@@ -85,7 +90,12 @@ namespace PawsAndLoot.Editor
                 AssetDatabase.CreateAsset(definition, path);
             }
 
-            definition.Configure(stableId, displayName, rarity, carryType);
+            definition.Configure(
+                stableId,
+                displayName,
+                rarity,
+                carryType,
+                raisesAlarm);
             EditorUtility.SetDirty(definition);
         }
 
