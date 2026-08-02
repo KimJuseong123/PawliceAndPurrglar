@@ -186,8 +186,11 @@ namespace PawsAndLoot.Gameplay.Camera
 
             if (!active || _followed == null)
             {
+                ClearRoomBounds();
                 return;
             }
+
+            AdoptRoomOf(_followed);
 
             // Start behind the player rather than at whatever yaw was left over
             // from the last visit, so walking in never begins facing a wall.
@@ -196,15 +199,98 @@ namespace PawsAndLoot.Gameplay.Camera
             _velocity = Vector3.zero;
         }
 
+        /// <summary>
+        /// How far inside the walls the camera is kept, in metres.
+        ///
+        /// The rooms are one welded mesh, so a wall between the camera and the
+        /// player cannot be singled out and faded — there is nothing to single
+        /// out. Keeping the camera inside the room instead means no outer wall
+        /// is ever between the two, which is the same result by a different
+        /// road and costs nothing.
+        ///
+        /// Half a metre in, so the near plane does not clip through.
+        /// </summary>
+        private const float WallStandoff = 0.5f;
+
+        private Bounds _room;
+        private bool _hasRoom;
+
+        /// <summary>
+        /// Tells the camera which room it is in, so it can stay inside it.
+        ///
+        /// Given rather than found: the room is a box the generator already
+        /// measured, and asking the camera to work it out from colliders every
+        /// frame would be a second opinion about the same thing.
+        /// </summary>
+        public void SetRoomBounds(Bounds room)
+        {
+            _room = room;
+            _hasRoom = true;
+        }
+
+        public void ClearRoomBounds()
+        {
+            _hasRoom = false;
+        }
+
+        /// <summary>
+        /// Works out which room the player is standing in and keeps to it.
+        ///
+        /// By floor area rather than by an id, so nothing has to be threaded
+        /// through: the rooms are laid out well apart from each other off the
+        /// map, and a point is inside exactly one of them.
+        /// </summary>
+        private void AdoptRoomOf(Transform player)
+        {
+            foreach (Gameplay.Interiors.HouseInterior room in
+                FindObjectsByType<Gameplay.Interiors.HouseInterior>(
+                    FindObjectsSortMode.None))
+            {
+                Vector2 half = room.FloorHalfExtents;
+                Vector3 centre = room.transform.position;
+                if (Mathf.Abs(player.position.x - centre.x) > half.x
+                    || Mathf.Abs(player.position.z - centre.z) > half.y)
+                {
+                    continue;
+                }
+
+                SetRoomBounds(new Bounds(
+                    new Vector3(centre.x, player.position.y, centre.z),
+                    new Vector3(half.x * 2f, 1f, half.y * 2f)));
+                return;
+            }
+
+            ClearRoomBounds();
+        }
+
         private Vector3 DesiredPosition()
         {
             Quaternion rotation = Quaternion.Euler(
                 pitchDegrees,
                 _yaw,
                 0f);
-            return _followed.position
+            Vector3 wanted = _followed.position
                 + lookOffset
                 - rotation * Vector3.forward * distance;
+
+            if (!_hasRoom)
+            {
+                return wanted;
+            }
+
+            // Pulled back inside the walls. Height is left alone: the camera is
+            // meant to be above the wall tops looking down, and the wall height
+            // is chosen to keep it under the ceiling that is not there.
+            return new Vector3(
+                Mathf.Clamp(
+                    wanted.x,
+                    _room.min.x + WallStandoff,
+                    _room.max.x - WallStandoff),
+                wanted.y,
+                Mathf.Clamp(
+                    wanted.z,
+                    _room.min.z + WallStandoff,
+                    _room.max.z - WallStandoff));
         }
 
         /// <summary>

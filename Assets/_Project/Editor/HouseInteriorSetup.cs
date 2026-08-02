@@ -92,9 +92,42 @@ namespace PawsAndLoot.Editor
         private static readonly System.Collections.Generic.Dictionary<
             string, Vector3> DoorWallForModel = new()
         {
+            { "interior_bookstore", Vector3.forward },
             { "interior_house02", Vector3.forward },
+            { "interior_house03", Vector3.forward },
+            { "interior_jewelry", Vector3.forward },
             { "interior_supermarket", Vector3.forward }
         };
+
+        /// <summary>
+        /// Where a player is put down, as a fraction of the plan view.
+        ///
+        /// Read off `Capture Interior Plans` with the marks drawn on it, so the
+        /// number here and the spot in the picture are the same thing. `u` runs
+        /// left to right, `v` runs top to bottom, both across the square the
+        /// plan is framed to — which is the room's larger side plus a margin,
+        /// the same framing the picture uses.
+        ///
+        /// Marked rather than searched. The clear-floor search finds somewhere
+        /// a body fits, which is not the same as somewhere it should be: it put
+        /// people down facing a bedroom wall three metres from the door they
+        /// came in by. A person looking at the plan places it once.
+        /// </summary>
+        private static readonly System.Collections.Generic.Dictionary<
+            string, Vector2> SpawnInPlan = new()
+        {
+            { "interior_bookstore", new Vector2(0.528f, 0.207f) },
+            { "interior_house02", new Vector2(0.552f, 0.292f) },
+            { "interior_house03", new Vector2(0.645f, 0.260f) },
+            { "interior_jewelry", new Vector2(0.463f, 0.169f) },
+            { "interior_supermarket", new Vector2(0.448f, 0.178f) }
+        };
+
+        /// <summary>
+        /// The margin the plan view is framed with, repeated here so a mark on
+        /// the picture lands where it was drawn.
+        /// </summary>
+        private const float PlanMargin = 1.12f;
 
         /// <summary>
         /// What the coarse collision copy of a room is called.
@@ -594,12 +627,19 @@ namespace PawsAndLoot.Editor
                 + doorway * half;
 
             Transform frontEntry = child($"Interior {number} Entry Front", room);
-            frontEntry.position = ClearSpotInside(
-                collisionRoot,
-                inner,
-                floorTop,
-                mouth,
-                doorway);
+            frontEntry.position = SpawnInPlan.TryGetValue(stem, out Vector2 mark)
+                ? FromPlan(inner, floorTop, mark)
+                : ClearSpotInside(
+                    collisionRoot,
+                    inner,
+                    floorTop,
+                    mouth,
+                    doorway);
+
+            // Looking into the room, away from the door they came through.
+            // Arriving nose to a wall costs the player the first second of
+            // every visit working out which way is in.
+            frontEntry.rotation = Quaternion.LookRotation(-doorway, Vector3.up);
             Transform backEntry = child($"Interior {number} Entry Back", room);
             backEntry.position = frontEntry.position;
 
@@ -920,6 +960,27 @@ namespace PawsAndLoot.Editor
         /// the wall is there, the ray stops; where the opening is, it does not.
         /// A run of misses wide enough to walk through is a door.
         /// </summary>
+        /// <summary>
+        /// Turns a mark on the plan into a spot on the floor.
+        ///
+        /// The plan is framed to a square of the room's larger side plus a
+        /// margin, centred on the room. Reversing that is the whole conversion,
+        /// and it is written once here so the picture and the town cannot drift
+        /// apart.
+        /// </summary>
+        private static Vector3 FromPlan(
+            Bounds inner,
+            float floorTop,
+            Vector2 mark)
+        {
+            float half = Mathf.Max(inner.extents.x, inner.extents.z)
+                * PlanMargin;
+            return new Vector3(
+                inner.center.x + (mark.x - 0.5f) * 2f * half,
+                floorTop,
+                inner.center.z + (0.5f - mark.y) * 2f * half);
+        }
+
         /// <summary>
         /// Finds somewhere inside the door with room to stand.
         ///
