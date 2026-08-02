@@ -6,6 +6,9 @@
 
 ### Added
 
+- `docs/20_DECIMATION_LIST.md`. 실측 기준 감면 목록과 Blender 파일 이름.
+  `Report Model Weights`가 임포트된 메시를 세고 원본 파일까지 되짚는다.
+- 가로등과 나무의 기둥에 얇은 충돌체. 수관은 그대로 통과한다.
 - 샌드박스 맵 사방에 외벽. 본 게임과 같은 단색 회색, 3m 높이, 통과 불가.
 - `Trim Build Size` / `Report Build Size Settings`. 씬 모델에 메시 압축을, 아트
   텍스처에 1024 상한을 건다. 샌드박스 빌드 에셋 총합 **140MB → 80MB**.

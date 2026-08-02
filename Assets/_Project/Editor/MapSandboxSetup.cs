@@ -2188,15 +2188,32 @@ namespace PawsAndLoot.Editor
                             return placed;
                         }
 
-                        // Scenery, not obstacles. Their own colliders are
-                        // wrongly sized for the same reason the buildings' were,
-                        // and a lamp post that shoves the player is worse than
-                        // one you can walk through.
+                        // The model's own colliders go, and a thin one takes
+                        // their place.
+                        //
+                        // Walking through a lamp post reads as broken, so these
+                        // are solid — but only the post. The imported colliders
+                        // wrap the whole thing including a tree's canopy, and a
+                        // canopy that stops you is an invisible wall four
+                        // metres wide over a trunk you can see round.
+                        //
+                        // A trunk you have to go round is worth having. It is
+                        // the only thing on a street a runner has to steer for,
+                        // and a chase with nothing to steer round is two
+                        // characters in a straight line.
                         foreach (Collider collider in
                             piece.GetComponentsInChildren<Collider>(true))
                         {
                             Object.DestroyImmediate(collider);
                         }
+
+                        var trunk = piece.AddComponent<CapsuleCollider>();
+                        trunk.radius = TrunkRadius(stem);
+                        trunk.height = targetHeight * 0.8f;
+                        trunk.center = new Vector3(
+                            0f,
+                            trunk.height * 0.5f,
+                            0f);
 
                         // Dense scans, all of them. Their shadows cost a
                         // second pass over every one of those triangles and buy
@@ -2215,6 +2232,22 @@ namespace PawsAndLoot.Editor
             }
 
             return placed;
+        }
+
+        /// <summary>
+        /// How wide the solid part of a piece of street furniture is.
+        ///
+        /// Measured off the thing that is actually in the way — the post or the
+        /// trunk — not off the model's extent. A tree's extent is its canopy,
+        /// and the canopy is the part you walk under.
+        /// </summary>
+        private static float TrunkRadius(string stem)
+        {
+            return stem switch
+            {
+                "env_street_lamp" => 0.18f,
+                _ => 0.35f
+            };
         }
 
         private static bool Overlaps(Rect area, Rect[] others)
