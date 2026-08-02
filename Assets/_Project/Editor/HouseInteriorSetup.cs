@@ -593,6 +593,8 @@ namespace PawsAndLoot.Editor
                 mouth - doorway * 0.2f,
                 number);
 
+            BuildPerimeter(colliders, inner, floorTop, doorway);
+
             // Whichever face the camera is behind comes away as a whole. Given the
             // room's measured inside rather than a list of parts: it works out which
             // face each piece belongs to from where the piece is, so windows and
@@ -879,6 +881,99 @@ namespace PawsAndLoot.Editor
         /// the wall is there, the ray stops; where the opening is, it does not.
         /// A run of misses wide enough to walk through is a door.
         /// </summary>
+        /// <summary>
+        /// How high the invisible wall round a room stands, in metres.
+        ///
+        /// Far taller than the wall you can see. The visible walls are cut low
+        /// so the camera can look in, which also means a player who climbs onto
+        /// a shelf is standing level with the top of the room and can walk off
+        /// the edge of it. The barrier is what the room is actually made of;
+        /// the model is what it looks like.
+        /// </summary>
+        private const float PerimeterHeight = 12f;
+
+        /// <summary>
+        /// How wide a hole is left at the door.
+        /// </summary>
+        private const float PerimeterGap = 3.2f;
+
+        /// <summary>
+        /// Boxes the room in so nothing can leave except through the door.
+        ///
+        /// Four slabs on the four sides, and the side with the door gets two
+        /// with a gap between them. Invisible: this is collision, and a visible
+        /// version would be a second set of walls inside the first.
+        /// </summary>
+        private static void BuildPerimeter(
+            Transform holder,
+            Bounds inner,
+            float floorTop,
+            Vector3 doorway)
+        {
+            const float Thickness = 0.6f;
+
+            foreach (Vector3 side in new[]
+            {
+                Vector3.forward, Vector3.back, Vector3.right, Vector3.left
+            })
+            {
+                Vector3 across = new Vector3(-side.z, 0f, side.x);
+                float span = Mathf.Abs(Vector3.Dot(inner.size, across))
+                    + Thickness * 2f;
+                float reach = Mathf.Abs(Vector3.Dot(inner.extents, side))
+                    + Thickness * 0.5f;
+                Vector3 middle =
+                    new Vector3(inner.center.x, floorTop, inner.center.z)
+                    + side * reach
+                    + Vector3.up * (PerimeterHeight * 0.5f);
+
+                bool hasDoor = Vector3.Dot(side, doorway) > 0.5f;
+                if (!hasDoor)
+                {
+                    AddSlab(holder, middle, across, span, Thickness);
+                    continue;
+                }
+
+                // Two pieces with the doorway between them.
+                float wing = (span - PerimeterGap) * 0.5f;
+                if (wing <= 0.1f)
+                {
+                    continue;
+                }
+
+                AddSlab(
+                    holder,
+                    middle + across * ((PerimeterGap + wing) * 0.5f),
+                    across,
+                    wing,
+                    Thickness);
+                AddSlab(
+                    holder,
+                    middle - across * ((PerimeterGap + wing) * 0.5f),
+                    across,
+                    wing,
+                    Thickness);
+            }
+        }
+
+        private static void AddSlab(
+            Transform holder,
+            Vector3 centre,
+            Vector3 across,
+            float span,
+            float thickness)
+        {
+            var slab = new GameObject("Perimeter");
+            slab.transform.SetParent(holder, false);
+            slab.transform.position = centre;
+
+            BoxCollider box = slab.AddComponent<BoxCollider>();
+            bool alongX = Mathf.Abs(across.x) > 0.5f;
+            box.size = alongX
+                ? new Vector3(span, PerimeterHeight, thickness)
+                : new Vector3(thickness, PerimeterHeight, span);
+        }
+
         /// <summary>
         /// The widest continuous gap in one of a room's walls, in metres.
         ///
@@ -1200,10 +1295,19 @@ namespace PawsAndLoot.Editor
             trigger.size = new Vector3(2.6f, 5f, 1.2f);
             trigger.center = new Vector3(0f, 1.5f, 0f);
 
-            // Automatic, so getting out is walking out. Indoors the press belongs to
-            // the wardrobes and drawers.
+            // A press, the same as the door outside.
+            //
+            // It used to be automatic, on the argument that getting out should
+            // be walking out. That only holds while the trigger is exactly the
+            // doorway, and it is not: it is placed on whichever wall the room
+            // reads as open, and reading a room wrong then teleports the player
+            // into the street for walking past a shelf. Which is what happened
+            // in the supermarket.
+            //
+            // A press cannot be triggered by accident, so the worst a misread
+            // wall can now do is put the prompt somewhere odd.
             outward.AddComponent<HouseDoorway>()
-                .Configure(interior, false, matchRuntime, null, side, true);
+                .Configure(interior, false, matchRuntime, null, side, false);
         }
 
         /// <summary>
