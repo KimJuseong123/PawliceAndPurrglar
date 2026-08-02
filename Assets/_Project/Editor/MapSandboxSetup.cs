@@ -182,8 +182,13 @@ namespace PawsAndLoot.Editor
             // centre line. Ending halfway across left the alley's lighter
             // surface as a tongue poking into the road, which reads as a
             // mistake rather than a junction.
-            Down("South East Alley", 54f, 11f, 22f, AlleyWidth),
 
+            // The south east alley used to run four metres west of this one,
+            // from the same street, to a dead end two thirds of the way up.
+            // Two roads five metres apart cannot both exist on a four metre
+            // grid — they came out as one twelve metre slab of tarmac with
+            // three centre lines down it — and this is the one that goes
+            // somewhere.
             Down("Bookstore Street", 59f, 13f, 56f, StreetWidth)
 
             // The east street is gone. It ran the full height a few metres from
@@ -218,6 +223,47 @@ namespace PawsAndLoot.Editor
                 ToEdge(fromX) + MapMinX,
                 ToEdge(toX) + MapMinX,
                 width);
+        }
+
+        /// <summary>
+        /// Complains about roads that ended up shoulder to shoulder.
+        ///
+        /// Two parallel streets less than two tiles apart snap onto touching
+        /// rows and stop being two streets. Nothing downstream notices: the
+        /// cells are laid, the blocks flood around them, the validator passes.
+        /// It shows up only as a wide pale ribbon in the middle of the town,
+        /// which is how it was found.
+        /// </summary>
+        private static void ReportCrowdedStreets()
+        {
+            var lanes = new Dictionary<(bool, int), List<string>>();
+            foreach (Street street in Streets)
+            {
+                int lane = street.Horizontal
+                    ? CellAt(0f, street.FixedCoordinate).y
+                    : CellAt(street.FixedCoordinate, 0f).x;
+                var key = (street.Horizontal, lane);
+                if (!lanes.TryGetValue(key, out List<string> names))
+                {
+                    names = new List<string>();
+                    lanes[key] = names;
+                }
+
+                names.Add(street.Name);
+            }
+
+            foreach (((bool horizontal, int lane), List<string> names) in lanes)
+            {
+                var key = (horizontal, lane + 1);
+                if (lanes.TryGetValue(key, out List<string> next))
+                {
+                    Debug.LogWarning(
+                        $"[SANDBOX] {string.Join(", ", names)} and "
+                        + $"{string.Join(", ", next)} are on touching rows of "
+                        + "tiles. They will be drawn as one wide road, not two "
+                        + "with something between them.");
+                }
+            }
         }
 
         /// <summary>The middle of the nearest row of tiles.</summary>
@@ -1410,18 +1456,15 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static int LayRoads(Transform parent)
         {
-            HashSet<Vector2Int> cells = RoadCells();
+            ReportCrowdedStreets();
+
+            Dictionary<Vector2Int, List<int>> cells = RoadCellStreets();
             HashSet<Vector2Int> crossings = Crossings(cells);
             int laid = 0;
 
-            foreach (Vector2Int cell in cells)
+            foreach (Vector2Int cell in cells.Keys)
             {
-                Ways open = Ways.None;
-                if (cells.Contains(cell + Vector2Int.up)) open |= Ways.North;
-                if (cells.Contains(cell + Vector2Int.right)) open |= Ways.East;
-                if (cells.Contains(cell + Vector2Int.down)) open |= Ways.South;
-                if (cells.Contains(cell + Vector2Int.left)) open |= Ways.West;
-
+                Ways open = OpeningsAt(cell, cells);
                 if (!Choose(open, out string stem, out float yaw))
                 {
                     continue;
@@ -1439,6 +1482,61 @@ namespace PawsAndLoot.Editor
             }
 
             return laid;
+        }
+
+        /// <summary>
+        /// Which sides of a cell the road carries on through.
+        ///
+        /// A side is open when the cell next door belongs to a street that this
+        /// cell belongs to as well. Asking only whether the neighbour is road —
+        /// which is what this did — cannot tell a junction from two roads
+        /// running side by side, and there are two such pairs in this plan: the
+        /// bookstore street runs four metres from the south east alley, and
+        /// market lane runs alongside the centre street. Every cell of those
+        /// stretches had three road neighbours, so every cell was given a
+        /// T-junction, and the result was a wide pale ribbon of mismatched
+        /// pieces rather than a road.
+        ///
+        /// Sharing a street also gets the ends right for free. Where a side
+        /// street runs into a main one, the last cell belongs to both, so it
+        /// opens along the main road and back down the side street — a T — and
+        /// where a street simply stops, only one side is shared and it gets a
+        /// dead end.
+        /// </summary>
+        private static Ways OpeningsAt(
+            Vector2Int cell,
+            Dictionary<Vector2Int, List<int>> cells)
+        {
+            List<int> mine = cells[cell];
+            Ways open = Ways.None;
+
+            if (Shares(cell + Vector2Int.up, mine, cells)) open |= Ways.North;
+            if (Shares(cell + Vector2Int.right, mine, cells)) open |= Ways.East;
+            if (Shares(cell + Vector2Int.down, mine, cells)) open |= Ways.South;
+            if (Shares(cell + Vector2Int.left, mine, cells)) open |= Ways.West;
+
+            return open;
+        }
+
+        private static bool Shares(
+            Vector2Int neighbour,
+            List<int> mine,
+            Dictionary<Vector2Int, List<int>> cells)
+        {
+            if (!cells.TryGetValue(neighbour, out List<int> theirs))
+            {
+                return false;
+            }
+
+            foreach (int street in mine)
+            {
+                if (theirs.Contains(street))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -1496,7 +1594,8 @@ namespace PawsAndLoot.Editor
         /// falls where somebody would actually walk across rather than in the
         /// middle of a junction.
         /// </summary>
-        private static HashSet<Vector2Int> Crossings(HashSet<Vector2Int> cells)
+        private static HashSet<Vector2Int> Crossings(
+            Dictionary<Vector2Int, List<int>> cells)
         {
             var chosen = new HashSet<Vector2Int>();
             foreach (Street street in Streets)
@@ -1510,20 +1609,17 @@ namespace PawsAndLoot.Editor
                         : new Vector3(street.FixedCoordinate, 0f, along);
                     Vector2Int cell = CellAt(at.x, at.z);
 
-                    bool northSouth =
-                        cells.Contains(cell + Vector2Int.up)
-                        && cells.Contains(cell + Vector2Int.down)
-                        && !cells.Contains(cell + Vector2Int.left)
-                        && !cells.Contains(cell + Vector2Int.right);
-                    bool eastWest =
-                        cells.Contains(cell + Vector2Int.left)
-                        && cells.Contains(cell + Vector2Int.right)
-                        && !cells.Contains(cell + Vector2Int.up)
-                        && !cells.Contains(cell + Vector2Int.down);
+                    if (!cells.ContainsKey(cell))
+                    {
+                        continue;
+                    }
 
-                    if (cells.Contains(cell)
-                        && (northSouth || eastWest)
-                        && chosen.Add(cell))
+                    Ways open = OpeningsAt(cell, cells);
+                    bool straight =
+                        open == (Ways.North | Ways.South)
+                        || open == (Ways.East | Ways.West);
+
+                    if (straight && chosen.Add(cell))
                     {
                         break;
                     }
@@ -1549,18 +1645,22 @@ namespace PawsAndLoot.Editor
         }
 
         /// <summary>
-        /// Every lattice cell whose middle falls on a street.
+        /// Every lattice cell whose middle falls on a street, and which streets
+        /// put it there.
         ///
         /// The cells are what the town is actually built from, so this is also
         /// what the buildings are kept off — asking the nominal rectangles
         /// instead would let a house stand on a tile that the grid rounded into
         /// the road.
         /// </summary>
-        private static HashSet<Vector2Int> RoadCells()
+        private static Dictionary<Vector2Int, List<int>> RoadCellStreets()
         {
-            var cells = new HashSet<Vector2Int>();
-            foreach (Rect area in StreetAreas())
+            var cells = new Dictionary<Vector2Int, List<int>>();
+            Rect[] areas = StreetAreas();
+
+            for (int street = 0; street < areas.Length; street++)
             {
+                Rect area = areas[street];
                 Vector2Int from = CellAt(area.xMin, area.yMin);
                 Vector2Int to = CellAt(area.xMax, area.yMax);
                 for (int x = from.x; x <= to.x; x++)
@@ -1569,15 +1669,28 @@ namespace PawsAndLoot.Editor
                     {
                         var cell = new Vector2Int(x, z);
                         Vector3 centre = CentreOf(cell);
-                        if (area.Contains(new Vector2(centre.x, centre.z)))
+                        if (!area.Contains(new Vector2(centre.x, centre.z)))
                         {
-                            cells.Add(cell);
+                            continue;
                         }
+
+                        if (!cells.TryGetValue(cell, out List<int> owners))
+                        {
+                            owners = new List<int>();
+                            cells[cell] = owners;
+                        }
+
+                        owners.Add(street);
                     }
                 }
             }
 
             return cells;
+        }
+
+        private static HashSet<Vector2Int> RoadCells()
+        {
+            return new HashSet<Vector2Int>(RoadCellStreets().Keys);
         }
 
         private static Rect[] RoadCellAreas()
@@ -1637,10 +1750,14 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static int LayGrass(Transform parent, Rect[] blocks)
         {
+            // Pulled in from the edge. The tile has a bevelled rim in a
+            // different colour, and repeating it across a lawn drew a tan grid
+            // over the whole town.
             Mesh face = FlatTileLibrary.TileFor(
                 "env_grass_tile",
                 EnvironmentDirectory,
-                out Material paint);
+                out Material paint,
+                0.18f);
             if (face == null || paint == null)
             {
                 return 0;

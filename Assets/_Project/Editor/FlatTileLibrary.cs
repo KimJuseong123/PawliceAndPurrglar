@@ -34,11 +34,26 @@ namespace PawsAndLoot.Editor
         /// scene is saved, which is the same trap that made the roads invisible
         /// when their material was built that way.
         /// </summary>
-        public static Mesh TileFor(string stem, string directory, out Material paint)
+        /// <param name="inset">
+        /// How far in from the edge of the face to sample, as a fraction of its
+        /// width. Zero takes the whole thing, which is right for a road tile
+        /// whose kerbs are part of the picture. The grass tile needs some,
+        /// because it has a bevelled rim in a different colour and repeating
+        /// that across a lawn draws a tan grid over the town.
+        /// </param>
+        public static Mesh TileFor(
+            string stem,
+            string directory,
+            out Material paint,
+            float inset = 0f)
         {
             paint = AssetDatabase.LoadAssetAtPath<Material>(
                 $"{MaterialDirectory}/{stem}.mat");
-            string path = $"{GeneratedDirectory}/{stem}_face.asset";
+            // The inset is part of the name, so changing it makes a new tile
+            // rather than quietly handing back the one cut with the old value.
+            string path = inset > 0f
+                ? $"{GeneratedDirectory}/{stem}_face_{inset:0.00}.asset"
+                : $"{GeneratedDirectory}/{stem}_face.asset";
             var cached = AssetDatabase.LoadAssetAtPath<Mesh>(path);
             if (cached != null && paint != null)
             {
@@ -58,6 +73,16 @@ namespace PawsAndLoot.Editor
                 Debug.LogWarning(
                     $"[ART] '{stem}' has no flat top face to cut a tile from.");
                 return null;
+            }
+
+            if (inset > 0f)
+            {
+                float back = Mathf.Min(footprint.width, footprint.height) * inset;
+                footprint = Rect.MinMaxRect(
+                    footprint.xMin + back,
+                    footprint.yMin + back,
+                    footprint.xMax - back,
+                    footprint.yMax - back);
             }
 
             var quad = new Mesh
