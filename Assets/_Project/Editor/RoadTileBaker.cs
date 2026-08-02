@@ -67,6 +67,29 @@ namespace PawsAndLoot.Editor
             new(0.235f, 0.243f, 0.259f, 1f);
 
         /// <summary>
+        /// Which tiles get their colours matched to each other.
+        ///
+        /// The roads only. They were sculpted one at a time and disagree about
+        /// what tarmac and kerbstone look like, so they have to be brought
+        /// together or the street reads as six different streets.
+        ///
+        /// The grass is one model with no such problem, and running the road
+        /// correction over it did real damage: its border pixels fall in the
+        /// same brightness band a kerb does, so every lawn came back with a tan
+        /// frame around it and the town looked tiled in linoleum. A correction
+        /// belongs only where the fault it corrects exists.
+        /// </summary>
+        private static readonly HashSet<string> Roads = new()
+        {
+            "env_road_straight2",
+            "env_road_cross2",
+            "env_road_corner2",
+            "env_road_crossing2",
+            "env_road_tee2",
+            "env_road_curve"
+        };
+
+        /// <summary>
         /// What a kerb should look like, taken the same way — the median of the
         /// three pieces that agree.
         /// </summary>
@@ -205,8 +228,12 @@ namespace PawsAndLoot.Editor
                     LiftBlacks(picture);
                 }
 
-                MatchTarmac(picture);
-                MatchKerb(picture);
+                if (Roads.Contains(stem))
+                {
+                    MatchTarmac(picture);
+                    MatchKerb(picture);
+                }
+
                 picture.Apply();
 
                 File.WriteAllBytes(
