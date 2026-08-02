@@ -1471,9 +1471,11 @@ namespace PawsAndLoot.Editor
             box.center = new Vector3(0f, local.y * 0.5f, 0f);
             box.size = local;
 
-            // Nothing in this town moves, so all of it can be batched. The
-            // buildings were the only thing that never said so.
-            MakeBatchable(instance);
+            // Instanced rather than batched. A building is forty thousand
+            // triangles and there are fifteen of them; combining them writes a
+            // second copy of all of it into the scene for a draw-call saving
+            // nobody would have measured.
+            MakeInstanced(instance);
             return true;
         }
 
@@ -1729,6 +1731,24 @@ namespace PawsAndLoot.Editor
         /// scene outside batching, which is most of the reason the town was
         /// slow even after its triangle count came down.
         /// </summary>
+        /// <summary>
+        /// Marks something to be combined into one mesh at build time.
+        ///
+        /// Worth doing for the ground, which is hundreds of two-triangle
+        /// squares: combining them turns hundreds of draw calls into a handful
+        /// and costs almost nothing, because two triangles duplicated is two
+        /// triangles.
+        ///
+        /// **Not** worth doing for the models. Static batching writes a second
+        /// copy of the geometry into the scene, so a forty-thousand-triangle
+        /// building ships twice — once as the model and once inside a combined
+        /// mesh. Measured off the build report: the combined meshes came to
+        /// 21 MB, more than everything else in the scene put together, for
+        /// fifty-odd renderers that were never going to cost a frame.
+        ///
+        /// The repeated ones — trees, lamps — get GPU instancing instead, which
+        /// is the same win with no second copy.
+        /// </summary>
         private static void MakeBatchable(GameObject root)
         {
             foreach (Transform part in
@@ -1737,6 +1757,30 @@ namespace PawsAndLoot.Editor
                 GameObjectUtility.SetStaticEditorFlags(
                     part.gameObject,
                     StaticEditorFlags.BatchingStatic);
+            }
+        }
+
+        /// <summary>
+        /// Lets many copies of one model be drawn in a single call without
+        /// shipping a second copy of its geometry.
+        ///
+        /// The right trade for the things there are dozens of. Marked on the
+        /// material rather than the object, because that is where Unity reads
+        /// it from — and shared materials mean marking one tree marks them all.
+        /// </summary>
+        private static void MakeInstanced(GameObject root)
+        {
+            foreach (Renderer renderer in
+                root.GetComponentsInChildren<Renderer>(true))
+            {
+                foreach (Material material in renderer.sharedMaterials)
+                {
+                    if (material != null && !material.enableInstancing)
+                    {
+                        material.enableInstancing = true;
+                        EditorUtility.SetDirty(material);
+                    }
+                }
             }
         }
 
@@ -2394,7 +2438,9 @@ namespace PawsAndLoot.Editor
                         UnityEngine.Rendering.ShadowCastingMode.Off;
                 }
 
-                MakeBatchable(piece);
+                // Thirty-nine of these and only two models between them, which
+                // is exactly what instancing is for.
+                MakeInstanced(piece);
                 placed++;
             }
 
