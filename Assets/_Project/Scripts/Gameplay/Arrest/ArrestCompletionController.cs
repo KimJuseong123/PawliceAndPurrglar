@@ -61,28 +61,37 @@ namespace PawsAndLoot.Gameplay.Arrest
                 return false;
             }
 
+            // Latched on every catch, not only the last one.
+            //
+            // Left unlatched for the first two, Update calls this again the
+            // very next frame while the officer is still standing on the thief,
+            // and the tally runs away from what actually happened on screen.
+            IsCompleted = true;
             CurrentCatchCount++;
-            bool reachedVictory =
-                CurrentCatchCount >= RequiredCatchCount;
-            IsCompleted = reachedVictory;
             GameLogger.Info(
                 GameLogCategory.Arrest,
-                reachedVictory
-                    ? "Required arrests completed. Police victory requested."
-                    : $"Arrest completed ({CurrentCatchCount}/{RequiredCatchCount}).",
+                $"Arrest completed ({CurrentCatchCount}/{RequiredCatchCount}).",
                 this);
-            if (!reachedVictory)
-            {
-                progressController.ResetProgress();
-            }
 
             ArrestCompleted?.Invoke();
             CatchCountChanged?.Invoke(CurrentCatchCount, RequiredCatchCount);
-            if (reachedVictory)
-            {
-                PoliceVictoryRequested?.Invoke();
-            }
 
+            // Raised every time, and the arbiter decides.
+            //
+            // This used to fire only on the third catch, which sounds right and
+            // is not: the arbiter counts the requests it receives and needs
+            // three of them. Forwarding only the third meant the officer had to
+            // catch the thief three times to send one request, and three
+            // requests to win — nine catches, except the unlatched middle
+            // catches made the tally unstable long before that. A two-process
+            // run jailed the thief four times, counted two arrests and declared
+            // nobody the winner.
+            //
+            // Two places counting the same thing is the shape of the bug that
+            // already split the host and the client over who had won
+            // (`ISSUE-046`). The count here is for the screen; the count that
+            // ends the match lives in one place.
+            PoliceVictoryRequested?.Invoke();
             return true;
         }
 

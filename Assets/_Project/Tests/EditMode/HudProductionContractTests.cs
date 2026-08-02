@@ -183,7 +183,20 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(File.Exists(GameScenePath), Is.True, GameScenePath);
             string scene = File.ReadAllText(GameScenePath);
             Assert.That(scene, Does.Not.Contain("Generated/Validation"));
-            Assert.That(scene, Does.Not.Contain("m_LocalScale: {x: 0, y: 0, z: 0}"));
+            // Nothing but a canvas may be scaled to nothing.
+            //
+            // This used to forbid a zero scale anywhere in the file, to catch a
+            // HUD that had been scaled away. It cannot stay that way: Unity
+            // writes a screen-space overlay canvas with a zero scale whenever
+            // the canvas has never rendered, and a scene built by an editor
+            // script and saved has never rendered. Batch mode or windowed,
+            // graphics or not — the file always says zero, and it is always
+            // recomputed the moment the game runs.
+            //
+            // So the check asks the scene instead of the text. A zero scale on
+            // a canvas root is the serialiser talking; a zero scale on anything
+            // else is somebody's UI that will not be there.
+            AssertOnlyCanvasesAreUnscaled(GameScenePath);
             Assert.That(scene, Does.Contain("9a7b02d3845aed24d8e4dde4734911bb"));
             Assert.That(scene, Does.Contain("6961fc7c68093c5479876c83455dcc7e"));
             Assert.That(scene, Does.Contain("7df0df2c17208144480fcd43b5ce3548"));
@@ -195,6 +208,43 @@ namespace PawsAndLoot.Tests.EditMode
             string bootstrap = File.ReadAllText(BootstrapScenePath);
             Assert.That(bootstrap, Does.Contain("3949b154060094045993ae7b38f21d9d"));
             Assert.That(bootstrap, Does.Contain("2340804867759a540896c8a7fd5ab8cb"));
+        }
+
+        /// <summary>
+        /// Opens a scene and fails on any object scaled to nothing, except the
+        /// canvas roots whose scale the canvas system owns.
+        /// </summary>
+        private static void AssertOnlyCanvasesAreUnscaled(string scenePath)
+        {
+            UnityEngine.SceneManagement.Scene scene =
+                UnityEditor.SceneManagement.EditorSceneManager.OpenScene(
+                    scenePath,
+                    UnityEditor.SceneManagement.OpenSceneMode.Additive);
+            try
+            {
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    foreach (Transform part in
+                        root.GetComponentsInChildren<Transform>(true))
+                    {
+                        if (part.localScale != Vector3.zero
+                            || part.GetComponent<Canvas>() != null)
+                        {
+                            continue;
+                        }
+
+                        Assert.Fail(
+                            $"'{part.name}' in {scenePath} is scaled to "
+                            + "nothing, so nothing under it will be seen.");
+                    }
+                }
+            }
+            finally
+            {
+                UnityEditor.SceneManagement.EditorSceneManager.CloseScene(
+                    scene,
+                    true);
+            }
         }
 
         private static void AssertBuildSafeMaterial(

@@ -105,7 +105,7 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator CompletionControllerFiresVictoryExactlyOnce()
+        public IEnumerator CompletionForwardsEachCatchExactlyOnce()
         {
             var state = new GameObject("Match Runtime");
             state.SetActive(false);
@@ -173,25 +173,30 @@ namespace PawsAndLoot.Tests.PlayMode
                 }
             }
 
+            // Eight callers, one catch, one request. That is the idempotency
+            // this test is named for, and it is per catch rather than per
+            // match: the arbiter needs to hear about all three, and it needs to
+            // hear about each of them exactly once.
             Assert.That(succeeded, Is.EqualTo(1));
             Assert.That(completion.CurrentCatchCount, Is.EqualTo(1));
-            Assert.That(victoryRequests, Is.Zero);
-            Assert.That(completion.IsCompleted, Is.False);
-
-            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
-            Assert.That(completion.TryCompleteArrest(), Is.True);
-            Assert.That(completion.CurrentCatchCount, Is.EqualTo(2));
-            Assert.That(victoryRequests, Is.Zero);
-            Assert.That(completion.IsCompleted, Is.False);
-
-            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
-            Assert.That(completion.TryCompleteArrest(), Is.True);
-            Assert.That(completion.CurrentCatchCount, Is.EqualTo(3));
             Assert.That(victoryRequests, Is.EqualTo(1));
             Assert.That(completion.IsCompleted, Is.True);
 
+            completion.ClearForNextArrest();
+            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
+            Assert.That(completion.TryCompleteArrest(), Is.True);
+            Assert.That(completion.CurrentCatchCount, Is.EqualTo(2));
+            Assert.That(victoryRequests, Is.EqualTo(2));
+            Assert.That(completion.IsCompleted, Is.True);
+
+            completion.ClearForNextArrest();
+            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
+            Assert.That(completion.TryCompleteArrest(), Is.True);
+            Assert.That(completion.CurrentCatchCount, Is.EqualTo(3));
+            Assert.That(victoryRequests, Is.EqualTo(3));
+
             Assert.That(completion.TryCompleteArrest(), Is.False);
-            Assert.That(victoryRequests, Is.EqualTo(1));
+            Assert.That(victoryRequests, Is.EqualTo(3));
 
             Object.DestroyImmediate(completionObject);
             Object.DestroyImmediate(progressObject);
