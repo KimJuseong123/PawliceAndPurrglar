@@ -36,8 +36,16 @@ namespace PawsAndLoot.Editor
                 .Where(path =>
                 {
                     string name = Path.GetFileNameWithoutExtension(path);
+                    // The rooms a player can walk into, and only those. The
+                    // jail is reached by being arrested rather than by a door,
+                    // and the station and the spare house are not enterable at
+                    // all, so putting them on a sheet meant for marking spawn
+                    // points would only invite marks nothing reads.
                     return name.StartsWith("interior_")
-                        && !name.EndsWith("_col");
+                        && !name.EndsWith("_col")
+                        && name != "interior_jail"
+                        && name != "interior_police"
+                        && name != "interior_house01";
                 })
                 .Distinct()
                 .OrderBy(path => path)
@@ -102,6 +110,11 @@ namespace PawsAndLoot.Editor
                     camera.nearClipPlane = 0.1f;
                     camera.farClipPlane = 80f + bounds.size.y;
 
+                    Debug.Log(
+                        $"[PLAN] {Path.GetFileNameWithoutExtension(paths[index])}"
+                        + $" cell {index}: {bounds.size.x:0.00} x "
+                        + $"{bounds.size.z:0.00} m, view half-width "
+                        + $"{camera.orthographicSize:0.00} m");
                     Blit(camera, sheet, index);
                     Object.DestroyImmediate(subject);
                 }

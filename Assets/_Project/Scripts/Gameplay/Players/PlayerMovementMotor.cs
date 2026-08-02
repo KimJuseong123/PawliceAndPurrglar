@@ -387,18 +387,6 @@ namespace PawsAndLoot.Gameplay.Players
                 return false;
             }
 
-            // Not indoors.
-            //
-            // There is nothing in a room worth jumping over, and a jump is how
-            // a player gets onto a doorstep, from there onto a partition, and
-            // over it into a back room the model draws as sealed. Lowering the
-            // step height stopped them walking up; this stops them hopping up.
-            var indoors =
-                GetComponent<Gameplay.Interiors.PlayerInteriorState>();
-            if (indoors != null && indoors.IsIndoors)
-            {
-                return false;
-            }
 
             // Set, not added. Falling speed at the moment of the press is whatever
             // the ground-stick term left behind, and adding to it would make the
