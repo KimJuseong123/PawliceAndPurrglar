@@ -51,7 +51,7 @@ namespace PawsAndLoot.Gameplay.Camera
         private float distance = 6.5f;
 
         [SerializeField, Range(5f, 80f)]
-        private float pitchDegrees = 34f;
+        private float pitchDegrees = 26f;
 
         /// <summary>
         /// Low, which is the whole reason the cursor is locked. Unlocked, a slow
@@ -74,7 +74,7 @@ namespace PawsAndLoot.Gameplay.Camera
         /// <c>InteriorSightlinePlayModeTests</c> is there to enforce.
         /// </summary>
         [SerializeField]
-        private Vector2 pitchLimits = new(14f, 38f);
+        private Vector2 pitchLimits = new(14f, 28f);
 
         [SerializeField, Min(0.01f)]
         private float smoothTimeSeconds = 0.08f;

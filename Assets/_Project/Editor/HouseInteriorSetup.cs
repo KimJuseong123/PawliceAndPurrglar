@@ -115,6 +115,40 @@ namespace PawsAndLoot.Editor
         private const float RoomZ = 12f;
 
         /// <summary>
+        /// How tall every room's walls stand, in metres.
+        ///
+        /// Rooms were being fitted to a shared floor footprint, and a shared
+        /// floor is the wrong thing to share. Uniform scale means a model with
+        /// a different plan shape shrinks until its long side fits, so the
+        /// supermarket — long and thin — came out smaller than a house it
+        /// should dwarf, and every room ended up a different height.
+        ///
+        /// Wall height is what should match. It is the one measurement rooms
+        /// genuinely have in common, it keeps the camera's clearance the same
+        /// everywhere, and it lets a big shop be a big shop.
+        ///
+        /// Four and a half metres, which is a decision shared with the
+        /// camera. The interior camera sits `1.2 + 6.5·sin(pitch)` above the
+        /// player, so at its 28 degree cap it is 4.25 m up — under the wall
+        /// tops, which is what stops every neighbouring room appearing at once
+        /// (ISSUE-035). Raising one without the other reopens that.
+        ///
+        /// It also sets how big a room is, since the plan follows the height.
+        /// These models are drawn dollhouse-style with walls short relative to
+        /// their floor, so this comes out at a generous room rather than a
+        /// cramped one — which is the other half of what was wrong.
+        /// </summary>
+        private const float WallHeight = 4.5f;
+
+        /// <summary>
+        /// How far inside its own doorway a player is put down.
+        ///
+        /// Past the trigger, so arriving is not read as leaving, and far enough
+        /// in that the door is behind them when they turn round.
+        /// </summary>
+        private const float EntryStandoff = 3.2f;
+
+        /// <summary>
         /// How far out from the wall the doorstep sits, in metres.
         ///
         /// Outside the building's own collider, so standing on the step is
@@ -161,8 +195,8 @@ namespace PawsAndLoot.Editor
         /// town and put coordinates far from everything else for no benefit.
         /// </summary>
         private const int Columns = 5;
-        private const float SpacingX = 36f;
-        private const float SpacingZ = 36f;
+        private const float SpacingX = 44f;
+        private const float SpacingZ = 44f;
 
         /// <summary>
         /// Well south of the map, which runs to z = -22.
@@ -372,13 +406,34 @@ namespace PawsAndLoot.Editor
             Transform room = child($"Interior {number}", root);
             room.position = centre;
 
-            Vector3 size = PlaceholderModelLibrary
+            // Measured at its own size first, then scaled by height.
+            //
+            // The library fits to a footprint, and a footprint is what must not
+            // be shared here. So it is asked for the model unscaled, and the
+            // scale that makes its walls the standard height is worked out and
+            // applied.
+            Vector3 native = PlaceholderModelLibrary
                 .TryInstantiateBuildingSized(
                     stem,
                     room,
                     centre,
-                    RoomX,
-                    RoomZ);
+                    0f,
+                    0f,
+                    1f);
+            if (native.y > 0.001f)
+            {
+                float lift = WallHeight / native.y;
+                foreach (Transform part in room)
+                {
+                    part.localScale *= lift;
+                    part.position = centre
+                        + (part.position - centre) * lift;
+                }
+            }
+
+            Vector3 size = native * (native.y > 0.001f
+                ? WallHeight / native.y
+                : 1f);
             if (size.y <= 0f)
             {
                 Debug.LogError(
@@ -453,20 +508,32 @@ namespace PawsAndLoot.Editor
 
             // Asked of the collision mesh, which only exists as of a moment
             // ago and is not in the physics scene until it is pushed there.
-            Physics.SyncTransforms();
-            bool frontOpen = HasOpening(inner, floorTop, Vector3.forward);
-            bool backOpen = HasOpening(inner, floorTop, Vector3.back);
-            if (!frontOpen && !backOpen)
+            // All four walls, not two.
+            //
+            // The probe used to ask only about the front and the back, so a
+            // room whose door is in a side wall — which the house is — reported
+            // its front as open on the strength of a window, and the player was
+            // put down against the outside of a wall they could not walk
+            // through. Which wall the door is in is a property of the model and
+            // has to be asked of the model.
+            Vector3 doorway = Vector3.forward;
+            float widest = -1f;
+            foreach (Vector3 side in new[]
             {
-                // Every room has to be leaveable. When the probe finds no way
-                // out at all it has misread the room rather than found a sealed
-                // one, and a thief locked inside is worse than a door in a
-                // wall.
-                Debug.LogWarning(
-                    $"[MAP-008] Interior {number} ({stem}) reads as sealed on "
-                    + "both sides. Opening the front so it can be left.");
-                frontOpen = true;
+                Vector3.forward, Vector3.back, Vector3.right, Vector3.left
+            })
+            {
+                float gap = WidestGap(collisionRoot, inner, floorTop, side);
+                if (gap > widest)
+                {
+                    widest = gap;
+                    doorway = side;
+                }
             }
+
+            Debug.Log(
+                $"[MAP-008] Interior {number} ({stem}) opens {doorway} with a "
+                + $"{widest:0.00} m gap.");
 
             // A thick slab under the whole room, on top of the model's own floor.
             // The foundation is a 1.1 m plate at this scale, and a character who has
@@ -486,22 +553,23 @@ namespace PawsAndLoot.Editor
             // means the door reads the arrival as a departure and throws the player
             // straight back into the street. 3.2 m is past it with room to spare, and
             // still close enough that the door is behind you when you turn round.
-            Transform frontEntry = child($"Interior {number} Entry Front", room);
-            frontEntry.position = new Vector3(
-                frontDoor.x,
-                floorTop,
-                inner.max.z - 3.2f);
-            Transform backEntry = child($"Interior {number} Entry Back", room);
-            backEntry.position = new Vector3(
-                backDoor.x,
-                floorTop,
-                inner.min.z + 3.2f);
+            // Inside the room, just clear of its own doorway, on whichever
+            // wall the doorway turned out to be in.
+            float half = Mathf.Abs(Vector3.Dot(inner.extents, doorway));
+            Vector3 mouth = new Vector3(inner.center.x, floorTop, inner.center.z)
+                + doorway * half;
 
-            // Out at the real house, on the matching side.
+            Transform frontEntry = child($"Interior {number} Entry Front", room);
+            frontEntry.position = mouth - doorway * EntryStandoff;
+            Transform backEntry = child($"Interior {number} Entry Back", room);
+            backEntry.position = frontEntry.position;
+
+            // Out at the real building. One way in means one way out, and both
+            // names still have to be filled because HouseInterior wants a pair.
             Transform frontExit = child($"Interior {number} Exit Front", room);
             frontExit.position = OutsidePoint(house, HouseDoorSide.Front, 5.4f);
             Transform backExit = child($"Interior {number} Exit Back", room);
-            backExit.position = OutsidePoint(house, HouseDoorSide.Back, 4.6f);
+            backExit.position = frontExit.position;
 
             HouseInterior interior =
                 room.gameObject.AddComponent<HouseInterior>();
@@ -516,27 +584,14 @@ namespace PawsAndLoot.Editor
                     inner.extents.z - 1.2f),
                 floorTop);
 
-            if (frontOpen)
-            {
-                CreateInsideDoor(
-                    room,
-                    interior,
-                    matchRuntime,
-                    HouseDoorSide.Front,
-                    new Vector3(frontDoor.x, floorTop, inner.max.z - 0.2f),
-                    number);
-            }
-
-            if (backOpen)
-            {
-                CreateInsideDoor(
-                    room,
-                    interior,
-                    matchRuntime,
-                    HouseDoorSide.Back,
-                    new Vector3(backDoor.x, floorTop, inner.min.z + 0.2f),
-                    number);
-            }
+            // One door, in the wall the model put it in.
+            CreateInsideDoor(
+                room,
+                interior,
+                matchRuntime,
+                HouseDoorSide.Front,
+                mouth - doorway * 0.2f,
+                number);
 
             // Whichever face the camera is behind comes away as a whole. Given the
             // room's measured inside rather than a list of parts: it works out which
@@ -551,28 +606,7 @@ namespace PawsAndLoot.Editor
             // Only where the room actually opens. A building whose inside is
             // drawn with one door gets one door outside; the other used to be a
             // prompt on a solid wall that led into the middle of a bookcase.
-            if (frontOpen)
-            {
-                CreateEntrance(
-                    house,
-                    interior,
-                    matchRuntime,
-                    HouseDoorSide.Front);
-            }
-
-            if (backOpen)
-            {
-                CreateEntrance(
-                    house,
-                    interior,
-                    matchRuntime,
-                    HouseDoorSide.Back);
-            }
-
-            Debug.Log(
-                $"[MAP-008] Interior {number} ({stem}): "
-                + $"{(frontOpen ? "front" : "-")}"
-                + $"/{(backOpen ? "back" : "-")} door.");
+            CreateEntrance(house, interior, matchRuntime, HouseDoorSide.Front);
             return true;
         }
 
@@ -845,46 +879,87 @@ namespace PawsAndLoot.Editor
         /// the wall is there, the ray stops; where the opening is, it does not.
         /// A run of misses wide enough to walk through is a door.
         /// </summary>
-        private static bool HasOpening(
+        /// <summary>
+        /// The widest continuous gap in one of a room's walls, in metres.
+        ///
+        /// Read off the collision mesh's triangles rather than by raycasting
+        /// into it. A collider added moments ago in the editor is not reliably
+        /// in the physics scene — that is what made an earlier version of this
+        /// report a fourteen metre doorway in a thirteen metre wall — and
+        /// triangles are in memory the moment the mesh is.
+        ///
+        /// The wall is divided into slots across its length. A slot with a
+        /// triangle standing in it at door height is wall; a run of slots with
+        /// nothing in them is a way through.
+        /// </summary>
+        private static float WidestGap(
+            Transform collision,
             Bounds inner,
             float floorTop,
             Vector3 direction)
         {
-            const float Height = 1.1f;
-            const float Samples = 21f;
-            const float NeededWidth = 0.9f;
+            const int Slots = 40;
+            const float LowGuard = 0.35f;
+            const float HighGuard = 1.6f;
+
+            if (collision == null)
+            {
+                return 0f;
+            }
 
             Vector3 across = new Vector3(-direction.z, 0f, direction.x);
             float span = Mathf.Abs(Vector3.Dot(inner.size, across));
-            float reach = Mathf.Abs(Vector3.Dot(inner.extents, direction))
-                + 2f;
+            float outEdge = Mathf.Abs(Vector3.Dot(inner.extents, direction));
+            float slotWidth = span / Slots;
+            var filled = new bool[Slots];
+
+            foreach (MeshFilter filter in
+                collision.GetComponentsInChildren<MeshFilter>(true))
+            {
+                Mesh mesh = filter.sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                Transform space = filter.transform;
+                foreach (Vector3 local in mesh.vertices)
+                {
+                    Vector3 point = space.TransformPoint(local);
+                    float height = point.y - floorTop;
+                    if (height < LowGuard || height > HighGuard)
+                    {
+                        continue;
+                    }
+
+                    Vector3 offset = point
+                        - new Vector3(inner.center.x, point.y, inner.center.z);
+
+                    // Only the band along this wall, not the whole room.
+                    if (Vector3.Dot(offset, direction) < outEdge - 1.2f)
+                    {
+                        continue;
+                    }
+
+                    float along = Vector3.Dot(offset, across) + span * 0.5f;
+                    int slot = Mathf.FloorToInt(along / slotWidth);
+                    if (slot >= 0 && slot < Slots)
+                    {
+                        filled[slot] = true;
+                    }
+                }
+            }
 
             float run = 0f;
             float best = 0f;
-            for (int index = 0; index <= Samples; index++)
+            foreach (bool solid in filled)
             {
-                float offset = (index / Samples - 0.5f) * span;
-                Vector3 from = new Vector3(
-                    inner.center.x,
-                    floorTop + Height,
-                    inner.center.z) + across * offset;
-
-                bool blocked = Physics.Raycast(
-                    from,
-                    direction,
-                    reach,
-                    Physics.AllLayers,
-                    QueryTriggerInteraction.Ignore);
-                run = blocked ? 0f : run + span / Samples;
+                run = solid ? 0f : run + slotWidth;
                 best = Mathf.Max(best, run);
             }
 
-            // Printed, because "every room has both doors" and "the probe hit
-            // nothing at all" produce the same answer and want opposite fixes.
-            Debug.Log(
-                $"[MAP-008] opening probe {direction}: widest gap "
-                + $"{best:0.00} m of {span:0.0} m wall.");
-            return best >= NeededWidth;
+            // A gap that reaches an end of the wall is the corner, not a door.
+            return filled[0] && filled[Slots - 1] ? best : 0f;
         }
 
         /// <summary>
