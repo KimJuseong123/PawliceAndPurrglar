@@ -2663,6 +2663,14 @@ namespace PawsAndLoot.Editor
                 player.AddComponent<LootCarryMovementPenalty>();
             carryPenalty.Configure(lootCarrier, motor);
 
+            // Taking something takes time now, and how long depends on how big
+            // it is. Without this the thief still steals, instantly, which is
+            // what the game did before — so a scene missing it is slower to
+            // notice than a scene that breaks.
+            LootPickupProgress pickupProgress =
+                player.AddComponent<LootPickupProgress>();
+            pickupProgress.Configure(lootCarrier, motor);
+
             // THROW-001/002/003. A prop slot separate from the loot slot, so
             // picking up a rock never costs the thief their jewels.
             player.AddComponent<PawsAndLoot.Gameplay.Players.StunState>();

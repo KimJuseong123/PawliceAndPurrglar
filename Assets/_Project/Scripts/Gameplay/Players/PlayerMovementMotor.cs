@@ -2,6 +2,7 @@ using System;
 using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Match;
+using PawsAndLoot.Gameplay.Loot;
 using UnityEngine;
 
 namespace PawsAndLoot.Gameplay.Players
@@ -159,9 +160,23 @@ namespace PawsAndLoot.Gameplay.Players
                 : 0f;
         public bool IsLootCarryPenaltyActive =>
             _lootCarryPenaltyActive;
+
+        /// <summary>
+        /// What the thief is carrying, in terms of how much it slows them.
+        ///
+        /// A pocket item is carried and costs nothing, so this is asked
+        /// alongside the flag rather than instead of it: something can be held
+        /// without being heavy, and code that wants to know "are your hands
+        /// full" is asking a different question from "are you slow".
+        /// </summary>
+        public LootCarryType CarriedWeight { get; private set; } =
+            LootCarryType.OneHand;
+
         public float MovementSpeedMultiplier =>
             _lootCarryPenaltyActive && playerConfig != null
-                ? playerConfig.LootCarrySpeedMultiplier
+                ? LootCarryRules.SpeedMultiplier(
+                    CarriedWeight,
+                    playerConfig.LootCarrySpeedMultiplier)
                 : 1f;
         public float EffectiveMoveSpeed =>
             playerConfig != null
@@ -189,7 +204,15 @@ namespace PawsAndLoot.Gameplay.Players
 
         public void SetLootCarryPenalty(bool active)
         {
+            SetLootCarryPenalty(active, LootCarryType.OneHand);
+        }
+
+        public void SetLootCarryPenalty(
+            bool active,
+            LootCarryType carryType)
+        {
             _lootCarryPenaltyActive = active;
+            CarriedWeight = carryType;
         }
 
         public void Move(Vector2 input, float deltaTime)
