@@ -77,8 +77,13 @@ namespace PawsAndLoot.Gameplay.Interiors
         ///
         /// Narrowing indoors is the honest fix for a character built for
         /// streets being asked to use domestic doors. Nothing outdoors changes.
+        ///
+        /// Down to 0.24 after 0.3 still would not fit the bookstore's inner
+        /// doorway. Under half a metre across the shoulders is not a shape
+        /// anybody reads off the screen, and the alternative is cutting
+        /// triangles out of a wall that is drawn with a hole already in it.
         /// </summary>
-        private const float IndoorRadius = 0.3f;
+        private const float IndoorRadius = 0.24f;
 
         private CharacterController _controller;
         private float _outdoorStepOffset = -1f;

@@ -118,7 +118,7 @@ namespace PawsAndLoot.Editor
         {
             { "interior_bookstore", new Vector2(0.528f, 0.207f) },
             { "interior_house02", new Vector2(0.552f, 0.292f) },
-            { "interior_house03", new Vector2(0.688f, 0.312f) },
+            { "interior_house03", new Vector2(0.472f, 0.391f) },
             { "interior_jewelry", new Vector2(0.463f, 0.169f) },
             { "interior_supermarket", new Vector2(0.448f, 0.178f) }
         };
@@ -128,6 +128,23 @@ namespace PawsAndLoot.Editor
         /// the picture lands where it was drawn.
         /// </summary>
         private const float PlanMargin = 1.12f;
+
+        /// <summary>
+        /// Where the way out stands, when it is not opposite the way in.
+        ///
+        /// Normally the door is one hole and the same hole serves both
+        /// directions, so the spawn mark is enough. The two-storey house has
+        /// its entrance in one place and the room's own opening in another, and
+        /// leaving through a doorway on the far side of the house is not
+        /// leaving the way you came.
+        ///
+        /// Read off the plan like the spawn, and in the same coordinates.
+        /// </summary>
+        private static readonly System.Collections.Generic.Dictionary<
+            string, Vector2> DoorInPlan = new()
+        {
+            { "interior_house03", new Vector2(0.472f, 0.391f) }
+        };
 
         /// <summary>
         /// What the coarse collision copy of a room is called.
@@ -663,13 +680,17 @@ namespace PawsAndLoot.Editor
                     inner.extents.z - 1.2f),
                 floorTop);
 
-            // One door, in the wall the model put it in.
+            // One door. Where the plan says, when the plan says; otherwise in
+            // the middle of the wall the opening was found in.
+            Vector3 doorAt = DoorInPlan.TryGetValue(stem, out Vector2 spot)
+                ? FromPlan(inner, floorTop, spot)
+                : mouth - doorway * 0.2f;
             CreateInsideDoor(
                 room,
                 interior,
                 matchRuntime,
                 HouseDoorSide.Front,
-                mouth - doorway * 0.2f,
+                doorAt,
                 number);
 
             BuildPerimeter(colliders, inner, floorTop, doorway);
