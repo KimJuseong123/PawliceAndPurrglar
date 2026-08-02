@@ -98,30 +98,6 @@ namespace PawsAndLoot.Editor
             "env_road_end"
         };
 
-        /// <summary>
-        /// What a kerb should look like, taken the same way — the median of the
-        /// three pieces that agree.
-        /// </summary>
-        private static readonly Color Kerb =
-            new(0.635f, 0.592f, 0.537f, 1f);
-
-        /// <summary>
-        /// Tiles whose source texture paints the road pure black.
-        ///
-        /// The crossing arrived that way — measured, not guessed: its atlas has
-        /// (0, 0, 0) everywhere the other pieces have a dark grey. Baked as-is
-        /// it is a black hole in the middle of a grey street.
-        ///
-        /// Lifted here rather than left alone, because the alternative is a
-        /// visibly broken town until the model is exported again. It is a
-        /// patch on a picture and it is named so — **the fix belongs in the
-        /// source texture**, and once that is re-exported this entry should go.
-        /// </summary>
-        private static readonly HashSet<string> BlackRoads = new()
-        {
-            "env_road_crossing2"
-        };
-
         [MenuItem("Paws & Loot/Setup/Bake Road Tile Textures")]
         public static void Bake()
         {
@@ -240,15 +216,15 @@ namespace PawsAndLoot.Editor
                     false);
                 picture.ReadPixels(new Rect(0f, 0f, Size, Size), 0, 0);
 
-                if (BlackRoads.Contains(stem))
-                {
-                    LiftBlacks(picture);
-                }
-
-                // Written before the corrections as well as after. When a tile
-                // comes out wrong the first question is whether the render was
-                // wrong or the correction was, and those two have very
-                // different fixes. Guessing cost an afternoon once.
+                // Written before anything touches it. When a tile comes out
+                // wrong the first question is whether the render was wrong or
+                // the correction was, and those two have very different fixes.
+                //
+                // Before *anything*: one correction used to run above this
+                // line, so the file called "raw" was already a third of the way
+                // corrected, and reading the crossing's asphalt off it gave a
+                // number that was twenty points too high. A diagnostic that is
+                // slightly not what it says it is is worse than none.
                 picture.Apply();
                 Directory.CreateDirectory(RawDirectory);
                 File.WriteAllBytes(
@@ -257,8 +233,7 @@ namespace PawsAndLoot.Editor
 
                 if (Roads.Contains(stem))
                 {
-                    MatchTarmac(picture);
-                    MatchKerb(picture);
+                    MatchSurfaces(picture);
                 }
 
                 picture.Apply();
@@ -333,194 +308,399 @@ namespace PawsAndLoot.Editor
         }
 
         /// <summary>
-        /// Shifts a tile's road surface onto the same grey as every other
-        /// tile's.
+        /// What one tile turned out to be made of.
         ///
-        /// The pieces were sculpted and textured one at a time, so each one has
-        /// its own idea of what tarmac looks like. Measured across the set: the
-        /// T-junction reads (50, 49, 51) and the dead end (79, 84, 100), a fifth
-        /// darker and a third lighter than the four that agree — and the dead
-        /// end is visibly blue on top of that. Laid side by side they look like
-        /// six different roads, which is exactly what a player sees.
-        ///
-        /// The correction is measured per tile rather than written down: find
-        /// what this tile calls tarmac, and move it to what the set calls
-        /// tarmac. Nothing is assumed about how far off any piece is.
-        ///
-        /// Applied as an offset that fades out with brightness. The markings and
-        /// the kerbs are not the thing that disagrees, and a flat gain would
-        /// drag the white lines grey along with the road. Full strength on the
-        /// road, none on anything as bright as a painted line.
+        /// Measured from the tile rather than compared against written-down
+        /// brightnesses. Absolute thresholds were what broke this before: they
+        /// were calibrated against a lit bake, the bake became unlit, every
+        /// tile dropped forty points, and the bands stopped landing on the
+        /// things they were named after. The kerb test silently matched nothing
+        /// at all on any tile, and nobody noticed because "the kerbs disagree"
+        /// looks exactly like "the kerbs were never corrected".
         /// </summary>
-        private static void MatchTarmac(Texture2D picture)
+        private readonly struct Surfaces
         {
-            Color[] pixels = picture.GetPixels();
-
-            // The median of the dark half, not the mean. A mean is pulled about
-            // by however much white paint a tile happens to carry, and the
-            // crossing carries a great deal.
-            var dark = new List<Color>();
-            foreach (Color pixel in pixels)
+            public Surfaces(
+                float roadLevel,
+                Color road,
+                float roadSpread,
+                Color kerb,
+                bool hasKerb,
+                Color paint,
+                bool hasPaint)
             {
-                if (Luminance(pixel) < 0.43f)
-                {
-                    dark.Add(pixel);
-                }
+                RoadLevel = roadLevel;
+                Road = road;
+                RoadSpread = roadSpread;
+                Kerb = kerb;
+                HasKerb = hasKerb;
+                Paint = paint;
+                HasPaint = hasPaint;
             }
 
-            if (dark.Count < pixels.Length / 20)
-            {
-                // Almost no road in this picture. Nothing to match, and
-                // guessing from a handful of pixels would move it wrongly.
-                return;
-            }
+            /// <summary>Luminance of this tile's carriageway.</summary>
+            public float RoadLevel { get; }
 
-            var measured = new Color(
-                Median(dark, 0),
-                Median(dark, 1),
-                Median(dark, 2),
-                1f);
-            var shift = new Color(
-                Tarmac.r - measured.r,
-                Tarmac.g - measured.g,
-                Tarmac.b - measured.b,
-                0f);
+            public Color Road { get; }
 
-            for (int index = 0; index < pixels.Length; index++)
-            {
-                Color pixel = pixels[index];
+            /// <summary>
+            /// How mottled the carriageway is. The thing that made the crossing
+            /// read as a lighter tile even after its average was matched: its
+            /// asphalt varies twelve times as much as a straight's, and a
+            /// mottled grey beside a flat grey looks like a different grey.
+            /// </summary>
+            public float RoadSpread { get; }
 
-                // Anchored to this tile's own tarmac, not to a fixed
-                // brightness. A tile whose road is already lighter than most
-                // sits high in a fixed ramp and gets only part of the
-                // correction it needs — the dead end came out three quarters
-                // fixed and still visibly blue. Measured from the tile, the
-                // road always gets all of it.
-                float weight = Mathf.Clamp01(
-                    (Luminance(measured) + 0.32f - Luminance(pixel)) / 0.32f);
-                pixels[index] = new Color(
-                    Mathf.Clamp01(pixel.r + shift.r * weight),
-                    Mathf.Clamp01(pixel.g + shift.g * weight),
-                    Mathf.Clamp01(pixel.b + shift.b * weight),
-                    1f);
-            }
+            public Color Kerb { get; }
+            public bool HasKerb { get; }
 
-            picture.SetPixels(pixels);
+            /// <summary>
+            /// The lane markings, which disagree as much as anything else:
+            /// measured across the set they run from 127 to 181, and the
+            /// crossing's stripes are 112 — the same brightness as a kerb,
+            /// which is why they read as dirty rather than painted.
+            /// </summary>
+            public Color Paint { get; }
+
+            public bool HasPaint { get; }
         }
 
         /// <summary>
-        /// Shifts a tile's kerb onto the same stone as every other tile's.
+        /// Where the carriageway ends, as a distance above its own level.
         ///
-        /// Same problem as the tarmac and the same answer, one band up. The
-        /// pieces disagree about kerbs even more than they do about road:
-        /// measured, three of them cluster near (160, 151, 137) while the
-        /// crossing is (123, 111, 97) and the dead end (206, 208, 201) — dark
-        /// tan against near-white grey, side by side along the same street.
-        ///
-        /// Kerbs are picked out by colour rather than by position. They do sit
-        /// along the edges, but the dead end's curves inward and correcting
-        /// only a border band would leave a seam halfway round it. The band
-        /// they occupy — bright enough not to be tarmac, dark enough not to be
-        /// paint — has nothing else in it.
+        /// Everything within this of the road level is road. Relative, so it
+        /// means the same thing on a tile whose asphalt is nearly black as on
+        /// one whose asphalt is mid grey.
         /// </summary>
-        private static void MatchKerb(Texture2D picture)
+        private const float RoadBand = 0.06f;
+
+        /// <summary>Where the correction has faded to nothing.</summary>
+        private const float RoadFade = 0.20f;
+
+        /// <summary>
+        /// Above the road and below the paint. Kerbstone lives here, and on
+        /// these tiles nothing else does.
+        /// </summary>
+        private const float KerbCeiling = 0.55f;
+
+        /// <summary>
+        /// How mottled the carriageway is allowed to be, in luminance.
+        ///
+        /// The median of the set, measured: five of the six sit between 0.0011
+        /// and 0.0058 and the crossing sits at 0.0464.
+        /// </summary>
+        private const float TargetSpread = 0.0040f;
+
+        /// <summary>
+        /// What a kerb should look like, measured across the set rather than
+        /// chosen. Four of the six cluster here; the crossing's is greyer and
+        /// the dead end's is half as bright.
+        /// </summary>
+        private static readonly Color Kerb =
+            new(112f / 255f, 96f / 255f, 80f / 255f, 1f);
+
+        /// <summary>
+        /// How far above its own road a marking starts.
+        ///
+        /// Low enough to catch the crossing's stripes, which sit only 0.15
+        /// above its asphalt — right where a kerb sits. Brightness alone cannot
+        /// separate those two on this tile and never could; what separates them
+        /// is that a kerb runs round the outside and a marking is painted
+        /// inside.
+        /// </summary>
+        private const float PaintFloor = 0.12f;
+
+        /// <summary>
+        /// What painted lines should look like, measured across the set. The
+        /// straight and the corner agree here; the T is fifty points darker and
+        /// the crossing's zebra darker still.
+        /// </summary>
+        private static readonly Color Paint =
+            new(178f / 255f, 173f / 255f, 165f / 255f, 1f);
+
+        /// <summary>
+        /// Reads a tile's carriageway, kerb and markings off the picture.
+        /// </summary>
+        private static Surfaces Measure(Color[] pixels)
         {
-            Color[] pixels = picture.GetPixels();
+            // Only well inside the tile, so kerbstone is not mistaken for a
+            // dark road on the tiles whose kerb runs wide.
+            int margin = Mathf.RoundToInt(Size * 0.26f);
+            var inner = new List<Color>();
+            for (int y = margin; y < Size - margin; y++)
+            {
+                for (int x = margin; x < Size - margin; x++)
+                {
+                    inner.Add(pixels[y * Size + x]);
+                }
+            }
+
+            inner.Sort((left, right) =>
+                Luminance(left).CompareTo(Luminance(right)));
+
+            // The darker half is carriageway on every one of these, including
+            // the crossing, where the stripes take up rather less than half.
+            int roadCount = Mathf.Max(1, (int)(inner.Count * 0.55f));
+            var road = inner.GetRange(0, roadCount);
+
+            float level = Luminance(road[road.Count / 2]);
+            var mean = new Color(
+                Mean(road, 0),
+                Mean(road, 1),
+                Mean(road, 2),
+                1f);
+
+            double sum = 0d;
+            foreach (Color pixel in road)
+            {
+                float delta = Luminance(pixel) - level;
+                sum += delta * delta;
+            }
+
+            float spread = Mathf.Sqrt((float)(sum / road.Count));
 
             var stone = new List<Color>();
             for (int index = 0; index < pixels.Length; index++)
             {
-                if (KerbWeight(pixels[index], index) > 0.9f)
+                if (BorderWeight(index) <= 0f)
+                {
+                    continue;
+                }
+
+                float lum = Luminance(pixels[index]);
+                if (lum > level + RoadBand && lum < level + KerbCeiling)
                 {
                     stone.Add(pixels[index]);
                 }
             }
 
-            // A tile with no kerb at all — the crossroads has none — has
-            // nothing to match, and a median of a handful of anti-aliased edge
+            // A tile with no kerb — the crossroads has none along its edges —
+            // has nothing to match, and a median of a handful of anti-aliased
             // pixels would move it somewhere arbitrary.
-            if (stone.Count < pixels.Length / 25)
+            bool hasKerb = stone.Count > pixels.Length / 40;
+            var kerb = hasKerb
+                ? new Color(
+                    Median(stone, 0),
+                    Median(stone, 1),
+                    Median(stone, 2),
+                    1f)
+                : Color.black;
+
+            var markings = new List<Color>();
+            for (int index = 0; index < pixels.Length; index++)
             {
-                return;
+                if (PaintWeight(pixels[index], index, level) > 0.9f)
+                {
+                    markings.Add(pixels[index]);
+                }
             }
 
-            var measured = new Color(
-                Median(stone, 0),
-                Median(stone, 1),
-                Median(stone, 2),
-                1f);
-            var shift = new Color(
-                Kerb.r - measured.r,
-                Kerb.g - measured.g,
-                Kerb.b - measured.b,
-                0f);
+            // A tile with no markings inside it — the dead end has only its
+            // dashes and the crossroads only its cross — still has enough. Far
+            // fewer than that and it is anti-aliasing rather than paint.
+            bool hasPaint = markings.Count > pixels.Length / 400;
+            var paint = hasPaint
+                ? new Color(
+                    Median(markings, 0),
+                    Median(markings, 1),
+                    Median(markings, 2),
+                    1f)
+                : Color.black;
+
+            return new Surfaces(
+                level,
+                mean,
+                spread,
+                kerb,
+                hasKerb,
+                paint,
+                hasPaint);
+        }
+
+        /// <summary>
+        /// Brings one tile's carriageway and kerb onto the set's.
+        ///
+        /// Both are done as an affine remap per channel rather than a flat
+        /// offset: the offset moves the colour and the scale flattens the
+        /// mottling. Matching only the average is what let the crossing pass
+        /// every measurement and still read as a lighter square in the street.
+        ///
+        /// The scale never rises above one. Squeezing a mottled tile onto a
+        /// calm one is wanted; stretching a calm tile up to the set's average
+        /// mottle would be inventing noise, and on the dead end — whose asphalt
+        /// varies by a thousandth — it would multiply what little it has by
+        /// four.
+        ///
+        /// Weights come from the *original* pixel, so correcting the road does
+        /// not move the kerb out from under its own test.
+        /// </summary>
+        private static void MatchSurfaces(Texture2D picture)
+        {
+            Color[] pixels = picture.GetPixels();
+            Surfaces measured = Measure(pixels);
+
+            float scale = Mathf.Clamp01(
+                TargetSpread / Mathf.Max(1e-5f, measured.RoadSpread));
 
             for (int index = 0; index < pixels.Length; index++)
             {
                 Color pixel = pixels[index];
-                float weight = KerbWeight(pixel, index);
-                if (weight <= 0f)
+                float lum = Luminance(pixel);
+                Color moved = pixel;
+
+                float road = Mathf.Clamp01(
+                    (measured.RoadLevel + RoadFade - lum)
+                    / (RoadFade - RoadBand));
+                if (road > 0f)
                 {
-                    continue;
+                    moved = Blend(
+                        moved,
+                        Remap(pixel, measured.Road, Tarmac, scale),
+                        road);
+                }
+
+                if (measured.HasKerb)
+                {
+                    float kerb = KerbWeight(pixel, index, measured.RoadLevel);
+                    if (kerb > 0f)
+                    {
+                        // Offset only. The stone's grain is the one thing on
+                        // these tiles worth keeping, and flattening it would
+                        // turn every kerb into a painted strip.
+                        moved = Blend(
+                            moved,
+                            Remap(pixel, measured.Kerb, Kerb, 1f),
+                            kerb);
+                    }
+                }
+
+                if (measured.HasPaint)
+                {
+                    float paint = PaintWeight(pixel, index, measured.RoadLevel);
+                    if (paint > 0f)
+                    {
+                        moved = Blend(
+                            moved,
+                            Remap(pixel, measured.Paint, Paint, 1f),
+                            paint);
+                    }
                 }
 
                 pixels[index] = new Color(
-                    Mathf.Clamp01(pixel.r + shift.r * weight),
-                    Mathf.Clamp01(pixel.g + shift.g * weight),
-                    Mathf.Clamp01(pixel.b + shift.b * weight),
+                    Mathf.Clamp01(moved.r),
+                    Mathf.Clamp01(moved.g),
+                    Mathf.Clamp01(moved.b),
                     1f);
             }
 
             picture.SetPixels(pixels);
         }
 
-        /// <summary>
-        /// How much a pixel counts as kerb: the right brightness, and near the
-        /// edge of the tile.
-        ///
-        /// Brightness alone is not enough. The crossing's stripes are not white
-        /// — they sit at the same brightness a kerb does — so a colour-only
-        /// test grabbed them and painted the zebra tan. Warmth does not settle
-        /// it either: the crossing's kerb is warm and the dead end's is very
-        /// nearly grey.
-        ///
-        /// Where they are does settle it. A kerb runs along the outside of a
-        /// tile by definition, and every marking on these pieces is drawn
-        /// inside. The dead end's kerb curves, but it curves around the
-        /// perimeter and stays in the band.
-        ///
-        /// Ramped on both, so the anti-aliased pixels where a kerb meets the
-        /// road are carried across smoothly instead of forming a line of their
-        /// own.
-        /// </summary>
-        private static float KerbWeight(Color pixel, int index)
+        private static Color Remap(Color pixel, Color from, Color to, float scale)
         {
-            float lum = Luminance(pixel);
-            if (lum < 0.35f || lum > 0.92f)
-            {
-                return 0f;
-            }
+            return new Color(
+                to.r + (pixel.r - from.r) * scale,
+                to.g + (pixel.g - from.g) * scale,
+                to.b + (pixel.b - from.b) * scale,
+                1f);
+        }
 
-            int x = index % Size;
-            int y = index / Size;
-            int fromEdge = Mathf.Min(
-                Mathf.Min(x, Size - 1 - x),
-                Mathf.Min(y, Size - 1 - y));
-            float border = Mathf.Clamp01(
-                (Size * 0.26f - fromEdge) / (Size * 0.06f));
+        private static Color Blend(Color from, Color to, float amount)
+        {
+            return new Color(
+                Mathf.Lerp(from.r, to.r, amount),
+                Mathf.Lerp(from.g, to.g, amount),
+                Mathf.Lerp(from.b, to.b, amount),
+                1f);
+        }
+
+        /// <summary>
+        /// How much a pixel counts as kerb: near the edge of the tile, and in
+        /// the band above this tile's own road and below its paint.
+        ///
+        /// Position matters as much as colour. The crossing's stripes are not
+        /// white — they sit at the same brightness a kerb does — so a
+        /// colour-only test grabbed them and painted the zebra tan. Warmth does
+        /// not settle it either: the crossing's kerb is warm and the dead end's
+        /// is very nearly grey.
+        ///
+        /// A kerb runs along the outside of a tile by definition, and every
+        /// marking on these pieces is drawn inside. The dead end's kerb curves,
+        /// but it curves around the perimeter and stays in the band.
+        /// </summary>
+        private static float KerbWeight(Color pixel, int index, float roadLevel)
+        {
+            float border = BorderWeight(index);
             if (border <= 0f)
             {
                 return 0f;
             }
 
-            float rising = Mathf.Clamp01((lum - 0.35f) / 0.08f);
-            float falling = Mathf.Clamp01((0.92f - lum) / 0.10f);
+            float lum = Luminance(pixel);
+
+            // Ramped at both ends so the anti-aliased pixels where a kerb meets
+            // the road are carried across smoothly instead of forming a line of
+            // their own.
+            float rising = Mathf.Clamp01((lum - roadLevel - RoadBand) / 0.06f);
+            float falling = Mathf.Clamp01(
+                (roadLevel + KerbCeiling - lum) / 0.10f);
             return Mathf.Min(Mathf.Min(rising, falling), border);
+        }
+
+        /// <summary>
+        /// How much a pixel counts as a painted marking: inside the tile, and
+        /// brighter than this tile's own asphalt.
+        ///
+        /// The mirror image of the kerb test, and deliberately so. The two
+        /// overlap completely in brightness — the crossing's zebra is exactly
+        /// as bright as its kerb — and not at all in position. Gating each on
+        /// the side of the tile it belongs to keeps them apart without either
+        /// needing to know about the other.
+        /// </summary>
+        private static float PaintWeight(Color pixel, int index, float roadLevel)
+        {
+            float inside = 1f - BorderWeight(index);
+            if (inside <= 0f)
+            {
+                return 0f;
+            }
+
+            float lum = Luminance(pixel);
+            return Mathf.Min(
+                inside,
+                Mathf.Clamp01((lum - roadLevel - PaintFloor) / 0.05f));
+        }
+
+        private static float BorderWeight(int index)
+        {
+            int x = index % Size;
+            int y = index / Size;
+            int fromEdge = Mathf.Min(
+                Mathf.Min(x, Size - 1 - x),
+                Mathf.Min(y, Size - 1 - y));
+            return Mathf.Clamp01(
+                (Size * 0.26f - fromEdge) / (Size * 0.06f));
         }
 
         private static float Luminance(Color pixel)
         {
             return 0.299f * pixel.r + 0.587f * pixel.g + 0.114f * pixel.b;
+        }
+
+        private static float Mean(List<Color> samples, int channel)
+        {
+            double total = 0d;
+            foreach (Color sample in samples)
+            {
+                total += channel switch
+                {
+                    0 => sample.r,
+                    1 => sample.g,
+                    _ => sample.b
+                };
+            }
+
+            return (float)(total / samples.Count);
         }
 
         private static float Median(List<Color> samples, int channel)
@@ -540,27 +720,6 @@ namespace PawsAndLoot.Editor
             return values[values.Count / 2];
         }
 
-        /// <summary>
-        /// Replaces near-black pixels with tarmac.
-        ///
-        /// Only the near-black ones, so the white markings and the tan kerb are
-        /// untouched. A blanket brighten would wash out the whole tile; what is
-        /// wrong here is one colour, and it is wrong by being absent.
-        /// </summary>
-        private static void LiftBlacks(Texture2D picture)
-        {
-            Color[] pixels = picture.GetPixels();
-            for (int index = 0; index < pixels.Length; index++)
-            {
-                Color pixel = pixels[index];
-                if (pixel.r < 0.08f && pixel.g < 0.08f && pixel.b < 0.08f)
-                {
-                    pixels[index] = Tarmac;
-                }
-            }
-
-            picture.SetPixels(pixels);
-        }
 
         /// <summary>
         /// A material wearing the baked picture, unlit.
