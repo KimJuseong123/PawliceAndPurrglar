@@ -73,6 +73,30 @@ namespace PawsAndLoot.Editor
         internal const string JailStem = "interior_jail";
 
         /// <summary>
+        /// Which wall a room's front door is in, when the probe gets it wrong.
+        ///
+        /// The probe reads the widest gap in each wall, and a gap is not always
+        /// a door: a glazed shopfront fills the band it looks at, while a sign
+        /// rail or a run of low shelving leaves it empty. It put the
+        /// supermarket's door a quarter turn out and the house's a half turn
+        /// out, both of which were found by walking into them.
+        ///
+        /// Named here rather than made cleverer. Which wall a door is in is a
+        /// fact about a model somebody drew, there are five of them, and a
+        /// person looking at the room settles it in a second where a heuristic
+        /// keeps being nearly right.
+        ///
+        /// Directions are the room's own, laid out unrotated: +Z north, -Z
+        /// south, +X east, -X west.
+        /// </summary>
+        private static readonly System.Collections.Generic.Dictionary<
+            string, Vector3> DoorWallForModel = new()
+        {
+            { "interior_house02", Vector3.forward },
+            { "interior_supermarket", Vector3.back }
+        };
+
+        /// <summary>
         /// What the coarse collision copy of a room is called.
         /// </summary>
         private const string CollisionSuffix = "_col";
@@ -531,9 +555,19 @@ namespace PawsAndLoot.Editor
                 }
             }
 
-            Debug.Log(
-                $"[MAP-008] Interior {number} ({stem}) opens {doorway} with a "
-                + $"{widest:0.00} m gap.");
+            if (DoorWallForModel.TryGetValue(stem, out Vector3 named))
+            {
+                Debug.Log(
+                    $"[MAP-008] Interior {number} ({stem}): probe said "
+                    + $"{doorway} ({widest:0.00} m), overridden to {named}.");
+                doorway = named;
+            }
+            else
+            {
+                Debug.Log(
+                    $"[MAP-008] Interior {number} ({stem}) opens {doorway} "
+                    + $"with a {widest:0.00} m gap.");
+            }
 
             // A thick slab under the whole room, on top of the model's own floor.
             // The foundation is a 1.1 m plate at this scale, and a character who has
@@ -1295,19 +1329,17 @@ namespace PawsAndLoot.Editor
             trigger.size = new Vector3(2.6f, 5f, 1.2f);
             trigger.center = new Vector3(0f, 1.5f, 0f);
 
-            // A press, the same as the door outside.
+            // Walked into, not pressed.
             //
-            // It used to be automatic, on the argument that getting out should
-            // be walking out. That only holds while the trigger is exactly the
-            // doorway, and it is not: it is placed on whichever wall the room
-            // reads as open, and reading a room wrong then teleports the player
-            // into the street for walking past a shelf. Which is what happened
-            // in the supermarket.
+            // Indoors the press belongs to the drawers and the display cases,
+            // which is what a thief is in there for; spending it on the door
+            // would mean standing in a doorway competing with the furniture.
             //
-            // A press cannot be triggered by accident, so the worst a misread
-            // wall can now do is put the prompt somewhere odd.
+            // Safe to walk through now for a reason it was not before: the room
+            // is boxed in by a barrier with a hole only where the door is, so
+            // the only way to reach this trigger is to be leaving.
             outward.AddComponent<HouseDoorway>()
-                .Configure(interior, false, matchRuntime, null, side, false);
+                .Configure(interior, false, matchRuntime, null, side, true);
         }
 
         /// <summary>

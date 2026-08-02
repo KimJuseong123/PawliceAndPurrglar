@@ -53,6 +53,50 @@ namespace PawsAndLoot.Gameplay.Interiors
         public bool IsIndoors => currentInteriorId != Outside;
 
         /// <summary>
+        /// How high a step the character will walk up indoors.
+        ///
+        /// Small. Outdoors a generous step is what gets a player over kerbs and
+        /// doorsteps without jumping. Indoors it is what let them walk up onto
+        /// a door threshold, from there onto a partition, and over it into a
+        /// back room with no way out — a room the model draws as sealed and the
+        /// collision therefore seals.
+        ///
+        /// A quarter of a metre still clears anything a room has on its floor.
+        /// </summary>
+        private const float IndoorStepOffset = 0.25f;
+
+        private CharacterController _controller;
+        private float _outdoorStepOffset = -1f;
+
+        private void Awake()
+        {
+            _controller = GetComponent<CharacterController>();
+            if (_controller != null)
+            {
+                _outdoorStepOffset = _controller.stepOffset;
+            }
+        }
+
+        /// <summary>
+        /// Applies the step height that belongs to where the player now is.
+        ///
+        /// The outdoor value is remembered rather than written down, because it
+        /// comes from the player config and this is not the place that decides
+        /// it.
+        /// </summary>
+        private void ApplyStepOffset()
+        {
+            if (_controller == null || _outdoorStepOffset < 0f)
+            {
+                return;
+            }
+
+            _controller.stepOffset = IsIndoors
+                ? Mathf.Min(IndoorStepOffset, _outdoorStepOffset)
+                : _outdoorStepOffset;
+        }
+
+        /// <summary>
         /// Host side, and the one place the value changes.
         /// </summary>
         public void SetInterior(int interiorId)
@@ -63,6 +107,7 @@ namespace PawsAndLoot.Gameplay.Interiors
             }
 
             currentInteriorId = interiorId;
+            ApplyStepOffset();
             InteriorChanged?.Invoke(interiorId);
         }
 
