@@ -198,6 +198,7 @@ namespace PawsAndLoot.Editor
                     LiftBlacks(picture);
                 }
 
+                MatchTarmac(picture);
                 picture.Apply();
 
                 File.WriteAllBytes(
@@ -214,6 +215,104 @@ namespace PawsAndLoot.Editor
                 Object.DestroyImmediate(target);
                 Object.DestroyImmediate(subject);
             }
+        }
+
+        /// <summary>
+        /// Shifts a tile's road surface onto the same grey as every other
+        /// tile's.
+        ///
+        /// The pieces were sculpted and textured one at a time, so each one has
+        /// its own idea of what tarmac looks like. Measured across the set: the
+        /// T-junction reads (50, 49, 51) and the dead end (79, 84, 100), a fifth
+        /// darker and a third lighter than the four that agree — and the dead
+        /// end is visibly blue on top of that. Laid side by side they look like
+        /// six different roads, which is exactly what a player sees.
+        ///
+        /// The correction is measured per tile rather than written down: find
+        /// what this tile calls tarmac, and move it to what the set calls
+        /// tarmac. Nothing is assumed about how far off any piece is.
+        ///
+        /// Applied as an offset that fades out with brightness. The markings and
+        /// the kerbs are not the thing that disagrees, and a flat gain would
+        /// drag the white lines grey along with the road. Full strength on the
+        /// road, none on anything as bright as a painted line.
+        /// </summary>
+        private static void MatchTarmac(Texture2D picture)
+        {
+            Color[] pixels = picture.GetPixels();
+
+            // The median of the dark half, not the mean. A mean is pulled about
+            // by however much white paint a tile happens to carry, and the
+            // crossing carries a great deal.
+            var dark = new List<Color>();
+            foreach (Color pixel in pixels)
+            {
+                if (Luminance(pixel) < 0.43f)
+                {
+                    dark.Add(pixel);
+                }
+            }
+
+            if (dark.Count < pixels.Length / 20)
+            {
+                // Almost no road in this picture. Nothing to match, and
+                // guessing from a handful of pixels would move it wrongly.
+                return;
+            }
+
+            var measured = new Color(
+                Median(dark, 0),
+                Median(dark, 1),
+                Median(dark, 2),
+                1f);
+            var shift = new Color(
+                Tarmac.r - measured.r,
+                Tarmac.g - measured.g,
+                Tarmac.b - measured.b,
+                0f);
+
+            for (int index = 0; index < pixels.Length; index++)
+            {
+                Color pixel = pixels[index];
+
+                // Anchored to this tile's own tarmac, not to a fixed
+                // brightness. A tile whose road is already lighter than most
+                // sits high in a fixed ramp and gets only part of the
+                // correction it needs — the dead end came out three quarters
+                // fixed and still visibly blue. Measured from the tile, the
+                // road always gets all of it.
+                float weight = Mathf.Clamp01(
+                    (Luminance(measured) + 0.32f - Luminance(pixel)) / 0.32f);
+                pixels[index] = new Color(
+                    Mathf.Clamp01(pixel.r + shift.r * weight),
+                    Mathf.Clamp01(pixel.g + shift.g * weight),
+                    Mathf.Clamp01(pixel.b + shift.b * weight),
+                    1f);
+            }
+
+            picture.SetPixels(pixels);
+        }
+
+        private static float Luminance(Color pixel)
+        {
+            return 0.299f * pixel.r + 0.587f * pixel.g + 0.114f * pixel.b;
+        }
+
+        private static float Median(List<Color> samples, int channel)
+        {
+            var values = new List<float>(samples.Count);
+            foreach (Color sample in samples)
+            {
+                values.Add(channel switch
+                {
+                    0 => sample.r,
+                    1 => sample.g,
+                    _ => sample.b
+                });
+            }
+
+            values.Sort();
+            return values[values.Count / 2];
         }
 
         /// <summary>
