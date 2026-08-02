@@ -256,18 +256,48 @@ namespace PawsAndLoot.Editor
             Transform routesRoot =
                 CreateChild("Route Network", villageRoot.transform);
 
-            CreateGroundAndBoundaries(
-                environmentRoot,
-                ground,
-                wall);
-            CreateRoadNetwork(roadsRoot, road, plaza);
-
+            // The town itself comes from the sandbox generator, which is where
+            // it was designed and where it is iterated on. Both maps have
+            // always been the same eighty by seventy-two metres in the same
+            // coordinates, so this is a swap rather than a translation.
+            //
             var rooftops = new List<Transform>();
             var ladders = new List<Transform>();
             var pendingLadderClimbs = new List<LadderTraversal>();
+
+            // The three shops are held back and put up below. They are not
+            // just buildings here: each one carries an interior, a walkable
+            // roof and a ladder, and the scene contract requires three of each.
+            // The sandbox knows about none of that, but it does know where
+            // their plots are, which is what it hands back.
+            //
+            // Removing them outright is the plan — see TASK-PORT-001 — but it
+            // has to happen together with re-siting the roofs, the ladders and
+            // the treasure, not before.
+            MapSandboxSetup.TownReport town = MapSandboxSetup.BuildTown(
+                environmentRoot,
+                buildingsRoot,
+                MapSandboxSetup.Measure(),
+                new HashSet<string>
+                {
+                    "Supermarket",
+                    "Bookstore",
+                    "Jewellery"
+                });
+            Vector3 supermarketPlot = PlotFor(town, "Supermarket");
+            Vector3 bookstorePlot = PlotFor(town, "Bookstore");
+            Vector3 jewelleryPlot = PlotFor(town, "Jewellery");
+            Debug.Log(
+                $"[MAP-001] Town laid from the sandbox: {town.Roads} road "
+                + $"tiles, {town.Destinations} buildings, {town.Houses} "
+                + $"houses, {town.SetPieces} set pieces, {town.Dressing} "
+                + "pieces of dressing. Shops go to "
+                + $"supermarket {supermarketPlot}, bookstore {bookstorePlot}, "
+                + $"jeweller {jewelleryPlot}.");
+
             CreateStore(
                 "Supermarket",
-                new Vector3(-9f, 0f, 6f),
+                supermarketPlot,
                 supermarket,
                 roof,
                 ladder,
@@ -280,7 +310,7 @@ namespace PawsAndLoot.Editor
                 "building_supermarket");
             CreateStore(
                 "Bookstore",
-                new Vector3(9f, 0f, 6f),
+                bookstorePlot,
                 bookstore,
                 roof,
                 ladder,
@@ -293,7 +323,7 @@ namespace PawsAndLoot.Editor
                 "building_bookstore");
             CreateStore(
                 "Jewelry Store",
-                new Vector3(9f, 0f, -6f),
+                jewelleryPlot,
                 jewelry,
                 roof,
                 ladder,
@@ -308,6 +338,7 @@ namespace PawsAndLoot.Editor
                 MarketGold,
                 wall);
             CreateCentralPlaza(featuresRoot, plaza, wall);
+
 
             List<Transform> trashBins = CreateTrashBins(
                 featuresRoot,
@@ -744,6 +775,32 @@ namespace PawsAndLoot.Editor
 
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        /// <summary>
+        /// Where the town left a plot for one of the shops.
+        ///
+        /// Throws rather than falling back to a coordinate of its own. A shop
+        /// dropped at the origin because a name was misspelled would stand in
+        /// the middle of a road with its interior, its roof and its ladder, and
+        /// nothing in the scene would object.
+        /// </summary>
+        private static Vector3 PlotFor(
+            MapSandboxSetup.TownReport town,
+            string kind)
+        {
+            foreach (MapSandboxSetup.TownPlot plot in town.Plots)
+            {
+                if (plot.Kind == kind)
+                {
+                    return plot.Centre;
+                }
+            }
+
+            throw new InvalidOperationException(
+                $"The town has no plot called '{kind}'. The main game asked "
+                + "the sandbox to leave one empty and the sandbox does not "
+                + "know that name.");
         }
 
         private static void CreateGroundAndBoundaries(

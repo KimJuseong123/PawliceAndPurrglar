@@ -573,23 +573,12 @@ namespace PawsAndLoot.Editor
             MatchRuntimeState match = BuildSystems(root);
             Measurements sizes = Measure();
 
-            BuildGround(environment);
-            int roads = BuildRoadNetwork(environment);
-
-            Rect[] blocks = NumberedBlocks(out _);
-            int placed = BuildBlocks(buildings, sizes, blocks, out int houses);
-
-            // What the buildings have claimed, carried forward rather than
-            // asked for twice. The set pieces have to avoid the buildings, the
-            // planting has to avoid both, and each of them working it out on
-            // its own is three chances to disagree about where the supermarket
-            // is.
-            List<Rect> occupied = LayOut(blocks)
-                .Select(placement =>
-                    placement.Area(FootprintOf(placement.Fill)))
-                .ToList();
-            int landmarks = BuildLandmarks(buildings, sizes, occupied);
-            int dressing = BuildDressing(environment, sizes, occupied, blocks);
+            TownReport town = BuildTown(environment, buildings, sizes, null);
+            int roads = town.Roads;
+            int placed = town.Destinations;
+            int houses = town.Houses;
+            int landmarks = town.SetPieces;
+            int dressing = town.Dressing;
 
             BuildPlayer(root, match);
             BuildLight(root);
@@ -610,6 +599,128 @@ namespace PawsAndLoot.Editor
                 + $"{placed} destinations, {houses} houses on a "
                 + $"{LotX:0}x{LotZ:0}m lot, {landmarks} set pieces, "
                 + $"{dressing} pieces of dressing.");
+        }
+
+        /// <summary>
+        /// What one building of the town turned out to be, and where.
+        ///
+        /// Handed back rather than looked up afterwards. The main game puts its
+        /// own shops up — they carry interiors, roofs and ladders the sandbox
+        /// knows nothing about — and it can only put them in the right place if
+        /// it is told where the plots the town left empty are.
+        /// </summary>
+        internal readonly struct TownPlot
+        {
+            public TownPlot(
+                string kind,
+                Vector3 centre,
+                float yaw,
+                Vector2 footprint)
+            {
+                Kind = kind;
+                Centre = centre;
+                Yaw = yaw;
+                Footprint = footprint;
+            }
+
+            /// <summary>The name of the <c>Fill</c> this plot was assigned.</summary>
+            public string Kind { get; }
+
+            public Vector3 Centre { get; }
+            public float Yaw { get; }
+            public Vector2 Footprint { get; }
+        }
+
+        internal readonly struct TownReport
+        {
+            public TownReport(
+                int roads,
+                int destinations,
+                int houses,
+                int setPieces,
+                int dressing,
+                List<TownPlot> plots)
+            {
+                Roads = roads;
+                Destinations = destinations;
+                Houses = houses;
+                SetPieces = setPieces;
+                Dressing = dressing;
+                Plots = plots;
+            }
+
+            public int Roads { get; }
+            public int Destinations { get; }
+            public int Houses { get; }
+            public int SetPieces { get; }
+            public int Dressing { get; }
+
+            /// <summary>
+            /// Every plot the layout assigned, including the ones that were
+            /// skipped. A skipped plot still has to be reported — being told
+            /// where the supermarket would have gone is the whole point of
+            /// skipping it.
+            /// </summary>
+            public List<TownPlot> Plots { get; }
+        }
+
+        /// <summary>
+        /// Lays the whole town: ground, roads, lawns, wall, buildings, the two
+        /// set pieces and the street furniture.
+        ///
+        /// Shared with the main game, which wants the same town and its own
+        /// shops. `skip` names the fills it will place itself; those plots are
+        /// left empty and reported, and everything downstream still treats them
+        /// as taken so the planting does not fill the gap with trees.
+        /// </summary>
+        internal static TownReport BuildTown(
+            Transform environment,
+            Transform buildings,
+            Measurements sizes,
+            HashSet<string> skip)
+        {
+            BuildGround(environment);
+            int roads = BuildRoadNetwork(environment);
+
+            Rect[] blocks = NumberedBlocks(out _);
+            int placed = BuildBlocks(
+                buildings,
+                sizes,
+                blocks,
+                skip,
+                out int houses);
+
+            // What the buildings have claimed, carried forward rather than
+            // asked for twice. The set pieces have to avoid the buildings, the
+            // planting has to avoid both, and each of them working it out on
+            // its own is three chances to disagree about where the supermarket
+            // is.
+            //
+            // Skipped plots are in here too. The ground is spoken for whether
+            // or not this generator is the one that fills it.
+            var plots = new List<TownPlot>();
+            var occupied = new List<Rect>();
+            foreach (Placement placement in LayOut(blocks))
+            {
+                Vector2 footprint = FootprintOf(placement.Fill);
+                occupied.Add(placement.Area(footprint));
+                plots.Add(new TownPlot(
+                    placement.Fill.ToString(),
+                    placement.Centre,
+                    placement.Yaw,
+                    footprint));
+            }
+
+            int landmarks = BuildLandmarks(buildings, sizes, occupied);
+            int dressing = BuildDressing(environment, sizes, occupied, blocks);
+
+            return new TownReport(
+                roads,
+                placed,
+                houses,
+                landmarks,
+                dressing,
+                plots);
         }
 
         /// <summary>
@@ -653,7 +764,7 @@ namespace PawsAndLoot.Editor
         /// The footprint of every model this uses, measured once rather than assumed.
         /// The main map has been bitten twice by eyeballed coordinates.
         /// </summary>
-        private struct Measurements
+        internal struct Measurements
         {
             public Dictionary<string, Vector3> Sizes;
 
@@ -666,7 +777,7 @@ namespace PawsAndLoot.Editor
             }
         }
 
-        private static Measurements Measure()
+        internal static Measurements Measure()
         {
             var sizes = new Dictionary<string, Vector3>();
             foreach (string path in AssetDatabase
@@ -1252,6 +1363,7 @@ namespace PawsAndLoot.Editor
             Transform parent,
             Measurements sizes,
             Rect[] blocks,
+            HashSet<string> skip,
             out int houses)
         {
             int specials = 0;
@@ -1259,6 +1371,14 @@ namespace PawsAndLoot.Editor
 
             foreach (Placement placement in LayOut(blocks))
             {
+                // Left for somebody else to fill. Counted as neither a house
+                // nor a destination, because nothing was built.
+                if (skip != null
+                    && skip.Contains(placement.Fill.ToString()))
+                {
+                    continue;
+                }
+
                 string stem = StemOf(placement.Fill);
                 if (stem == null
                     || !PlaceBuilding(
