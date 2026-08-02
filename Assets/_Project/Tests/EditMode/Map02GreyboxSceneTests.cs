@@ -37,11 +37,9 @@ namespace PawsAndLoot.Tests.EditMode
         private const string Map02ScenePath =
             "Assets/_Project/Scenes/GameMap02.unity";
         private const string RoadModelPath =
-            "Assets/_Project/Art/Environment/road section 3d model/"
-            + "road+section+3d+model.fbx";
+            "Assets/_Project/Art/Environment/env_road_section.fbx";
         private const string RoadTexturePath =
-            "Assets/_Project/Art/Environment/road section 3d model/"
-            + "road+section+3d+model.fbm/"
+            "Assets/_Project/Art/Environment/env_road_section.fbm/"
             + "road+section+3d+model_basecolor.jpg";
         private const string RoadDisplayMaterialPath =
             "Assets/_Project/Materials/Greybox/Map02RoadFbx.mat";

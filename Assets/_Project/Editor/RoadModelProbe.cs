@@ -15,8 +15,7 @@ namespace PawsAndLoot.Editor
     internal static class RoadModelProbe
     {
         private const string RoadModelPath =
-            "Assets/_Project/Art/Environment/road section 3d model/"
-            + "road+section+3d+model.fbx";
+            "Assets/_Project/Art/Environment/env_road_section.fbx";
 
         [MenuItem("Paws & Loot/Setup/Report Road Model")]
         public static void Report()

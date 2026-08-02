@@ -1,3 +1,4 @@
+using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Logging;
 using PawsAndLoot.Match;
 using Unity.Collections;
@@ -114,6 +115,29 @@ namespace PawsAndLoot.Integration.Network
                 this);
 
             ResolveEvaluator()?.AdoptDecidedResult(result);
+            AdoptPurse(result.SoldAmount);
+        }
+
+        /// <summary>
+        /// Puts the final takings into the purse the screen reads from.
+        ///
+        /// The purse normally replicates on the player's own object, and that
+        /// object is destroyed by the scene unload that deciding a winner
+        /// starts — the same trap the verdict itself fell into, and the reason
+        /// this class exists. So the last sale, the one that wins the match,
+        /// was the one sale that never arrived: the client declared the thief
+        /// the winner over a counter reading eight hundred of a thousand.
+        ///
+        /// The figure is already in the message. It only had to be carried the
+        /// last few feet.
+        /// </summary>
+        private void AdoptPurse(int soldAmount)
+        {
+            foreach (ThiefLootWallet wallet in
+                FindObjectsByType<ThiefLootWallet>(FindObjectsSortMode.None))
+            {
+                wallet.ApplyRemoteSale(soldAmount);
+            }
         }
 
         /// <summary>

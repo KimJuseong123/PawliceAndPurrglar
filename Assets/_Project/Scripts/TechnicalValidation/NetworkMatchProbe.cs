@@ -88,6 +88,19 @@ namespace PawsAndLoot.TechnicalValidation
 
         private const float PlaceForArrestAt = 11f;
 
+        /// <summary>
+        /// How long the thief spends standing by a piece, and then by the
+        /// merchant. Long enough for a placement to settle and a request to
+        /// cross the wire and come back.
+        /// </summary>
+        private const float SellCycle = 2.5f;
+
+        /// <summary>
+        /// What the least valuable piece fetches. Used only to decide when the
+        /// purse is close enough to the target for one more sale to finish it.
+        /// </summary>
+        private const int CheapestLoot = 200;
+
         [SerializeField, Min(1f)]
         private float sampleSeconds = 14f;
 
@@ -104,6 +117,7 @@ namespace PawsAndLoot.TechnicalValidation
         private bool _sawCarried;
         private int _sawCarrierRole = -1;
         private int _peakSoldAmount;
+        private int _sellPhase = -1;
         private float _peakArrestSeconds;
         private bool _sawArrestCompleted;
         private int _peakArrestCount;
@@ -390,7 +404,130 @@ namespace PawsAndLoot.TechnicalValidation
                 return;
             }
 
+            if (_scenario == "steal" || _scenario == "clash")
+            {
+                DriveSelling(assigned.Value);
+                return;
+            }
+
             DriveLootAndArrest(assigned.Value);
+        }
+
+        /// <summary>
+        /// NET-010's two unmeasured cases: the thief winning, and a sale
+        /// landing in the same breath as the third catch.
+        ///
+        /// The match has two ways to end and only one of them had ever been run
+        /// end to end. The officer's win was covered from the day it existed;
+        /// the thief's was written down as blocked on there being too little
+        /// treasure on the map to reach the target, and it stayed written down
+        /// as blocked for long after six pieces were placed and the block went
+        /// away. Nothing was watching, so nothing said so.
+        ///
+        /// The thief is walked round the same loop a player walks: stand by a
+        /// piece, ask for it, stand by the merchant, ask to sell, repeat.
+        /// Placement is the host's doing and the asking is the client's, for
+        /// the same reason the rest of the run splits that way — a request that
+        /// never crosses the wire proves nothing about the half most likely to
+        /// be broken.
+        ///
+        /// In `clash` the officer is kept on the thief throughout, so the last
+        /// sale and the last catch are both live at once and one of them has to
+        /// lose. What is being checked is not which: it is that both machines
+        /// name the same winner, and that the arbiter hands down one verdict
+        /// rather than two.
+        /// </summary>
+        private void DriveSelling(PlayerRole role)
+        {
+            NetworkPlayerLink link = FindLink(role);
+            if (link == null || !link.IsSpawned)
+            {
+                return;
+            }
+
+            link.SubmitInputRpc(Vector2.zero, false);
+
+            // The officer only joins in for the clash, and only once the purse
+            // is one sale away — arresting earlier would end the match before
+            // there is anything to collide with.
+            if (_scenario == "clash" && OneSaleShort())
+            {
+                KeepPoliceOnFreeThief();
+            }
+
+            float step = _elapsed - MoveUntil;
+            bool selling = ((int)(step / SellCycle)) % 2 == 1;
+
+            if (_mode == "host")
+            {
+                int phase = (int)(step / SellCycle);
+                if (phase != _sellPhase)
+                {
+                    _sellPhase = phase;
+                    if (selling)
+                    {
+                        PlaceThiefBesideSaleZone();
+                    }
+                    else
+                    {
+                        PlaceThiefBesideUnsoldLoot();
+                    }
+                }
+            }
+
+            // Asked for every frame rather than once. The window has to survive
+            // the placement settling and the request crossing the wire, and the
+            // sale is guarded against being credited twice anyway — that guard
+            // is itself under test here.
+            if (role == PlayerRole.Thief)
+            {
+                _interactRequests++;
+                link.SubmitInteractRpc();
+            }
+        }
+
+        /// <summary>
+        /// Whether one more sale would take the thief over the line.
+        ///
+        /// Read from the purse rather than counted, because the officer's
+        /// throws take a cut of it and a count would not know.
+        /// </summary>
+        private bool OneSaleShort()
+        {
+            foreach (ThiefLootWallet wallet in
+                FindObjectsByType<ThiefLootWallet>(FindObjectsSortMode.None))
+            {
+                if (wallet.SoldAmount >= wallet.TargetAmount - CheapestLoot)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Stands the thief beside a piece that is still there to be taken.
+        ///
+        /// By name, so the order is a property of the map rather than of
+        /// whatever order the objects happened to be created in (ISSUE-041).
+        /// </summary>
+        private void PlaceThiefBesideUnsoldLoot()
+        {
+            LootItem loot = FindObjectsByType<LootItem>(
+                    FindObjectsSortMode.None)
+                .Where(item => item.CurrentState != LootState.Sold
+                    && item.CurrentState != LootState.Carried)
+                .OrderBy(item => item.name, StringComparer.Ordinal)
+                .FirstOrDefault();
+            if (loot == null)
+            {
+                return;
+            }
+
+            PlaceRole(
+                PlayerRole.Thief,
+                loot.transform.position + new Vector3(1f, 0f, 0f));
         }
 
         /// <summary>
@@ -1294,12 +1431,14 @@ namespace PawsAndLoot.TechnicalValidation
 
             int soldAmount = 0;
             int creditedSales = 0;
+            int targetAmount = 0;
             foreach (ThiefLootWallet wallet in
                 FindObjectsByType<ThiefLootWallet>(
                     FindObjectsSortMode.None))
             {
                 soldAmount = wallet.SoldAmount;
                 creditedSales = wallet.CreditedSaleCount;
+                targetAmount = wallet.TargetAmount;
             }
 
             float arrestSeconds = 0f;
@@ -1387,6 +1526,7 @@ namespace PawsAndLoot.TechnicalValidation
             // duplicate-sale check: many requests must credit at most one sale.
             AppendNumber(json, "interactRequests", _interactRequests);
             AppendNumber(json, "soldAmount", soldAmount);
+            AppendNumber(json, "targetAmount", targetAmount);
             AppendNumber(json, "peakSoldAmount", _peakSoldAmount);
             AppendNumber(json, "creditedSales", creditedSales);
 
@@ -1493,9 +1633,32 @@ namespace PawsAndLoot.TechnicalValidation
             // it: the officer's client has to be able to ask, and the thief's
             // machine has to see the stun the host applied. Judging only the host
             // would pass the case where the throw works and nobody else sees it.
-            bool scenarioPassed = _scenario == "disconnect"
-                ? _mode != "host" || _disconnectCount == 1
-                : _sawCarried
+            // What the thief's run has to show: that the purse actually
+            // reached the target and that both machines were told the thief
+            // won. Not the officer's half — no rock is thrown, no trap laid,
+            // nothing bought, and demanding those would fail a run that did
+            // exactly what it set out to do.
+            //
+            // The clash asks for the same, minus the winner's name. Which of
+            // the two lands first is a race and naming it would make the test a
+            // lottery; what must hold is that both machines say the same thing
+            // and that exactly one verdict was handed down.
+            bool sellingPassed =
+                _sawCarried
+                && _decidedWinner != "None"
+                // Both machines, not just the host. The client used to be let
+                // off this because its purse replicates, and that is exactly
+                // where the hole was: the winning sale never crossed, so the
+                // client called the thief the winner over a counter two
+                // hundred short of the target.
+                && _peakSoldAmount >= targetAmount;
+
+            bool scenarioPassed = _scenario switch
+            {
+                "disconnect" => _mode != "host" || _disconnectCount == 1,
+                "steal" => sellingPassed && _decidedWinner == "Thief",
+                "clash" => sellingPassed,
+                _ => _sawCarried
                     && _decidedWinner != "None"
                     // Three catches, but only where they are counted. The
                     // client adopts the host's verdict rather than counting for
@@ -1526,7 +1689,8 @@ namespace PawsAndLoot.TechnicalValidation
                     // That is the half that has to cross the wire; the spent
                     // total is a host-side counter.
                     && _lastPoliceAmount >= 0
-                    && _lastPoliceAmount < _peakPoliceAmount;
+                    && _lastPoliceAmount < _peakPoliceAmount
+            };
             AppendBool(json, "passed", sessionHealthy && scenarioPassed);
             json.AppendLine("  \"end\": true");
             json.AppendLine("}");

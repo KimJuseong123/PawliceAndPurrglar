@@ -6,6 +6,21 @@
 
 ### Added
 
+- 네트워크 회귀 시나리오 `steal`과 `clash`. 도둑이 1,000골드로 이기는 경로와,
+  마지막 판매가 마지막 체포와 동시에 살아 있는 경우를 2프로세스로 실측한다.
+- `Repair Model Textures` / `Validate Model Textures` / `Capture Model Sheet` /
+  `Report Road Pieces` / `Report Road Colours` / `Report Sandbox Cost`.
+
+### Fixed
+
+- 승리를 결정한 판매 금액이 클라이언트에 도착하지 않던 것 (`ISSUE-048`).
+  지갑이 씬 언로드가 파괴하는 오브젝트에 실려 있었다. 화면에는 "820 / 1000"인
+  채로 승리 화면이 넘어갔다.
+- MAP-002가 참조하던 도로 모델 경로. 같은 모델을 `env_road_section.fbx`로
+  들여오면서 원래 폴더를 지웠고, 씬이 열리지 않아 테스트 10개가 깨졌다.
+
+### Added (이전)
+
 - 동물 유인 소품 2종 (`THROW-004`). 참치캔은 고양이를, 개껌은 강아지를 부른다.
   양쪽이 서로의 동물을 건드릴 수 있는 유일한 수단
 - 상점 진열대 절도 (`THROW-006`). 바나나와 개껌을 도둑만 가져간다
