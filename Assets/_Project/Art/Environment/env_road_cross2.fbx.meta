@@ -7,6 +7,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: tripo_material_41cf1204-9a7a-4a46-a569-e2b59882c9ef
+    second: {fileID: 2100000, guid: 490ff9cfe3ac2f1448191f2cfd1268a6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: tripo_material_d4e2a4e0-25d5-4250-9206-0a1b5b75e00a
     second: {fileID: 2100000, guid: 490ff9cfe3ac2f1448191f2cfd1268a6, type: 2}
   materials:

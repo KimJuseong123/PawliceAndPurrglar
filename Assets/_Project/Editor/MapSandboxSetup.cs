@@ -553,6 +553,15 @@ namespace PawsAndLoot.Editor
         [MenuItem("Paws & Loot/Sandbox/Rebuild Map Sandbox")]
         public static void RebuildSandbox()
         {
+            // Before anything is placed, because a model that arrived without
+            // its texture remapped is placed as a white shape and says nothing
+            // about it. The forest, the lake and the garden all went into the
+            // town as pale blobs the day they were imported, and the town was
+            // rebuilt twice before anyone thought to ask the models rather than
+            // the scene. Repairing first costs a second and removes the whole
+            // class of "I imported it and it came out white".
+            ModelTextureRepair.Repair();
+
             Scene scene = EditorSceneManager.NewScene(
                 NewSceneSetup.EmptyScene,
                 NewSceneMode.Single);
@@ -569,10 +578,28 @@ namespace PawsAndLoot.Editor
 
             Rect[] blocks = NumberedBlocks(out _);
             int placed = BuildBlocks(buildings, sizes, blocks, out int houses);
-            int dressing = BuildDressing(environment, sizes, blocks);
+
+            // What the buildings have claimed, carried forward rather than
+            // asked for twice. The set pieces have to avoid the buildings, the
+            // planting has to avoid both, and each of them working it out on
+            // its own is three chances to disagree about where the supermarket
+            // is.
+            List<Rect> occupied = LayOut(blocks)
+                .Select(placement =>
+                    placement.Area(FootprintOf(placement.Fill)))
+                .ToList();
+            int landmarks = BuildLandmarks(buildings, sizes, occupied);
+            int dressing = BuildDressing(environment, sizes, occupied, blocks);
 
             BuildPlayer(root, match);
             BuildLight(root);
+
+            // Dormant unless the build is asked for a picture. Costs one
+            // disabled component in a normal run and removes the need to
+            // photograph the window from outside, which twice photographed
+            // something else.
+            root.gameObject.AddComponent<
+                TechnicalValidation.SandboxViewProbe>();
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -581,7 +608,8 @@ namespace PawsAndLoot.Editor
                 "[SANDBOX] Rebuilt to the real map's numbers: "
                 + $"{MapWidth:0}x{MapDepth:0}m, {roads} road strips, "
                 + $"{placed} destinations, {houses} houses on a "
-                + $"{LotX:0}x{LotZ:0}m lot, {dressing} pieces of dressing.");
+                + $"{LotX:0}x{LotZ:0}m lot, {landmarks} set pieces, "
+                + $"{dressing} pieces of dressing.");
         }
 
         /// <summary>
@@ -849,7 +877,35 @@ namespace PawsAndLoot.Editor
             // The supermarket goes to the corner the trees had.
             { "4:Supermarket", new Vector2(7f, 4f) },
             // And the house it was leaning on moves west.
-            { "4:OneStorey", new Vector2(-5f, 0f) }
+            { "4:OneStorey", new Vector2(-5f, 0f) },
+            // The south-west house moves north off the ground the lake garden
+            // now covers. Spacing it down the middle of its block put it
+            // squarely between the two places the plan asks for, so it had to
+            // be pushed to one of them.
+            { "8:OneStorey", new Vector2(0f, 7.5f) }
+        };
+
+        /// <summary>
+        /// The things that are placed where they were drawn rather than where a
+        /// block's spacing would put them.
+        ///
+        /// Everything else on a block is spread evenly along it, which is right
+        /// for a row of houses and wrong for these: a forest, a lake and a
+        /// house share the west of the town, and the plan says which is north
+        /// of which. Even spacing has no way to be told that, and adding a
+        /// third item to a block's list moves the two that were already there.
+        ///
+        /// Still checked against the roads and against everything already
+        /// placed — being drawn somewhere is not the same as fitting there.
+        /// </summary>
+        private static readonly
+            (string Stem, string Label, Vector2 Centre, Vector2 Footprint)[]
+            Landmarks =
+        {
+            ("env_forest", "Forest", new Vector2(-21.5f, 26f),
+                new Vector2(11f, 11f)),
+            ("env_lake_garden", "Lake Garden", new Vector2(-20f, -14f),
+                new Vector2(12f, 10f))
         };
 
         /// <summary>
@@ -899,7 +955,12 @@ namespace PawsAndLoot.Editor
                 Fill.Bookstore => new Vector2(12f, 10f),
                 Fill.Jewellery => new Vector2(10f, 8f),
                 Fill.Supermarket => new Vector2(12f, 8f),
-                Fill.Plaza => new Vector2(16f, 8f),
+                // Square, because the garden is. The old reservation was 16 x 8
+                // for a model a metre by a metre, and a model is fitted by
+                // whichever side runs out first — so eight metres of the
+                // sixteen were reserved for a square that was never going to
+                // reach them, and nothing else could stand there.
+                Fill.Plaza => new Vector2(8f, 8f),
                 _ => new Vector2(LotX, LotZ)
             };
         }
@@ -914,7 +975,10 @@ namespace PawsAndLoot.Editor
                 Fill.Jewellery => "building_jewelry",
                 Fill.TwoStorey => "building_house_2f",
                 Fill.OneStorey => "building_house_1f",
-                Fill.Plaza => "env_fountain_plaza",
+                // The garden, not the plaza. The plaza model has road stubs
+                // moulded into its four edges, which met the town's own roads
+                // at whatever angle the plot happened to give it.
+                Fill.Plaza => "env_fountain_garden",
                 _ => null
             };
         }
@@ -1233,6 +1297,82 @@ namespace PawsAndLoot.Editor
         }
 
         /// <summary>
+        /// Where the drawn set pieces end up, after being checked against the
+        /// roads and against the buildings.
+        ///
+        /// Worked out separately from building them, for the same reason the
+        /// buildings are: the planting has to know what ground is spoken for,
+        /// and asking the scene afterwards would mean the plan and the town
+        /// could disagree.
+        /// </summary>
+        private static List<(string Stem, string Label, Vector3 Centre,
+            Vector2 Footprint)> LayOutLandmarks(List<Rect> taken)
+        {
+            var placed = new List<(string, string, Vector3, Vector2)>();
+            Rect[] roads = RoadCellAreas();
+
+            foreach ((string stem, string label, Vector2 at, Vector2 footprint)
+                in Landmarks)
+            {
+                var centre = new Vector3(at.x, 0f, at.y);
+                if (!TryFit(footprint, roads, taken, ref centre))
+                {
+                    Debug.LogWarning(
+                        $"[SANDBOX] {label} was drawn at {at} and there is no "
+                        + "clear ground within ten metres of it. Left out "
+                        + "rather than dropped on a road.");
+                    continue;
+                }
+
+                taken.Add(new Rect(
+                    centre.x - footprint.x * 0.5f,
+                    centre.z - footprint.y * 0.5f,
+                    footprint.x,
+                    footprint.y));
+                placed.Add((stem, label, centre, footprint));
+            }
+
+            return placed;
+        }
+
+        /// <summary>
+        /// Puts the forest and the lake garden down.
+        ///
+        /// Fitted to a footprint like a building, because that is what they are
+        /// to everything around them: ground somebody else cannot stand on.
+        /// </summary>
+        private static int BuildLandmarks(
+            Transform parent,
+            Measurements sizes,
+            List<Rect> taken)
+        {
+            int built = 0;
+            foreach ((string stem, string label, Vector3 centre,
+                Vector2 footprint) in LayOutLandmarks(taken))
+            {
+                if (PlaceBuilding(
+                        parent,
+                        stem,
+                        centre,
+                        180f,
+                        footprint,
+                        label,
+                        sizes))
+                {
+                    built++;
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"[SANDBOX] {label} ({stem}) would not load. The town "
+                        + "has a gap where it was drawn.");
+                }
+            }
+
+            return built;
+        }
+
+        /// <summary>
         /// A flat square with a fountain in the middle, rather than a building.
         /// </summary>
         private static void BuildPlaza(
@@ -1365,6 +1505,7 @@ namespace PawsAndLoot.Editor
         private static int BuildDressing(
             Transform parent,
             Measurements sizes,
+            List<Rect> occupied,
             Rect[] blocks)
         {
             Transform surface = Child("Surface", parent);
@@ -1382,28 +1523,7 @@ namespace PawsAndLoot.Editor
                         block.height - 1f))
                     .ToArray());
 
-            Rect[] built = LayOut(blocks)
-                .Select(placement =>
-                    placement.Area(FootprintOf(placement.Fill)))
-                .ToArray();
-
-            count += LineStreets(
-                dressing,
-                sizes,
-                "env_street_lamp",
-                18f,
-                1.4f,
-                3.2f,
-                built);
-            count += LineStreets(
-                dressing,
-                sizes,
-                "env_tree",
-                16f,
-                2.8f,
-                4.5f,
-                built);
-
+            count += Plant(dressing, sizes, occupied.ToArray());
             return count;
         }
 
@@ -1665,10 +1785,18 @@ namespace PawsAndLoot.Editor
             ("env_road_tee2", Ways.North | Ways.East | Ways.West),
             ("env_road_corner2", Ways.North | Ways.East),
             ("env_road_straight2", Ways.North | Ways.South),
-            // The only piece the new set does not have. A road that stops has
-            // to look like it stopped, and the curved segment is what that
-            // looks like.
-            ("env_road_curve", Ways.North)
+            // The dead end, which the set was missing until segment 06 arrived.
+            // A carriageway that stops in a rounded kerb, rather than the
+            // curved segment that stood in for it and implied the road carried
+            // on somewhere out of frame.
+            //
+            // It opens east, not north: on the model sheet the cap sits on the
+            // west edge and the road runs out the other side. Every other piece
+            // in this table happens to open north, and assuming this one did
+            // too would cap the wrong end of every dead end in the town — which
+            // looks like a road that stops one tile early rather than like a
+            // mistake.
+            ("env_road_end", Ways.East)
         };
 
         /// <summary>
@@ -2100,155 +2228,244 @@ namespace PawsAndLoot.Editor
             return laid;
         }
 
+
         /// <summary>
-        /// Puts one model down each side of every street at a fixed spacing,
-        /// set back from the kerb.
-        ///
-        /// Skips anything that would land on another street, which is what
-        /// keeps lamps out of junctions.
+        /// A piece of street furniture, and which model it is.
         /// </summary>
-        private static int LineStreets(
+        private enum Prop
+        {
+            Lamp,
+            Tree
+        }
+
+        /// <summary>
+        /// Where the lamps and the trees stand, read off the drawn plan.
+        ///
+        /// These used to be spaced automatically: one model every so many
+        /// metres down both sides of every street. That gives a town where the
+        /// furniture is evenly boring — a lamp at the exact middle of every
+        /// stretch, nothing in the corners, and no way to say "three trees
+        /// here, none there". The plan is a design decision and even spacing
+        /// cannot hold one.
+        ///
+        /// Written in map coordinates, which is what the plan view is labelled
+        /// in, so a spot picked off the picture goes straight in here. They are
+        /// read to the nearest half metre or so and then snapped clear of the
+        /// roads and buildings below, because a coordinate lifted off a drawing
+        /// is not a promise that the ground is empty.
+        /// </summary>
+        private static readonly (Vector2 At, Prop Kind)[] Planting =
+        {
+            // North band, along the top street and the two alleys.
+            (new Vector2(-21f, 46.5f), Prop.Tree),
+            (new Vector2(-14f, 46.5f), Prop.Tree),
+            (new Vector2(9.5f, 44f), Prop.Tree),
+            (new Vector2(-21f, 40f), Prop.Lamp),
+            (new Vector2(-14f, 40f), Prop.Tree),
+            (new Vector2(-6f, 38.5f), Prop.Lamp),
+            (new Vector2(2f, 40.5f), Prop.Tree),
+            (new Vector2(10f, 40f), Prop.Lamp),
+            (new Vector2(19f, 38.5f), Prop.Tree),
+            (new Vector2(26f, 40f), Prop.Lamp),
+            (new Vector2(34f, 40f), Prop.Lamp),
+            (new Vector2(45.5f, 40f), Prop.Lamp),
+
+            // The middle band, either side of the police station and the
+            // jeweller.
+            (new Vector2(11f, 34f), Prop.Tree),
+            (new Vector2(27f, 34f), Prop.Tree),
+            (new Vector2(33.5f, 32.5f), Prop.Tree),
+            (new Vector2(-5f, 28.5f), Prop.Tree),
+            (new Vector2(11f, 28.5f), Prop.Lamp),
+            (new Vector2(17.5f, 28.5f), Prop.Lamp),
+            (new Vector2(27f, 28f), Prop.Tree),
+            (new Vector2(33.5f, 28f), Prop.Lamp),
+            (new Vector2(-5f, 24f), Prop.Tree),
+            (new Vector2(-5f, 19.5f), Prop.Lamp),
+            (new Vector2(-5f, 15.5f), Prop.Tree),
+
+            // Along the centre street.
+            (new Vector2(11f, 12f), Prop.Tree),
+            (new Vector2(17.5f, 12f), Prop.Tree),
+            (new Vector2(-12.5f, 7.5f), Prop.Lamp),
+            (new Vector2(-5f, 8f), Prop.Tree),
+            (new Vector2(2f, 8f), Prop.Lamp),
+            (new Vector2(11f, 8f), Prop.Tree),
+            (new Vector2(17.5f, 8f), Prop.Tree),
+            (new Vector2(27f, 8f), Prop.Tree),
+            (new Vector2(33.5f, 8f), Prop.Lamp),
+
+            // The south band, around the garden.
+            (new Vector2(-12.5f, 1f), Prop.Tree),
+            (new Vector2(-6f, 1f), Prop.Tree),
+            (new Vector2(19f, 1f), Prop.Tree),
+            (new Vector2(-12.5f, -3.5f), Prop.Lamp),
+            (new Vector2(-5f, -3.5f), Prop.Lamp),
+            (new Vector2(2f, -3.5f), Prop.Lamp),
+            (new Vector2(19f, -3.5f), Prop.Lamp),
+            (new Vector2(25.5f, -3.5f), Prop.Lamp)
+        };
+
+        /// <summary>
+        /// How far a prop may be shifted to find ground, and in what steps.
+        ///
+        /// Small. The point of reading the coordinates off a drawing is that
+        /// they land where they were drawn; a prop free to wander five metres
+        /// would quietly rearrange the plan and the picture would still look
+        /// plausible. Three metres moves one off a kerb it was half on and
+        /// gives up otherwise.
+        /// </summary>
+        private const float PlantingReach = 3f;
+
+        /// <summary>
+        /// Plants the drawn lamps and trees.
+        ///
+        /// Nothing here is solid. Trunks used to be — a thin capsule round the
+        /// post, on the argument that a chase wants something to steer round —
+        /// but a lamp post you cannot see the collider of is also a lamp post
+        /// you get caught on, and there are forty of them now rather than
+        /// twelve. The buildings and the boundary are what shape a chase.
+        /// </summary>
+        private static int Plant(
             Transform parent,
             Measurements sizes,
-            string stem,
-            float spacing,
-            float setback,
-            float targetHeight,
-            Rect[] buildings)
+            Rect[] occupied)
         {
-            Vector3 native = sizes.Of(stem);
-            if (native.y <= 0.01f)
-            {
-                return 0;
-            }
-
-            float scale = targetHeight / native.y;
             Rect[] roads = RoadCellAreas();
             int placed = 0;
+            int skipped = 0;
 
-            foreach (Street street in Streets)
+            for (int index = 0; index < Planting.Length; index++)
             {
-                float length = street.To - street.From;
-                int slots = Mathf.FloorToInt(length / spacing);
-                if (slots < 1)
+                (Vector2 drawn, Prop kind) = Planting[index];
+                string stem = kind == Prop.Lamp
+                    ? "env_street_lamp"
+                    : "env_tree";
+                float height = kind == Prop.Lamp ? 3.2f : 4.5f;
+
+                Vector3 native = sizes.Of(stem);
+                if (native.y <= 0.01f)
                 {
                     continue;
                 }
 
-                float offset = street.Width * 0.5f + setback;
-                for (int slot = 1; slot <= slots; slot++)
+                if (!TryClearSpot(drawn, roads, occupied, out Vector2 at))
                 {
-                    float along = street.From
-                        + length * slot / (slots + 1f);
-                    for (int side = -1; side <= 1; side += 2)
-                    {
-                        Vector3 at = street.Horizontal
-                            ? new Vector3(
-                                along,
-                                0f,
-                                street.FixedCoordinate + offset * side)
-                            : new Vector3(
-                                street.FixedCoordinate + offset * side,
-                                0f,
-                                along);
-
-                        var footing = new Rect(
-                            at.x - 0.8f,
-                            at.z - 0.8f,
-                            1.6f,
-                            1.6f);
-                        // Kept clear of the buildings as well as the roads. A
-                        // tree at the shop door hides the shop, which is the one
-                        // thing on the block anybody is looking for.
-                        var elbow = new Rect(
-                            at.x - 3.5f,
-                            at.z - 3.5f,
-                            7f,
-                            7f);
-                        if (at.x < MapMinX + 1f
-                            || at.z < MapMinZ + 1f
-                            || at.x > MapMaxX - 1f
-                            || at.z > MapMaxZ - 1f
-                            || Overlaps(footing, roads)
-                            || Overlaps(elbow, buildings))
-                        {
-                            continue;
-                        }
-
-                        GameObject piece = Instantiate(
-                            stem,
-                            EnvironmentDirectory,
-                            parent,
-                            at,
-                            Quaternion.Euler(0f, slot * 37f % 360f, 0f),
-                            Vector3.one * scale,
-                            $"{stem} {street.Name} {slot}{side}");
-                        if (piece == null)
-                        {
-                            return placed;
-                        }
-
-                        // The model's own colliders go, and a thin one takes
-                        // their place.
-                        //
-                        // Walking through a lamp post reads as broken, so these
-                        // are solid — but only the post. The imported colliders
-                        // wrap the whole thing including a tree's canopy, and a
-                        // canopy that stops you is an invisible wall four
-                        // metres wide over a trunk you can see round.
-                        //
-                        // A trunk you have to go round is worth having. It is
-                        // the only thing on a street a runner has to steer for,
-                        // and a chase with nothing to steer round is two
-                        // characters in a straight line.
-                        foreach (Collider collider in
-                            piece.GetComponentsInChildren<Collider>(true))
-                        {
-                            Object.DestroyImmediate(collider);
-                        }
-
-                        var trunk = piece.AddComponent<CapsuleCollider>();
-                        trunk.radius = TrunkRadius(stem);
-                        trunk.height = targetHeight * 0.8f;
-                        trunk.center = new Vector3(
-                            0f,
-                            trunk.height * 0.5f,
-                            0f);
-
-                        // Dense scans, all of them. Their shadows cost a
-                        // second pass over every one of those triangles and buy
-                        // very little at this size.
-                        foreach (Renderer renderer in
-                            piece.GetComponentsInChildren<Renderer>(true))
-                        {
-                            renderer.shadowCastingMode =
-                                UnityEngine.Rendering.ShadowCastingMode.Off;
-                        }
-
-                        MakeBatchable(piece);
-                        placed++;
-                    }
+                    Debug.LogWarning(
+                        $"[SANDBOX] The {kind} drawn at {drawn} has no clear "
+                        + $"ground within {PlantingReach:0} m. Left out rather "
+                        + "than stood in a road or inside a wall.");
+                    skipped++;
+                    continue;
                 }
+
+                GameObject piece = Instantiate(
+                    stem,
+                    EnvironmentDirectory,
+                    parent,
+                    new Vector3(at.x, 0f, at.y),
+                    // Turned by an amount that depends on where it is rather
+                    // than on a counter, so moving one entry in the table does
+                    // not spin every tree after it.
+                    Quaternion.Euler(0f, (at.x * 37f + at.y * 61f) % 360f, 0f),
+                    Vector3.one * (height / native.y),
+                    $"{stem} {index:00}");
+                if (piece == null)
+                {
+                    return placed;
+                }
+
+                // Walk-through, on the plan's own instruction. The imported
+                // colliders wrap the canopy as well as the trunk, so leaving
+                // them would be an invisible wall four metres across.
+                foreach (Collider collider in
+                    piece.GetComponentsInChildren<Collider>(true))
+                {
+                    Object.DestroyImmediate(collider);
+                }
+
+                // Dense scans, all of them. Their shadows cost a second pass
+                // over every one of those triangles and buy very little at this
+                // size.
+                foreach (Renderer renderer in
+                    piece.GetComponentsInChildren<Renderer>(true))
+                {
+                    renderer.shadowCastingMode =
+                        UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
+
+                MakeBatchable(piece);
+                placed++;
             }
 
+            // Printed because a prop that could not be placed leaves no trace
+            // in the scene, and a plan that quietly lost a third of its trees
+            // looks like a plan that was drawn sparsely.
+            Debug.Log(
+                $"[SANDBOX] Planting: {placed} of {Planting.Length} placed, "
+                + $"{skipped} had nowhere to go.");
             return placed;
         }
 
         /// <summary>
-        /// How wide the solid part of a piece of street furniture is.
+        /// Finds ground for a prop, starting where it was drawn.
         ///
-        /// Measured off the thing that is actually in the way — the post or the
-        /// trunk — not off the model's extent. A tree's extent is its canopy,
-        /// and the canopy is the part you walk under.
+        /// Searches outward in rings so the nearest clear spot wins, the same
+        /// way a building is fitted. The footing is deliberately wider than a
+        /// trunk: a tree whose trunk clears the kerb by a centimetre still has
+        /// its canopy over the carriageway.
         /// </summary>
-        private static float TrunkRadius(string stem)
+        private static bool TryClearSpot(
+            Vector2 drawn,
+            Rect[] roads,
+            Rect[] occupied,
+            out Vector2 at)
         {
-            return stem switch
+            const float Step = 0.5f;
+            const float Footing = 1.6f;
+
+            for (float radius = 0f;
+                radius <= PlantingReach;
+                radius += Step)
             {
-                "env_street_lamp" => 0.18f,
-                _ => 0.35f
-            };
+                for (float dx = -radius; dx <= radius; dx += Step)
+                {
+                    for (float dz = -radius; dz <= radius; dz += Step)
+                    {
+                        if (radius > 0f
+                            && Mathf.Abs(dx) < radius
+                            && Mathf.Abs(dz) < radius)
+                        {
+                            continue;
+                        }
+
+                        var candidate = new Vector2(drawn.x + dx, drawn.y + dz);
+                        var footing = new Rect(
+                            candidate.x - Footing * 0.5f,
+                            candidate.y - Footing * 0.5f,
+                            Footing,
+                            Footing);
+
+                        if (footing.xMin < MapMinX + 0.5f
+                            || footing.yMin < MapMinZ + 0.5f
+                            || footing.xMax > MapMaxX - 0.5f
+                            || footing.yMax > MapMaxZ - 0.5f
+                            || Overlaps(footing, roads)
+                            || Overlaps(footing, occupied))
+                        {
+                            continue;
+                        }
+
+                        at = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            at = drawn;
+            return false;
         }
+
 
         private static bool Overlaps(Rect area, Rect[] others)
         {

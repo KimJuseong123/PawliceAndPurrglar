@@ -39,6 +39,15 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Materials/Models";
 
         /// <summary>
+        /// Where the uncorrected renders go, for when a tile comes out wrong.
+        ///
+        /// Outside Assets on purpose. They are evidence, not art: putting them
+        /// in the project would import seven textures nothing references on
+        /// every bake.
+        /// </summary>
+        private const string RawDirectory = "Logs/baked-raw";
+
+        /// <summary>
         /// Big enough that a crossing's stripes stay crisp at the distance the
         /// camera sits, small enough that a hundred of them cost nothing.
         /// </summary>
@@ -55,7 +64,7 @@ namespace PawsAndLoot.Editor
             "env_road_corner2",
             "env_road_crossing2",
             "env_road_tee2",
-            "env_road_curve",
+            "env_road_end",
             "env_grass_tile"
         };
 
@@ -86,7 +95,7 @@ namespace PawsAndLoot.Editor
             "env_road_corner2",
             "env_road_crossing2",
             "env_road_tee2",
-            "env_road_curve"
+            "env_road_end"
         };
 
         /// <summary>
@@ -137,15 +146,20 @@ namespace PawsAndLoot.Editor
                 camera.backgroundColor = new Color(0.18f, 0.19f, 0.21f, 1f);
                 camera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
-                sun.transform.SetParent(stage.transform);
-                sun.type = LightType.Directional;
-
-                // Straight down and flat. A raking light bakes shadows into the
-                // picture, and a baked shadow is one that points the wrong way
-                // the moment the sun in the scene points anywhere else.
-                sun.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-                sun.intensity = 1f;
-                sun.shadows = LightShadows.None;
+                // No light at all. Each tile is drawn unlit below, so lighting
+                // it would only be a second opinion about its colour.
+                //
+                // There used to be a directional light pointing straight down,
+                // on the argument that a raking light bakes shadows in. It does
+                // — but straight down is the worst case of the opposite
+                // problem: every up-facing surface sits at exactly full
+                // brightness, so the tiniest wobble in a normal falls off a
+                // cliff. Three tiles came back as white noise with the kerbs
+                // and the lane markings around them perfectly clean, because
+                // the kerbs face sideways and the markings are separate
+                // geometry. What a ground tile wants baked into it is its
+                // colour, and nothing else.
+                sun.enabled = false;
 
                 foreach (string stem in Stems)
                 {
@@ -190,6 +204,8 @@ namespace PawsAndLoot.Editor
             var subject = (GameObject)PrefabUtility.InstantiatePrefab(asset);
             subject.transform.SetParent(stage);
             subject.transform.position = Vector3.zero;
+            var borrowed = new List<Material>();
+            MakeUnlit(subject, borrowed);
 
             var target = new RenderTexture(Size, Size, 24)
             {
@@ -229,6 +245,16 @@ namespace PawsAndLoot.Editor
                     LiftBlacks(picture);
                 }
 
+                // Written before the corrections as well as after. When a tile
+                // comes out wrong the first question is whether the render was
+                // wrong or the correction was, and those two have very
+                // different fixes. Guessing cost an afternoon once.
+                picture.Apply();
+                Directory.CreateDirectory(RawDirectory);
+                File.WriteAllBytes(
+                    $"{RawDirectory}/{stem}.png",
+                    picture.EncodeToPNG());
+
                 if (Roads.Contains(stem))
                 {
                     MatchTarmac(picture);
@@ -250,6 +276,59 @@ namespace PawsAndLoot.Editor
                 target.Release();
                 Object.DestroyImmediate(target);
                 Object.DestroyImmediate(subject);
+                foreach (Material material in borrowed)
+                {
+                    Object.DestroyImmediate(material);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Redresses a tile in flat colour for the photograph.
+        ///
+        /// The picture wanted here is the tile's albedo — what colour is this
+        /// square of ground — and a lit shader answers a different question,
+        /// one whose answer depends on how the mesh happens to be tessellated.
+        /// Unlit takes the lighting out of it entirely, so a tile decimated to
+        /// forty thousand triangles bakes to the same picture as the million
+        /// it was exported at.
+        ///
+        /// The stand-in materials are made here and destroyed with the subject.
+        /// Leaving them behind would put an untracked material in the project
+        /// for every tile, every bake.
+        /// </summary>
+        private static void MakeUnlit(GameObject subject, List<Material> made)
+        {
+            Shader unlit = Shader.Find("Universal Render Pipeline/Unlit");
+            if (unlit == null)
+            {
+                Debug.LogWarning(
+                    "[ROAD] No URP unlit shader, so the tiles are being lit "
+                    + "after all. Expect them to disagree about brightness.");
+                return;
+            }
+
+            foreach (Renderer renderer in
+                subject.GetComponentsInChildren<Renderer>(true))
+            {
+                Material[] originals = renderer.sharedMaterials;
+                var swapped = new Material[originals.Length];
+                for (int index = 0; index < originals.Length; index++)
+                {
+                    var flat = new Material(unlit);
+                    if (originals[index] != null)
+                    {
+                        flat.mainTexture = originals[index].mainTexture;
+                        flat.color = originals[index].HasProperty("_BaseColor")
+                            ? originals[index].GetColor("_BaseColor")
+                            : Color.white;
+                    }
+
+                    made.Add(flat);
+                    swapped[index] = flat;
+                }
+
+                renderer.sharedMaterials = swapped;
             }
         }
 

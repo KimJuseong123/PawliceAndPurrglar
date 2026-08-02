@@ -95,19 +95,31 @@
 
 ## 하지 않아도 되는 것
 
-### 도로 조각 5종 — **필요 없다**
+### 도로 조각 — 빌드에는 안 들어가지만, 감면은 한다 (2026-08-03 수정)
 
-각 95만 삼각형이지만 **빌드에 들어가지 않는다.** 위에서 한 번 구워 512px 그림으로
-쓰고, 화면에 있는 것은 삼각형 2개짜리 평면이다. `Report Model Weights`가 이 다섯을
+각 95만 삼각형이고 **빌드에는 들어가지 않는다.** 위에서 한 번 구워 512px 그림으로
+쓰고, 화면에 있는 것은 삼각형 2개짜리 평면이다. `Report Model Weights`가 이들을
 `unused`로 보고하는 것이 그 증거다.
 
-| 모델 | 상태 |
-|---|---|
-| `road segment 01~05` | 굽는 원본으로만 쓰임. 빌드 제외 |
-| `curved road segment` | 같음 |
-| `grass tile` | 같음 |
+그래도 감면한다. **저장소에는 들어가기 때문이다** — 조각 하나가 25MB이고, 팀원이
+받아야 하는 것도 그것이다. 4만으로 깎으면 1.3MB가 되고 구워진 그림은 같다.
 
-**모델을 고치면 다시 구워야 한다** (`Bake Road Tile Textures`). 감면할 필요는 없다.
+| 모델 | 이전 → 이후 | Blender 파일 |
+|---|---:|---|
+| 십자 (02) | 963,022 → **40,000** | `environment/road segment 02 3d model/calibration+target+3d+model.fbx` |
+| ㄱ자 (03) | 938,816 → **40,000** | `environment/_superseded/board+game+tile+3d+model.fbx` |
+| T자 (05) | 976,278 → **40,000** | `environment/road segment 05 3d model/road+segment++05+3d+model.fbx` |
+| 막다른 길 (06) | 987,484 → **40,000** | `environment/road segment 06 3d model/3d+road+tile+model.fbx` |
+
+> **굽는 원본을 감면하려면 굽는 것이 Unlit이어야 한다.** 예전 굽기는 정면 직사광을
+> 썼고, 그러면 위를 보는 면이 전부 밝기 곡선 끝에 앉는다. 감면이 남긴 법선의 미세한
+> 흔들림이 그 절벽에서 떨어져 아스팔트가 흰 잡음으로 터졌다 (`ISSUE-059`).
+> 지금은 조명을 끄고 알베도만 찍으므로 4만짜리와 95만짜리가 같은 그림으로 나온다.
+
+**모델을 고치면 다시 구워야 한다** (`Bake Road Tile Textures`).
+
+`road segment 03`으로 받은 압축 파일에는 **ㄱ자가 아니라 횡단보도가 들어 있었다**
+(`crosswalk+tile+3d+model.fbx`). 이전 ㄱ자를 `_superseded/`에서 되살려 쓰고 있다.
 
 ### 이미 가벼운 것
 
@@ -116,13 +128,19 @@
 
 ---
 
-## 숲과 호수
+## 숲과 호수 — 들어왔다 (2026-08-03)
 
-**ArtSource에 없다.** 만들어 넣으실 계획이면, 나무처럼 여러 번 반복될 것이므로
-처음부터 **5,000 삼각형 이하**로 만드시는 편이 나중에 깎는 것보다 낫다.
+한 구획을 통째로 채우는 세트 피스라 반복되지 않는다. 건물 외관과 같은 4만으로 잡았다.
 
-호수는 평면에 가까우므로 도로와 같은 방법(위에서 구워 평면에 입히기)이 그대로
-통한다. 필요하면 그렇게 처리할 수 있다.
+| 모델 | 이전 → 이후 | Blender 파일 |
+|---|---:|---|
+| 숲 | 951,012 → **40,000** | `environment/forest 3d model/forest+clearing+3d+model.fbx` |
+| 호수 공원 | 944,082 → **40,000** | `environment/lake garden 3d model/isometric+garden+3d+model.fbx` |
+| 분수 정원 (광장) | 958,444 → **40,000** | `environment/fountain garden 3d model/fountain+garden+3d+model.fbx` |
+| 감옥 (아직 미배치) | 950,518 → **100,000** | `environment/prison cell 3d model/prison+cell+3d+model.fbx` |
+
+감옥은 실내라 10만으로 깎아 `ArtSource/Decimated/env_prison_cell.fbx`에 두었다.
+아직 어느 씬에도 넣지 않았다 — 감옥 작업을 할 때 그대로 임포트하면 된다.
 
 ---
 

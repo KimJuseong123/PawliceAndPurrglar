@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: e73cd750e82e7af4f95a3b092d4e50d8
+guid: 43f49e61a75900743bf8e06aaeaf8a50
 ModelImporter:
   serializedVersion: 24501
   internalIDToNameTable: []
@@ -7,13 +7,8 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: tripo_material_04474518-9f30-4934-a9ce-0fe9e9c88832
-    second: {fileID: 2100000, guid: e9e354976dd23544ea676955f61e431a, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: tripo_node_b1a19dd8-631f-464c-bd29-937a1e92a62a_material
-    second: {fileID: 2100000, guid: e9e354976dd23544ea676955f61e431a, type: 2}
+      name: tripo_material_7741df3c-8190-46af-8931-130f7c1721c8
+    second: {fileID: 2100000, guid: 33a6fffd2aa66994aa4b58a87bbf6dbd, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -45,7 +40,7 @@ ModelImporter:
   meshes:
     lODScreenPercentages: []
     globalScale: 1
-    meshCompression: 3
+    meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
     sortHierarchyByName: 1
