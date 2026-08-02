@@ -93,7 +93,7 @@ namespace PawsAndLoot.Editor
             string, Vector3> DoorWallForModel = new()
         {
             { "interior_house02", Vector3.forward },
-            { "interior_supermarket", Vector3.back }
+            { "interior_supermarket", Vector3.forward }
         };
 
         /// <summary>
@@ -594,7 +594,12 @@ namespace PawsAndLoot.Editor
                 + doorway * half;
 
             Transform frontEntry = child($"Interior {number} Entry Front", room);
-            frontEntry.position = mouth - doorway * EntryStandoff;
+            frontEntry.position = ClearSpotInside(
+                collisionRoot,
+                inner,
+                floorTop,
+                mouth,
+                doorway);
             Transform backEntry = child($"Interior {number} Entry Back", room);
             backEntry.position = frontEntry.position;
 
@@ -915,6 +920,105 @@ namespace PawsAndLoot.Editor
         /// the wall is there, the ray stops; where the opening is, it does not.
         /// A run of misses wide enough to walk through is a door.
         /// </summary>
+        /// <summary>
+        /// Finds somewhere inside the door with room to stand.
+        ///
+        /// A fixed step in from the doorway is not enough. These rooms are
+        /// partitioned, and three metres past the front door of the house is
+        /// the inside of a dividing wall — the player arrived wedged in it,
+        /// which reads as the game being broken before they have moved.
+        ///
+        /// Candidates are tried from just inside the door and worked inward,
+        /// with a little left and right, and the first one with clear air
+        /// around it wins. Clear is measured against the collision mesh's own
+        /// vertices in the band a body occupies, not by raycasting: a collider
+        /// added moments ago is not reliably in the editor's physics scene, and
+        /// vertices are in memory the moment the mesh is.
+        /// </summary>
+        private static Vector3 ClearSpotInside(
+            Transform collision,
+            Bounds inner,
+            float floorTop,
+            Vector3 mouth,
+            Vector3 doorway)
+        {
+            const float Clearance = 0.85f;
+            const float LowBand = 0.35f;
+            const float HighBand = 1.6f;
+
+            Vector3 fallback = mouth - doorway * EntryStandoff;
+            if (collision == null)
+            {
+                return fallback;
+            }
+
+            var blockers = new List<Vector3>();
+            foreach (MeshFilter filter in
+                collision.GetComponentsInChildren<MeshFilter>(true))
+            {
+                Mesh mesh = filter.sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                Transform space = filter.transform;
+                foreach (Vector3 local in mesh.vertices)
+                {
+                    Vector3 point = space.TransformPoint(local);
+                    float height = point.y - floorTop;
+                    if (height >= LowBand && height <= HighBand)
+                    {
+                        blockers.Add(
+                            new Vector3(point.x, 0f, point.z));
+                    }
+                }
+            }
+
+            Vector3 across = new Vector3(-doorway.z, 0f, doorway.x);
+            for (float inward = 1.6f; inward <= 9f; inward += 0.6f)
+            {
+                foreach (float sideways in new[]
+                {
+                    0f, 1f, -1f, 2f, -2f, 3f, -3f
+                })
+                {
+                    Vector3 candidate = mouth
+                        - doorway * inward
+                        + across * sideways;
+                    if (!inner.Contains(new Vector3(
+                            candidate.x,
+                            inner.center.y,
+                            candidate.z)))
+                    {
+                        continue;
+                    }
+
+                    var flat = new Vector3(candidate.x, 0f, candidate.z);
+                    bool clear = true;
+                    foreach (Vector3 blocker in blockers)
+                    {
+                        if ((blocker - flat).sqrMagnitude
+                            < Clearance * Clearance)
+                        {
+                            clear = false;
+                            break;
+                        }
+                    }
+
+                    if (clear)
+                    {
+                        return new Vector3(candidate.x, floorTop, candidate.z);
+                    }
+                }
+            }
+
+            Debug.LogWarning(
+                "[MAP-008] No clear floor inside a doorway; falling back to a "
+                + "fixed step in, which may be inside a wall.");
+            return fallback;
+        }
+
         /// <summary>
         /// How high the invisible wall round a room stands, in metres.
         ///
