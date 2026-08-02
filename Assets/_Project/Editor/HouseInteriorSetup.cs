@@ -60,8 +60,7 @@ namespace PawsAndLoot.Editor
             { "Bookstore", "interior_bookstore" },
             { "Jewellery", "interior_jewelry" },
             { "OneStorey", "interior_house02" },
-            { "TwoStorey", "interior_house03" },
-            { "PoliceStation", "interior_police" }
+            { "TwoStorey", "interior_house03" }
         };
 
         /// <summary>
@@ -106,6 +105,48 @@ namespace PawsAndLoot.Editor
         private const float RoomX = 17f;
 
         private const float RoomZ = 12f;
+
+        /// <summary>
+        /// How far out from the wall the doorstep sits, in metres.
+        ///
+        /// Outside the building's own collider, so standing on the step is
+        /// standing in the street rather than inside the wall.
+        /// </summary>
+        private const float DoorStandoff = 1.3f;
+
+        /// <summary>
+        /// How close a player has to be for the prompt to appear.
+        ///
+        /// Generous enough to find without hunting, tight enough that running
+        /// down a terrace does not light up four doors at once.
+        /// </summary>
+        private const float DoorPromptRadius = 2.2f;
+
+        /// <summary>
+        /// The world box everything drawn for a building occupies.
+        /// </summary>
+        private static bool TryGetWorldBounds(
+            Transform subject,
+            out Bounds bounds)
+        {
+            bounds = new Bounds();
+            bool any = false;
+            foreach (Renderer part in
+                subject.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!any)
+                {
+                    bounds = part.bounds;
+                    any = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(part.bounds);
+                }
+            }
+
+            return any;
+        }
 
         /// <summary>
         /// A grid rather than a row. Nineteen rooms in a line reach 700 m from the
@@ -221,6 +262,13 @@ namespace PawsAndLoot.Editor
                 return;
             }
 
+            // The ground and the buildings were made moments ago in this same
+            // pass, and a collider created this frame is not in the physics
+            // scene yet. Every doorstep below is found by raycasting down for
+            // ground, so without this the search finds nothing under any of
+            // them and every door falls back to a guess.
+            Physics.SyncTransforms();
+
             Transform root = childFactory("House Interiors", parent);
             root.localPosition = Vector3.zero;
 
@@ -249,6 +297,14 @@ namespace PawsAndLoot.Editor
                 // A kind with no room of its own gets nothing rather than
                 // somebody else's. A door that opens into the wrong shop is
                 // worse than a door that does not open.
+                // The station is scenery. A thief who can walk into the police
+                // station is a thief with a room to hide in inside the one
+                // building the game already sends them to under arrest.
+                if (kind == "PoliceStation")
+                {
+                    continue;
+                }
+
                 if (!InteriorForKind.TryGetValue(kind, out string stem))
                 {
                     Debug.LogWarning(
@@ -739,8 +795,15 @@ namespace PawsAndLoot.Editor
                     continue;
                 }
 
-                Vector3 candidate = house.TransformPoint(
-                    new Vector3(0f, 0f, sign * step));
+                // Along the building's facing, at a distance in metres.
+                //
+                // TransformPoint would scale the distance by the building's
+                // own scale, and the town's buildings are one-metre models
+                // blown up twelvefold: "two point six metres in front" came out
+                // as thirty-one, past the far kerb. Direction from the
+                // transform, distance in world units.
+                Vector3 candidate = house.position
+                    + house.forward * (sign * step);
                 if (!Physics.Raycast(
                         candidate + Vector3.up * 3f,
                         Vector3.down,
@@ -763,8 +826,8 @@ namespace PawsAndLoot.Editor
                     candidate.z);
             }
 
-            Vector3 fallback = house.TransformPoint(
-                new Vector3(0f, 0f, sign * 2.6f));
+            Vector3 fallback = house.position
+                + house.forward * (sign * 2.6f);
             Debug.LogWarning(
                 $"[MAP-008] No ground in front of the {side} door of "
                 + $"'{house.name}'. Falling back to 2.6 m, which may be inside "
@@ -825,20 +888,49 @@ namespace PawsAndLoot.Editor
             HouseDoorLeaf leaf = CreateLeaf(house, side);
 
             var entrance = new GameObject($"House Entrance {side}");
-            entrance.transform.SetParent(house, false);
 
-            // On the step, in the house's own space. The porch is at +Z and the back
-            // step at -Z — measured, after the first version put both the way in and
-            // the way out at the back door (ISSUE-034).
-            float sign = side == HouseDoorSide.Back ? -1f : 1f;
-            entrance.transform.localPosition = new Vector3(
-                0f,
-                0.5f,
-                sign * (side == HouseDoorSide.Back ? 3.7f : 4.4f));
+            // Parented above the house, not to it, and placed in world space.
+            //
+            // These offsets used to be local, which was fine while every house
+            // was one hand-built model at its authored size. The town's
+            // buildings are one-metre models scaled up to fit their plots — by
+            // twelve, in the usual case — and a local offset of 4.4 m became
+            // fifty-three. Every doorway in the town was sitting off the edge
+            // of the map with a twenty-metre trigger, which is why no door
+            // could be pressed: not because the prompt was missing, but because
+            // it was nowhere near the door.
+            //
+            // Nothing here moves, so hanging the doorways beside the buildings
+            // rather than inside them costs nothing and takes the scale out of
+            // the arithmetic entirely.
+            entrance.transform.SetParent(house.parent, false);
+
+            if (!TryGetWorldBounds(house, out Bounds shell))
+            {
+                Object.DestroyImmediate(entrance);
+                Debug.LogWarning(
+                    $"[MAP-008] '{house.name}' has nothing drawn, so its "
+                    + $"{side} door has nowhere to be.");
+                return;
+            }
+
+            // Along the building's own facing rather than along world Z. The
+            // town turns buildings to face their street, and a door placed on
+            // the south face of one that faces west is a door in a side wall.
+            Vector3 out_ = side == HouseDoorSide.Back
+                ? -house.forward
+                : house.forward;
+            float reach = Mathf.Abs(Vector3.Dot(shell.extents, out_))
+                + DoorStandoff;
+            entrance.transform.position = new Vector3(
+                shell.center.x,
+                shell.min.y + 0.5f,
+                shell.center.z) + out_ * reach;
+
             SphereCollider trigger =
                 entrance.AddComponent<SphereCollider>();
             trigger.isTrigger = true;
-            trigger.radius = 1.7f;
+            trigger.radius = DoorPromptRadius;
             entrance.AddComponent<HouseDoorway>()
                 .Configure(interior, true, matchRuntime, leaf, side);
         }
