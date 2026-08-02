@@ -89,6 +89,11 @@ namespace PawsAndLoot.Gameplay.Players
             }
         }
 
+        public void RefreshTarget(ContextInteractionKey key)
+        {
+            RefreshTarget();
+        }
+
         public bool TryInteractCurrent()
         {
             IPlayerInteractable target = CurrentTarget;

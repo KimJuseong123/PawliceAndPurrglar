@@ -121,6 +121,13 @@ namespace PawsAndLoot.Integration.Network
             {
                 input.IsLocallyControlled = false;
             }
+
+            foreach (QuickSlotKeyboardInput input in
+                Object.FindObjectsByType<QuickSlotKeyboardInput>(
+                    FindObjectsSortMode.None))
+            {
+                input.Configure(null, false);
+            }
         }
 
         private void Update()
@@ -166,7 +173,8 @@ namespace PawsAndLoot.Integration.Network
                     ReadAxis(keyboard.aKey, keyboard.dKey),
                     ReadAxis(keyboard.sKey, keyboard.wKey));
             bool dash = keyboard != null
-                && keyboard.spaceKey.wasPressedThisFrame;
+                && (keyboard.leftShiftKey.wasPressedThisFrame
+                    || keyboard.rightShiftKey.wasPressedThisFrame);
 
             link.SubmitInputRpc(move, dash);
 
@@ -174,7 +182,7 @@ namespace PawsAndLoot.Integration.Network
             // is an event; folding it into the movement stream would drop presses
             // that landed between sends.
             if (keyboard != null
-                && keyboard.leftShiftKey.wasPressedThisFrame)
+                && keyboard.spaceKey.wasPressedThisFrame)
             {
                 link.SubmitJumpRpc();
             }
@@ -208,15 +216,6 @@ namespace PawsAndLoot.Integration.Network
             NetworkPlayerLink link,
             Keyboard keyboard)
         {
-            // The mouse is checked before the keyboard guard: a player with the
-            // cursor in one hand still has to be able to throw on a machine
-            // where the keyboard is momentarily unavailable.
-            if (Mouse.current != null
-                && Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                link.SubmitUseToolRpc(ReadAim(link));
-            }
-
             if (keyboard == null)
             {
                 return;
@@ -232,9 +231,10 @@ namespace PawsAndLoot.Integration.Network
                 link.SubmitDropRpc();
             }
 
-            if (keyboard.fKey.wasPressedThisFrame)
+            int quickSlot = ReadQuickSlotKey(keyboard);
+            if (quickSlot >= 0)
             {
-                link.SubmitUseToolRpc(ReadAim(link));
+                link.SubmitSelectToolSlotRpc(quickSlot);
             }
 
             int command = ReadCompanionCommandKey(keyboard);
@@ -244,8 +244,31 @@ namespace PawsAndLoot.Integration.Network
             }
         }
 
+        private static int ReadQuickSlotKey(Keyboard keyboard)
+        {
+            bool ctrl = keyboard.leftCtrlKey.isPressed
+                || keyboard.rightCtrlKey.isPressed;
+            if (ctrl)
+            {
+                return -1;
+            }
+
+            if (keyboard.digit1Key.wasPressedThisFrame) return 0;
+            if (keyboard.digit2Key.wasPressedThisFrame) return 1;
+            if (keyboard.digit3Key.wasPressedThisFrame) return 2;
+            if (keyboard.digit4Key.wasPressedThisFrame) return 3;
+            return -1;
+        }
+
         private static int ReadCompanionCommandKey(Keyboard keyboard)
         {
+            bool ctrl = keyboard.leftCtrlKey.isPressed
+                || keyboard.rightCtrlKey.isPressed;
+            if (!ctrl)
+            {
+                return 0;
+            }
+
             if (keyboard.digit1Key.wasPressedThisFrame)
             {
                 return 1;

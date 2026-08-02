@@ -2703,6 +2703,10 @@ namespace PawsAndLoot.Editor
             PawsAndLoot.Gameplay.Items.ToolCarrier toolCarrier =
                 player.AddComponent<PawsAndLoot.Gameplay.Items.ToolCarrier>();
             toolCarrier.Configure(identity, matchRuntime);
+            toolCarrier.ConfigureDefaultLoadout(true);
+            PawsAndLoot.Input.QuickSlotKeyboardInput quickSlotInput =
+                player.AddComponent<PawsAndLoot.Input.QuickSlotKeyboardInput>();
+            quickSlotInput.Configure(toolCarrier, locallyControlled);
             PawsAndLoot.Gameplay.Items.ToolUseAction toolUse =
                 player.AddComponent<PawsAndLoot.Gameplay.Items.ToolUseAction>();
             toolUse.Configure(identity, toolCarrier, Physics.AllLayers);

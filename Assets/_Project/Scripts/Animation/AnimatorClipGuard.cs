@@ -74,6 +74,55 @@ namespace PawsAndLoot.Animation
             return usable;
         }
 
+        public static AnimationValidationResult Validate(
+            Animator candidate,
+            CharacterAnimationProfile profile)
+        {
+            var result = new AnimationValidationResult
+            {
+                CharacterName = profile != null ? profile.Character.ToString() : "Unknown",
+                RigType = profile != null ? profile.RigType : CharacterAnimationRigType.Generic,
+                ControllerName = candidate != null && candidate.runtimeAnimatorController != null
+                    ? candidate.runtimeAnimatorController.name
+                    : "None",
+                RuntimeClipCount = CountUsableClips(candidate),
+                HasValidAvatar = candidate != null && candidate.avatar != null,
+                IsValid = candidate != null && CountUsableClips(candidate) > 0
+            };
+            if (candidate == null) result.AddFailure("Animator is missing.");
+            if (result.RuntimeClipCount == 0) result.AddFailure("No usable animation clips.");
+            if (profile != null
+                && profile.RigType == CharacterAnimationRigType.Humanoid
+                && (candidate == null
+                    || candidate.avatar == null
+                    || !candidate.avatar.isHuman))
+            {
+                result.AddFailure(
+                    "Humanoid profile requires a valid Humanoid avatar.");
+            }
+            return result;
+        }
+
+        public static bool HasUsableLocomotion(
+            Animator candidate,
+            out string reason)
+        {
+            if (candidate == null)
+            {
+                reason = "Animator is missing.";
+                return false;
+            }
+
+            if (CountUsableClips(candidate) == 0)
+            {
+                reason = "No usable animation clips.";
+                return false;
+            }
+
+            reason = string.Empty;
+            return true;
+        }
+
         private void Awake()
         {
             if (animator == null)

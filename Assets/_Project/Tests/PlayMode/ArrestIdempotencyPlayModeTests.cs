@@ -174,24 +174,24 @@ namespace PawsAndLoot.Tests.PlayMode
             }
 
             Assert.That(succeeded, Is.EqualTo(1));
+            Assert.That(completion.CurrentCatchCount, Is.EqualTo(1));
+            Assert.That(victoryRequests, Is.Zero);
+            Assert.That(completion.IsCompleted, Is.False);
+
+            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
+            Assert.That(completion.TryCompleteArrest(), Is.True);
+            Assert.That(completion.CurrentCatchCount, Is.EqualTo(2));
+            Assert.That(victoryRequests, Is.Zero);
+            Assert.That(completion.IsCompleted, Is.False);
+
+            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
+            Assert.That(completion.TryCompleteArrest(), Is.True);
+            Assert.That(completion.CurrentCatchCount, Is.EqualTo(3));
             Assert.That(victoryRequests, Is.EqualTo(1));
             Assert.That(completion.IsCompleted, Is.True);
 
-            // And it re-arms for the next catch rather than staying latched,
-            // which is what changed when one arrest stopped ending the match.
-            // The progress has to come back with it: a controller left marked
-            // completed can never start again, which looks like a dead sensor.
-            completion.ClearForNextArrest();
-            Assert.That(completion.IsCompleted, Is.False);
-            Assert.That(progress.IsCompleted, Is.False);
-
-            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
-            Assert.That(
-                completion.TryCompleteArrest(),
-                Is.True,
-                "The second arrest never lands, so the officer can only ever "
-                + "score once.");
-            Assert.That(victoryRequests, Is.EqualTo(2));
+            Assert.That(completion.TryCompleteArrest(), Is.False);
+            Assert.That(victoryRequests, Is.EqualTo(1));
 
             Object.DestroyImmediate(completionObject);
             Object.DestroyImmediate(progressObject);

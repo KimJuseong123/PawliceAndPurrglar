@@ -67,6 +67,24 @@ namespace PawsAndLoot.Tests.PlayMode
             Assert.That(
                 fixture.Completion.TryCompleteArrest(),
                 Is.True);
+            Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(1));
+            Assert.That(fixture.Completion.IsCompleted, Is.False);
+
+            fixture.Progress.Tick(
+                fixture.ArrestConfig.ArrestDurationSeconds);
+            Assert.That(
+                fixture.Completion.TryCompleteArrest(),
+                Is.True);
+            Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(2));
+            Assert.That(fixture.Completion.IsCompleted, Is.False);
+
+            fixture.Progress.Tick(
+                fixture.ArrestConfig.ArrestDurationSeconds);
+            Assert.That(
+                fixture.Completion.TryCompleteArrest(),
+                Is.True);
+            Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(3));
+            Assert.That(fixture.Completion.IsCompleted, Is.True);
             fixture.Presenter.Refresh();
             Assert.That(fixture.Fill.fillAmount, Is.EqualTo(1f));
             Assert.That(

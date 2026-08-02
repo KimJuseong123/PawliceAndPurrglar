@@ -1,0 +1,9 @@
+faster-whisper
+
+Copyright (c) SYSTRAN.
+
+This project uses the faster-whisper Python package locally. The upstream
+package is distributed under the MIT License. See:
+https://github.com/SYSTRAN/faster-whisper
+
+This file is a project notice and does not replace the upstream license.

@@ -39,16 +39,14 @@ namespace PawsAndLoot.Gameplay.Players
                 : new Vector2(
                     ReadAxis(keyboard.aKey, keyboard.dKey),
                     ReadAxis(keyboard.sKey, keyboard.wKey));
-            if (keyboard?.spaceKey.wasPressedThisFrame == true)
+            if (keyboard != null
+                && (keyboard.leftShiftKey.wasPressedThisFrame
+                    || keyboard.rightShiftKey.wasPressedThisFrame))
             {
                 movementMotor.TryStartDash(input);
             }
 
-            // Left shift, not space. Space is the dash, which is a tuned mechanic
-            // with its own speed and cooldown in the rules, and taking it for a jump
-            // would have removed something to add something. Shift is free and falls
-            // under the same hand as WASD.
-            if (keyboard?.leftShiftKey.wasPressedThisFrame == true)
+            if (keyboard?.spaceKey.wasPressedThisFrame == true)
             {
                 movementMotor.TryJump();
             }

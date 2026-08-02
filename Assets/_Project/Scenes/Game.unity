@@ -4335,6 +4335,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ToolCarrier
   identity: {fileID: 72927090}
   matchStateSource: {fileID: 1704684901}
+  grantDefaultLoadoutOnGameplayStart: 1
+  maximumStackSize: 9
 --- !u!114 &72927075
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -113117,6 +113119,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ToolCarrier
   identity: {fileID: 1529255352}
   matchStateSource: {fileID: 1704684901}
+  grantDefaultLoadoutOnGameplayStart: 1
+  maximumStackSize: 9
 --- !u!114 &1529255328
 MonoBehaviour:
   m_ObjectHideFlags: 0

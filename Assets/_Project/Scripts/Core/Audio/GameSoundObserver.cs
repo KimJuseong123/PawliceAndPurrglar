@@ -85,7 +85,7 @@ namespace PawsAndLoot.Audio
 
             if (arrestCompletion != null)
             {
-                arrestCompletion.PoliceVictoryRequested +=
+                arrestCompletion.ArrestCompleted +=
                     HandleArrestCompleted;
             }
 
@@ -128,7 +128,7 @@ namespace PawsAndLoot.Audio
 
             if (arrestCompletion != null)
             {
-                arrestCompletion.PoliceVictoryRequested -=
+                arrestCompletion.ArrestCompleted -=
                     HandleArrestCompleted;
             }
 

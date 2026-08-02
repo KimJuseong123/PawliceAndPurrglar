@@ -96,7 +96,9 @@ namespace PawsAndLoot.Gameplay.Items
 
                 float offAxis =
                     (toTarget - flat * along).magnitude;
-                if (offAxis > ThrowableCatalog.ThrowHitRadiusMeters)
+                if (offAxis > ThrowableCatalog.GetThrowHitRadius(
+                        thrower.Role,
+                        candidate.Role))
                 {
                     continue;
                 }

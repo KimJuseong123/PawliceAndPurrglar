@@ -122,6 +122,14 @@
 - 음성, 네트워크, 최종 모델링은 별도의 에픽으로 유지한다.
 - 미확정 밸런스 수치를 완료 조건으로 고정하지 않는다.
 - 범위 변경은 `docs/14_DECISION_LOG.md`와 이 문서에 함께 기록한다.
+
+## Windows Local AI Addendum
+
+Windows Standalone voice input uses Unity `Microphone` and a bundled loopback
+LocalAI Gateway. The Gateway uses `Systran/faster-whisper-small` and Ollama
+`qwen3:4b-instruct`. Numeric-key and button commands remain available when
+local services, models, or microphone permission are unavailable. Speech
+accuracy and gameplay verification remain manual checks.
 # Voice Command MVP Addendum
 
 The voice-command MVP is now implemented as a WebGL client adapter plus a

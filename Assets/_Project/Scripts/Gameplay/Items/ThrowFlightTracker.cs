@@ -38,8 +38,10 @@ namespace PawsAndLoot.Gameplay.Items
         }
 
         private static ThrowFlightTracker _instance;
+        private static int _nextRecoveryPickupId = -1;
 
         private readonly List<Flight> _flights = new();
+        private readonly List<ThrowablePickup> _recoveryPickups = new();
 
         public int ActiveFlightCount => _flights.Count;
 
@@ -110,6 +112,7 @@ namespace PawsAndLoot.Gameplay.Items
                 if (flight.Travelled >= flight.Distance)
                 {
                     _flights.RemoveAt(index);
+                    CreateRecoveryPickup(flight);
                     continue;
                 }
 
@@ -190,13 +193,35 @@ namespace PawsAndLoot.Gameplay.Items
 
                 float offAxis =
                     (toTarget - flight.Direction * along).magnitude;
-                if (offAxis <= ThrowableCatalog.ThrowHitRadiusMeters)
+                if (offAxis <= ThrowableCatalog.GetThrowHitRadius(
+                        flight.Thrower.Role,
+                        candidate.Role))
                 {
                     return candidate;
                 }
             }
 
             return null;
+        }
+
+        private void CreateRecoveryPickup(Flight flight)
+        {
+            if (flight.Thrower == null)
+            {
+                return;
+            }
+
+            Vector3 landing = flight.Origin
+                + flight.Direction.normalized * flight.Distance;
+            landing.y = 0f;
+            ThrowablePickup pickup = ThrownPickupFactory.Create(
+                _nextRecoveryPickupId--,
+                flight.Kind,
+                landing);
+            if (pickup != null)
+            {
+                _recoveryPickups.Add(pickup);
+            }
         }
 
         private void Awake()
@@ -210,6 +235,25 @@ namespace PawsAndLoot.Gameplay.Items
             {
                 _instance = null;
             }
+
+            foreach (ThrowablePickup pickup in _recoveryPickups)
+            {
+                if (pickup == null)
+                {
+                    continue;
+                }
+
+                if (Application.isPlaying)
+                {
+                    Destroy(pickup.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(pickup.gameObject);
+                }
+            }
+
+            _recoveryPickups.Clear();
         }
 
         private void Update()

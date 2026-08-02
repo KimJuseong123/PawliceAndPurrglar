@@ -186,3 +186,18 @@ Pixabay는 쓰지 않기로 했다. 검토한 곡이 Content ID에 등록돼 있
 2. 출처를 모르는 파일은 **저장소에 남기지 않는다.** 지우거나, 출처를 확인하고 적는다.
 3. CC-BY처럼 표기 의무가 있는 것을 받으면 작성자·파일명·URL을 반드시 적는다.
 4. 새 생성 모델은 Tripo 생성 이력에 남는지 확인하고 증빙을 함께 보관한다.
+
+## 8. Windows LocalAI runtime
+
+The Windows Standalone local voice path uses a loopback-only LocalAI Gateway at
+`127.0.0.1`. It is an installation/runtime artifact, not a cloud service, and
+does not send audio, transcripts, or command context to an external server.
+Temporary WAV files are deleted after processing unless development debug
+recording is explicitly enabled.
+
+| Component | Purpose | License note |
+|---|---|---|
+| `faster-whisper` | Local STT runtime used by the gateway | MIT; see `Licenses/faster-whisper-MIT.txt` |
+| `Systran/faster-whisper-small` | Local STT model | MIT; see `Licenses/faster-whisper-small-MIT.txt` |
+| `Ollama` | Local model runner for command interpretation fallback | MIT; see `Licenses/Ollama-license.txt` |
+| `Qwen3` | Local instruction model used through Ollama | Apache-2.0; see `Licenses/Qwen3-Apache-2.0.txt` |

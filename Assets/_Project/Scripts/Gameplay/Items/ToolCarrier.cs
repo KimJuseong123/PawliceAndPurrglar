@@ -7,7 +7,7 @@ using UnityEngine;
 namespace PawsAndLoot.Gameplay.Items
 {
     /// <summary>
-    /// One prop slot per player, separate from the loot slot.
+    /// Four prop slots per player, separate from the loot slot.
     ///
     /// It has to be separate. "The thief carries one piece of loot" is a
     /// confirmed rule in <c>docs/03_GAME_RULES.md</c>, and sharing that slot
@@ -27,66 +27,123 @@ namespace PawsAndLoot.Gameplay.Items
         [SerializeField]
         private MonoBehaviour matchStateSource;
 
+        [SerializeField]
+        private bool grantDefaultLoadoutOnGameplayStart;
+
+        [SerializeField, Min(1)]
+        private int maximumStackSize = 9;
+
+        private readonly QuickSlotController _slots = new();
         private IMatchStateReader _matchState;
-        private bool _hasTool;
-        private ThrowableKind _kind;
+        private MatchRuntimeState _subscribedRuntime;
+        private bool _defaultLoadoutGranted;
 
         public event Action<bool> HeldToolChanged;
+        public event Action InventoryChanged;
 
-        public bool HasTool => _hasTool;
-        public ThrowableKind HeldKind => _kind;
+        public bool HasTool => _slots.HasSelectedItem;
+        public bool HasAnyTool => _slots.HasAnyItem;
+        public ThrowableKind HeldKind =>
+            _slots.TryGet(_slots.SelectedSlot, out ThrowableKind kind)
+                ? kind
+                : ThrowableKind.Rock;
+        public int HeldQuantity => GetSlotQuantity(SelectedSlot);
         public PlayerRole Role =>
             identity != null ? identity.Role : PlayerRole.Police;
 
-        public ThrowableUse HeldUse => ThrowableCatalog.GetUse(_kind);
+        public ThrowableUse HeldUse => ThrowableCatalog.GetUse(HeldKind);
+
+        public int SelectedSlot => _slots.SelectedSlot;
+        public int EncodedSlots => _slots.EncodeSlots();
+        public int EncodedQuantities => _slots.EncodeQuantities();
+
+        public bool TryGetSlot(int index, out ThrowableKind kind)
+        {
+            return _slots.TryGet(index, out kind);
+        }
+
+        public int GetSlotQuantity(int index)
+        {
+            return _slots.GetQuantity(index);
+        }
+
+        public bool CanStore(ThrowableKind kind)
+        {
+            return _slots.CanStore(kind, maximumStackSize);
+        }
+
+        public bool SelectSlot(int index)
+        {
+            if (!_slots.SelectSlot(index))
+            {
+                return false;
+            }
+
+            PublishChanged();
+            return true;
+        }
 
         public void Configure(
             PlayerRoleIdentity configuredIdentity,
             IMatchStateReader configuredMatchState)
         {
+            UnsubscribeRuntime();
             identity = configuredIdentity;
             _matchState = configuredMatchState;
             matchStateSource = configuredMatchState as MonoBehaviour;
-            _hasTool = false;
+            _slots.Clear();
+            _defaultLoadoutGranted = false;
+            SubscribeRuntime();
+            TryGrantDefaultLoadoutIfNeeded();
+            PublishChanged();
+        }
+
+        public void ConfigureDefaultLoadout(
+            bool grantOnGameplayStart,
+            int configuredMaximumStackSize = 9)
+        {
+            grantDefaultLoadoutOnGameplayStart = grantOnGameplayStart;
+            maximumStackSize = Mathf.Max(1, configuredMaximumStackSize);
+            TryGrantDefaultLoadoutIfNeeded();
         }
 
         /// <summary>
-        /// Takes a prop. Refused when a match is not running or the slot is
-        /// already full, so walking over a pickup cannot silently swap the tool
-        /// a player was saving.
+        /// Takes a prop. Refused when a match is not running or the quick slots
+        /// have no room for this kind.
         /// </summary>
         public bool TryPickUp(ThrowableKind kind)
         {
-            if (ResolveMatchState()?.IsGameplayActive != true || _hasTool)
+            if (ResolveMatchState()?.IsGameplayActive != true
+                || !_slots.TryStore(
+                    kind,
+                    1,
+                    maximumStackSize,
+                    out _))
             {
                 return false;
             }
 
-            _hasTool = true;
-            _kind = kind;
             GameLogger.Info(
                 GameLogCategory.Player,
                 $"{Role} picked up {kind}.",
                 this);
-            HeldToolChanged?.Invoke(true);
+            PublishChanged();
             return true;
         }
 
         /// <summary>
-        /// Spends the held prop. Returns false when there is nothing to spend,
-        /// which is what stops one pickup from producing two rocks.
+        /// Spends one prop from the selected slot.
         /// </summary>
         public bool TryConsume(out ThrowableKind kind)
         {
-            kind = _kind;
-            if (!_hasTool
-                || ResolveMatchState()?.IsGameplayActive != true)
+            kind = HeldKind;
+            if (ResolveMatchState()?.IsGameplayActive != true
+                || !_slots.TryConsumeSelected(out kind))
             {
                 return false;
             }
 
-            _hasTool = false;
-            HeldToolChanged?.Invoke(false);
+            PublishChanged();
             return true;
         }
 
@@ -105,14 +162,42 @@ namespace PawsAndLoot.Gameplay.Items
         /// </remarks>
         public void ApplyReplicated(bool hasTool, ThrowableKind kind)
         {
-            if (_hasTool == hasTool && _kind == kind)
+            if (MatchesReplicatedState(hasTool, kind))
             {
                 return;
             }
 
-            _hasTool = hasTool;
-            _kind = kind;
-            HeldToolChanged?.Invoke(hasTool);
+            _slots.Clear();
+            if (hasTool)
+            {
+                _slots.TrySetSlot(0, kind, 1);
+                _slots.SelectSlot(0);
+            }
+
+            PublishChanged();
+        }
+
+        public void ApplyReplicatedSlots(
+            int packedSlots,
+            int packedQuantities,
+            int selectedSlot)
+        {
+            int clampedSelected = Mathf.Clamp(
+                selectedSlot,
+                0,
+                QuickSlotController.SlotCount - 1);
+            if (_slots.EncodeSlots() == packedSlots
+                && _slots.EncodeQuantities() == packedQuantities
+                && _slots.SelectedSlot == clampedSelected)
+            {
+                return;
+            }
+
+            _slots.ApplyEncodedSlots(
+                packedSlots,
+                packedQuantities,
+                clampedSelected);
+            PublishChanged();
         }
 
         /// <summary>
@@ -120,13 +205,126 @@ namespace PawsAndLoot.Gameplay.Items
         /// </summary>
         public void Clear()
         {
-            if (!_hasTool)
+            _defaultLoadoutGranted = false;
+            if (!_slots.HasAnyItem)
             {
                 return;
             }
 
-            _hasTool = false;
-            HeldToolChanged?.Invoke(false);
+            _slots.Clear();
+            PublishChanged();
+        }
+
+        private void OnEnable()
+        {
+            SubscribeRuntime();
+            TryGrantDefaultLoadoutIfNeeded();
+        }
+
+        private void Start()
+        {
+            SubscribeRuntime();
+            TryGrantDefaultLoadoutIfNeeded();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeRuntime();
+        }
+
+        private bool MatchesReplicatedState(
+            bool hasTool,
+            ThrowableKind kind)
+        {
+            if (!hasTool)
+            {
+                return !_slots.HasAnyItem;
+            }
+
+            return _slots.OccupiedSlotCount == 1
+                && _slots.SelectedSlot == 0
+                && _slots.GetQuantity(0) == 1
+                && _slots.TryGet(0, out ThrowableKind current)
+                && current == kind;
+        }
+
+        private void TryGrantDefaultLoadoutIfNeeded()
+        {
+            if (!grantDefaultLoadoutOnGameplayStart
+                || _defaultLoadoutGranted
+                || ResolveMatchState()?.IsGameplayActive != true)
+            {
+                return;
+            }
+
+            bool changed = false;
+            for (int slot = 0; slot < QuickSlotController.SlotCount; slot++)
+            {
+                if (!ThrowableCatalog.TryGetStartingLoadout(
+                        Role,
+                        slot,
+                        out ThrowableLoadoutItem item))
+                {
+                    continue;
+                }
+
+                changed |= _slots.TrySetSlot(
+                    slot,
+                    item.Kind,
+                    Mathf.Min(
+                        Mathf.Max(1, item.Quantity),
+                        maximumStackSize));
+            }
+
+            _slots.SelectSlot(0);
+            _defaultLoadoutGranted = true;
+            if (changed)
+            {
+                GameLogger.Info(
+                    GameLogCategory.Player,
+                    $"{Role} received starting tools.",
+                    this);
+                PublishChanged();
+            }
+        }
+
+        private void PublishChanged()
+        {
+            HeldToolChanged?.Invoke(HasTool);
+            InventoryChanged?.Invoke();
+        }
+
+        private void SubscribeRuntime()
+        {
+            if (_subscribedRuntime != null)
+            {
+                return;
+            }
+
+            if (matchStateSource is MatchRuntimeState runtime)
+            {
+                _subscribedRuntime = runtime;
+                _subscribedRuntime.StateChanged += HandleMatchStateChanged;
+            }
+        }
+
+        private void UnsubscribeRuntime()
+        {
+            if (_subscribedRuntime == null)
+            {
+                return;
+            }
+
+            _subscribedRuntime.StateChanged -= HandleMatchStateChanged;
+            _subscribedRuntime = null;
+        }
+
+        private void HandleMatchStateChanged(MatchStateChanged change)
+        {
+            if (change.CurrentState == MatchState.Playing)
+            {
+                TryGrantDefaultLoadoutIfNeeded();
+            }
         }
 
         private IMatchStateReader ResolveMatchState()

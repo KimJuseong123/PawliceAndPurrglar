@@ -1,0 +1,26 @@
+{
+  "gateway": {
+    "host": "127.0.0.1",
+    "port": 8765,
+    "startupTimeoutSeconds": 120,
+    "requestTimeoutSeconds": 30,
+    "portScanCount": 16
+  },
+  "ollama": {
+    "host": "127.0.0.1",
+    "port": 11434,
+    "model": "qwen3:4b-instruct"
+  },
+  "stt": {
+    "modelPath": "models/faster-whisper-small",
+    "language": "ko",
+    "preferredDevice": "cuda",
+    "gpuComputeType": "int8_float16",
+    "cpuComputeType": "int8"
+  },
+  "recording": {
+    "sampleRate": 16000,
+    "maxSeconds": 5,
+    "minimumMilliseconds": 250
+  }
+}

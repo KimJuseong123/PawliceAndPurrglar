@@ -1,0 +1,7 @@
+Ollama Windows runtime
+
+The official Ollama Windows runtime is downloaded by tools/setup-local-ai.ps1
+from https://ollama.com/download/windows.
+
+Redistribution is subject to the license distributed with the downloaded
+runtime and current Ollama terms. This project does not modify the binary.

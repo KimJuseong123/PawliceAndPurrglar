@@ -16,6 +16,9 @@ namespace PawsAndLoot.Config
         [SerializeField, Min(0.1f), Tooltip("Maximum push-to-talk capture length. This is a prototype hypothesis.")]
         private float maximumUtteranceSeconds = 5f;
 
+        [SerializeField, Min(0f), Tooltip("Seconds before another voice command can start after one command completes.")]
+        private float postCommandCooldownSeconds = 30f;
+
         [Header("Backend")]
         [SerializeField, Tooltip("Non-secret voice backend URL. Never store an API key here.")]
         private string backendBaseUrl = "http://localhost:3000";
@@ -29,6 +32,7 @@ namespace PawsAndLoot.Config
         public bool VoiceInputEnabled => voiceInputEnabled;
         public bool KeyboardFallbackEnabled => keyboardFallbackEnabled;
         public float MaximumUtteranceSeconds => maximumUtteranceSeconds;
+        public float PostCommandCooldownSeconds => postCommandCooldownSeconds;
         public string BackendBaseUrl => backendBaseUrl;
         public float RequestTimeoutSeconds => requestTimeoutSeconds;
         public float MaximumFileSizeMegabytes => maximumFileSizeMegabytes;
@@ -36,6 +40,7 @@ namespace PawsAndLoot.Config
         public override void ValidateOrThrow()
         {
             GameConfigValidation.RequirePositive(this, maximumUtteranceSeconds, nameof(maximumUtteranceSeconds));
+            GameConfigValidation.RequireNonNegative(this, postCommandCooldownSeconds, nameof(postCommandCooldownSeconds));
             GameConfigValidation.RequirePositive(this, requestTimeoutSeconds, nameof(requestTimeoutSeconds));
             GameConfigValidation.RequirePositive(this, maximumFileSizeMegabytes, nameof(maximumFileSizeMegabytes));
             GameConfigValidation.RequireTrue(
