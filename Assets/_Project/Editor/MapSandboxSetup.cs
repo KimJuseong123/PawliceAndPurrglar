@@ -148,7 +148,13 @@ namespace PawsAndLoot.Editor
             // with ground between them rather than one that runs the width:
             // the south-east has its own way out to the east edge, and getting
             // there from the west means going round instead of straight along.
-            Across("South Street", 13f, 15f, 50f, StreetWidth),
+            // Reaches four metres further east than it used to, to the tile
+            // where the plaza east street now comes down to meet it. The two
+            // used to stop one tile apart on the diagonal — near enough to see
+            // across and not near enough to walk — and both ends were capped
+            // off. Not further: the road out to the east is meant to stay
+            // separate from this one.
+            Across("South Street", 13f, 15f, 52f, StreetWidth),
             Across("South East Street", 13f, 54f, 80f, StreetWidth),
 
             // Sits flush on the centre road rather than floating above it, so
@@ -177,7 +183,9 @@ namespace PawsAndLoot.Editor
             // Its east edge lines up with where the south road stops, so the
             // junction is a clean corner instead of a metre of road carrying on
             // past the turn.
-            Down("Plaza East Street", 48f, 15f, 27f, StreetWidth),
+            // Down to the south street, turning the corner rather than
+            // stopping above it.
+            Down("Plaza East Street", 48f, 12f, 27f, StreetWidth),
             // Runs to the far side of the road rather than stopping on its
             // centre line. Ending halfway across left the alley's lighter
             // surface as a tongue poking into the road, which reads as a
@@ -871,10 +879,10 @@ namespace PawsAndLoot.Editor
             (new Vector2(42f, 20f),
                 new[] { Fill.TwoStorey, Fill.OneStorey }),
             (new Vector2(-20f, -10f), new[] { Fill.OneStorey }),
-            (new Vector2(10f, -2f), new[] { Fill.Plaza }),
-            (new Vector2(42f, -2f), new[] { Fill.Supermarket }),
+            (new Vector2(10f, -2f), new[] { Fill.TwoStorey }),
+            (new Vector2(42f, -2f), new[] { Fill.Plaza }),
             (new Vector2(22f, -14f),
-                new[] { Fill.Bookstore, Fill.TwoStorey, Fill.OneStorey })
+                new[] { Fill.Bookstore, Fill.OneStorey, Fill.Supermarket })
         };
 
         /// <summary>
@@ -1460,6 +1468,7 @@ namespace PawsAndLoot.Editor
 
             Dictionary<Vector2Int, List<int>> cells = RoadCellStreets();
             HashSet<Vector2Int> crossings = Crossings(cells);
+            var tally = new Dictionary<string, int>();
             int laid = 0;
 
             foreach (Vector2Int cell in cells.Keys)
@@ -1475,62 +1484,89 @@ namespace PawsAndLoot.Editor
                     stem = CrossingStem;
                 }
 
-                if (Lay(parent, stem, cell, yaw, 0.02f))
+                if (!Lay(parent, stem, cell, yaw, 0.02f))
                 {
-                    laid++;
+                    continue;
                 }
+
+                tally.TryGetValue(stem, out int running);
+                tally[stem] = running + 1;
+                laid++;
             }
 
+            // Printed because a wrong junction is not an error anywhere — it
+            // just looks wrong. A pile of dead ends means the streets are not
+            // meeting; none at all means nothing is being capped that should
+            // be.
+            Debug.Log(
+                "[SANDBOX] Road tiles: "
+                + string.Join(
+                    ", ",
+                    tally.OrderBy(entry => entry.Key)
+                        .Select(entry => $"{entry.Key} {entry.Value}")));
             return laid;
         }
 
         /// <summary>
         /// Which sides of a cell the road carries on through.
         ///
-        /// A side is open when the cell next door belongs to a street that this
-        /// cell belongs to as well. Asking only whether the neighbour is road —
-        /// which is what this did — cannot tell a junction from two roads
-        /// running side by side, and there are two such pairs in this plan: the
-        /// bookstore street runs four metres from the south east alley, and
-        /// market lane runs alongside the centre street. Every cell of those
-        /// stretches had three road neighbours, so every cell was given a
-        /// T-junction, and the result was a wide pale ribbon of mismatched
-        /// pieces rather than a road.
+        /// A side is open when the cell next door is road and the direction
+        /// runs along some street that one of the two cells belongs to.
         ///
-        /// Sharing a street also gets the ends right for free. Where a side
-        /// street runs into a main one, the last cell belongs to both, so it
-        /// opens along the main road and back down the side street — a T — and
-        /// where a street simply stops, only one side is shared and it gets a
-        /// dead end.
+        /// Asking only whether the neighbour is road cannot tell a junction
+        /// from two roads running side by side, and this plan has such pairs:
+        /// every cell of those stretches had three road neighbours, so every
+        /// cell was given a T-junction and the result was a wide pale ribbon of
+        /// mismatched pieces.
+        ///
+        /// Asking whether the two cells share a street is too strict the other
+        /// way. A side street that stops against a main road often stops one
+        /// tile short of it — the streets meet without ever occupying the same
+        /// tile — and then neither side would open, so the side street got a
+        /// dead end painted across it and the main road ran past behind. That
+        /// is what closed off the road between the station and the jeweller.
+        ///
+        /// The direction is what matters. Running south out of a north-south
+        /// street is the road carrying on; running north out of an east-west
+        /// one is the road jumping across to its neighbour, and it should not.
         /// </summary>
         private static Ways OpeningsAt(
             Vector2Int cell,
             Dictionary<Vector2Int, List<int>> cells)
         {
-            List<int> mine = cells[cell];
             Ways open = Ways.None;
 
-            if (Shares(cell + Vector2Int.up, mine, cells)) open |= Ways.North;
-            if (Shares(cell + Vector2Int.right, mine, cells)) open |= Ways.East;
-            if (Shares(cell + Vector2Int.down, mine, cells)) open |= Ways.South;
-            if (Shares(cell + Vector2Int.left, mine, cells)) open |= Ways.West;
+            if (Continues(cell, Vector2Int.up, cells)) open |= Ways.North;
+            if (Continues(cell, Vector2Int.right, cells)) open |= Ways.East;
+            if (Continues(cell, Vector2Int.down, cells)) open |= Ways.South;
+            if (Continues(cell, Vector2Int.left, cells)) open |= Ways.West;
 
             return open;
         }
 
-        private static bool Shares(
-            Vector2Int neighbour,
-            List<int> mine,
+        private static bool Continues(
+            Vector2Int cell,
+            Vector2Int step,
             Dictionary<Vector2Int, List<int>> cells)
         {
+            Vector2Int neighbour = cell + step;
             if (!cells.TryGetValue(neighbour, out List<int> theirs))
             {
                 return false;
             }
 
-            foreach (int street in mine)
+            bool alongX = step.x != 0;
+            foreach (int street in cells[cell])
             {
-                if (theirs.Contains(street))
+                if (Streets[street].Horizontal == alongX)
+                {
+                    return true;
+                }
+            }
+
+            foreach (int street in theirs)
+            {
+                if (Streets[street].Horizontal == alongX)
                 {
                     return true;
                 }
@@ -1873,10 +1909,10 @@ namespace PawsAndLoot.Editor
                         // tree at the shop door hides the shop, which is the one
                         // thing on the block anybody is looking for.
                         var elbow = new Rect(
-                            at.x - 2.5f,
-                            at.z - 2.5f,
-                            5f,
-                            5f);
+                            at.x - 3.5f,
+                            at.z - 3.5f,
+                            7f,
+                            7f);
                         if (at.x < MapMinX + 1f
                             || at.z < MapMinZ + 1f
                             || at.x > MapMaxX - 1f
