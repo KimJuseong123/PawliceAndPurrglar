@@ -229,6 +229,10 @@ Ensure Bootstrap Services         Bootstrap 서비스 오브젝트 보장
 Rebuild MAP-001 Greybox Village   Game 씬 마을 재생성
 Validate MAP-001 Greybox Village  장소·경로·폭·충돌 검사
 Capture Map Overview              Game 씬 상공 평면도 → Logs/map-overview.png
+Capture Sandbox Overview          샌드박스 상공 평면도 → Logs/sandbox-overview.png
+                                  + 배치 목록 Logs/sandbox-placements.txt
+                                  좌표 격자를 얹으려면
+                                  python Tools/annotate_sandbox_plan.py
 Report House Model Layout         집 모델 부품·치수 보고 (실내를 손대기 전에 먼저 잰다)
 Report Interior Faces             실내 네 면의 부품 배정과 **어디에도 안 속한 것** 보고
 Create Default Config Assets      Settings/Configs 7개 에셋 생성
