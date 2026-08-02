@@ -278,71 +278,20 @@ namespace PawsAndLoot.Editor
                 environmentRoot,
                 buildingsRoot,
                 MapSandboxSetup.Measure(),
-                new HashSet<string>
-                {
-                    "Supermarket",
-                    "Bookstore",
-                    "Jewellery"
-                });
-            Vector3 supermarketPlot = PlotFor(town, "Supermarket");
-            Vector3 bookstorePlot = PlotFor(town, "Bookstore");
-            Vector3 jewelleryPlot = PlotFor(town, "Jewellery");
+                null);
             Debug.Log(
                 $"[MAP-001] Town laid from the sandbox: {town.Roads} road "
                 + $"tiles, {town.Destinations} buildings, {town.Houses} "
                 + $"houses, {town.SetPieces} set pieces, {town.Dressing} "
-                + "pieces of dressing. Shops go to "
-                + $"supermarket {supermarketPlot}, bookstore {bookstorePlot}, "
-                + $"jeweller {jewelleryPlot}.");
-
-            CreateStore(
-                "Supermarket",
-                supermarketPlot,
-                supermarket,
-                roof,
-                ladder,
-                buildingsRoot,
-                featuresRoot,
-                LadderSide.West,
-                rooftops,
-                ladders,
-                pendingLadderClimbs,
-                "building_supermarket");
-            CreateStore(
-                "Bookstore",
-                bookstorePlot,
-                bookstore,
-                roof,
-                ladder,
-                buildingsRoot,
-                featuresRoot,
-                LadderSide.East,
-                rooftops,
-                ladders,
-                pendingLadderClimbs,
-                "building_bookstore");
-            CreateStore(
-                "Jewelry Store",
-                jewelleryPlot,
-                jewelry,
-                roof,
-                ladder,
-                buildingsRoot,
-                featuresRoot,
-                LadderSide.East,
-                rooftops,
-                ladders,
-                pendingLadderClimbs);
-            CreateRaccoonMarket(
-                buildingsRoot,
-                MarketGold,
-                wall);
-            CreateCentralPlaza(featuresRoot, plaza, wall);
+                + "pieces of dressing.");
 
 
-            List<Transform> trashBins = CreateTrashBins(
-                featuresRoot,
-                trash);
+
+            // Nothing is furnished yet. The town was replaced wholesale and
+            // the hides, the treasure, the roofs and the ladders go back in
+            // against the new streets during playtesting, not against the old
+            // coordinates they were surveyed for.
+            var trashBins = new List<Transform>();
             Dictionary<GreyboxLocationId, Transform> locations =
                 CreateLocationAnchors(
                     locationsRoot,
@@ -421,11 +370,6 @@ namespace PawsAndLoot.Editor
             ConfigureMatchResultFlow(
                 matchRuntime,
                 matchEndController);
-            CreatePrototypeInteractionTargets(
-                villageRoot.transform,
-                locations,
-                ladders,
-                matchRuntime);
 
             CreateRouteLine(
                 map.GetRoute(GreyboxMapDefinition.CrossingRouteId),
@@ -436,10 +380,6 @@ namespace PawsAndLoot.Editor
                 LoadPlayerMoveSpeed(),
                 traversalProbe,
                 villageRoot.transform);
-            CreateAuthoredSceneDressing(
-                villageRoot.transform,
-                locations,
-                matchRuntime);
             CompanionCommandDispatcher companionDispatcher =
                 CreateCompanions(
                     villageRoot.transform,
@@ -529,14 +469,20 @@ namespace PawsAndLoot.Editor
 
             map.ValidateOrThrow();
             resultFlow.ValidateOrThrow();
-            if (map.Locations.Count != 7
-                || map.Rooftops.Count < 3
-                || map.Ladders.Count < 3
-                || map.TrashBins.Count < 4
-                || map.Routes.Count < 9)
+            // Locations and routes still have to be all there — they are what
+            // the map means, and a town with six of seven is a town where one
+            // destination silently does not exist.
+            //
+            // The furniture counts are gone with the furniture. Roofs, ladders
+            // and bins were surveyed against streets that no longer exist and
+            // come back against the new ones during playtesting
+            // (TASK-PORT-002..005). Demanding three of each here would mean
+            // keeping three of each somewhere arbitrary just to get the scene
+            // to build, which is how a placeholder becomes permanent.
+            if (map.Locations.Count != 7 || map.Routes.Count < 9)
             {
                 throw new InvalidOperationException(
-                    "MAP-001 scene is missing required locations, routes, rooftops, ladders, or trash bins.");
+                    "MAP-001 scene is missing required locations or routes.");
             }
         }
 

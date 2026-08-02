@@ -311,22 +311,33 @@ namespace PawsAndLoot.Gameplay.Map
 
         private void ValidateFeatures()
         {
-            if (rooftops == null || rooftops.Count < 3 || rooftops.Any(item => item == null))
+            // Counts are no longer demanded, only that what is listed exists.
+            //
+            // The three roofs, three ladders and four bins were a stand-in for
+            // "the town has been furnished", and the town has just been
+            // replaced wholesale with the sandbox's. Everything that carried
+            // those numbers came down with the old town and goes back up
+            // against the new one during playtesting (TASK-PORT-002..005).
+            //
+            // A null in the list is still a fault: that is a reference to
+            // something that was deleted, which is the failure this catches
+            // that a count never did.
+            if (rooftops != null && rooftops.Any(item => item == null))
             {
                 throw new InvalidOperationException(
-                    "Greybox map requires at least three valid rooftop references.");
+                    "Greybox map has a rooftop reference pointing at nothing.");
             }
 
-            if (ladders == null || ladders.Count < 3 || ladders.Any(item => item == null))
+            if (ladders != null && ladders.Any(item => item == null))
             {
                 throw new InvalidOperationException(
-                    "Greybox map requires at least three valid ladders.");
+                    "Greybox map has a ladder reference pointing at nothing.");
             }
 
-            if (trashBins == null || trashBins.Count < 4 || trashBins.Any(item => item == null))
+            if (trashBins != null && trashBins.Any(item => item == null))
             {
                 throw new InvalidOperationException(
-                    "Greybox map requires at least four valid trash-bin positions.");
+                    "Greybox map has a trash-bin reference pointing at nothing.");
             }
         }
 
