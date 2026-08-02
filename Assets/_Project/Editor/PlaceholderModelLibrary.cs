@@ -530,7 +530,7 @@ namespace PawsAndLoot.Editor
             return initialised;
         }
 
-        private static GameObject TryInstantiate(
+        internal static GameObject TryInstantiate(
             string assetPath,
             Transform parent,
             string instanceName)

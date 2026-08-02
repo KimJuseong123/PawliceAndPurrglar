@@ -72,6 +72,14 @@ namespace PawsAndLoot.Editor
         /// </summary>
         internal const string JailStem = "interior_jail";
 
+        /// <summary>
+        /// What the coarse collision copy of a room is called.
+        /// </summary>
+        private const string CollisionSuffix = "_col";
+
+        private const string BuildingDirectory =
+            "Assets/_Project/Art/Buildings";
+
         // Interiors are filed with the buildings, which is the one folder
         // PlaceholderModelLibrary loads from. The `interior_` prefix keeps a
         // shell and the room behind it apart without a second folder.
@@ -400,7 +408,28 @@ namespace PawsAndLoot.Editor
 
             Transform colliders = child($"Interior {number} Colliders", room);
             colliders.position = centre;
-            solids += AddSolidColliders(parts, colliders);
+
+            // The room as it actually stands, not as it was authored.
+            //
+            // This was being built from the size TryInstantiateBuildingSized
+            // reports, which is the model's own measurement before it is fitted
+            // — about a metre. The collision copy was therefore scaled to a
+            // metre and left as a small lump in the middle of the floor, and
+            // every probe ray sailed straight over it: the walls read as one
+            // continuous fourteen-metre doorway.
+            if (!TryGetWorldBounds(room, out Bounds roomShell))
+            {
+                roomShell = new Bounds(
+                    new Vector3(inner.center.x, floorTop, inner.center.z),
+                    new Vector3(inner.size.x, 3f, inner.size.z));
+            }
+            solids += AddSolidColliders(stem, colliders, roomShell);
+
+            // The furniture and the partitions came from the same part-name
+            // lookup and find nothing for the same reason: these rooms are one
+            // welded mesh. The collision copy above already carries both — a
+            // sofa in it is a sofa-shaped lump of collision — so there is
+            // nothing left for them to add.
             props += AddFurnitureColliders(parts, colliders);
             partitions += AddHalfHeightPartitions(
                 parts,
@@ -408,6 +437,23 @@ namespace PawsAndLoot.Editor
                 floorTop,
                 cube,
                 partitionMaterial);
+
+            // Asked of the collision mesh, which only exists as of a moment
+            // ago and is not in the physics scene until it is pushed there.
+            Physics.SyncTransforms();
+            bool frontOpen = HasOpening(inner, floorTop, Vector3.forward);
+            bool backOpen = HasOpening(inner, floorTop, Vector3.back);
+            if (!frontOpen && !backOpen)
+            {
+                // Every room has to be leaveable. When the probe finds no way
+                // out at all it has misread the room rather than found a sealed
+                // one, and a thief locked inside is worse than a door in a
+                // wall.
+                Debug.LogWarning(
+                    $"[MAP-008] Interior {number} ({stem}) reads as sealed on "
+                    + "both sides. Opening the front so it can be left.");
+                frontOpen = true;
+            }
 
             // A thick slab under the whole room, on top of the model's own floor.
             // The foundation is a 1.1 m plate at this scale, and a character who has
@@ -457,20 +503,27 @@ namespace PawsAndLoot.Editor
                     inner.extents.z - 1.2f),
                 floorTop);
 
-            CreateInsideDoor(
-                room,
-                interior,
-                matchRuntime,
-                HouseDoorSide.Front,
-                new Vector3(frontDoor.x, floorTop, inner.max.z - 0.2f),
-                number);
-            CreateInsideDoor(
-                room,
-                interior,
-                matchRuntime,
-                HouseDoorSide.Back,
-                new Vector3(backDoor.x, floorTop, inner.min.z + 0.2f),
-                number);
+            if (frontOpen)
+            {
+                CreateInsideDoor(
+                    room,
+                    interior,
+                    matchRuntime,
+                    HouseDoorSide.Front,
+                    new Vector3(frontDoor.x, floorTop, inner.max.z - 0.2f),
+                    number);
+            }
+
+            if (backOpen)
+            {
+                CreateInsideDoor(
+                    room,
+                    interior,
+                    matchRuntime,
+                    HouseDoorSide.Back,
+                    new Vector3(backDoor.x, floorTop, inner.min.z + 0.2f),
+                    number);
+            }
 
             // Whichever face the camera is behind comes away as a whole. Given the
             // room's measured inside rather than a list of parts: it works out which
@@ -482,8 +535,31 @@ namespace PawsAndLoot.Editor
                     new Vector2(inner.extents.x, inner.extents.z),
                     floorTop);
 
-            CreateEntrance(house, interior, matchRuntime, HouseDoorSide.Front);
-            CreateEntrance(house, interior, matchRuntime, HouseDoorSide.Back);
+            // Only where the room actually opens. A building whose inside is
+            // drawn with one door gets one door outside; the other used to be a
+            // prompt on a solid wall that led into the middle of a bookcase.
+            if (frontOpen)
+            {
+                CreateEntrance(
+                    house,
+                    interior,
+                    matchRuntime,
+                    HouseDoorSide.Front);
+            }
+
+            if (backOpen)
+            {
+                CreateEntrance(
+                    house,
+                    interior,
+                    matchRuntime,
+                    HouseDoorSide.Back);
+            }
+
+            Debug.Log(
+                $"[MAP-008] Interior {number} ({stem}): "
+                + $"{(frontOpen ? "front" : "-")}"
+                + $"/{(backOpen ? "back" : "-")} door.");
             return true;
         }
 
@@ -596,39 +672,142 @@ namespace PawsAndLoot.Editor
         /// hundred of them across nineteen rooms, for nothing. These are plain
         /// colliders with no renderer, so the batching pass has no opinion on them.
         /// </summary>
+        /// <summary>
+        /// Makes the room solid, from a collision mesh built for the purpose.
+        ///
+        /// The old version picked out named parts — walls, floor — and gave
+        /// each one a mesh collider. Every interior that has arrived since is a
+        /// single welded mesh with no parts to pick, so it matched nothing and
+        /// added nothing: the rooms were furnished, lit, enterable and made
+        /// entirely of air.
+        ///
+        /// One mesh means the choice is a mesh collider or nothing. The room's
+        /// own mesh is a hundred thousand triangles and there are thirteen
+        /// rooms, which is 1.3 million triangles of collision for a build that
+        /// is meant to run in a browser. So a second, coarse copy of each room
+        /// is decimated to four thousand and used for collision only —
+        /// fifty-two thousand across the town, and a wall is a wall whether it
+        /// is described by four triangles or four hundred.
+        /// </summary>
         private static int AddSolidColliders(
-            IReadOnlyList<Renderer> parts,
-            Transform holder)
+            string stem,
+            Transform holder,
+            Bounds shell)
         {
-            int added = 0;
-            foreach (Renderer part in parts)
+            GameObject collision = PlaceholderModelLibrary.TryInstantiate(
+                $"{BuildingDirectory}/{stem}{CollisionSuffix}.fbx",
+                holder,
+                $"{stem} Collision");
+            if (collision == null)
             {
-                if (!SolidPrefixes.Any(prefix =>
-                        part.name.StartsWith(prefix)))
+                Debug.LogWarning(
+                    $"[MAP-008] '{stem}' has no collision mesh "
+                    + $"('{stem}{CollisionSuffix}'), so that room is made of "
+                    + "air. Run the collision bake.");
+                return 0;
+            }
+
+            // Fitted to the room it is standing in rather than to its own
+            // authored size. The two are the same model at different triangle
+            // counts, so matching their bounds matches their shapes.
+            if (!TryGetWorldBounds(collision.transform, out Bounds raw)
+                || raw.size.x < 0.001f
+                || raw.size.z < 0.001f)
+            {
+                Object.DestroyImmediate(collision);
+                return 0;
+            }
+
+            float fit = Mathf.Min(
+                shell.size.x / raw.size.x,
+                shell.size.z / raw.size.z);
+            collision.transform.localScale = Vector3.one * fit;
+            TryGetWorldBounds(collision.transform, out raw);
+            collision.transform.position += shell.center - raw.center;
+            collision.transform.position += Vector3.up
+                * (shell.min.y - collision.transform.position.y
+                    + (collision.transform.position.y - raw.min.y));
+
+            int added = 0;
+            foreach (MeshFilter filter in
+                collision.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (filter.sharedMesh == null)
                 {
                     continue;
                 }
 
-                var filter = part.GetComponent<MeshFilter>();
-                if (filter == null || filter.sharedMesh == null)
+                // The renderer goes; only the shape is wanted. Leaving it on
+                // would draw a coarse grey copy of the room inside the room.
+                Renderer drawn = filter.GetComponent<Renderer>();
+                if (drawn != null)
                 {
-                    continue;
+                    Object.DestroyImmediate(drawn);
                 }
 
-                var shell = new GameObject($"{part.name} Collider");
-                shell.transform.SetParent(holder, false);
-                shell.transform.SetPositionAndRotation(
-                    part.transform.position,
-                    part.transform.rotation);
-                shell.transform.localScale = part.transform.lossyScale;
                 MeshCollider collider =
-                    shell.AddComponent<MeshCollider>();
+                    filter.gameObject.AddComponent<MeshCollider>();
                 collider.sharedMesh = filter.sharedMesh;
-
                 added++;
             }
 
             return added;
+        }
+
+        /// <summary>
+        /// Which sides of a room have a way through, measured rather than
+        /// assumed.
+        ///
+        /// Rooms were being given a front and a back door whichever they had.
+        /// Half of these models are drawn with one opening, so the other
+        /// doorway was a hole punched in a solid wall: a door that led into the
+        /// street through no gap at all, and from the street into the middle of
+        /// a bookcase.
+        ///
+        /// Found by firing across each wall from inside at door height. Where
+        /// the wall is there, the ray stops; where the opening is, it does not.
+        /// A run of misses wide enough to walk through is a door.
+        /// </summary>
+        private static bool HasOpening(
+            Bounds inner,
+            float floorTop,
+            Vector3 direction)
+        {
+            const float Height = 1.1f;
+            const float Samples = 21f;
+            const float NeededWidth = 0.9f;
+
+            Vector3 across = new Vector3(-direction.z, 0f, direction.x);
+            float span = Mathf.Abs(Vector3.Dot(inner.size, across));
+            float reach = Mathf.Abs(Vector3.Dot(inner.extents, direction))
+                + 2f;
+
+            float run = 0f;
+            float best = 0f;
+            for (int index = 0; index <= Samples; index++)
+            {
+                float offset = (index / Samples - 0.5f) * span;
+                Vector3 from = new Vector3(
+                    inner.center.x,
+                    floorTop + Height,
+                    inner.center.z) + across * offset;
+
+                bool blocked = Physics.Raycast(
+                    from,
+                    direction,
+                    reach,
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore);
+                run = blocked ? 0f : run + span / Samples;
+                best = Mathf.Max(best, run);
+            }
+
+            // Printed, because "every room has both doors" and "the probe hit
+            // nothing at all" produce the same answer and want opposite fixes.
+            Debug.Log(
+                $"[MAP-008] opening probe {direction}: widest gap "
+                + $"{best:0.00} m of {span:0.0} m wall.");
+            return best >= NeededWidth;
         }
 
         /// <summary>
