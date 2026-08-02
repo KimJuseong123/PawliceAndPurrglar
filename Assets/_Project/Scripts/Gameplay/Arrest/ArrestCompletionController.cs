@@ -96,6 +96,26 @@ namespace PawsAndLoot.Gameplay.Arrest
         }
 
         /// <summary>
+        /// Takes the host's tally on a machine that is not counting.
+        ///
+        /// A client never runs this controller — the host owns the arrest — so
+        /// its own count stays at zero for the whole match and the screen said
+        /// so. Nothing about the rules changes here; the number is being told
+        /// to a machine that could not work it out.
+        /// </summary>
+        public void ApplyReplicatedCatchCount(int catchCount)
+        {
+            int clamped = Mathf.Max(0, catchCount);
+            if (clamped == CurrentCatchCount)
+            {
+                return;
+            }
+
+            CurrentCatchCount = clamped;
+            CatchCountChanged?.Invoke(CurrentCatchCount, RequiredCatchCount);
+        }
+
+        /// <summary>
         /// Re-arms the controller once the thief is back on the map.
         ///
         /// The progress controller has to be reset with it. Leaving it marked

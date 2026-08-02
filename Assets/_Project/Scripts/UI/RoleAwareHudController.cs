@@ -43,6 +43,7 @@ namespace PawsAndLoot.UI
 
         private MatchRuntimeState matchRuntime;
         private ArrestCompletionController arrestCompletion;
+        private PawsAndLoot.Gameplay.Arrest.ThiefJailState jailState;
         private ThiefLootWallet thiefWallet;
         private ToolCarrier carrier;
         private VoiceCommandInput voice;
@@ -212,6 +213,8 @@ namespace PawsAndLoot.UI
             matchRuntime ??= FindFirstObjectByType<MatchRuntimeState>();
             arrestCompletion ??=
                 FindFirstObjectByType<ArrestCompletionController>();
+            jailState ??= FindFirstObjectByType<
+                PawsAndLoot.Gameplay.Arrest.ThiefJailState>();
             thiefWallet ??= FindFirstObjectByType<ThiefLootWallet>();
             PlayerRole role = ResolveRole();
             if (carrier == null || carrier.Role != role)
@@ -358,6 +361,24 @@ namespace PawsAndLoot.UI
 
             if (catchProgressText == null)
             {
+                return;
+            }
+
+            // The sentence goes where the tally goes, because they are one
+            // sentence in the player's head: how many times, and how long until
+            // I can play again. Split across the screen they read as two
+            // unrelated numbers.
+            //
+            // Shown only while it is running. A countdown reading zero all
+            // match is a permanent piece of furniture that says nothing, and
+            // the eye stops going to it before the one moment it matters.
+            if (jailState != null && jailState.IsJailed)
+            {
+                catchProgressText.text = role == PlayerRole.Thief
+                    ? $"붙잡힌 횟수 {current} / {required}"
+                        + $"    유치장 {jailState.RemainingSeconds:0.0}초"
+                    : $"도둑 체포 {current} / {required}"
+                        + $"    유치 중 {jailState.RemainingSeconds:0.0}초";
                 return;
             }
 

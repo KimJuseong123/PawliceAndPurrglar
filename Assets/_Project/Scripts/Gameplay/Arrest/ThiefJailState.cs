@@ -104,6 +104,34 @@ namespace PawsAndLoot.Gameplay.Arrest
         /// <summary>
         /// Ends the sentence without serving it, for a match reset.
         /// </summary>
+        /// <summary>
+        /// Takes the host's remaining sentence on a machine that is not serving
+        /// it.
+        ///
+        /// The client has no authority over the jail, so its own clock never
+        /// starts and the thief sat in a cell with no idea how long for. This
+        /// only feeds the countdown on screen — where the thief actually is
+        /// still comes from the replicated position.
+        /// </summary>
+        public void ApplyReplicatedRemaining(float remainingSeconds)
+        {
+            if (HasAuthority)
+            {
+                return;
+            }
+
+            bool wasJailed = IsJailed;
+            _remainingSeconds = Mathf.Max(0f, remainingSeconds);
+            if (!wasJailed && IsJailed)
+            {
+                Jailed?.Invoke();
+            }
+            else if (wasJailed && !IsJailed)
+            {
+                Released?.Invoke();
+            }
+        }
+
         public void Clear()
         {
             _remainingSeconds = 0f;

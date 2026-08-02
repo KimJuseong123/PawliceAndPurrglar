@@ -302,6 +302,27 @@ namespace PawsAndLoot.Integration.Network
         /// Counts stuns so a client can tell a fresh hit from a value that
         /// happens to be the same, the way arrest interruptions are counted.
         /// </summary>
+        /// <summary>
+        /// How many times this officer has caught the thief, and how long this
+        /// thief has left in the cells.
+        ///
+        /// Display only — neither decides anything. They are here because the
+        /// screen was reading them off components that only ever run on the
+        /// host: a client watched the whole match with the counter stuck on
+        /// zero and no idea how long they were locked up for. The rules were
+        /// working and the player could not see them, which is a different
+        /// failure from the rules not working and is just as bad to play.
+        /// </summary>
+        private readonly NetworkVariable<int> _catchCount =
+            new(0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<float> _jailSeconds =
+            new(0f,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
         private readonly NetworkVariable<int> _stunCount =
             new(
                 0,
@@ -947,6 +968,24 @@ namespace PawsAndLoot.Integration.Network
                 _stunSeconds.Value = stun.RemainingSeconds;
             }
 
+            // Read off whichever of the two this player happens to have. The
+            // officer carries the tally and the thief carries the sentence, so
+            // one of these is always null and that is fine — asking is cheaper
+            // than a second link type.
+            var completion =
+                GetComponent<PawsAndLoot.Gameplay.Arrest.ArrestCompletionController>();
+            if (completion != null)
+            {
+                _catchCount.Value = completion.CurrentCatchCount;
+            }
+
+            var jail =
+                GetComponent<PawsAndLoot.Gameplay.Arrest.ThiefJailState>();
+            if (jail != null)
+            {
+                _jailSeconds.Value = jail.RemainingSeconds;
+            }
+
             if (toolCarrier != null)
             {
                 _heldTool.Value = toolCarrier.HasTool
@@ -1000,6 +1039,15 @@ namespace PawsAndLoot.Integration.Network
             {
                 policeWallet.ApplyReplicated(_policeAmount.Value);
             }
+
+            // Written into the same components the screen already reads, rather
+            // than handed to the HUD separately. One reader, two writers that
+            // never run on the same machine — the host simulates and the client
+            // is told, which is how everything else here works.
+            GetComponent<PawsAndLoot.Gameplay.Arrest.ArrestCompletionController>()
+                ?.ApplyReplicatedCatchCount(_catchCount.Value);
+            GetComponent<PawsAndLoot.Gameplay.Arrest.ThiefJailState>()
+                ?.ApplyReplicatedRemaining(_jailSeconds.Value);
 
             if (interiorState != null)
             {
