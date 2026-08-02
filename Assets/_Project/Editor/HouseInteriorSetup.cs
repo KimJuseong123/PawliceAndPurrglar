@@ -423,7 +423,20 @@ namespace PawsAndLoot.Editor
                     new Vector3(inner.center.x, floorTop, inner.center.z),
                     new Vector3(inner.size.x, 3f, inner.size.z));
             }
-            solids += AddSolidColliders(stem, colliders, roomShell);
+            solids += AddSolidColliders(
+                stem,
+                colliders,
+                parts.Length > 0 ? parts[0].transform : null,
+                out Transform collisionRoot);
+
+            // The floor a player stands on, not the bottom of the model.
+            //
+            // floorTop was the underside of the whole thing, which is where the
+            // slab and the entry points were put. The model's own floor plate
+            // is some way above that, so arriving "on the floor" put the
+            // character's feet under it and their legs through it — exactly the
+            // buried look that was reported.
+            floorTop = MeasureFloorTop(collisionRoot, roomShell, floorTop);
 
             // The furniture and the partitions came from the same part-name
             // lookup and find nothing for the same reason: these rooms are one
@@ -692,8 +705,10 @@ namespace PawsAndLoot.Editor
         private static int AddSolidColliders(
             string stem,
             Transform holder,
-            Bounds shell)
+            Transform visual,
+            out Transform collisionRoot)
         {
+            collisionRoot = null;
             GameObject collision = PlaceholderModelLibrary.TryInstantiate(
                 $"{BuildingDirectory}/{stem}{CollisionSuffix}.fbx",
                 holder,
@@ -707,27 +722,30 @@ namespace PawsAndLoot.Editor
                 return 0;
             }
 
-            // Fitted to the room it is standing in rather than to its own
-            // authored size. The two are the same model at different triangle
-            // counts, so matching their bounds matches their shapes.
-            if (!TryGetWorldBounds(collision.transform, out Bounds raw)
-                || raw.size.x < 0.001f
-                || raw.size.z < 0.001f)
+            // Given the visible model's own transform, exactly.
+            //
+            // The two are the same model at different triangle counts, so the
+            // placement that is right for one is right for the other. Fitting
+            // the coarse copy to the room by measuring and scaling was three
+            // lines of arithmetic that had to agree with a fourth somewhere
+            // else, and it did not: the collision came out half the height of
+            // the room it was meant to be, which is a wall you can see and
+            // walk through.
+            if (visual == null)
             {
                 Object.DestroyImmediate(collision);
+                Debug.LogWarning(
+                    $"[MAP-008] '{stem}' has no visible model to match, so "
+                    + "its collision copy has nowhere to be.");
                 return 0;
             }
 
-            float fit = Mathf.Min(
-                shell.size.x / raw.size.x,
-                shell.size.z / raw.size.z);
-            collision.transform.localScale = Vector3.one * fit;
-            TryGetWorldBounds(collision.transform, out raw);
-            collision.transform.position += shell.center - raw.center;
-            collision.transform.position += Vector3.up
-                * (shell.min.y - collision.transform.position.y
-                    + (collision.transform.position.y - raw.min.y));
+            collision.transform.SetPositionAndRotation(
+                visual.position,
+                visual.rotation);
+            collision.transform.localScale = visual.lossyScale;
 
+            collisionRoot = collision.transform;
             int added = 0;
             foreach (MeshFilter filter in
                 collision.GetComponentsInChildren<MeshFilter>(true))
@@ -752,6 +770,65 @@ namespace PawsAndLoot.Editor
             }
 
             return added;
+        }
+
+        /// <summary>
+        /// The height of the surface a player actually stands on.
+        ///
+        /// Read off the collision geometry rather than by raycasting into it.
+        /// A collider added moments ago in the editor is not reliably in the
+        /// physics scene, which is what made the wall probe report a fourteen
+        /// metre doorway in a thirteen metre wall. Triangles are in memory the
+        /// moment the mesh is.
+        ///
+        /// The floor is the upward-facing geometry in the bottom third of the
+        /// room. Upward-facing alone would also collect table tops and shelves;
+        /// the bottom third rules those out without needing to know what a
+        /// table is.
+        /// </summary>
+        private static float MeasureFloorTop(
+            Transform collision,
+            Bounds shell,
+            float fallback)
+        {
+            if (collision == null)
+            {
+                return fallback;
+            }
+
+            float ceiling = shell.min.y + shell.size.y * 0.34f;
+            float best = float.MinValue;
+
+            foreach (MeshFilter filter in
+                collision.GetComponentsInChildren<MeshFilter>(true))
+            {
+                Mesh mesh = filter.sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                Vector3[] vertices = mesh.vertices;
+                Vector3[] normals = mesh.normals;
+                Transform space = filter.transform;
+                for (int index = 0;
+                    index < vertices.Length && index < normals.Length;
+                    index++)
+                {
+                    if (space.TransformDirection(normals[index]).y < 0.85f)
+                    {
+                        continue;
+                    }
+
+                    float y = space.TransformPoint(vertices[index]).y;
+                    if (y <= ceiling && y > best)
+                    {
+                        best = y;
+                    }
+                }
+            }
+
+            return best > float.MinValue ? best : fallback;
         }
 
         /// <summary>
