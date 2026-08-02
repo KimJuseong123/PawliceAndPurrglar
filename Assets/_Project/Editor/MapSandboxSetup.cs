@@ -879,10 +879,13 @@ namespace PawsAndLoot.Editor
             (new Vector2(42f, 20f),
                 new[] { Fill.TwoStorey, Fill.OneStorey }),
             (new Vector2(-20f, -10f), new[] { Fill.OneStorey }),
-            (new Vector2(10f, -2f), new[] { Fill.TwoStorey }),
-            (new Vector2(42f, -2f), new[] { Fill.Plaza }),
+            (new Vector2(10f, -2f), new[] { Fill.Plaza }),
+            // The plot east of the square, which had nothing on it but two
+            // trees and a lamp. The planting avoids buildings, so putting the
+            // supermarket here clears them without naming them.
+            (new Vector2(42f, -2f), new[] { Fill.Supermarket }),
             (new Vector2(22f, -14f),
-                new[] { Fill.Bookstore, Fill.OneStorey, Fill.Supermarket })
+                new[] { Fill.Bookstore, Fill.OneStorey, Fill.TwoStorey })
         };
 
         /// <summary>
@@ -1062,9 +1065,27 @@ namespace PawsAndLoot.Editor
 
             foreach ((Vector2 inside, Fill[] contents) in Assignments)
             {
-                int number = System.Array.FindIndex(
-                    blocks,
-                    candidate => candidate.Contains(inside)) + 1;
+                // The smallest plot the point falls in, not the first.
+                //
+                // Blocks are reported by their bounding box and two of them are
+                // L-shaped, so the big southern one's box swallows the three
+                // small plots along its north edge whole. Taking the first
+                // match put the square and the supermarket inside it and left
+                // the plots they were meant for empty — and since a point
+                // inside a plot is still inside a plot, nothing warned.
+                int number = 0;
+                float smallest = float.MaxValue;
+                for (int index = 0; index < blocks.Length; index++)
+                {
+                    Rect candidate = blocks[index];
+                    float area = candidate.width * candidate.height;
+                    if (candidate.Contains(inside) && area < smallest)
+                    {
+                        smallest = area;
+                        number = index + 1;
+                    }
+                }
+
                 if (number < 1)
                 {
                     Debug.LogWarning(
@@ -1431,24 +1452,44 @@ namespace PawsAndLoot.Editor
         /// <summary>
         /// Every road piece and the sides its carriageway runs out of.
         ///
-        /// Measured, not guessed: `Report Road Pieces` photographs each one
-        /// from above and `Capture Model Sheet` puts them side by side. The
-        /// file names do not say — "road tile" is the crossing, "road section"
-        /// is the plain straight, "street intersection" is the T — and laying
-        /// them by name put a pedestrian crossing on every metre of every
-        /// street in the town.
+        /// Measured, not guessed: `Capture Model Sheet` photographs each one
+        /// from above and `Report Road Pieces` reads the height of its four
+        /// edges. The file names do not say which is which — the crossing
+        /// arrived as `crosswalk platform`, the crossroads as `crosshair target
+        /// board`, and the corner as `board game tile` — and laying them by
+        /// name is what put a pedestrian crossing on every metre of every
+        /// street the first time round.
+        ///
+        /// The order matters. A cell that could take either a straight or a
+        /// crossing gets the first match, and the plain straight is what a
+        /// street is mostly made of.
         /// </summary>
         private static readonly (string Stem, Ways Open)[] RoadPieces =
         {
-            ("env_road_crossroad",
+            ("env_road_cross2",
                 Ways.North | Ways.East | Ways.South | Ways.West),
-            ("env_road_intersection", Ways.North | Ways.East | Ways.West),
-            ("env_road_corner", Ways.West | Ways.North),
-            ("env_road_section", Ways.North | Ways.South),
+            ("env_road_tee2", Ways.North | Ways.East | Ways.West),
+            ("env_road_corner2", Ways.North | Ways.East),
+            ("env_road_straight2", Ways.North | Ways.South),
+            // The only piece the new set does not have. A road that stops has
+            // to look like it stopped, and the curved segment is what that
+            // looks like.
             ("env_road_curve", Ways.North)
         };
 
-        private const string CrossingStem = "env_road_tile";
+        /// <summary>
+        /// The crossing, and the sides it opens before it is turned.
+        ///
+        /// Held apart from the table because it is chosen for a different
+        /// reason — not by what the cell connects to, but by where a person
+        /// would want to walk across. It still has to be turned to match the
+        /// street, and it does not start the same way round as everything else:
+        /// its stripes lie across an east-west road while the straight runs
+        /// north-south. Assuming they agreed would lay every crossing sideways.
+        /// </summary>
+        private const string CrossingStem = "env_road_crossing2";
+
+        private const Ways CrossingOpen = Ways.East | Ways.West;
 
         /// <summary>
         /// Lays the roads as a grid of modular tiles.
@@ -1479,9 +1520,11 @@ namespace PawsAndLoot.Editor
                     continue;
                 }
 
-                if (crossings.Contains(cell))
+                if (crossings.Contains(cell)
+                    && TurnFor(CrossingOpen, open, out float crossingYaw))
                 {
                     stem = CrossingStem;
+                    yaw = crossingYaw;
                 }
 
                 if (!Lay(parent, stem, cell, yaw, 0.02f))
@@ -1576,28 +1619,43 @@ namespace PawsAndLoot.Editor
         }
 
         /// <summary>
+        /// The quarter turn that makes a piece open exactly the given sides,
+        /// if one exists.
+        /// </summary>
+        private static bool TurnFor(Ways sides, Ways open, out float yaw)
+        {
+            for (int quarter = 0; quarter < 4; quarter++)
+            {
+                if (Turn(sides, quarter) != open)
+                {
+                    continue;
+                }
+
+                yaw = quarter * 90f;
+                return true;
+            }
+
+            yaw = 0f;
+            return false;
+        }
+
+        /// <summary>
         /// The piece and quarter turn that opens exactly the given sides.
         /// </summary>
         private static bool Choose(Ways open, out string stem, out float yaw)
         {
             foreach ((string candidate, Ways sides) in RoadPieces)
             {
-                for (int quarter = 0; quarter < 4; quarter++)
+                if (TurnFor(sides, open, out yaw))
                 {
-                    if (Turn(sides, quarter) != open)
-                    {
-                        continue;
-                    }
-
                     stem = candidate;
-                    yaw = quarter * 90f;
                     return true;
                 }
             }
 
             // An isolated cell has nothing to join, so it gets a plain piece
             // rather than nothing at all.
-            stem = "env_road_section";
+            stem = "env_road_straight2";
             yaw = 0f;
             return open == Ways.None;
         }
