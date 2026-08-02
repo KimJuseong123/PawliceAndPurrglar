@@ -1246,6 +1246,10 @@ namespace PawsAndLoot.Editor
                 // like everything else the animals do.
                 agentObject.AddComponent<CompanionLure>();
 
+                // And what a bang acts on. Weaker than food on purpose: an
+                // animal already at a tin stays there.
+                agentObject.AddComponent<CompanionNoiseAttention>();
+
                 if (legs.LegCount == 0)
                 {
                     Debug.LogWarning(
@@ -1481,6 +1485,22 @@ namespace PawsAndLoot.Editor
             trapObject
                 .AddComponent<NetworkItemCoordinator>()
                 .Configure(matchRuntime);
+
+            // Where loud things are written down. One per match rather than one
+            // per listener, because a bang is a fact about the town and not
+            // about whoever happened to be near it.
+            var noiseObject = new GameObject("Noise Board");
+            noiseObject.transform.SetParent(parent);
+            PawsAndLoot.Gameplay.Sensing.NoiseBoard noiseBoard =
+                noiseObject.AddComponent<
+                    PawsAndLoot.Gameplay.Sensing.NoiseBoard>();
+            noiseObject
+                .AddComponent<PawsAndLoot.Animation.NoisePingView>()
+                .Configure(
+                    noiseBoard,
+                    LoadOrCreateMaterial(
+                        "Greybox_NoiseRing",
+                        new Color(1f, 0.85f, 0.3f)));
 
             // Disconnect handling deliberately lives on the persistent
             // NetworkManager object in Bootstrap, not here: one handler for the
@@ -3346,17 +3366,28 @@ namespace PawsAndLoot.Editor
             // In front of the supermarket, on the side away from the police
             // counters so the two shops do not read as one.
             Vector3 shelf = new Vector3(-20.5f, 0.5f, -16.5f);
-            (ThrowableKind Kind, Vector3 Offset, Color Tint)[] shelves =
+            (ThrowableKind Kind, Vector3 Offset, Color Tint,
+                PlayerRole? Owner)[] shelves =
             {
                 (ThrowableKind.Banana, Vector3.zero,
-                    new Color(0.94f, 0.86f, 0.28f)),
+                    new Color(0.94f, 0.86f, 0.28f), PlayerRole.Thief),
                 (ThrowableKind.DogTreat, new Vector3(2.2f, 0f, 0f),
-                    new Color(0.66f, 0.5f, 0.32f))
+                    new Color(0.66f, 0.5f, 0.32f), PlayerRole.Thief),
+                // The firework is the thief's, off the bookstore shelf in the
+                // design document; it sits here with the rest until that shop
+                // has an interior to take it from.
+                (ThrowableKind.Firework, new Vector3(4.4f, 0f, 0f),
+                    new Color(0.86f, 0.3f, 0.34f), PlayerRole.Thief),
+                // The chicken is nobody's. It makes a noise and does nothing
+                // else, so there is no advantage in it to hand to one side, and
+                // both players want it for opposite reasons.
+                (ThrowableKind.RubberChicken, new Vector3(6.6f, 0f, 0f),
+                    new Color(0.98f, 0.82f, 0.2f), null)
             };
 
             int id = 101;
-            foreach ((ThrowableKind kind, Vector3 offset, Color tint)
-                in shelves)
+            foreach ((ThrowableKind kind, Vector3 offset, Color tint,
+                PlayerRole? owner) in shelves)
             {
                 Vector3 spot = shelf + offset;
                 var pickup = new GameObject($"{kind} Shelf");
@@ -3388,8 +3419,8 @@ namespace PawsAndLoot.Editor
                 pickup.AddComponent<ThrowablePickup>().Configure(
                     kind,
                     presentation,
-                    true,
-                    PlayerRole.Thief,
+                    owner.HasValue,
+                    owner ?? PlayerRole.Thief,
                     14f,
                     id++);
 

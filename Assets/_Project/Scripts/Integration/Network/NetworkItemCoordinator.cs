@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using PawsAndLoot.Companions;
 using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Gameplay.Players;
+using PawsAndLoot.Gameplay.Sensing;
 using PawsAndLoot.Logging;
 using PawsAndLoot.Match;
 using Unity.Collections;
@@ -41,6 +42,7 @@ namespace PawsAndLoot.Integration.Network
         public const string ClearMessageName = "PawsAndLoot.TrapCleared";
         public const string PickupMessageName = "PawsAndLoot.PickupTaken";
         public const string RevealMessageName = "PawsAndLoot.ThiefRevealed";
+        public const string NoiseMessageName = "PawsAndLoot.NoiseHeard";
 
         /// <summary>
         /// Payload sizes, asked of the serialiser rather than counted.
@@ -55,6 +57,12 @@ namespace PawsAndLoot.Integration.Network
 
         public static readonly int ClearMessageBytes =
             FastBufferWriter.GetWriteSize<int>();
+
+        /// <summary>
+        /// Position, how far it carries, and who set it off.
+        /// </summary>
+        public static readonly int NoiseMessageBytes =
+            sizeof(float) * 4 + sizeof(int);
 
         public static readonly int RevealMessageBytes =
             FastBufferWriter.GetWriteSize<int>() * 2
@@ -241,8 +249,19 @@ namespace PawsAndLoot.Integration.Network
             foreach (KeyValuePair<int, PlacedTrap> entry in _traps)
             {
                 PlacedTrap trap = entry.Value;
-                if (trap == null
-                    || !trap.TryTrigger(out PlayerRoleIdentity victim))
+                if (trap == null)
+                {
+                    continue;
+                }
+
+                // Two ways to go off, asked in one place. A fuse burns whether
+                // or not anybody came near; a tripwire waits. The prop knows
+                // which it is, so this does not branch on the kind.
+                PlayerRoleIdentity victim = null;
+                bool fired = trap.HasFuse
+                    ? trap.TickFuse(Time.deltaTime)
+                    : trap.TryTrigger(out victim);
+                if (!fired)
                 {
                     continue;
                 }
@@ -305,8 +324,26 @@ namespace PawsAndLoot.Integration.Network
             PlacedTrap trap,
             PlayerRoleIdentity victim)
         {
-            if (ThrowableCatalog.GetEffect(trap.Kind)
-                == TrapEffect.Reveal)
+            TrapEffect effect = ThrowableCatalog.GetEffect(trap.Kind);
+
+            // Noise first, and it needs no victim. A bang happens at a place,
+            // not to a person — the one prop whose whole job is to be heard by
+            // whoever happens to be near, including whoever set it off.
+            if (effect == TrapEffect.Noise)
+            {
+                Bang(
+                    trap.transform.position,
+                    ThrowableCatalog.GetNoiseRadius(trap.Kind),
+                    trap.PlacedBy);
+                return;
+            }
+
+            if (victim == null)
+            {
+                return;
+            }
+
+            if (effect == TrapEffect.Reveal)
             {
                 Reveal(victim.Role, trap.TrapId, trap.transform.position);
                 return;
@@ -355,6 +392,76 @@ namespace PawsAndLoot.Integration.Network
         /// machine that has to stop hiding the thief is not the machine that
         /// decided the sensor went off.
         /// </summary>
+        /// <summary>
+        /// Writes a noise down here and repeats it to the other machine.
+        ///
+        /// Sent rather than recomputed, for the reason every other crossing
+        /// value in this project is sent: the client does not run the fuse and
+        /// does not test the tripwire, so a client left to work it out would
+        /// hear nothing and the prop would be a single-player prop.
+        /// </summary>
+        private void Bang(Vector3 at, float radius, PlayerRole madeBy)
+        {
+            ApplyBangLocally(at, radius, madeBy);
+
+            NetworkManager manager = ResolveManager();
+            if (manager == null
+                || !manager.IsListening
+                || !manager.IsServer
+                || manager.CustomMessagingManager == null)
+            {
+                return;
+            }
+
+            using var writer = new FastBufferWriter(
+                NoiseMessageBytes,
+                Allocator.Temp);
+            writer.WriteValueSafe(at.x);
+            writer.WriteValueSafe(at.y);
+            writer.WriteValueSafe(at.z);
+            writer.WriteValueSafe(radius);
+            writer.WriteValueSafe((int)madeBy);
+            manager.CustomMessagingManager.SendNamedMessageToAll(
+                NoiseMessageName,
+                writer);
+        }
+
+        private void ApplyBangLocally(
+            Vector3 at,
+            float radius,
+            PlayerRole madeBy)
+        {
+            foreach (NoiseBoard board in
+                FindObjectsByType<NoiseBoard>(FindObjectsSortMode.None))
+            {
+                board.Report(at, radius, madeBy);
+            }
+        }
+
+        private void HandleNoise(
+            ulong senderClientId,
+            FastBufferReader reader)
+        {
+            reader.ReadValueSafe(out float x);
+            reader.ReadValueSafe(out float y);
+            reader.ReadValueSafe(out float z);
+            reader.ReadValueSafe(out float radius);
+            reader.ReadValueSafe(out int madeBy);
+
+            NetworkManager manager = ResolveManager();
+            if (manager != null && manager.IsServer)
+            {
+                // The host already wrote it down when it happened. Writing it
+                // again on the way past would double every count.
+                return;
+            }
+
+            ApplyBangLocally(
+                new Vector3(x, y, z),
+                radius,
+                (PlayerRole)madeBy);
+        }
+
         private void Reveal(
             PlayerRole revealed,
             int trapId,
@@ -508,6 +615,9 @@ namespace PawsAndLoot.Integration.Network
             manager.CustomMessagingManager.RegisterNamedMessageHandler(
                 RevealMessageName,
                 HandleRevealed);
+            manager.CustomMessagingManager.RegisterNamedMessageHandler(
+                NoiseMessageName,
+                HandleNoise);
             GameLogger.Debug(
                 GameLogCategory.Network,
                 "Trap messages registered.",
