@@ -38,8 +38,44 @@ namespace PawsAndLoot.Editor
     /// </summary>
     internal static class HouseInteriorSetup
     {
-        private const string InteriorStem =
-            "building_house_1f_with_interior";
+        /// <summary>
+        /// Which interior model stands behind each kind of building.
+        ///
+        /// The three shops have rooms of their own — a jeweller's cases, a
+        /// library's shelves, a grocer's aisles — and the houses share the two
+        /// most recent general interiors.
+        ///
+        /// Which two is settled by triangle count rather than by file date.
+        /// Every interior in the folder was unpacked in the same second, so the
+        /// dates say only when somebody ran unzip; the counts say which
+        /// pipeline made them. `house01` and the jeweller arrive at forty
+        /// thousand triangles and the rest at nine hundred and fifty thousand,
+        /// which is the generator's own signature and therefore the recent
+        /// pair.
+        /// </summary>
+        private static readonly System.Collections.Generic.Dictionary<
+            string, string> InteriorForKind = new()
+        {
+            { "Supermarket", "interior_supermarket" },
+            { "Bookstore", "interior_bookstore" },
+            { "Jewellery", "interior_jewelry" },
+            { "OneStorey", "interior_house02" },
+            { "TwoStorey", "interior_house03" },
+            { "PoliceStation", "interior_police" }
+        };
+
+        /// <summary>
+        /// Where a caught thief waits out the sentence.
+        ///
+        /// Its own room rather than a corner of the police station, so the
+        /// sentence is somewhere with nothing in it and no way out until the
+        /// clock says so.
+        /// </summary>
+        internal const string JailStem = "interior_jail";
+
+        // Interiors are filed with the buildings, which is the one folder
+        // PlaceholderModelLibrary loads from. The `interior_` prefix keeps a
+        // shell and the room behind it apart without a second folder.
 
         /// <summary>
         /// How much bigger the room is than the building.
@@ -53,6 +89,23 @@ namespace PawsAndLoot.Editor
         /// once the first time (ISSUE-035).
         /// </summary>
         private const float InteriorScale = 2.2f;
+
+        /// <summary>
+        /// How big a room is fitted to, in metres.
+        ///
+        /// Fitted to a footprint rather than multiplied by a scale. The scale
+        /// was tuned against one model that happened to export at about eight
+        /// metres across; every interior since exports at about one, so the
+        /// same multiplier produced a room two metres wide — smaller than the
+        /// player, and reported as "missing its walls" because nothing that
+        /// small can have an inside.
+        ///
+        /// Seventeen by twelve is what the hand-built room measured, and
+        /// therefore what is already known to play.
+        /// </summary>
+        private const float RoomX = 17f;
+
+        private const float RoomZ = 12f;
 
         /// <summary>
         /// A grid rather than a row. Nineteen rooms in a line reach 700 m from the
@@ -157,7 +210,7 @@ namespace PawsAndLoot.Editor
         public static void Build(
             Transform parent,
             MatchRuntimeState matchRuntime,
-            IReadOnlyList<Transform> houses,
+            IReadOnlyList<(Transform Building, string Kind)> houses,
             System.Func<string, Color, Material> materialFactory,
             System.Func<string, Vector3, Vector3, Material, Transform, bool,
                 GameObject> cubeFactory,
@@ -187,8 +240,20 @@ namespace PawsAndLoot.Editor
             int partitions = 0;
             for (int index = 0; index < houses.Count; index++)
             {
-                if (houses[index] == null)
+                (Transform building, string kind) = houses[index];
+                if (building == null)
                 {
+                    continue;
+                }
+
+                // A kind with no room of its own gets nothing rather than
+                // somebody else's. A door that opens into the wrong shop is
+                // worse than a door that does not open.
+                if (!InteriorForKind.TryGetValue(kind, out string stem))
+                {
+                    Debug.LogWarning(
+                        $"[MAP-008] '{kind}' has no interior model, so its "
+                        + "building has no inside.");
                     continue;
                 }
 
@@ -200,7 +265,8 @@ namespace PawsAndLoot.Editor
                         root,
                         matchRuntime,
                         index,
-                        houses[index],
+                        building,
+                        stem,
                         centre,
                         floorMaterial,
                         partitionMaterial,
@@ -227,6 +293,7 @@ namespace PawsAndLoot.Editor
             MatchRuntimeState matchRuntime,
             int index,
             Transform house,
+            string stem,
             Vector3 centre,
             Material floorMaterial,
             Material partitionMaterial,
@@ -243,17 +310,16 @@ namespace PawsAndLoot.Editor
 
             Vector3 size = PlaceholderModelLibrary
                 .TryInstantiateBuildingSized(
-                    InteriorStem,
+                    stem,
                     room,
                     centre,
-                    0f,
-                    0f,
-                    InteriorScale);
+                    RoomX,
+                    RoomZ);
             if (size.y <= 0f)
             {
                 Debug.LogError(
                     $"[MAP-008] Interior {number} could not be built: "
-                    + $"'{InteriorStem}' did not instantiate.");
+                    + $"'{stem}' did not instantiate.");
                 Object.DestroyImmediate(room.gameObject);
                 return false;
             }
@@ -268,7 +334,9 @@ namespace PawsAndLoot.Editor
                     out Vector3 backDoor))
             {
                 Debug.LogError(
-                    $"[MAP-008] Interior {number} is missing the walls or doors "
+                    $"[MAP-008] Interior {number} ({stem}) measured "
+                    + $"{inner.size.x:0.0} x {inner.size.z:0.0} m inside, "
+                    + "which is not a room. It is missing the walls or doors "
                     + "it is measured from.");
                 Object.DestroyImmediate(room.gameObject);
                 return false;
@@ -367,6 +435,42 @@ namespace PawsAndLoot.Editor
         /// Reads the room's floor height, its inside extents and where its two doors
         /// are, from the model rather than from constants.
         /// </summary>
+        /// <summary>
+        /// How far inside the shell a doorway sits.
+        ///
+        /// Far enough to be through the wall rather than in it, close enough
+        /// that walking out of one is walking out of the building.
+        /// </summary>
+        private const float DoorInset = 1.2f;
+
+        /// <summary>
+        /// How much of the shell's width the walls take, as a fraction.
+        ///
+        /// Used to find the space between the walls when the walls are not
+        /// separate objects to measure. A tenth each side is what the models
+        /// that *are* separable measure at.
+        /// </summary>
+        private const float WallShare = 0.1f;
+
+        /// <summary>
+        /// Reads the room's floor height, its inside extents and where its two
+        /// doors go, from the model's shape rather than from its part names.
+        ///
+        /// It used to look up seven parts by name — `BD_House1F_Wall_Left` and
+        /// so on — which worked for exactly one model, the hand-built one it
+        /// was written against. Every interior that has arrived since is a
+        /// single scanned mesh with no named parts at all, so the lookup found
+        /// nothing and every room reported itself as missing its walls.
+        ///
+        /// Shape survives that. A room is a box open at the top: its floor is
+        /// the bottom of its bounds, its walls are the outside of them, and its
+        /// doors go in the middle of the two long edges. Nothing here can be
+        /// broken by an exporter renaming a mesh.
+        ///
+        /// The doors are placed rather than found. None of these models has a
+        /// door in it — they are rooms, drawn open — and a doorway is a trigger
+        /// and a destination rather than a thing to look at.
+        /// </summary>
         private static bool TryMeasure(
             IReadOnlyList<Renderer> parts,
             out float floorTop,
@@ -379,47 +483,51 @@ namespace PawsAndLoot.Editor
             frontDoor = Vector3.zero;
             backDoor = Vector3.zero;
 
-            Renderer Find(string name) =>
-                parts.FirstOrDefault(part => part.name == name);
+            bool any = false;
+            var shell = new Bounds();
+            foreach (Renderer part in parts)
+            {
+                if (part == null)
+                {
+                    continue;
+                }
 
-            Renderer foundation = Find("BD_House1F_Foundation");
-            Renderer left = Find("BD_House1F_Wall_Left");
-            Renderer right = Find("BD_House1F_Wall_Right");
-            Renderer front = Find("BD_House1F_Wall_Front");
-            Renderer back = Find("BD_House1F_Wall_Back");
-            Renderer frontLeaf = Find("BD_House1F_Door_Front_Leaf");
-            Renderer backLeaf = Find("BD_House1F_Door_Back_Leaf");
-            if (foundation == null || left == null || right == null
-                || front == null || back == null
-                || frontLeaf == null || backLeaf == null)
+                if (!any)
+                {
+                    shell = part.bounds;
+                    any = true;
+                }
+                else
+                {
+                    shell.Encapsulate(part.bounds);
+                }
+            }
+
+            if (!any)
             {
                 return false;
             }
 
-            floorTop = foundation.bounds.max.y;
-            frontDoor = frontLeaf.bounds.center;
-            backDoor = backLeaf.bounds.center;
+            floorTop = shell.min.y;
 
-            // The space between the walls, not the space they occupy.
-            float innerMinX = Mathf.Min(left.bounds.min.x, right.bounds.min.x);
-            float innerMaxX = Mathf.Max(left.bounds.max.x, right.bounds.max.x);
-            float innerMinZ = Mathf.Min(front.bounds.min.z, back.bounds.min.z);
-            float innerMaxZ = Mathf.Max(front.bounds.max.z, back.bounds.max.z);
-            float wallX = Mathf.Min(
-                left.bounds.size.x,
-                right.bounds.size.x);
-            float wallZ = Mathf.Min(
-                front.bounds.size.z,
-                back.bounds.size.z);
+            float wallX = shell.size.x * WallShare;
+            float wallZ = shell.size.z * WallShare;
             inner = new Bounds(
+                new Vector3(shell.center.x, floorTop, shell.center.z),
                 new Vector3(
-                    (innerMinX + innerMaxX) * 0.5f,
-                    floorTop,
-                    (innerMinZ + innerMaxZ) * 0.5f),
-                new Vector3(
-                    Mathf.Max(0f, innerMaxX - innerMinX - wallX * 2f),
+                    Mathf.Max(0f, shell.size.x - wallX * 2f),
                     0f,
-                    Mathf.Max(0f, innerMaxZ - innerMinZ - wallZ * 2f)));
+                    Mathf.Max(0f, shell.size.z - wallZ * 2f)));
+
+            frontDoor = new Vector3(
+                shell.center.x,
+                floorTop,
+                shell.min.z + DoorInset);
+            backDoor = new Vector3(
+                shell.center.x,
+                floorTop,
+                shell.max.z - DoorInset);
+
             return inner.size.x > 1f && inner.size.z > 1f;
         }
 

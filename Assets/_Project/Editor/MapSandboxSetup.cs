@@ -615,12 +615,14 @@ namespace PawsAndLoot.Editor
                 string kind,
                 Vector3 centre,
                 float yaw,
-                Vector2 footprint)
+                Vector2 footprint,
+                Transform instance)
             {
                 Kind = kind;
                 Centre = centre;
                 Yaw = yaw;
                 Footprint = footprint;
+                Instance = instance;
             }
 
             /// <summary>The name of the <c>Fill</c> this plot was assigned.</summary>
@@ -629,6 +631,14 @@ namespace PawsAndLoot.Editor
             public Vector3 Centre { get; }
             public float Yaw { get; }
             public Vector2 Footprint { get; }
+
+            /// <summary>
+            /// What was actually built here, or null when the plot was skipped
+            /// or the model would not load. The main game hangs an interior off
+            /// this, and an interior attached to nothing is a door that opens
+            /// onto a room nobody can leave.
+            /// </summary>
+            public Transform Instance { get; }
         }
 
         internal readonly struct TownReport
@@ -704,11 +714,16 @@ namespace PawsAndLoot.Editor
             {
                 Vector2 footprint = FootprintOf(placement.Fill);
                 occupied.Add(placement.Area(footprint));
+                // Looked up by the label the placement was built under.
+                // Deterministic, because the layout is: LayOut runs twice with
+                // the same inputs and hands back the same labels in the same
+                // order both times.
                 plots.Add(new TownPlot(
                     placement.Fill.ToString(),
                     placement.Centre,
                     placement.Yaw,
-                    footprint));
+                    footprint,
+                    buildings.Find(placement.Label)));
             }
 
             int landmarks = BuildLandmarks(buildings, sizes, occupied);

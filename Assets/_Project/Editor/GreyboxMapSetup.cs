@@ -279,6 +279,7 @@ namespace PawsAndLoot.Editor
                 buildingsRoot,
                 MapSandboxSetup.Measure(),
                 null);
+            _townPlots = town.Plots;
             Debug.Log(
                 $"[MAP-001] Town laid from the sandbox: {town.Roads} road "
                 + $"tiles, {town.Destinations} buildings, {town.Houses} "
@@ -413,6 +414,28 @@ namespace PawsAndLoot.Editor
             perfObject.transform.SetParent(villageRoot.transform);
             perfObject.AddComponent<
                 PawsAndLoot.TechnicalValidation.ScenePerformanceProbe>();
+
+            // Every building the town put up, paired with what kind it is.
+            // The kind is what picks the room: a jeweller gets cases and a
+            // house gets bedrooms, and neither is decided by which order they
+            // happened to be created in.
+            var enterable =
+                new List<(Transform Building, string Kind)>();
+            foreach (MapSandboxSetup.TownPlot plot in _townPlots)
+            {
+                if (plot.Instance != null)
+                {
+                    enterable.Add((plot.Instance, plot.Kind));
+                }
+            }
+
+            HouseInteriorSetup.Build(
+                villageRoot.transform,
+                matchRuntime,
+                enterable,
+                LoadOrCreateMaterial2,
+                CreateCube,
+                CreateChild);
 
             // ART-012 runs last so it sees every generated object.
             SceneOptimizationPass.Run(villageRoot);
@@ -967,13 +990,6 @@ namespace PawsAndLoot.Editor
 
             // Interiors last, because they need the finished houses: each one
             // takes its exit point from the building it belongs to.
-            HouseInteriorSetup.Build(
-                root,
-                matchRuntime,
-                _enterableHouses,
-                LoadOrCreateMaterial2,
-                CreateCube,
-                CreateChild);
         }
 
         /// <summary>
@@ -1685,6 +1701,12 @@ namespace PawsAndLoot.Editor
         /// can be generated once at the end.
         /// </summary>
         private static readonly List<Transform> _enterableHouses = new();
+
+        /// <summary>
+        /// What the town built and where, kept from the swap so the interiors
+        /// know which room belongs behind which door.
+        /// </summary>
+        private static List<MapSandboxSetup.TownPlot> _townPlots = new();
 
         private static float HouseScale()
         {

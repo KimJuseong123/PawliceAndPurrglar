@@ -29,6 +29,17 @@ namespace PawsAndLoot.Editor
     {
         private const string EnvironmentDirectory =
             "Assets/_Project/Art/Environment";
+
+        /// <summary>
+        /// Photographed too, and from the side rather than from above.
+        ///
+        /// An interior seen from directly overhead is a floor plan: it says
+        /// nothing about which model is a shop and which is a bedroom, which is
+        /// the only question worth asking of a folder full of files called
+        /// "house interior".
+        /// </summary>
+        private const string InteriorDirectory =
+            "Assets/_Project/Art/Buildings";
         private const string Output = "Logs/model-sheet.png";
         private const int Cell = 320;
         private const int Columns = 4;
@@ -37,7 +48,9 @@ namespace PawsAndLoot.Editor
         public static void Capture()
         {
             string[] paths = AssetDatabase
-                .FindAssets("t:Model", new[] { EnvironmentDirectory })
+                .FindAssets(
+                    "t:Model",
+                    new[] { EnvironmentDirectory, InteriorDirectory })
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .Where(path => path.EndsWith(".fbx"))
                 .Distinct()
@@ -95,14 +108,22 @@ namespace PawsAndLoot.Editor
                         + $"{bounds.size.x:0.00} x {bounds.size.y:0.00} x "
                         + $"{bounds.size.z:0.00} m");
 
-                    camera.orthographicSize =
-                        Mathf.Max(bounds.extents.x, bounds.extents.z) * 1.15f;
-                    camera.transform.position = new Vector3(
-                        bounds.center.x,
-                        bounds.max.y + 20f,
-                        bounds.center.z);
+                    // Interiors are looked at from a raking angle. Straight
+                    // down turns a room into a floor plan, and a folder of
+                    // files called "house interior" is exactly the case where
+                    // the question is what the room *is*.
+                    bool room = path.StartsWith(InteriorDirectory);
+                    float reach = Mathf.Max(
+                        bounds.extents.x,
+                        Mathf.Max(bounds.extents.y, bounds.extents.z));
+                    camera.orthographicSize = reach * 1.25f;
+                    camera.transform.rotation = room
+                        ? Quaternion.Euler(28f, 35f, 0f)
+                        : Quaternion.Euler(90f, 0f, 0f);
+                    camera.transform.position = bounds.center
+                        - camera.transform.forward * (reach * 4f + 20f);
                     camera.nearClipPlane = 0.1f;
-                    camera.farClipPlane = 60f + bounds.size.y;
+                    camera.farClipPlane = 200f + bounds.size.y;
 
                     Blit(camera, sheet, index);
                     Object.DestroyImmediate(subject);
