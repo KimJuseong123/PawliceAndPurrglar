@@ -22,6 +22,17 @@ namespace PawsAndLoot.Gameplay.Arrest
         public event Action<int, int> CatchCountChanged;
         public event Action PoliceVictoryRequested;
 
+        /// <summary>
+        /// Whether an arrest has landed and not yet been served.
+        ///
+        /// This used to be a one-way latch because one arrest ended the match,
+        /// so nothing ever needed to happen afterwards. Now the thief comes back
+        /// and can be caught again, and the latch is what stops a single catch
+        /// from being counted every frame while the officer is still standing
+        /// on them. <see cref="ClearForNextArrest"/> is what re-arms it, and
+        /// that is called when the thief is released rather than on a timer —
+        /// releasing is the moment they can be caught again.
+        /// </summary>
         public bool IsCompleted { get; private set; }
         public int CurrentCatchCount { get; private set; }
         public int RequiredCatchCount => Mathf.Max(1, requiredCatchCount);
@@ -73,6 +84,22 @@ namespace PawsAndLoot.Gameplay.Arrest
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Re-arms the controller once the thief is back on the map.
+        ///
+        /// The progress controller has to be reset with it. Leaving it marked
+        /// completed means the next arrest can never start, which looks like a
+        /// broken sensor rather than a missed reset.
+        /// </summary>
+        public void ClearForNextArrest()
+        {
+            IsCompleted = false;
+            if (progressController != null)
+            {
+                progressController.ResetProgress();
+            }
         }
 
         public void ValidateOrThrow()

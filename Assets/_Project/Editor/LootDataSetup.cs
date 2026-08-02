@@ -15,18 +15,30 @@ namespace PawsAndLoot.Editor
         public static void CreateDefaultLootData()
         {
             EnsureFolder();
+            // Carry weight is not rarity. The watch is the second dearest
+            // piece and the easiest to run with, and the trinket is the
+            // cheapest and awkward — that mismatch is the whole choice at the
+            // shelf. Making the expensive things uniformly heavy would collapse
+            // it back into "take the dearest one you can reach".
             CreateOrUpdate(
                 "common-trinket",
                 "Common Trinket",
-                LootRarity.Common);
+                LootRarity.Common,
+                LootCarryType.TwoHand);
             CreateOrUpdate(
                 "uncommon-watch",
                 "Fine Watch",
-                LootRarity.Uncommon);
+                LootRarity.Uncommon,
+                LootCarryType.Pocket);
+            // The one the whole town is wired to notice. Alarmed, and the
+            // heaviest thing on the map, so taking it is a decision about the
+            // rest of the match rather than about one room.
             CreateOrUpdate(
                 "rare-jewel",
                 "Rare Jewel",
-                LootRarity.Rare);
+                LootRarity.Rare,
+                LootCarryType.Bulky,
+                true);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             ValidateDefaultLootData();
@@ -63,7 +75,9 @@ namespace PawsAndLoot.Editor
         private static void CreateOrUpdate(
             string stableId,
             string displayName,
-            LootRarity rarity)
+            LootRarity rarity,
+            LootCarryType carryType,
+            bool raisesAlarm = false)
         {
             string path =
                 $"{LootDataRoot}/{stableId}.asset";
@@ -76,7 +90,12 @@ namespace PawsAndLoot.Editor
                 AssetDatabase.CreateAsset(definition, path);
             }
 
-            definition.Configure(stableId, displayName, rarity);
+            definition.Configure(
+                stableId,
+                displayName,
+                rarity,
+                carryType,
+                raisesAlarm);
             EditorUtility.SetDirty(definition);
         }
 

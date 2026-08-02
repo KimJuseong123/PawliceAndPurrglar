@@ -52,7 +52,23 @@ namespace PawsAndLoot.Gameplay.Players
             LootItem previous,
             LootItem current)
         {
-            movementMotor.SetLootCarryPenalty(current != null);
+            movementMotor.SetLootCarryPenalty(
+                current != null,
+                WeightOf(current));
+        }
+
+        /// <summary>
+        /// How heavy a piece is, defaulting to one hand.
+        ///
+        /// A piece with no definition is a broken piece, and refusing to slow
+        /// the thief at all would make the broken case the fastest one to
+        /// carry.
+        /// </summary>
+        private static LootCarryType WeightOf(LootItem loot)
+        {
+            return loot != null && loot.Definition != null
+                ? loot.Definition.CarryType
+                : LootCarryType.OneHand;
         }
 
         private void SubscribeAndSync()
@@ -70,7 +86,9 @@ namespace PawsAndLoot.Gameplay.Players
                 _subscribed = true;
             }
 
-            movementMotor.SetLootCarryPenalty(carrier.HasLoot);
+            movementMotor.SetLootCarryPenalty(
+                carrier.HasLoot,
+                WeightOf(carrier.HeldLoot));
         }
 
         private void Unsubscribe()

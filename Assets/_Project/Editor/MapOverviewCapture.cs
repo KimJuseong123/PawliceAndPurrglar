@@ -21,13 +21,38 @@ namespace PawsAndLoot.Editor
         private const string OutputPath =
             "Logs/map-overview.png";
 
+        private const string Map02OutputPath =
+            "Logs/map02-overview.png";
+
         private const int PixelsPerMeter = 12;
 
         [MenuItem("Paws & Loot/Setup/Capture Map Overview")]
         public static void Capture()
         {
-            Scene scene = EditorSceneManager.OpenScene(
+            CaptureScene(
                 GameSceneCatalog.GetPath(GameSceneId.Game),
+                OutputPath);
+        }
+
+        /// <summary>
+        /// The same plan view of MAP-002.
+        ///
+        /// A town is re-cut by editing coordinates, and coordinates are exactly
+        /// what nobody can check by reading. Overlap can be measured, but "this
+        /// block is empty and that one is crammed" only shows up in a picture.
+        /// </summary>
+        [MenuItem("Paws & Loot/Setup/Capture MAP-002 Overview")]
+        public static void CaptureMap02()
+        {
+            CaptureScene(Map02GreyboxSetup.ScenePath, Map02OutputPath);
+        }
+
+        private static void CaptureScene(
+            string scenePath,
+            string outputPath)
+        {
+            Scene scene = EditorSceneManager.OpenScene(
+                scenePath,
                 OpenSceneMode.Single);
 
             GreyboxMapDefinition map = null;
@@ -102,7 +127,7 @@ namespace PawsAndLoot.Editor
             UnityEngine.Rendering.GraphicsSettings
                 .lightsUseColorTemperature = previousColorTemperature;
 
-            string full = Path.GetFullPath(OutputPath);
+            string full = Path.GetFullPath(outputPath);
             Directory.CreateDirectory(Path.GetDirectoryName(full));
             File.WriteAllBytes(full, image.EncodeToPNG());
             Object.DestroyImmediate(image);

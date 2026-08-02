@@ -14,34 +14,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Audio.GameSoundBank
   entries:
   - soundId: 1
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 5a05262802fa95745a511ee3dcb92788, type: 3}
     volume: 1
   - soundId: 2
-    clip: {fileID: 0}
-    volume: 1
+    clip: {fileID: 8300000, guid: 23060b1d1fb743342aa501972e93d57a, type: 3}
+    volume: 0.6
   - soundId: 3
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 7cfae28e237967b428cb5eb48b9e2fd7, type: 3}
     volume: 1
   - soundId: 4
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: f899900e70901a14b90c34c5b341bf53, type: 3}
     volume: 1
   - soundId: 5
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: b11950042f30f1543844d3386b7fbca9, type: 3}
     volume: 1
   - soundId: 6
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: ec3ae2f395640754f941d0c92a7d0e00, type: 3}
     volume: 1
   - soundId: 7
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: fe2e7cd3ca6d4a546b958cb4c36c5d82, type: 3}
     volume: 1
   - soundId: 8
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 72922b5756638754a88f7b068968e32f, type: 3}
     volume: 1
   - soundId: 9
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 5ab51f7ad66068b488c454c7bcbd7bb3, type: 3}
     volume: 1
   - soundId: 10
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: f1cc79636e4f49c4e984a0c367786e09, type: 3}
     volume: 1
   musicVolume: 0.35
   musicTrack: {fileID: 0}

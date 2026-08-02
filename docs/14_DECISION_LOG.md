@@ -490,3 +490,23 @@
 - Gateway and Ollama processes are stopped only when Unity started them.
 - Models and runtime binaries are installation artifacts, not Git-tracked
   source files.
+
+## DEC-032. 경찰 승리는 체포 3회, 도둑은 판매 1,000골드
+
+- Context: 체포 1회가 즉시 승리였다. 4분짜리 경기가 30초 만에 끝날 수 있었고,
+  도둑은 한 번의 실수를 복구할 방법이 없었다.
+- Decision: 경찰은 체포 3회, 도둑은 누적 판매 1,000골드. 시간 만료는 경찰 승리.
+  체포 1회는 경찰서 11초 구금 후 도둑 스폰에 재배치.
+- Alternative rejected: 모든 것을 골드로 환산해 제한시간 후 점수를 비교하는 안.
+  경찰이 도둑의 돈 절반을 가져가는 구조에서는 **도둑이 가장 부유할 때 잡는 것이
+  최적**이 되어 초반에 쫓지 않는 것이 이득이 된다. 추격 게임에서 "쫓지 않는 것이
+  최적"은 게임을 망가뜨린다. 또한 `PoliceWallet`이 장비 구매용이라 점수와 겸하면
+  손전등을 사는 것이 자기 점수를 깎는 행위가 된다.
+- Constraint: 구금 시간은 아무도 플레이하지 않는 시간이므로 4~20초로 제한하고
+  기본 11초. 3회 x 20초면 4분의 1분을 구경에 쓰게 된다.
+- Consequence: 체포 중복 제거의 책임이 `MatchResultArbiter`에서
+  `ArrestCompletionController`로 옮겨갔다. 판정기는 이제 호출마다 세야 하므로,
+  한 번의 체포가 두 번 세어지는 것은 래치를 가진 호출자가 막는다. 그 래치는
+  타이머가 아니라 **석방 시점**에 풀린다 — 석방이 다시 잡힐 수 있게 되는 시점이다.
+- Still open: 클라이언트 HUD의 체포 횟수와 구금 카운트다운은 복제되지 않는다.
+  판정 결과는 호스트가 정해 복제하므로 승패에는 영향이 없다.

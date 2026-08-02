@@ -138,6 +138,18 @@ namespace PawsAndLoot.Gameplay.Map
         [SerializeField, Min(1f)]
         private float mapDepthMeters = 44f;
 
+        /// <summary>
+        /// Whether this map was built without the village's environment content.
+        ///
+        /// MAP-002 is a bare greybox: roads, blocks and a coordinate grid, and none
+        /// of the destinations, pickups or hiding places <c>Game.unity</c> carries. A
+        /// map with no locations is otherwise indistinguishable from one whose builder
+        /// failed halfway, so the builder says which it is rather than leaving the
+        /// validator to guess from an empty list.
+        /// </summary>
+        [SerializeField]
+        private bool environmentContentCleared;
+
         [Header("Required Locations")]
         [SerializeField]
         private List<GreyboxLocationReference> locations = new();
@@ -163,6 +175,29 @@ namespace PawsAndLoot.Gameplay.Map
         public IReadOnlyList<Transform> Rooftops => rooftops;
         public IReadOnlyList<Transform> Ladders => ladders;
         public IReadOnlyList<Transform> TrashBins => trashBins;
+        public bool EnvironmentContentCleared => environmentContentCleared;
+
+        /// <summary>
+        /// Sets the ground size without touching the location and route lists.
+        ///
+        /// <see cref="Configure"/> replaces everything at once, which is what the
+        /// village builder wants. A map that has no locations to configure still has
+        /// a size, and passing empty lists to say so would clear anything a later
+        /// pass had already put there.
+        /// </summary>
+        public void ResizeDimensions(float widthMeters, float depthMeters)
+        {
+            mapWidthMeters = Mathf.Max(1f, widthMeters);
+            mapDepthMeters = Mathf.Max(1f, depthMeters);
+        }
+
+        /// <summary>
+        /// Records that this map deliberately carries no environment content.
+        /// </summary>
+        public void MarkEnvironmentContentCleared()
+        {
+            environmentContentCleared = true;
+        }
 
         public void Configure(
             float widthMeters,
@@ -233,6 +268,18 @@ namespace PawsAndLoot.Gameplay.Map
             {
                 throw new InvalidOperationException(
                     "Greybox map dimensions must be positive.");
+            }
+
+            // Everything below this line describes the village: its six destinations,
+            // its rooftops and ladders, and the routes between them. A map that was
+            // built without that content has none of it to check, and demanding three
+            // rooftops of a bare greybox only reports that it is bare — which is what
+            // it was asked to be.
+            //
+            // The size is still checked, because every map has one.
+            if (environmentContentCleared)
+            {
+                return;
             }
 
             ValidateLocations();

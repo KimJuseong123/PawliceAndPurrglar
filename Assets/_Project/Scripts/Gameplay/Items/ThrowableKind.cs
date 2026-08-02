@@ -1,3 +1,4 @@
+using PawsAndLoot.Companions;
 using PawsAndLoot.Gameplay.Players;
 
 namespace PawsAndLoot.Gameplay.Items
@@ -39,11 +40,45 @@ namespace PawsAndLoot.Gameplay.Items
         /// corridor sensor light every apartment block has — at night a light is
         /// worth more than an alarm, because the officer already cannot see.
         /// </summary>
-        SensorLight = 3
-        ,Bone = 4
-        ,TunaCan = 5
-        ,RubberChicken = 6
-        ,NoiseCan = 7
+        SensorLight = 3,
+
+        /// <summary>
+        /// Police. Placed on the ground; the thief's cat goes to it and stays.
+        /// The cat scouts and steals, so pulling it away denies information —
+        /// which is what the officer's props are for.
+        /// </summary>
+        TunaCan = 4,
+
+        /// <summary>
+        /// Thief. Placed on the ground; the police's dog goes to it and stays.
+        /// The dog tracks, so pulling it away buys seconds — which is what the
+        /// thief's props are for.
+        /// </summary>
+        DogTreat = 5,
+
+        /// <summary>
+        /// Nobody's. Placed on the ground; squawks when anybody walks near and
+        /// does nothing else at all.
+        ///
+        /// The only prop that belongs to neither side, because it is the only
+        /// one that does not favour anybody: a sound pulls attention to a place
+        /// regardless of who is standing there, and both players want that for
+        /// opposite reasons. The officer wants a doorway that tells; the thief
+        /// wants a corridor that lies.
+        /// </summary>
+        RubberChicken = 6,
+
+        /// <summary>
+        /// Thief. Placed on the ground; goes off by itself after a few seconds
+        /// with a bang everyone hears.
+        ///
+        /// The only prop on a fuse rather than a tripwire, which is the whole
+        /// point of it — a trap waits for somebody to make a mistake, and a
+        /// firework happens whether or not anybody obliges. That is what makes
+        /// it worth planning around and what makes it cost the thief their own
+        /// position when they set it.
+        /// </summary>
+        Firework = 7
     }
 
     /// <summary>
@@ -72,7 +107,26 @@ namespace PawsAndLoot.Gameplay.Items
         /// Makes them visible for a while and does not slow them at all. The
         /// thief keeps running — they just do it in the open.
         /// </summary>
-        Reveal = 1
+        Reveal = 1,
+
+        /// <summary>
+        /// Pulls the opponent's animal to the spot and keeps it there.
+        ///
+        /// Applies to the animal, never to a player, and it is the only effect
+        /// that fires on being placed rather than on being trodden on: a smell
+        /// that only works if the dog happens to step on it is not a lure.
+        /// </summary>
+        Lure = 2,
+
+        /// <summary>
+        /// Makes a sound where it stands and nothing else.
+        ///
+        /// Nobody is stopped, nobody is slowed, nobody loses anything. It goes
+        /// on the noise board and the animals and the screen do what they like
+        /// with it — which means it works on the player who set it off too, and
+        /// that is not a flaw in it.
+        /// </summary>
+        Noise = 3
     }
 
     public readonly struct ThrowableLoadoutItem
@@ -111,6 +165,35 @@ namespace PawsAndLoot.Gameplay.Items
         /// end of the run.
         /// </summary>
         public const float RevealSeconds = 2.5f;
+
+        /// <summary>
+        /// How long an animal stays with the food.
+        ///
+        /// Four seconds is a corner and a half at a run. Long enough that
+        /// losing the dog matters, short enough that the officer is not simply
+        /// without a dog for the rest of the chase — the props buy a moment,
+        /// they do not remove a character.
+        /// </summary>
+        public const float LureSeconds = 4f;
+
+        /// <summary>
+        /// How far a bang carries.
+        ///
+        /// Deliberately larger than the torch's 17 m reach: hearing something
+        /// should reach further than seeing it, or a noise prop is only ever a
+        /// worse torch. Large enough to cross a block, small enough that half
+        /// the town does not turn round.
+        /// </summary>
+        public const float NoiseRadiusMeters = 22f;
+
+        /// <summary>
+        /// How long a firework sits before it goes off.
+        ///
+        /// Long enough to walk away from and short enough to plan around. Under
+        /// about two seconds the thief cannot be anywhere else when it fires,
+        /// which is the only reason to place one.
+        /// </summary>
+        public const float FireworkFuseSeconds = 2.5f;
 
         /// <summary>
         /// How far a thrown prop travels before it drops. Short on purpose:
@@ -166,20 +249,46 @@ namespace PawsAndLoot.Gameplay.Items
             {
                 ThrowableKind.Banana =>
                     PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                ThrowableKind.DogTreat =>
+                    PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                ThrowableKind.TunaCan =>
+                    PawsAndLoot.Gameplay.Players.PlayerRole.Police,
                 ThrowableKind.GlueTrap =>
                     PawsAndLoot.Gameplay.Players.PlayerRole.Police,
                 ThrowableKind.SensorLight =>
                     PawsAndLoot.Gameplay.Players.PlayerRole.Police,
-                // A rock in the street is nobody's.
+                ThrowableKind.Firework =>
+                    PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                // A rock in the street is nobody's, and neither is a rubber
+                // chicken on a supermarket shelf.
                 _ => null
             };
         }
 
         public static TrapEffect GetEffect(ThrowableKind kind)
         {
-            return kind == ThrowableKind.SensorLight
-                ? TrapEffect.Reveal
-                : TrapEffect.Hold;
+            return kind switch
+            {
+                ThrowableKind.SensorLight => TrapEffect.Reveal,
+                ThrowableKind.TunaCan => TrapEffect.Lure,
+                ThrowableKind.DogTreat => TrapEffect.Lure,
+                ThrowableKind.RubberChicken => TrapEffect.Noise,
+                ThrowableKind.Firework => TrapEffect.Noise,
+                _ => TrapEffect.Hold
+            };
+        }
+
+        /// <summary>
+        /// Which animal a lure calls. Null for everything that is not one.
+        /// </summary>
+        public static CompanionKind? GetLuredCompanion(ThrowableKind kind)
+        {
+            return kind switch
+            {
+                ThrowableKind.TunaCan => CompanionKind.Cat,
+                ThrowableKind.DogTreat => CompanionKind.Dog,
+                _ => null
+            };
         }
 
         public static float GetStunSeconds(ThrowableKind kind)
@@ -190,6 +299,15 @@ namespace PawsAndLoot.Gameplay.Items
                 ThrowableKind.GlueTrap => GlueHoldSeconds,
                 // A sensor light does not slow anybody down. It only tells.
                 ThrowableKind.SensorLight => 0f,
+                // Food does nothing to a person. Stepping over a tuna can is
+                // stepping over a tuna can.
+                ThrowableKind.TunaCan => 0f,
+                ThrowableKind.DogTreat => 0f,
+                // Noise does nothing to a body. Being startled is not being
+                // held, and a squawk that also stopped you would quietly be the
+                // best trap in the game.
+                ThrowableKind.RubberChicken => 0f,
+                ThrowableKind.Firework => 0f,
                 _ => RockStunSeconds
             };
         }
@@ -203,7 +321,40 @@ namespace PawsAndLoot.Gameplay.Items
         /// </summary>
         public static float GetTriggerRadius(ThrowableKind kind)
         {
-            return kind == ThrowableKind.SensorLight ? 3.2f : 0.85f;
+            return kind switch
+            {
+                ThrowableKind.SensorLight => 3.2f,
+                // Wider than something underfoot. A chicken you have to tread
+                // on exactly is a chicken that never squawks, and the point of
+                // it is to notice somebody passing rather than to catch them.
+                ThrowableKind.RubberChicken => 2.4f,
+                _ => 0.85f
+            };
+        }
+
+        /// <summary>
+        /// How long a prop waits before going off on its own, or zero if it
+        /// waits to be trodden on instead.
+        ///
+        /// Asked of every prop rather than of the firework specifically, so the
+        /// trap loop has one question to ask and adding a second timed prop does
+        /// not add a branch to it.
+        /// </summary>
+        public static float GetFuseSeconds(ThrowableKind kind)
+        {
+            return kind == ThrowableKind.Firework
+                ? FireworkFuseSeconds
+                : 0f;
+        }
+
+        /// <summary>
+        /// How far this prop's noise carries, or zero if it makes none.
+        /// </summary>
+        public static float GetNoiseRadius(ThrowableKind kind)
+        {
+            return GetEffect(kind) == TrapEffect.Noise
+                ? NoiseRadiusMeters
+                : 0f;
         }
 
         public static float GetThrowHitRadius(
@@ -255,6 +406,10 @@ namespace PawsAndLoot.Gameplay.Items
                 ThrowableKind.Banana => "바나나",
                 ThrowableKind.GlueTrap => "끈끈이",
                 ThrowableKind.SensorLight => "센서등",
+                ThrowableKind.TunaCan => "참치캔",
+                ThrowableKind.DogTreat => "개껌",
+                ThrowableKind.RubberChicken => "고무닭",
+                ThrowableKind.Firework => "폭죽",
                 _ => "돌"
             };
         }

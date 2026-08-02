@@ -29,6 +29,7 @@ namespace PawsAndLoot.Gameplay.Items
         private PlayerRole _placedBy;
         private ThrowableKind _kind;
         private bool _armed;
+        private float _fuseRemaining;
 
         /// <summary>
         /// Raised on the host when the trap catches somebody. The caller applies
@@ -37,6 +38,15 @@ namespace PawsAndLoot.Gameplay.Items
         public event Action<PlacedTrap, PlayerRoleIdentity> Triggered;
 
         public bool IsArmed => _armed;
+
+        /// <summary>
+        /// Whether this one goes off by itself rather than waiting to be
+        /// trodden on.
+        /// </summary>
+        public bool HasFuse =>
+            ThrowableCatalog.GetFuseSeconds(_kind) > 0f;
+
+        public float FuseRemainingSeconds => _fuseRemaining;
         public PlayerRole PlacedBy => _placedBy;
         public ThrowableKind Kind => _kind;
 
@@ -63,6 +73,7 @@ namespace PawsAndLoot.Gameplay.Items
             _matchState = configuredMatchState;
             matchStateSource = configuredMatchState as MonoBehaviour;
             _armed = true;
+            _fuseRemaining = ThrowableCatalog.GetFuseSeconds(kind);
         }
 
         public void Disarm()
@@ -71,12 +82,51 @@ namespace PawsAndLoot.Gameplay.Items
         }
 
         /// <summary>
+        /// Burns the fuse down and reports the one frame it reaches zero.
+        ///
+        /// A fuse does not care whether anybody came near, which is the whole
+        /// difference between a firework and a trap: a trap is a bet that
+        /// somebody will make a mistake, and a firework is a thing that happens.
+        ///
+        /// Stepped by the caller rather than by Update so the host is the only
+        /// machine burning it and a test can run it without waiting.
+        /// </summary>
+        public bool TickFuse(float deltaTime)
+        {
+            if (!_armed
+                || !HasFuse
+                || deltaTime <= 0f
+                || ResolveMatchState()?.IsGameplayActive != true)
+            {
+                return false;
+            }
+
+            _fuseRemaining -= deltaTime;
+            if (_fuseRemaining > 0f)
+            {
+                return false;
+            }
+
+            _armed = false;
+            GameLogger.Info(
+                GameLogCategory.Player,
+                $"{_kind} placed by {_placedBy} went off.",
+                this);
+            Triggered?.Invoke(this, null);
+            return true;
+        }
+
+        /// <summary>
         /// Host-side check. Separated from Update so a test can step it without
         /// waiting on frames.
         /// </summary>
         public PlayerRoleIdentity FindVictim()
         {
+            // A fuse prop has no victim to find. Asking anyway would let a
+            // firework fire early because somebody walked past it, which is the
+            // one thing it is not supposed to do.
             if (!_armed
+                || HasFuse
                 || ResolveMatchState()?.IsGameplayActive != true)
             {
                 return null;

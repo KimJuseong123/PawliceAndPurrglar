@@ -68,7 +68,7 @@ namespace PawsAndLoot.Gameplay.Items
         {
             return kind switch
             {
-                ThrowableKind.Bone => new ThrowableEffectProfile(
+                ThrowableKind.DogTreat => new ThrowableEffectProfile(
                     ThrowableEffectTarget.Dog,
                     ThrowableActivationType.DirectHit
                         | ThrowableActivationType.Landing,
@@ -92,7 +92,7 @@ namespace PawsAndLoot.Gameplay.Items
                     5f,
                     3f,
                     4f),
-                ThrowableKind.NoiseCan => new ThrowableEffectProfile(
+                ThrowableKind.Firework => new ThrowableEffectProfile(
                     ThrowableEffectTarget.Human
                         | ThrowableEffectTarget.Dog
                         | ThrowableEffectTarget.Cat,
@@ -137,7 +137,7 @@ namespace PawsAndLoot.Gameplay.Items
                 }
             }
 
-            if (kind == ThrowableKind.NoiseCan)
+            if (kind == ThrowableKind.Firework)
             {
                 ApplyNoise(victim.transform.position, profile);
             }

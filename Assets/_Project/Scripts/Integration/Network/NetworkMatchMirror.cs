@@ -33,16 +33,38 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
 
+        /// <summary>
+        /// The decided result, sent rather than recomputed.
+        ///
+        /// Both machines used to work this out for themselves and happened to
+        /// agree, because one arrest ended the match and the arrest itself
+        /// replicates. With three arrests they stopped agreeing: the client
+        /// counts catches from replicated arrest progress but the release that
+        /// re-arms the next one is a host-side timer, so its count stalls and
+        /// the match never ends on its screen. The thief was told NO MATCH
+        /// RESULT while the host showed a winner.
+        ///
+        /// Two machines independently reaching the same verdict is not a rule
+        /// this project makes anywhere else, and this is why.
+        /// </summary>
         [SerializeField]
         private MatchRuntimeState matchRuntime;
+
+        [SerializeField]
+        private MatchResultEvaluator evaluator;
+
+        private bool _appliedRemoteResult;
 
         public MatchState ReplicatedState => (MatchState)_state.Value;
         public float ReplicatedRemainingSeconds => _remainingSeconds.Value;
         public float ReplicatedCountdownSeconds => _countdownSeconds.Value;
 
-        public void Configure(MatchRuntimeState runtime)
+        public void Configure(
+            MatchRuntimeState runtime,
+            MatchResultEvaluator configuredEvaluator = null)
         {
             matchRuntime = runtime;
+            evaluator = configuredEvaluator;
         }
 
         private void Awake()
@@ -68,6 +90,32 @@ namespace PawsAndLoot.Integration.Network
             // A client must not simulate the match at all, otherwise two clocks
             // drift apart and the two screens disagree.
             matchRuntime.SetRemoteControlled(!IsServer);
+
+            if (evaluator == null)
+            {
+                evaluator = FindFirstObjectByType<MatchResultEvaluator>();
+            }
+
+            evaluator?.SetAuthority(IsServer);
+
+            // The animals are scene objects with no link of their own, so their
+            // authority is set from the one component that knows whether this
+            // machine is the host.
+            foreach (PawsAndLoot.Companions.CompanionLure lure in
+                FindObjectsByType<PawsAndLoot.Companions.CompanionLure>(
+                    FindObjectsSortMode.None))
+            {
+                lure.SetAuthority(IsServer);
+            }
+
+            // Published the instant it is decided, not on the next Update.
+            //
+            // This component lives in the match scene, and deciding a winner
+            // starts that scene unloading. Waiting for the next frame is a race
+            // against the mirror's own destruction: the host would reach the
+            // result screen while the client sat in Playing forever, which is
+            // exactly the "NO MATCH RESULT" the replication was added to fix.
+
         }
 
         private void Update()

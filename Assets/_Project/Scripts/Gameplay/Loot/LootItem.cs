@@ -114,7 +114,20 @@ namespace PawsAndLoot.Gameplay.Loot
 
             LootCarrier carrier =
                 context.Player.GetComponent<LootCarrier>();
-            return carrier != null && carrier.TryAcquire(this);
+            if (carrier == null)
+            {
+                return false;
+            }
+
+            // Through the timer if the thief has one. Without it the old
+            // instant grab still works, which keeps every test and every tool
+            // that builds a bare carrier honest rather than silently unable to
+            // steal.
+            var progress =
+                context.Player.GetComponent<LootPickupProgress>();
+            return progress != null
+                ? progress.Request(this)
+                : carrier.TryAcquire(this);
         }
 
         internal bool TryAcquire(
