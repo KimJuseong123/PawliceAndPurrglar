@@ -78,7 +78,24 @@ namespace PawsAndLoot.Gameplay.Items
         /// it worth planning around and what makes it cost the thief their own
         /// position when they set it.
         /// </summary>
-        Firework = 7
+        Firework = 7,
+
+        /// <summary>
+        /// Thief. Thrown at a player; sticks to their face.
+        ///
+        /// Deliberately not a second rock. The rock takes time away, and
+        /// another prop that also took time away would be the same prop with a
+        /// different model. This takes sight instead — the victim keeps every
+        /// bit of their speed and loses the ability to see where they are
+        /// spending it.
+        ///
+        /// That makes it the only prop whose worth depends on where it lands.
+        /// Blinded in an open square you shrug and keep running; blinded at a
+        /// junction you have to guess. Nothing else in the set pays for timing
+        /// that way, and it is rare because it is the strongest thing the thief
+        /// can do to somebody who is already looking at them.
+        /// </summary>
+        FrozenOctopus = 8
     }
 
     /// <summary>
@@ -126,7 +143,16 @@ namespace PawsAndLoot.Gameplay.Items
         /// with it — which means it works on the player who set it off too, and
         /// that is not a flaw in it.
         /// </summary>
-        Noise = 3
+        Noise = 3,
+
+        /// <summary>
+        /// Covers their eyes and leaves their legs alone.
+        ///
+        /// The one effect that costs information rather than time. A victim who
+        /// cannot see keeps every bit of their speed, which is why it is worth
+        /// having alongside a stun instead of being folded into one.
+        /// </summary>
+        Blind = 4
     }
 
     public readonly struct ThrowableLoadoutItem
@@ -196,6 +222,15 @@ namespace PawsAndLoot.Gameplay.Items
         public const float FireworkFuseSeconds = 2.5f;
 
         /// <summary>
+        /// How long the octopus stays on somebody's face.
+        ///
+        /// Longer than a stun, because it costs nothing but sight and a short
+        /// blindness is one you can stand still through. Short enough that it
+        /// is a corner, not a round.
+        /// </summary>
+        public const float BlindSeconds = 2.2f;
+
+        /// <summary>
         /// How far a thrown prop travels before it drops. Short on purpose:
         /// a rock that crosses the map would make the chase a shooting range.
         ///
@@ -233,7 +268,7 @@ namespace PawsAndLoot.Gameplay.Items
 
         public static ThrowableUse GetUse(ThrowableKind kind)
         {
-            return kind == ThrowableKind.Rock
+            return kind is ThrowableKind.Rock or ThrowableKind.FrozenOctopus
                 ? ThrowableUse.Thrown
                 : ThrowableUse.Placed;
         }
@@ -259,6 +294,8 @@ namespace PawsAndLoot.Gameplay.Items
                     PawsAndLoot.Gameplay.Players.PlayerRole.Police,
                 ThrowableKind.Firework =>
                     PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                ThrowableKind.FrozenOctopus =>
+                    PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
                 // A rock in the street is nobody's, and neither is a rubber
                 // chicken on a supermarket shelf.
                 _ => null
@@ -274,6 +311,7 @@ namespace PawsAndLoot.Gameplay.Items
                 ThrowableKind.DogTreat => TrapEffect.Lure,
                 ThrowableKind.RubberChicken => TrapEffect.Noise,
                 ThrowableKind.Firework => TrapEffect.Noise,
+                ThrowableKind.FrozenOctopus => TrapEffect.Blind,
                 _ => TrapEffect.Hold
             };
         }
@@ -308,6 +346,10 @@ namespace PawsAndLoot.Gameplay.Items
                 // best trap in the game.
                 ThrowableKind.RubberChicken => 0f,
                 ThrowableKind.Firework => 0f,
+                // It does not hold anybody. That is the rock's job, and giving
+                // it away twice would leave the thief with two of the same
+                // prop.
+                ThrowableKind.FrozenOctopus => 0f,
                 _ => RockStunSeconds
             };
         }
@@ -345,6 +387,15 @@ namespace PawsAndLoot.Gameplay.Items
             return kind == ThrowableKind.Firework
                 ? FireworkFuseSeconds
                 : 0f;
+        }
+
+        /// <summary>
+        /// How long this prop blinds whoever it lands on, or zero if it does
+        /// not.
+        /// </summary>
+        public static float GetBlindSeconds(ThrowableKind kind)
+        {
+            return kind == ThrowableKind.FrozenOctopus ? BlindSeconds : 0f;
         }
 
         /// <summary>
@@ -410,6 +461,7 @@ namespace PawsAndLoot.Gameplay.Items
                 ThrowableKind.DogTreat => "개껌",
                 ThrowableKind.RubberChicken => "고무닭",
                 ThrowableKind.Firework => "폭죽",
+                ThrowableKind.FrozenOctopus => "냉동 문어",
                 _ => "돌"
             };
         }

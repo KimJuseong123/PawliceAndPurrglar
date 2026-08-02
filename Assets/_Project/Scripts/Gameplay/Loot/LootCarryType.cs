@@ -93,6 +93,31 @@ namespace PawsAndLoot.Gameplay.Loot
             };
         }
 
+        /// <summary>
+        /// How far the sound of dropping it carries.
+        ///
+        /// Derived from the carry type rather than written per piece, because
+        /// it is the same fact seen from another side: what makes a gold bar
+        /// slow to run with is what makes it loud when it hits the pavement. A
+        /// watch in a pocket makes no sound worth hearing and gets nothing.
+        ///
+        /// This is what gives the officer a reason to chase noise rather than
+        /// only sightlines, and it gives the thief a reason to think before
+        /// dropping the heavy thing to run — the drop that saves them is the
+        /// drop that says where they are.
+        /// </summary>
+        public static float DropNoiseRadius(LootCarryType carryType)
+        {
+            return carryType switch
+            {
+                LootCarryType.Pocket => 0f,
+                LootCarryType.OneHand => 9f,
+                LootCarryType.TwoHand => 17f,
+                LootCarryType.Bulky => 26f,
+                _ => 9f
+            };
+        }
+
         public static string DisplayName(LootCarryType carryType)
         {
             return carryType switch

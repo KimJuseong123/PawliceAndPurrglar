@@ -137,7 +137,39 @@ namespace PawsAndLoot.Gameplay.Loot
 
             HeldLoot = null;
             HeldLootChanged?.Invoke(previous, null);
+            ReportDropNoise(previous, dropPosition);
             return true;
+        }
+
+        /// <summary>
+        /// Tells the town that something heavy just hit the ground.
+        ///
+        /// Only for things heavy enough to be heard. A pocket piece gets a
+        /// radius of zero and nothing is written down — an event nobody could
+        /// act on is worse than no event, because it teaches the officer to
+        /// ignore the one signal that matters.
+        ///
+        /// Reported on the drop rather than on the pickup, because dropping is
+        /// the moment the thief chooses. Picking a thing up is something they
+        /// did quietly on purpose; putting it down to run is a decision with a
+        /// price, and this is the price.
+        /// </summary>
+        private void ReportDropNoise(LootItem dropped, Vector3 at)
+        {
+            if (dropped?.Definition == null)
+            {
+                return;
+            }
+
+            float radius = LootCarryRules.DropNoiseRadius(
+                dropped.Definition.CarryType);
+            if (radius <= 0f)
+            {
+                return;
+            }
+
+            FindFirstObjectByType<PawsAndLoot.Gameplay.Sensing.NoiseBoard>()
+                ?.Report(at, radius, identity == null ? null : identity.Role);
         }
 
         /// <summary>

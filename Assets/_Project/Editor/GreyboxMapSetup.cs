@@ -2697,6 +2697,11 @@ namespace PawsAndLoot.Editor
             // picking up a rock never costs the thief their jewels.
             player.AddComponent<PawsAndLoot.Gameplay.Players.StunState>();
 
+            // What the octopus lands on. Separate from the stun because the two
+            // stack and mean different things — held still and able to see, or
+            // running blind, or both.
+            player.AddComponent<PawsAndLoot.Gameplay.Players.BlindedState>();
+
             // MAP-008. Which house this player is inside, if any. Read by the
             // doorway, the indoor camera and the dog's report.
             player.AddComponent<PlayerInteriorState>();
@@ -3407,7 +3412,11 @@ namespace PawsAndLoot.Editor
                 // else, so there is no advantage in it to hand to one side, and
                 // both players want it for opposite reasons.
                 (ThrowableKind.RubberChicken, new Vector3(6.6f, 0f, 0f),
-                    new Color(0.98f, 0.82f, 0.2f), null)
+                    new Color(0.98f, 0.82f, 0.2f), null),
+                // One of them, and the thief's. It is the strongest thing they
+                // can do to somebody already looking at them, so it is rare.
+                (ThrowableKind.FrozenOctopus, new Vector3(8.8f, 0f, 0f),
+                    new Color(0.72f, 0.42f, 0.6f), PlayerRole.Thief)
             };
 
             int id = 101;
