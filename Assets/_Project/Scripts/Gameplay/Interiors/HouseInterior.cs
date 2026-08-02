@@ -88,6 +88,23 @@ namespace PawsAndLoot.Gameplay.Interiors
         public Vector3 EntryPosition => EntryPositionFor(HouseDoorSide.Front);
         public Vector3 ExitPosition => ExitPositionFor(HouseDoorSide.Front);
 
+        /// <summary>
+        /// Which way a player faces on arriving inside.
+        ///
+        /// Taken from the entry marker, which the generator turns to look at
+        /// the far wall. It used to be left to whatever the player happened to
+        /// be facing in the street, so the same door gave a different view
+        /// every time and the room had to be found again on each visit.
+        /// </summary>
+        public Quaternion EntryFacingFor(HouseDoorSide side)
+        {
+            Transform point = side == HouseDoorSide.Back
+                ? backEntryPoint
+                : frontEntryPoint;
+            point ??= frontEntryPoint;
+            return point != null ? point.rotation : transform.rotation;
+        }
+
         public Vector3 EntryPositionFor(HouseDoorSide side)
         {
             Transform point = side == HouseDoorSide.Back

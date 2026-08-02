@@ -273,24 +273,14 @@ namespace PawsAndLoot.Gameplay.Camera
                 + lookOffset
                 - rotation * Vector3.forward * distance;
 
-            if (!_hasRoom)
-            {
-                return wanted;
-            }
-
-            // Pulled back inside the walls. Height is left alone: the camera is
-            // meant to be above the wall tops looking down, and the wall height
-            // is chosen to keep it under the ceiling that is not there.
-            return new Vector3(
-                Mathf.Clamp(
-                    wanted.x,
-                    _room.min.x + WallStandoff,
-                    _room.max.x - WallStandoff),
-                wanted.y,
-                Mathf.Clamp(
-                    wanted.z,
-                    _room.min.z + WallStandoff,
-                    _room.max.z - WallStandoff));
+            // Not clamped to the room any more.
+            //
+            // Keeping the camera inside the walls did stop them coming between
+            // it and the player, but it did it by dragging the camera in and
+            // down until the view was a cupboard. A room you cannot see across
+            // is worse than a wall you occasionally see through. The wall is
+            // dealt with by not drawing it, not by moving the camera.
+            return wanted;
         }
 
         /// <summary>

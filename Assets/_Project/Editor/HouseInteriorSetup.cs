@@ -118,7 +118,7 @@ namespace PawsAndLoot.Editor
         {
             { "interior_bookstore", new Vector2(0.528f, 0.207f) },
             { "interior_house02", new Vector2(0.552f, 0.292f) },
-            { "interior_house03", new Vector2(0.645f, 0.260f) },
+            { "interior_house03", new Vector2(0.688f, 0.312f) },
             { "interior_jewelry", new Vector2(0.463f, 0.169f) },
             { "interior_supermarket", new Vector2(0.448f, 0.178f) }
         };

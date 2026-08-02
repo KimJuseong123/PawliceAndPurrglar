@@ -65,8 +65,24 @@ namespace PawsAndLoot.Gameplay.Interiors
         /// </summary>
         private const float IndoorStepOffset = 0.25f;
 
+        /// <summary>
+        /// How wide the character is indoors, as a radius in metres.
+        ///
+        /// Outdoors they are 0.45 across the radius, which is nine tenths of a
+        /// metre of shoulder plus the controller's skin. Interior doorways are
+        /// drawn about a metre and a quarter wide and the coarse collision copy
+        /// of a wall bulges into that, so a doorway that is plainly open on
+        /// screen is one nobody can walk through — which is exactly what was
+        /// reported of the bookstore.
+        ///
+        /// Narrowing indoors is the honest fix for a character built for
+        /// streets being asked to use domestic doors. Nothing outdoors changes.
+        /// </summary>
+        private const float IndoorRadius = 0.3f;
+
         private CharacterController _controller;
         private float _outdoorStepOffset = -1f;
+        private float _outdoorRadius = -1f;
 
         private void Awake()
         {
@@ -74,6 +90,7 @@ namespace PawsAndLoot.Gameplay.Interiors
             if (_controller != null)
             {
                 _outdoorStepOffset = _controller.stepOffset;
+                _outdoorRadius = _controller.radius;
             }
         }
 
@@ -94,6 +111,13 @@ namespace PawsAndLoot.Gameplay.Interiors
             _controller.stepOffset = IsIndoors
                 ? Mathf.Min(IndoorStepOffset, _outdoorStepOffset)
                 : _outdoorStepOffset;
+
+            if (_outdoorRadius > 0f)
+            {
+                _controller.radius = IsIndoors
+                    ? Mathf.Min(IndoorRadius, _outdoorRadius)
+                    : _outdoorRadius;
+            }
         }
 
         /// <summary>
