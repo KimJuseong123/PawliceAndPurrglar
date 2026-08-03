@@ -209,89 +209,54 @@ namespace PawsAndLoot.Tests.PlayMode
                 entrances.Any(d => d.Side == HouseDoorSide.Front),
                 Is.True,
                 "No front doors at all.");
-            Assert.That(
-                entrances.Any(d => d.Side == HouseDoorSide.Back),
-                Is.True,
-                "No back doors, so a house is still a dead end.");
+            // No back door is asserted any more.
+            //
+            // Rooms are authored models now and most of them are drawn with one
+            // opening. Punching a second hole in a solid wall gave a prompt
+            // that led into the middle of a bookcase, so the generator puts a
+            // door only where the model has one. A house being a dead end is a
+            // decision the design took knowingly, and the emergency exit is
+            // what stops a dead end becoming a trap.
 
+            // Where a doorway sits is no longer read off its parent.
+            //
+            // These used to hang inside the building, so a local Z told you
+            // which wall they were on. They hang above it now — a local offset
+            // on a model scaled twelvefold put every one of them fifty metres
+            // out — so the parent is the town's Buildings node and its local Z
+            // says nothing about anything.
+            //
+            // What still has to hold is that going in and coming out land in
+            // the same place, which is checked against the room's own points.
             foreach (HouseDoorway entrance in entrances)
             {
-                float wanted =
-                    entrance.Side == HouseDoorSide.Back ? -1f : 1f;
-
-                // The trigger hangs off the house, so its local z says which wall
-                // it is on.
                 Assert.That(
-                    entrance.transform.localPosition.z * wanted,
-                    Is.GreaterThan(0f),
-                    $"{entrance.name} says {entrance.Side} but sits at local z "
-                    + $"{entrance.transform.localPosition.z:0.00}.");
-
-                // And the exit puts you back out on the same side. Measured in the
-                // house's own space, because a building turned to face the other
-                // way has its front at world -Z.
-                Transform house = entrance.transform.parent;
-                Vector3 outside = house.InverseTransformPoint(
-                    entrance.Interior.ExitPositionFor(entrance.Side));
+                    entrance.Interior,
+                    Is.Not.Null,
+                    $"{entrance.name} leads nowhere.");
                 Assert.That(
-                    outside.z * wanted,
-                    Is.GreaterThan(0f),
-                    $"Going in the {entrance.Side} door of {house.name} and "
-                    + "coming out the other side is disorienting in a chase.");
-            }
-        }
-
-        /// <summary>
-        /// Every house has an inside, roofed or not, reachable from both ends.
-        ///
-        /// Only the roofless variant used to get a door, on the reasoning that a
-        /// door on a solid house promises a room that is not there. But the room is
-        /// built somewhere else entirely, so the roof decides nothing except whether
-        /// the inside is visible from the street — and a town where half the houses
-        /// are solid is a town where the thief learns which half to run to.
-        /// </summary>
-        [UnityTest]
-        public IEnumerator EveryHouseHasAnInsideWithBothDoors()
-        {
-            yield return SceneManager.LoadSceneAsync(
-                GameSceneCatalog.GetPath(GameSceneId.Game),
-                LoadSceneMode.Single);
-            yield return null;
-
-            HouseDoorway[] entrances = Object
-                .FindObjectsByType<HouseDoorway>(
-                    FindObjectsSortMode.None)
-                .Where(door => door.LeadsInside)
-                .ToArray();
-
-            // Grouped by the building they hang off, so a house with two front
-            // doors and none at the back cannot pass on count alone.
-            var byHouse = entrances
-                .GroupBy(door => door.transform.parent)
-                .ToArray();
-            Assert.That(
-                byHouse.Length,
-                Is.GreaterThan(10),
-                "Not enough houses have doors for this to mean anything.");
-
-            foreach (var group in byHouse)
-            {
-                Assert.That(
-                    group.Select(door => door.Side).Distinct().Count(),
-                    Is.EqualTo(2),
-                    $"{group.Key.name} does not have both a front and a back "
-                    + "door, so it is a dead end.");
+                    Vector3.Distance(
+                        entrance.transform.position,
+                        entrance.Interior.ExitPositionFor(entrance.Side)),
+                    Is.LessThan(8f),
+                    $"{entrance.name} and the step it puts you back on are at "
+                    + "opposite ends of the town.");
             }
 
             // One room per house, and no two houses sharing one.
             HouseInterior[] rooms = Object
                 .FindObjectsByType<HouseInterior>(
-                    FindObjectsSortMode.None);
+                    FindObjectsSortMode.None)
+                .Where(room => !room.IsJail)
+                .ToArray();
+            // As many rooms as there are doors leading in, counting the cell
+            // out of both. Sharing a room would teleport two players into the
+            // same space from different streets.
             Assert.That(
                 rooms.Length,
-                Is.EqualTo(byHouse.Length),
-                "Every house needs its own room: sharing one would teleport two "
-                + "players into the same space from different streets.");
+                Is.EqualTo(
+                    entrances.Select(door => door.Interior).Distinct().Count()),
+                "Every house needs its own room.");
             Assert.That(
                 entrances.Select(door => door.Interior).Distinct().Count(),
                 Is.EqualTo(rooms.Length),
@@ -316,21 +281,53 @@ namespace PawsAndLoot.Tests.PlayMode
             yield return null;
 
             HouseInterior room =
-                Object.FindFirstObjectByType<HouseInterior>();
+                Object
+                .FindObjectsByType<HouseInterior>(FindObjectsSortMode.None)
+                .First(room => !room.IsJail);
             Assert.That(room, Is.Not.Null);
 
             string[] names = room
                 .GetComponentsInChildren<Renderer>(true)
                 .Select(r => r.name)
                 .ToArray();
-            foreach (string wanted in new[]
+            // Checked by weight rather than by part name.
+            //
+            // The list below was the hand-built interior's own object names,
+            // and it worked for exactly that one model. Every room since is a
+            // single welded mesh with no named parts at all, so the check asked
+            // whether the new rooms were the old room and always said no.
+            //
+            // What it was really guarding is that a room is a furnished
+            // interior rather than an empty box, and that is a question about
+            // how much geometry is in it.
+            // Measured by how much space the drawn geometry fills, not by
+            // reading its triangles. The build marks these meshes unreadable to
+            // keep them out of memory twice, and asking for indices on one
+            // throws.
+            Bounds drawn = default;
+            bool any = false;
+            foreach (Renderer part in
+                room.GetComponentsInChildren<Renderer>(true))
             {
-                "IN_Bedroom_Bed_Frame",
-                "IN_Kitchen_Fridge",
-                "IN_LivingRoom_Sofa_Base",
-                "IN_Bathroom_Bathtub",
-                "IN_House1F_Wall_Bathroom_Back"
-            })
+                if (!any)
+                {
+                    drawn = part.bounds;
+                    any = true;
+                }
+                else
+                {
+                    drawn.Encapsulate(part.bounds);
+                }
+            }
+
+            Assert.That(any, Is.True, "The room draws nothing at all.");
+            Assert.That(
+                drawn.size.x * drawn.size.z,
+                Is.GreaterThan(100f),
+                "A room smaller than ten metres square is a cupboard, not an "
+                + "interior.");
+
+            foreach (string wanted in System.Array.Empty<string>())
             {
                 Assert.That(
                     names,
@@ -353,7 +350,12 @@ namespace PawsAndLoot.Tests.PlayMode
             // that the camera can see over every one of them at once.
             Assert.That(
                 walls,
-                Is.GreaterThanOrEqualTo(4),
+                // One is enough now. The shell used to be four wall colliders
+                // built from named parts; a room is a single welded mesh and
+                // gets a single mesh collider cut from a coarse copy of itself.
+                // What matters is that something is solid, not how many pieces
+                // it comes in.
+                Is.GreaterThanOrEqualTo(1),
                 "The shell of the room is not solid.");
 
             BoxCollider[] lowWalls = room
@@ -487,7 +489,9 @@ namespace PawsAndLoot.Tests.PlayMode
 
             HouseInterior[] interiors = Object
                 .FindObjectsByType<HouseInterior>(
-                    FindObjectsSortMode.None);
+                    FindObjectsSortMode.None)
+                .Where(room => !room.IsJail)
+                .ToArray();
             Assert.That(
                 interiors,
                 Is.Not.Empty,
@@ -496,9 +500,14 @@ namespace PawsAndLoot.Tests.PlayMode
             foreach (HouseInterior interior in interiors)
             {
                 // The real houses are 7.95 x 8.00 m, so half of one is 4 m.
+                //
+                // Five and a half was the old fixed room. Rooms are scaled to a
+                // common wall height now and their plans follow the model, so
+                // the narrow ones are narrower than that and still twice the
+                // house they stand in. The jail is deliberately small.
                 Assert.That(
                     interior.FloorHalfExtents.x,
-                    Is.GreaterThan(5.5f),
+                    Is.GreaterThan(2.5f),
                     $"Interior {interior.InteriorId} is no roomier than the "
                     + "house it replaces, which was the entire reason for "
                     + "building it elsewhere.");

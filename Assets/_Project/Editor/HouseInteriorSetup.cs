@@ -203,7 +203,8 @@ namespace PawsAndLoot.Editor
         /// The cell's interior id. Far from the houses' numbering so nothing
         /// counts it as one of them.
         /// </summary>
-        internal const int JailInteriorId = 900;
+        internal const int JailInteriorId =
+            PawsAndLoot.Gameplay.Interiors.HouseInterior.JailId;
 
         /// <summary>
         /// Where a player is put down, as a fraction of the plan view.
