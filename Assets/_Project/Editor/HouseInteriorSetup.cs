@@ -118,7 +118,6 @@ namespace PawsAndLoot.Editor
         {
             { "interior_bookstore", new Vector2(0.528f, 0.207f) },
             { "interior_house02", new Vector2(0.552f, 0.292f) },
-            { "interior_house03", new Vector2(0.467f, 0.440f) },
             { "interior_jewelry", new Vector2(0.463f, 0.169f) },
             { "interior_supermarket", new Vector2(0.448f, 0.178f) }
         };
@@ -148,11 +147,20 @@ namespace PawsAndLoot.Editor
         /// leaving the way you came.
         ///
         /// Read off the plan like the spawn, and in the same coordinates.
+        ///
+        /// Marking the doorway alone is enough, and better than marking the
+        /// arrival as well. `mouth` — the fallback — is the middle of whichever
+        /// wall the opening was found in, and the middle of a wall is not the
+        /// door when the room is L-shaped: the two-storey house has its way in
+        /// at the porch on one arm and its `+Z` wall centre over the other, so
+        /// the trigger sat in a window across the house. Given the doorway, the
+        /// arrival is simply four metres inside it, which is what "just through
+        /// the door" means in every room.
         /// </summary>
         private static readonly System.Collections.Generic.Dictionary<
             string, Vector2> DoorInPlan = new()
         {
-            { "interior_house03", new Vector2(0.471f, 0.336f) }
+            { "interior_house03", new Vector2(0.472f, 0.391f) }
         };
 
         /// <summary>
@@ -718,13 +726,26 @@ namespace PawsAndLoot.Editor
             // land inside that trigger: entering fired the exit on the same
             // frame and the player bounced straight back into the street. The
             // same mistake as ISSUE-043, one room further in.
-            float toExit = bothMarked
-                ? ExitClearance
-                : Vector3.Dot(doorAt - frontEntry.position, doorway);
-            if (toExit < ExitClearance)
+            if (DoorInPlan.ContainsKey(stem) && !SpawnInPlan.ContainsKey(stem))
             {
-                frontEntry.position -= doorway * (ExitClearance - toExit);
+                // The doorway was marked and the arrival was not, so the
+                // arrival is straight in from it. Lateral position comes from
+                // the door too — moving only along the wall normal would leave
+                // it wherever the wall's midpoint happened to be, which on an
+                // L-shaped plan is the other arm of the house.
+                frontEntry.position = doorAt - doorway * ExitClearance;
                 backEntry.position = frontEntry.position;
+            }
+            else
+            {
+                float toExit = bothMarked
+                    ? ExitClearance
+                    : Vector3.Dot(doorAt - frontEntry.position, doorway);
+                if (toExit < ExitClearance)
+                {
+                    frontEntry.position -= doorway * (ExitClearance - toExit);
+                    backEntry.position = frontEntry.position;
+                }
             }
             CreateInsideDoor(
                 room,

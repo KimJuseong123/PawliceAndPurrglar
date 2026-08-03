@@ -4365,11 +4365,16 @@ namespace PawsAndLoot.Editor
                 banner,
                 markerLabel);
 
-            // The emergency exit's countdown, on the same canvas. It builds its
-            // own label at runtime rather than being handed one, because a
-            // reference filled by this script does not survive the scene being
-            // saved (ISSUE-031).
-            marker.gameObject
+            // The emergency exit's countdown, on the canvas itself.
+            //
+            // It was on the distraction marker, which spends almost all of its
+            // life switched off — and Update does not run on a disabled object,
+            // so the countdown never counted. Nothing about it belongs to the
+            // marker; it was simply the object in hand.
+            Transform escapeHost = marker.parent != null
+                ? marker.parent
+                : marker;
+            escapeHost.gameObject
                 .AddComponent<InteriorEscapePresenter>()
                 .Configure(roleSelector);
         }
