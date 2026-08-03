@@ -6,7 +6,18 @@ namespace PawsAndLoot.Gameplay.Players
 {
     public sealed class PlayerInteractionScanner : MonoBehaviour
     {
-        private const int MaxNearbyColliders = 32;
+        /// <summary>
+        /// How many colliders one scan may consider.
+        ///
+        /// OverlapSphereNonAlloc fills the buffer and stops — it does not say
+        /// it ran out, and which colliders make the cut is arbitrary. Thirty-two
+        /// was enough on an empty greybox and is not enough beside the
+        /// raccoon's pitch, where a bin, a sale zone, five shelves, a boundary
+        /// and a doorway all sit inside one interaction radius. The symptom is
+        /// one particular pickup that cannot be picked up, which reads as that
+        /// pickup being broken.
+        /// </summary>
+        private const int MaxNearbyColliders = 128;
 
         [SerializeField]
         private PlayerRoleIdentity identity;
@@ -62,6 +73,18 @@ namespace PawsAndLoot.Gameplay.Players
                 nearbyColliders,
                 Physics.AllLayers,
                 QueryTriggerInteraction.Collide);
+            if (count >= MaxNearbyColliders)
+            {
+                // Said out loud rather than truncated in silence. If this ever
+                // fires, something within arm's reach is invisible to the
+                // player and no other symptom will tell them why.
+                PawsAndLoot.Logging.GameLogger.Warning(
+                    PawsAndLoot.Logging.GameLogCategory.Player,
+                    $"Interaction scan filled its {MaxNearbyColliders} slot "
+                    + "buffer, so something nearby was not considered.",
+                    this);
+            }
+
             float nearestDistance = float.PositiveInfinity;
             int highestPriority = int.MinValue;
 
