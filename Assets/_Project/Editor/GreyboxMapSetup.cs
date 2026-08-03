@@ -3270,6 +3270,17 @@ namespace PawsAndLoot.Editor
                 config,
                 thiefSpawns,
                 jailInteriorId);
+
+            // And the first corner of the match, drawn the same way as every
+            // corner after it. A fixed start undid half of what the corners are
+            // for: the officer knew where the opening ten seconds would be
+            // spent even without knowing where the next thirty would.
+            thief.gameObject
+                .AddComponent<PawsAndLoot.Gameplay.Players.ThiefStartSpawn>()
+                .Configure(
+                    matchRuntime,
+                    thiefSpawns,
+                    thief.GetComponent<PlayerInteriorState>());
         }
 
         private static void ConfigureMatchResultEvaluator(
