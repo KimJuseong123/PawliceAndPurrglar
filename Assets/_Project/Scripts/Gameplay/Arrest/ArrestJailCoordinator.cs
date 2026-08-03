@@ -39,6 +39,15 @@ namespace PawsAndLoot.Gameplay.Arrest
         [SerializeField]
         private PawsAndLoot.Gameplay.Players.ThiefSpawnPoints releasePoints;
 
+        /// <summary>
+        /// The room the cell is, or Outside when there is no cell to put them
+        /// in. Told to the thief so the interior camera and the indoor rules
+        /// apply while they serve their time.
+        /// </summary>
+        [SerializeField]
+        private int jailInteriorId =
+            PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside;
+
         private bool _subscribed;
 
         public void Configure(
@@ -48,9 +57,12 @@ namespace PawsAndLoot.Gameplay.Arrest
             Transform configuredReleasePoint,
             ArrestConfig configuredArrestConfig,
             PawsAndLoot.Gameplay.Players.ThiefSpawnPoints configuredReleasePoints
-                = null)
+                = null,
+            int configuredJailInteriorId =
+                PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside)
         {
             releasePoints = configuredReleasePoints;
+            jailInteriorId = configuredJailInteriorId;
             Unsubscribe();
             arrestCompletion = configuredArrestCompletion;
             jail = configuredJail;
@@ -97,6 +109,8 @@ namespace PawsAndLoot.Gameplay.Arrest
                 arrestConfig.JailSeconds,
                 cellPoint.position,
                 release);
+
+            SetThiefRoom(jailInteriorId);
         }
 
         /// <summary>
@@ -107,8 +121,35 @@ namespace PawsAndLoot.Gameplay.Arrest
         /// can be arrested again, which reads as the officer scoring twice for
         /// standing still.
         /// </summary>
+        /// <summary>
+        /// Marks the thief as inside the cell, or back in the street.
+        ///
+        /// Only where this machine is the one that decides. A client copy of a
+        /// character is moved by having its position written, so acting on the
+        /// state there would fight the host over where the thief is — the same
+        /// rule the doorway follows.
+        /// </summary>
+        private void SetThiefRoom(int interiorId)
+        {
+            if (jail == null)
+            {
+                return;
+            }
+
+            var room = jail
+                .GetComponent<
+                    PawsAndLoot.Gameplay.Interiors.PlayerInteriorState>();
+            if (room != null && room.HasAuthority)
+            {
+                room.SetInterior(interiorId);
+            }
+        }
+
         private void HandleReleased()
         {
+            SetThiefRoom(
+                PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside);
+
             arrestCompletion?.ClearForNextArrest();
             GameLogger.Info(
                 GameLogCategory.Arrest,

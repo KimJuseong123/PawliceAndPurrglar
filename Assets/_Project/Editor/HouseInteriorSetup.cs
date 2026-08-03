@@ -101,6 +101,111 @@ namespace PawsAndLoot.Editor
         };
 
         /// <summary>
+        /// Builds the cell a caught thief waits in, and gives back the spot
+        /// they stand on.
+        ///
+        /// A room rather than a coordinate outside the police station. Being
+        /// arrested used to mean standing in the street beside the building
+        /// with the controls off, which reads as the game having frozen. Ten
+        /// seconds somewhere that plainly is a cell reads as a sentence.
+        ///
+        /// Built like the other rooms and then sealed: same model handling,
+        /// same collision copy, same floor measurement, but the barrier has no
+        /// gap in it. There is no door out of jail — the clock is the door.
+        /// </summary>
+        internal static Transform BuildJail(
+            Transform parent,
+            System.Func<string, Transform, Transform> childFactory,
+            out int interiorId)
+        {
+            interiorId = JailInteriorId;
+
+            Physics.SyncTransforms();
+            Transform room = childFactory("Jail Interior", parent);
+
+            // Well past the last house room, on the same grid.
+            var centre = new Vector3(
+                RowStartX,
+                0f,
+                RowZ - (Columns + 1) * SpacingZ);
+            room.position = centre;
+
+            Vector3 native = PlaceholderModelLibrary
+                .TryInstantiateBuildingSized(
+                    JailStem,
+                    room,
+                    centre,
+                    0f,
+                    0f,
+                    1f);
+            if (native.y <= 0.001f)
+            {
+                Debug.LogError(
+                    $"[MAP-008] '{JailStem}' would not load, so there is no "
+                    + "cell. A caught thief will be left in the street.");
+                return null;
+            }
+
+            float lift = WallHeight / native.y;
+            foreach (Transform part in room)
+            {
+                part.localScale *= lift;
+                part.position = centre + (part.position - centre) * lift;
+            }
+
+            Renderer[] parts = room.GetComponentsInChildren<Renderer>(true);
+            if (!TryMeasure(
+                    parts,
+                    out float floorTop,
+                    out Bounds inner,
+                    out _,
+                    out _))
+            {
+                Debug.LogError("[MAP-008] The cell has no measurable inside.");
+                return null;
+            }
+
+            Transform colliders = childFactory("Jail Colliders", room);
+            colliders.position = centre;
+            AddSolidColliders(
+                JailStem,
+                colliders,
+                parts.Length > 0 ? parts[0].transform : null,
+                out Transform collisionRoot);
+            floorTop = MeasureFloorTop(collisionRoot, inner, floorTop);
+
+            // Sealed on all four sides. Vector3.zero is not one of the four
+            // directions the barrier tests against, so no wall gets a gap.
+            BuildPerimeter(colliders, inner, floorTop, Vector3.zero);
+
+            var interior = room.gameObject.AddComponent<HouseInterior>();
+            Transform stand = childFactory("Jail Stand", room);
+            stand.position =
+                new Vector3(inner.center.x, floorTop, inner.center.z);
+            interior.Configure(
+                JailInteriorId,
+                stand,
+                stand,
+                stand,
+                stand,
+                new Vector2(
+                    Mathf.Max(1f, inner.extents.x - 1.2f),
+                    Mathf.Max(1f, inner.extents.z - 1.2f)),
+                floorTop);
+
+            Debug.Log(
+                $"[MAP-008] Cell built at {stand.position}, "
+                + $"{inner.size.x:0.0} x {inner.size.z:0.0} m inside.");
+            return stand;
+        }
+
+        /// <summary>
+        /// The cell's interior id. Far from the houses' numbering so nothing
+        /// counts it as one of them.
+        /// </summary>
+        internal const int JailInteriorId = 900;
+
+        /// <summary>
         /// Where a player is put down, as a fraction of the plan view.
         ///
         /// Read off `Capture Interior Plans` with the marks drawn on it, so the

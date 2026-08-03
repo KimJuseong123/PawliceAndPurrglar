@@ -21,7 +21,7 @@ namespace PawsAndLoot.Config
         /// match attractive in the first place.
         /// </summary>
         [SerializeField, Range(4f, 20f), Tooltip("Seconds an arrested thief is held before respawning.")]
-        private float jailSeconds = 11f;
+        private float jailSeconds = 10f;
 
         public float ArrestDistance => arrestDistance;
         public float ArrestDurationSeconds => arrestDurationSeconds;

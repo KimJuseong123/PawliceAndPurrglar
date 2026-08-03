@@ -3232,13 +3232,30 @@ namespace PawsAndLoot.Editor
             // taken; the release is their own spawn rather than the station
             // door, which would put them back within arm's reach of the officer
             // who just caught them and hand over the next two arrests.
-            Transform cell = map.GetLocation(GreyboxLocationId.PoliceSpawn);
+            // The cell is a room now, not a spot outside the station.
+            //
+            // Standing in the street with the controls off for ten seconds
+            // reads as the game having frozen. Ten seconds in something that is
+            // plainly a cell reads as a sentence.
+            Transform cell = HouseInteriorSetup.BuildJail(
+                police.transform.root,
+                CreateChild,
+                out int jailInteriorId);
             Transform release = map.GetLocation(GreyboxLocationId.ThiefSpawn);
+            if (cell == null)
+            {
+                // Fall back to the old spot rather than refusing to build. A
+                // town with a clumsy jail is playable; a town that will not
+                // load is not.
+                cell = map.GetLocation(GreyboxLocationId.PoliceSpawn);
+                jailInteriorId = PlayerInteriorState.Outside;
+            }
+
             if (cell == null || release == null)
             {
                 throw new InvalidOperationException(
-                    "ARREST-007 requires the police station and thief spawn "
-                    + "anchors for the jail.");
+                    "ARREST-007 requires a cell and the thief spawn anchors "
+                    + "for the jail.");
             }
 
             ThiefJailState jail =
@@ -3251,7 +3268,8 @@ namespace PawsAndLoot.Editor
                 cell,
                 release,
                 config,
-                thiefSpawns);
+                thiefSpawns,
+                jailInteriorId);
         }
 
         private static void ConfigureMatchResultEvaluator(
