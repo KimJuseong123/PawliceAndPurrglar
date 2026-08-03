@@ -2813,7 +2813,14 @@ namespace PawsAndLoot.Editor
 
             // MAP-008. Which house this player is inside, if any. Read by the
             // doorway, the indoor camera and the dog's report.
-            player.AddComponent<PlayerInteriorState>();
+            PlayerInteriorState interiorState =
+                player.AddComponent<PlayerInteriorState>();
+
+            // The way out that does not need the door to work. Ten seconds, so
+            // it rescues a player wedged behind a counter without rescuing one
+            // who is simply cornered.
+            player.AddComponent<InteriorEscapeHatch>()
+                .Configure(interiorState);
             PawsAndLoot.Gameplay.Items.ToolCarrier toolCarrier =
                 player.AddComponent<PawsAndLoot.Gameplay.Items.ToolCarrier>();
             toolCarrier.Configure(identity, matchRuntime);

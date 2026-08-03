@@ -130,6 +130,15 @@ namespace PawsAndLoot.Editor
         private const float PlanMargin = 1.12f;
 
         /// <summary>
+        /// How far the arrival point is kept from the way out, in metres.
+        ///
+        /// The exit trigger is 1.2 m deep and a metre and a half tall, and it
+        /// has to be walked into rather than pressed. Four metres is well clear
+        /// of it with the door still behind you when you turn round.
+        /// </summary>
+        private const float ExitClearance = 4f;
+
+        /// <summary>
         /// Where the way out stands, when it is not opposite the way in.
         ///
         /// Normally the door is one hole and the same hole serves both
@@ -685,6 +694,32 @@ namespace PawsAndLoot.Editor
             Vector3 doorAt = DoorInPlan.TryGetValue(stem, out Vector2 spot)
                 ? FromPlan(inner, floorTop, spot)
                 : mouth - doorway * 0.2f;
+
+            // Pushed out against the wall.
+            //
+            // A door in the middle of a room is a door with room on both sides,
+            // and the side that is not the street is where the player is put
+            // down. Sitting it on the wall gives the arrival somewhere to be.
+            float toWall = Mathf.Abs(Vector3.Dot(inner.extents, doorway))
+                - Vector3.Dot(doorAt - inner.center, doorway)
+                - 0.4f;
+            if (toWall > 0f)
+            {
+                doorAt += doorway * toWall;
+            }
+
+            // And the arrival is moved off it.
+            //
+            // The way out is a trigger you walk into, and the way in used to
+            // land inside that trigger: entering fired the exit on the same
+            // frame and the player bounced straight back into the street. The
+            // same mistake as ISSUE-043, one room further in.
+            float toExit = Vector3.Dot(doorAt - frontEntry.position, doorway);
+            if (toExit < ExitClearance)
+            {
+                frontEntry.position -= doorway * (ExitClearance - toExit);
+                backEntry.position = frontEntry.position;
+            }
             CreateInsideDoor(
                 room,
                 interior,
