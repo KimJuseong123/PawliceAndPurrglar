@@ -5,6 +5,18 @@ using UnityEngine;
 
 namespace PawsAndLoot.Integration.Voice
 {
+    public static class VoiceCaptureSettings
+    {
+        private const float DefaultMicrophoneSensitivity = 1f;
+        private static float microphoneSensitivity = DefaultMicrophoneSensitivity;
+
+        public static float MicrophoneSensitivity
+        {
+            get => microphoneSensitivity;
+            set => microphoneSensitivity = Mathf.Clamp(value, 0.25f, 5f);
+        }
+    }
+
     [Serializable]
     public sealed class VoiceCaptureData
     {
@@ -180,12 +192,29 @@ namespace PawsAndLoot.Integration.Voice
                 sumSquares += value * value;
             }
 
+            float sensitivity = VoiceCaptureSettings.MicrophoneSensitivity;
             float rms = Mathf.Sqrt(sumSquares / Mathf.Max(1, sampleCount));
-            if (rms < SilenceRmsThreshold)
+            float silenceThreshold = SilenceRmsThreshold
+                / Mathf.Max(0.25f, sensitivity);
+            if (rms < silenceThreshold)
             {
                 clip = null;
                 failed?.Invoke("VOICE_AUDIO_SILENT");
                 yield break;
+            }
+
+            if (!Mathf.Approximately(sensitivity, 1f))
+            {
+                float[] amplified = new float[sampleCount];
+                for (int index = 0; index < sampleCount; index++)
+                {
+                    amplified[index] = Mathf.Clamp(
+                        samples[index] * sensitivity,
+                        -1f,
+                        1f);
+                }
+
+                samples = amplified;
             }
 
             byte[] wav = WavAudioEncoder.Encode(

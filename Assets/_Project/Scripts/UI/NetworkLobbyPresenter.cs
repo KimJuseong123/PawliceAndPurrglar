@@ -3,6 +3,8 @@ using System.Text;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Integration.Network;
+using PawsAndLoot.Logging;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,26 +17,37 @@ namespace PawsAndLoot.UI
     /// Read only with respect to rules. It starts a session and reads the role
     /// board; it never assigns a role itself, because only the server may do
     /// that.
+    ///
+    /// The view is wired at prefab build time and the session at scene build
+    /// time, so the prefab can be opened and inspected on its own.
     /// </summary>
     public sealed class NetworkLobbyPresenter : MonoBehaviour
     {
+        /// <summary>
+        /// How often the lobby re-reads the session while nothing has raised an
+        /// event. Polled rather than driven purely by events because the LAN
+        /// directory and the role board both change without notifying anyone,
+        /// but at a fixed interval instead of every frame.
+        /// </summary>
+        private const float PollInterval = 0.15f;
+
         [SerializeField]
         private NetworkSessionController session;
 
         [SerializeField]
-        private Text myAddressLabel;
+        private TMP_Text myAddressLabel;
 
         [SerializeField]
-        private Text statusLabel;
+        private TMP_Text statusLabel;
 
         [SerializeField]
-        private Text roleLabel;
+        private TMP_Text roleLabel;
 
         [SerializeField]
-        private InputField joinAddressField;
+        private TMP_InputField joinAddressField;
 
         [SerializeField]
-        private InputField portField;
+        private TMP_InputField portField;
 
         [SerializeField]
         private Button hostButton;
@@ -55,22 +68,40 @@ namespace PawsAndLoot.UI
         private LanRoomDirectory roomDirectory;
 
         [SerializeField]
-        private Text roomListLabel;
+        private TMP_Text roomListLabel;
+
+        [SerializeField]
+        private LobbyCharacterView characterView;
+
+        [SerializeField]
+        private bool fillEndpointFields = true;
 
         /// <summary>
         /// Fixed slots rather than instantiated rows: the match is two players,
         /// so a handful of rooms is all a LAN will ever usefully show, and a
-        /// fixed set costs no allocation on the per-frame refresh.
+        /// fixed set costs no allocation on the refresh.
         /// </summary>
         [SerializeField]
         private Button[] roomButtons = new Button[0];
 
         [SerializeField]
-        private Text[] roomLabels = new Text[0];
+        private TMP_Text[] roomLabels = new TMP_Text[0];
 
         private readonly List<LanRoom> _boundRooms = new();
 
         private NetworkRoleBoard _roleBoard;
+        private float _nextPoll;
+        private string _roomSignature = string.Empty;
+
+        /// <summary>
+        /// The session this lobby actually talks to.
+        ///
+        /// Exposed so a caller can read the same object a button reached rather
+        /// than whichever <see cref="NetworkSessionController"/> a scene-wide
+        /// search turns up first — which, with a leftover from an earlier scene
+        /// still alive, is not necessarily this one.
+        /// </summary>
+        public NetworkSessionController Session => session;
 
         public string MyAddressText =>
             myAddressLabel != null ? myAddressLabel.text : string.Empty;
@@ -79,20 +110,23 @@ namespace PawsAndLoot.UI
         public string RoleText =>
             roleLabel != null ? roleLabel.text : string.Empty;
 
-        public void Configure(
-            NetworkSessionController configuredSession,
-            Text configuredMyAddress,
-            Text configuredStatus,
-            Text configuredRole,
-            InputField configuredJoinAddress,
-            InputField configuredPort,
+        /// <summary>
+        /// Wires everything that lives inside the lobby prefab. Called once when
+        /// the prefab is built, so the references are serialised into the asset
+        /// rather than reconstructed in the scene.
+        /// </summary>
+        public void ConfigureView(
+            TMP_Text configuredMyAddress,
+            TMP_Text configuredStatus,
+            TMP_Text configuredRole,
+            TMP_InputField configuredJoinAddress,
+            TMP_InputField configuredPort,
             Button configuredHost,
             Button configuredJoin,
             Button configuredSwap,
             Button configuredStart,
             Button configuredLeave)
         {
-            session = configuredSession;
             myAddressLabel = configuredMyAddress;
             statusLabel = configuredStatus;
             roleLabel = configuredRole;
@@ -103,25 +137,38 @@ namespace PawsAndLoot.UI
             swapRoleButton = configuredSwap;
             startMatchButton = configuredStart;
             leaveButton = configuredLeave;
-            RefreshAddresses();
-            Refresh();
+        }
+
+        public void ConfigureRoomListView(
+            TMP_Text configuredRoomListLabel,
+            Button[] configuredRoomButtons,
+            TMP_Text[] configuredRoomLabels)
+        {
+            roomListLabel = configuredRoomListLabel;
+            roomButtons = configuredRoomButtons ?? new Button[0];
+            roomLabels = configuredRoomLabels ?? new TMP_Text[0];
+        }
+
+        public void ConfigureCharacterView(LobbyCharacterView configuredView)
+        {
+            characterView = configuredView;
         }
 
         /// <summary>
-        /// Supplies the LAN room list. Separate from <see cref="Configure"/> so
-        /// a lobby without discovery still works: without these the panel is
-        /// just the original type-an-IP lobby.
+        /// Supplies the scene's services. Separate from the view because the
+        /// session lives in the scene and cannot be referenced from a prefab
+        /// asset.
         /// </summary>
-        public void ConfigureRoomList(
+        public void ConfigureSession(
+            NetworkSessionController configuredSession,
             LanRoomDirectory configuredDirectory,
-            Text configuredRoomListLabel,
-            Button[] configuredRoomButtons,
-            Text[] configuredRoomLabels)
+            bool configuredFillEndpointFields = true)
         {
+            session = configuredSession;
             roomDirectory = configuredDirectory;
-            roomListLabel = configuredRoomListLabel;
-            roomButtons = configuredRoomButtons ?? new Button[0];
-            roomLabels = configuredRoomLabels ?? new Text[0];
+            fillEndpointFields = configuredFillEndpointFields;
+            RefreshAddresses();
+            Refresh();
         }
 
         /// <summary>
@@ -174,6 +221,14 @@ namespace PawsAndLoot.UI
                 }
             }
 
+            string signature = BuildRoomSignature(offline);
+            if (signature == _roomSignature)
+            {
+                return;
+            }
+
+            _roomSignature = signature;
+
             for (int index = 0; index < roomButtons.Length; index++)
             {
                 Button button = roomButtons[index];
@@ -183,7 +238,11 @@ namespace PawsAndLoot.UI
                 }
 
                 bool used = index < _boundRooms.Count;
-                button.gameObject.SetActive(used);
+                if (button.gameObject.activeSelf != used)
+                {
+                    button.gameObject.SetActive(used);
+                }
+
                 if (!used)
                 {
                     continue;
@@ -196,11 +255,20 @@ namespace PawsAndLoot.UI
                 if (index < roomLabels.Length
                     && roomLabels[index] != null)
                 {
+                    // Numbered rather than named. The advert carries the host's
+                    // machine name and address, and neither belongs on screen;
+                    // they go to the log instead, where they are still useful
+                    // when a join fails.
                     roomLabels[index].text = room.IsFull
-                        ? $"{room.Label}  ({room.Address}) · 가득 참"
-                        : $"{room.Label}  ({room.Address}) · "
-                          + $"{room.PlayerCount}/"
-                          + $"{NetworkSessionController.MaximumPlayers}";
+                        ? $"방 {index + 1} · 가득 참"
+                        : $"방 {index + 1} · 참가 가능 "
+                          + $"({room.PlayerCount}/"
+                          + $"{NetworkSessionController.MaximumPlayers})";
+                    GameLogger.Debug(
+                        GameLogCategory.Network,
+                        $"Lobby room {index + 1}: {room.Label} at "
+                        + $"{room.Address}:{room.Port}, "
+                        + $"{room.PlayerCount} player(s).");
                 }
             }
 
@@ -211,26 +279,51 @@ namespace PawsAndLoot.UI
 
             if (!offline)
             {
-                roomListLabel.text = "세션 진행 중";
+                SetText(roomListLabel, "세션 진행 중");
                 return;
             }
 
             if (roomDirectory != null && !roomDirectory.IsListening)
             {
-                roomListLabel.text =
-                    "같은 네트워크 방 찾기 불가 · 아래에 IP를 직접 입력하세요";
+                SetText(
+                    roomListLabel,
+                    "같은 네트워크 방 찾기를 쓸 수 없습니다. 아래에 IP를 직접 입력하세요.");
                 return;
             }
 
-            roomListLabel.text = _boundRooms.Count == 0
-                ? "같은 네트워크에서 방을 찾는 중... (호스트가 먼저 방을 열어야 합니다)"
-                : $"같은 네트워크의 방 {_boundRooms.Count}개 · 눌러서 참가";
+            SetText(
+                roomListLabel,
+                _boundRooms.Count == 0
+                    ? "같은 네트워크에서 방을 찾는 중입니다. 한 명이 먼저 호스트를 눌러야 합니다."
+                    : $"같은 네트워크에서 방 {_boundRooms.Count}개를 찾았습니다. 눌러서 참가하세요.");
+        }
+
+        private string BuildRoomSignature(bool offline)
+        {
+            var signature = new StringBuilder(offline ? "off" : "on");
+            signature.Append(
+                roomDirectory != null && roomDirectory.IsListening ? '+' : '-');
+            foreach (LanRoom room in _boundRooms)
+            {
+                signature.Append('|');
+                signature.Append(room.Address);
+                signature.Append(':');
+                signature.Append(room.Port);
+                signature.Append('/');
+                signature.Append(room.PlayerCount);
+            }
+
+            return signature.ToString();
         }
 
         /// <summary>
-        /// Lists every local IPv4 so the player can pick the one their partner
-        /// can actually reach. Loopback is labelled because it only works for
-        /// two processes on one machine.
+        /// Shows the addresses another player on this network could actually
+        /// reach: the private ones and loopback.
+        ///
+        /// Any routable address the machine also holds is deliberately left off
+        /// the screen. It cannot help a player on the same LAN and it is exactly
+        /// the kind of value that should not be sitting in a screenshot. The
+        /// full list still goes to the log.
         /// </summary>
         public void RefreshAddresses()
         {
@@ -239,12 +332,25 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            var text = new StringBuilder();
-            text.Append("내 IP: ");
+            var text = new StringBuilder("내 주소: ");
+            var logged = new StringBuilder();
             bool first = true;
             foreach (string address in
                 LocalAddressProvider.GetIPv4Addresses())
             {
+                if (logged.Length > 0)
+                {
+                    logged.Append(", ");
+                }
+
+                logged.Append(address);
+
+                bool loopback = address == LocalAddressProvider.LoopbackAddress;
+                if (!loopback && !LocalAddressProvider.IsPrivateLan(address))
+                {
+                    continue;
+                }
+
                 if (!first)
                 {
                     text.Append("   ");
@@ -252,22 +358,33 @@ namespace PawsAndLoot.UI
 
                 first = false;
                 text.Append(address);
-                if (address == LocalAddressProvider.LoopbackAddress)
+                if (loopback)
                 {
                     text.Append(" (같은 PC)");
                 }
             }
 
-            myAddressLabel.text = text.ToString();
+            if (first)
+            {
+                text.Append("찾지 못했습니다");
+            }
 
-            if (joinAddressField != null
+            SetText(myAddressLabel, text.ToString());
+            GameLogger.DebugOnce(
+                GameLogCategory.Network,
+                "lobby-local-addresses",
+                $"Local IPv4 addresses: {logged}");
+
+            if (fillEndpointFields
+                && joinAddressField != null
                 && string.IsNullOrWhiteSpace(joinAddressField.text))
             {
                 joinAddressField.text =
                     LocalAddressProvider.LoopbackAddress;
             }
 
-            if (portField != null
+            if (fillEndpointFields
+                && portField != null
                 && string.IsNullOrWhiteSpace(portField.text))
             {
                 portField.text =
@@ -283,7 +400,7 @@ namespace PawsAndLoot.UI
             }
 
             session.TryStartHost(
-                portField != null ? portField.text : string.Empty);
+                GetPortText());
             Refresh();
         }
 
@@ -295,10 +412,8 @@ namespace PawsAndLoot.UI
             }
 
             session.TryJoin(
-                joinAddressField != null
-                    ? joinAddressField.text
-                    : string.Empty,
-                portField != null ? portField.text : string.Empty);
+                GetJoinAddressText(),
+                GetPortText());
             Refresh();
         }
 
@@ -367,25 +482,24 @@ namespace PawsAndLoot.UI
 
             bool offline = session.Mode
                 == NetworkSessionController.SessionMode.Offline;
+            bool isHost = session.Mode
+                == NetworkSessionController.SessionMode.Host;
             NetworkRoleBoard board = ResolveRoleBoard();
             bool ready = session.IsSessionReady
                 && board != null
                 && board.IsAssigned;
+            bool localIsPolice = ready && board.LocalRole == PlayerRole.Police;
 
-            if (statusLabel != null)
-            {
-                statusLabel.text = string.IsNullOrEmpty(session.LastStatus)
-                    ? "호스트로 시작하거나 상대 IP로 접속하세요."
-                    : session.LastStatus;
-            }
+            SetText(statusLabel, DescribeStatus(offline, ready, isHost));
+            SetText(
+                roleLabel,
+                ready
+                    ? localIsPolice ? "내 역할: 경찰" : "내 역할: 도둑"
+                    : "내 역할: 대기 중");
 
-            if (roleLabel != null)
+            if (characterView != null)
             {
-                roleLabel.text = ready
-                    ? board.LocalRole == PlayerRole.Police
-                        ? "내 역할: 👮 경찰"
-                        : "내 역할: 🕵 도둑"
-                    : "내 역할: 대기 중";
+                characterView.Apply(ready, localIsPolice);
             }
 
             SetInteractable(hostButton, offline);
@@ -394,18 +508,15 @@ namespace PawsAndLoot.UI
             SetInteractable(swapRoleButton, ready);
             // Only the host may start, so a client cannot pull the other player
             // into a match they have not agreed to.
-            SetInteractable(
-                startMatchButton,
-                ready
-                && session.Mode
-                   == NetworkSessionController.SessionMode.Host);
+            SetInteractable(startMatchButton, ready && isHost);
 
-            if (joinAddressField != null)
+            if (joinAddressField != null
+                && joinAddressField.interactable != offline)
             {
                 joinAddressField.interactable = offline;
             }
 
-            if (portField != null)
+            if (portField != null && portField.interactable != offline)
             {
                 portField.interactable = offline;
             }
@@ -413,30 +524,85 @@ namespace PawsAndLoot.UI
             RefreshRoomList(offline);
         }
 
+        /// <summary>
+        /// One line that always says what to do next.
+        ///
+        /// A disabled button with no explanation is the most common way a lobby
+        /// strands someone, so the reason a control is unavailable is the
+        /// message rather than a footnote under it.
+        /// </summary>
+        private string DescribeStatus(bool offline, bool ready, bool isHost)
+        {
+            if (offline)
+            {
+                return string.IsNullOrEmpty(session.LastStatus)
+                    ? "호스트로 시작하거나 상대의 IP로 참가하세요."
+                    : session.LastStatus;
+            }
+
+            if (!ready)
+            {
+                return isHost
+                    ? "상대 플레이어를 기다리고 있습니다."
+                    : "호스트에 연결하는 중입니다.";
+            }
+
+            return isHost
+                ? "상대 플레이어와 연결되었습니다. 게임 시작을 누르세요."
+                : "상대 플레이어와 연결되었습니다. 호스트가 시작하기를 기다립니다.";
+        }
+
+        private string GetJoinAddressText()
+        {
+            string value = joinAddressField != null
+                ? joinAddressField.text
+                : string.Empty;
+            return string.IsNullOrWhiteSpace(value)
+                ? LocalAddressProvider.LoopbackAddress
+                : value;
+        }
+
+        private string GetPortText()
+        {
+            string value = portField != null ? portField.text : string.Empty;
+            return string.IsNullOrWhiteSpace(value)
+                ? NetworkSessionController.DefaultPort.ToString()
+                : value;
+        }
+
         private NetworkRoleBoard ResolveRoleBoard()
         {
             if (_roleBoard == null)
             {
-                _roleBoard = Object.FindFirstObjectByType<
-                    NetworkRoleBoard>();
+                _roleBoard = FindFirstObjectByType<NetworkRoleBoard>();
             }
 
             return _roleBoard;
         }
 
+        private static void SetText(TMP_Text label, string value)
+        {
+            // Compared before assigning: the lobby polls, and handing TMP the
+            // same string still marks the canvas dirty and re-lays the text out.
+            if (label != null && label.text != value)
+            {
+                label.text = value;
+            }
+        }
+
         private static void SetInteractable(Button button, bool value)
         {
-            if (button != null)
+            if (button != null && button.interactable != value)
             {
                 button.interactable = value;
             }
         }
 
         /// <summary>
-        /// Buttons are wired here, at runtime, not by the scene builder.
+        /// Buttons are wired here, at runtime, not by the prefab builder.
         ///
         /// <c>Button.onClick.AddListener</c> from an editor script registers a
-        /// non-persistent listener, which is dropped when the scene is saved.
+        /// non-persistent listener, which is dropped when the asset is saved.
         /// The built player then showed a lobby whose buttons did nothing, so no
         /// session was ever created no matter what IP was typed. Wiring in
         /// OnEnable is what <see cref="SceneNavigationButton"/> already does and
@@ -510,13 +676,42 @@ namespace PawsAndLoot.UI
 
         private void OnEnable()
         {
+            // The scene wires these; falling back to a search keeps a lobby that
+            // was dropped into a scene by hand from failing silently, and the
+            // warning says which case happened.
+            if (session == null)
+            {
+                session = FindFirstObjectByType<NetworkSessionController>();
+                if (session == null)
+                {
+                    GameLogger.Error(
+                        GameLogCategory.Network,
+                        "Lobby has no NetworkSessionController. Nothing in the "
+                        + "lobby can start or join a session.");
+                }
+                else
+                {
+                    GameLogger.Warning(
+                        GameLogCategory.Network,
+                        "Lobby session reference was not serialised; found one "
+                        + "in the scene instead.");
+                }
+            }
+
+            if (roomDirectory == null)
+            {
+                roomDirectory = FindFirstObjectByType<LanRoomDirectory>();
+            }
+
             if (session != null)
             {
                 session.StatusChanged += HandleStatusChanged;
             }
 
             WireButtons(true);
+            _roomSignature = string.Empty;
             RefreshAddresses();
+            Refresh();
         }
 
         private void OnDisable()
@@ -536,6 +731,16 @@ namespace PawsAndLoot.UI
 
         private void Update()
         {
+            // Polled on an interval rather than every frame. The session and the
+            // room directory both change without raising anything, but a lobby
+            // that rebuilds its strings sixty times a second allocates for no
+            // reason.
+            if (Time.unscaledTime < _nextPoll)
+            {
+                return;
+            }
+
+            _nextPoll = Time.unscaledTime + PollInterval;
             Refresh();
         }
     }

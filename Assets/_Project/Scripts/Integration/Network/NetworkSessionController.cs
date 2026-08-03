@@ -1,6 +1,7 @@
 using System;
 using PawsAndLoot.Logging;
 using PawsAndLoot.Config;
+using PawsAndLoot.Core;
 using PawsAndLoot.Integration.Voice;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -212,6 +213,28 @@ namespace PawsAndLoot.Integration.Network
             return true;
         }
 
+        /// <summary>
+        /// Forces this controller back to a fresh lobby state.
+        ///
+        /// Unlike <see cref="Leave"/> this does not require a session to be
+        /// running and never touches the transport: it is for the case where the
+        /// session belonged to a manager that has just been destroyed, so there
+        /// is nothing left to shut down and the only work is dropping references
+        /// to it.
+        /// </summary>
+        public void ResetForLobby()
+        {
+            Cleanup();
+            // Dropped rather than despawned. The board belonged to the previous
+            // session; despawning through a manager that is gone would throw,
+            // and holding the reference would make SpawnRoleBoard skip the new
+            // one and leave the roles unassigned.
+            _spawnedRoleBoard = null;
+            SetMode(SessionMode.Offline);
+            LastStatus = string.Empty;
+            StatusChanged?.Invoke(LastStatus);
+        }
+
         public void Leave()
         {
             if (_mode == SessionMode.Offline)
@@ -241,11 +264,23 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
-            GameObject instance = Instantiate(roleBoardPrefab);
-            _spawnedRoleBoard = instance.GetComponent<NetworkObject>();
-            if (_spawnedRoleBoard == null)
+            if (networkManager == null
+                || !networkManager.IsListening
+                || !networkManager.IsServer)
             {
-                Destroy(instance);
+                GameLogger.Error(
+                    GameLogCategory.Network,
+                    "Refusing to spawn the role board: this manager is not "
+                    + $"listening as a server (listening="
+                    + $"{networkManager != null && networkManager.IsListening}, "
+                    + $"server={networkManager != null && networkManager.IsServer}).",
+                    this);
+                return;
+            }
+
+            var prefabObject = roleBoardPrefab.GetComponent<NetworkObject>();
+            if (prefabObject == null)
+            {
                 GameLogger.Warning(
                     GameLogCategory.Network,
                     "Role board prefab has no NetworkObject.",
@@ -253,10 +288,23 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
-            // Lives only for the lobby. The role is committed to a local value
-            // before the match loads, so nothing has to survive the scene
-            // change and NGO's object lifecycle is left alone.
-            _spawnedRoleBoard.Spawn();
+            // Spawned through this manager by name rather than Instantiate plus
+            // Spawn(). A NetworkObject with no owner set resolves its manager as
+            // NetworkManager.Singleton, and Netcode leaves a manager from a
+            // previous match holding that singleton — the spawn then went to
+            // something that was not listening and said so.
+            //
+            // Lives only for the lobby: the role is committed to a local value
+            // before the match loads, so nothing has to survive the scene change.
+            _spawnedRoleBoard = prefabObject.InstantiateAndSpawn(networkManager);
+            if (_spawnedRoleBoard == null)
+            {
+                GameLogger.Error(
+                    GameLogCategory.Network,
+                    "Netcode refused to spawn the role board; roles cannot be "
+                    + "assigned.",
+                    this);
+            }
         }
 
         private void DespawnRoleBoard()
@@ -376,6 +424,21 @@ namespace PawsAndLoot.Integration.Network
         {
             LastStatus = status;
             StatusChanged?.Invoke(status);
+        }
+
+        /// <summary>
+        /// Offers the session-ending hook the result screen's "로비로" needs.
+        /// Installed here rather than called directly so the UI layer keeps not
+        /// referencing the network layer.
+        /// </summary>
+        private void OnEnable()
+        {
+            NetworkSceneBridge.SetLeaveHandler(Leave);
+        }
+
+        private void OnDisable()
+        {
+            NetworkSceneBridge.ClearLeaveHandler();
         }
 
         private void OnDestroy()

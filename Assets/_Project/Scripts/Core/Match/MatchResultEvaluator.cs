@@ -119,12 +119,30 @@ namespace PawsAndLoot.Match
                 return false;
             }
 
+            // Reported before the verdict is handed on: this is the one place
+            // that holds the wallet, the arrest counter and the clock at the
+            // instant the match ended. A moment later the match scene unloads
+            // and every one of them reads zero.
+            MatchResultSession.ReportSummary(BuildSummary());
+
             GameLogger.Info(
                 GameLogCategory.Match,
                 $"Match result decided: {result.Winner} / {result.Reason}.",
                 this);
             ResultDecided?.Invoke(result);
             return true;
+        }
+
+        private MatchSummary BuildSummary()
+        {
+            return new MatchSummary(
+                matchRuntime.MatchDurationSeconds
+                - matchRuntime.RemainingMatchSeconds,
+                arrestCompletion.CurrentCatchCount,
+                arrestCompletion.RequiredCatchCount,
+                thiefWallet.CreditedSaleCount,
+                thiefWallet.SoldAmount,
+                thiefWallet.TargetAmount);
         }
 
         public void ValidateOrThrow()

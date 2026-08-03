@@ -53,7 +53,7 @@ namespace PawsAndLoot.Integration.Voice
         {
             return kind == CompanionKind.Dog
                 ? new[] { "TRACK", "SEARCH", "GUARD", "BARK", "STAY", "STOP" }
-                : new[] { "SCOUT", "DISTRACT", "STEAL", "HIDE", "STAY", "STOP" };
+                : new[] { "SCOUT", "DISTRACT", "ROOF", "HIDE", "STAY", "STOP" };
         }
     }
 }

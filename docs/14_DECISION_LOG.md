@@ -491,6 +491,18 @@
 - Models and runtime binaries are installation artifacts, not Git-tracked
   source files.
 
+2026-08-02 addendum:
+
+- Deterministic command fallback runs before Ollama for core dog and cat
+  commands. This keeps common voice commands responsive even when the local LLM
+  is cold, unavailable, or slow.
+- A LocalAI gateway with ready STT but unavailable Ollama is treated as
+  degraded but usable by Unity, because fallback commands can still complete
+  without an LLM round trip.
+- Cat command slot 3 is shown and interpreted as `ROOF` for the current
+  playtest. The runtime still reuses the existing third cat command ID to avoid
+  broad enum churn, but keyboard, voice context, and HUD labels present it as a
+  rooftop-climb command rather than a loot-steal command.
 ## DEC-032. 경찰 승리는 체포 3회, 도둑은 판매 1,000골드
 
 - Context: 체포 1회가 즉시 승리였다. 4분짜리 경기가 30초 만에 끝날 수 있었고,

@@ -3,7 +3,9 @@
   "rootNamespace": "PawsAndLoot.Tests.PlayMode",
   "references": [
     "PawsAndLoot.Runtime",
-    "Unity.Netcode.Runtime"
+    "Unity.Netcode.Runtime",
+    "Unity.Networking.Transport",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

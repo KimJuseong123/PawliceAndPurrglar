@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using PawsAndLoot.Companions;
+using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Gameplay.Loot;
@@ -23,6 +25,8 @@ namespace PawsAndLoot.UI
     public sealed class RoleAwareHudController : MonoBehaviour
     {
         private const int QuickSlotCount = 4;
+        private const int InventorySlotCount = 25;
+        private const int CatBagSlotCount = 4;
 
         [SerializeField] private TMP_Text matchTimer;
         [SerializeField] private RoleStatusPanelView roleStatus;
@@ -34,6 +38,9 @@ namespace PawsAndLoot.UI
         [SerializeField] private ContextInteractionPromptView contextPrompt;
         [SerializeField] private InventorySlotView[] inventorySlots = Array.Empty<InventorySlotView>();
         [SerializeField] private GameObject inventoryPanel;
+        [SerializeField] private GameObject catExchangePanel;
+        [SerializeField] private InventorySlotView[] exchangePlayerSlots = Array.Empty<InventorySlotView>();
+        [SerializeField] private InventorySlotView[] exchangeCatSlots = Array.Empty<InventorySlotView>();
         [SerializeField] private Button bagButton;
         [SerializeField] private Button voiceButton;
         [SerializeField] private MinimapHudController minimap;
@@ -48,11 +55,22 @@ namespace PawsAndLoot.UI
         private ToolCarrier carrier;
         private VoiceCommandInput voice;
         private PlayerInteractionScanner scanner;
+        private PlayerInteractionInput interactionInput;
+        private LootConfig lootConfig;
+        private Sprite currencyIcon;
+        private readonly Dictionary<ThrowableKind, Sprite> itemIconCache = new();
+        private readonly Dictionary<string, Sprite> lootIconCache = new(
+            StringComparer.OrdinalIgnoreCase);
         private CompanionCommandDispatcher dispatcher;
         private CompanionCommandDispatcher subscribedDispatcher;
+        private CatInventoryInteractable activeCatInventory;
+        private ToolCarrier exchangeCarrier;
         private bool inventoryOpen;
+        private bool catExchangeOpen;
         private bool buttonListenersBound;
+        private bool slotListenersBound;
         private bool graphicAuditLogged;
+        private bool catInteractablesInstalled;
 
         public bool IsInventoryOpen => inventoryOpen;
         public bool IsPlayerBound => carrier != null;
@@ -71,6 +89,9 @@ namespace PawsAndLoot.UI
             ContextInteractionPromptView configuredContextPrompt,
             InventorySlotView[] configuredInventorySlots,
             GameObject configuredInventoryPanel,
+            GameObject configuredCatExchangePanel,
+            InventorySlotView[] configuredExchangePlayerSlots,
+            InventorySlotView[] configuredExchangeCatSlots,
             Button configuredBagButton,
             Button configuredVoiceButton,
             MinimapHudController configuredMinimap,
@@ -88,13 +109,18 @@ namespace PawsAndLoot.UI
             contextPrompt = configuredContextPrompt;
             inventorySlots = configuredInventorySlots ?? Array.Empty<InventorySlotView>();
             inventoryPanel = configuredInventoryPanel;
+            catExchangePanel = configuredCatExchangePanel;
+            exchangePlayerSlots = configuredExchangePlayerSlots ?? Array.Empty<InventorySlotView>();
+            exchangeCatSlots = configuredExchangeCatSlots ?? Array.Empty<InventorySlotView>();
             bagButton = configuredBagButton;
             voiceButton = configuredVoiceButton;
             minimap = configuredMinimap;
             objectiveText = configuredObjectiveText;
             catchProgressText = configuredCatchProgressText;
             catchProgressView = configuredCatchProgressView;
+            ApplyEssentialLayoutDefaults();
             BindButtonListeners();
+            BindSlotListeners();
         }
 
         private void OnEnable()
@@ -104,15 +130,22 @@ namespace PawsAndLoot.UI
             GameplayInputRouter.BindingDisplayChanged += BindBindingLabels;
             GameplayInputRouter.AnimalCommandPressed += HandleAnimalCommandPressed;
             GameplayInputRouter.VoicePressed += HandleVoicePressed;
+            CatInventoryInteractable.ExchangeRequested += OpenCatExchange;
             ApplyEssentialLayoutDefaults();
+            ResolveSerializedTextFallbacks();
             HideUnusedMatchTimer();
             HideCentralObjective();
             HudRuntimeInstaller.SuppressLegacyPresentation();
-            ResolveSerializedTextFallbacks();
             BindButtonListeners();
+            BindSlotListeners();
             if (inventoryPanel != null)
             {
                 inventoryPanel.SetActive(false);
+            }
+
+            if (catExchangePanel != null)
+            {
+                catExchangePanel.SetActive(false);
             }
         }
 
@@ -123,6 +156,7 @@ namespace PawsAndLoot.UI
             GameplayInputRouter.BindingDisplayChanged -= BindBindingLabels;
             GameplayInputRouter.AnimalCommandPressed -= HandleAnimalCommandPressed;
             GameplayInputRouter.VoicePressed -= HandleVoicePressed;
+            CatInventoryInteractable.ExchangeRequested -= OpenCatExchange;
             UnsubscribeDispatcher();
             if (buttonListenersBound)
             {
@@ -130,6 +164,8 @@ namespace PawsAndLoot.UI
                 voiceButton?.onClick.RemoveListener(ToggleVoiceCapture);
                 buttonListenersBound = false;
             }
+
+            ClearSlotListeners();
             GameplayInputRouter.SetGameplayInputSuppressed(false);
         }
 
@@ -143,6 +179,64 @@ namespace PawsAndLoot.UI
             bagButton?.onClick.AddListener(ToggleInventory);
             voiceButton?.onClick.AddListener(ToggleVoiceCapture);
             buttonListenersBound = bagButton != null || voiceButton != null;
+        }
+
+        private void BindSlotListeners()
+        {
+            ClearExchangeSlots(exchangePlayerSlots);
+            ClearExchangeSlots(exchangeCatSlots);
+            slotListenersBound =
+                BindExchangeSlots(exchangePlayerSlots, HandleExchangePlayerSlotClicked)
+                | BindExchangeSlots(exchangeCatSlots, HandleExchangeCatSlotClicked);
+        }
+
+        private static bool BindExchangeSlots(
+            InventorySlotView[] slots,
+            Action<int> handler)
+        {
+            if (slots == null || handler == null)
+            {
+                return false;
+            }
+
+            bool bound = false;
+            for (int index = 0; index < slots.Length; index++)
+            {
+                InventorySlotView slot = slots[index];
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                Button button = slot.GetComponent<Button>()
+                    ?? slot.gameObject.AddComponent<Button>();
+                int captured = index;
+                button.onClick.AddListener(() => handler(captured));
+                bound = true;
+            }
+
+            return bound;
+        }
+
+        private void ClearSlotListeners()
+        {
+            ClearExchangeSlots(exchangePlayerSlots);
+            ClearExchangeSlots(exchangeCatSlots);
+            slotListenersBound = false;
+        }
+
+        private static void ClearExchangeSlots(InventorySlotView[] slots)
+        {
+            if (slots == null)
+            {
+                return;
+            }
+
+            foreach (InventorySlotView slot in slots)
+            {
+                Button button = slot != null ? slot.GetComponent<Button>() : null;
+                button?.onClick.RemoveAllListeners();
+            }
         }
 
         private void Update()
@@ -174,11 +268,59 @@ namespace PawsAndLoot.UI
         public void SetInventoryOpen(bool open)
         {
             inventoryOpen = open;
-            GameplayInputRouter.SetGameplayInputSuppressed(open);
+            if (open)
+            {
+                SetCatExchangeOpen(false);
+            }
+
             if (inventoryPanel != null)
             {
                 inventoryPanel.SetActive(open);
             }
+
+            RefreshInputSuppression();
+        }
+
+        public void OpenCatExchange(
+            CatInventoryInteractable catInventory,
+            ToolCarrier playerCarrier)
+        {
+            if (catInventory == null || playerCarrier == null)
+            {
+                return;
+            }
+
+            activeCatInventory = catInventory;
+            exchangeCarrier = playerCarrier;
+            SetInventoryOpen(false);
+            SetCatExchangeOpen(true);
+            voiceFeed?.ShowMessage(
+                "고양이 가방",
+                "아이템을 눌러 서로 옮길 수 있어요",
+                2.5f);
+        }
+
+        private void SetCatExchangeOpen(bool open)
+        {
+            catExchangeOpen = open;
+            if (!open)
+            {
+                activeCatInventory = null;
+                exchangeCarrier = null;
+            }
+
+            if (catExchangePanel != null)
+            {
+                catExchangePanel.SetActive(open);
+            }
+
+            RefreshInputSuppression();
+        }
+
+        private void RefreshInputSuppression()
+        {
+            GameplayInputRouter.SetGameplayInputSuppressed(
+                inventoryOpen || catExchangeOpen);
         }
 
         private void ToggleVoiceCapture()
@@ -186,6 +328,10 @@ namespace PawsAndLoot.UI
             ResolveSources();
             if (voice == null)
             {
+                voiceFeed?.ShowMessage(
+                    "VOICE UNAVAILABLE",
+                    "Microphone input is not connected.",
+                    2.5f);
                 return;
             }
 
@@ -202,9 +348,10 @@ namespace PawsAndLoot.UI
 
         private void HandleEscape()
         {
-            if (inventoryOpen)
+            if (inventoryOpen || catExchangeOpen)
             {
                 SetInventoryOpen(false);
+                SetCatExchangeOpen(false);
             }
         }
 
@@ -216,6 +363,13 @@ namespace PawsAndLoot.UI
             jailState ??= FindFirstObjectByType<
                 PawsAndLoot.Gameplay.Arrest.ThiefJailState>();
             thiefWallet ??= FindFirstObjectByType<ThiefLootWallet>();
+            if (lootConfig == null && GameConfigService.IsInitialized)
+            {
+                lootConfig = GameConfigService.Current.Loot;
+            }
+
+            currencyIcon ??= Resources.Load<Sprite>("UI/CurrencyCoin");
+            EnsureCatInteractablesInstalled();
             PlayerRole role = ResolveRole();
             if (carrier == null || carrier.Role != role)
             {
@@ -231,8 +385,10 @@ namespace PawsAndLoot.UI
                 }
             }
 
-            if (scanner == null)
+            if (scanner == null || !MatchesRole(scanner, role))
             {
+                scanner = null;
+                interactionInput = null;
                 foreach (PlayerInteractionScanner candidate in
                     FindObjectsByType<PlayerInteractionScanner>(FindObjectsSortMode.None))
                 {
@@ -247,6 +403,13 @@ namespace PawsAndLoot.UI
                         }
                     }
                 }
+            }
+
+            if (scanner != null
+                && (interactionInput == null
+                    || interactionInput.GetComponent<PlayerInteractionScanner>() != scanner))
+            {
+                interactionInput = scanner.GetComponent<PlayerInteractionInput>();
             }
 
             if (voice == null)
@@ -273,6 +436,25 @@ namespace PawsAndLoot.UI
             }
 
             SubscribeDispatcherIfNeeded();
+        }
+
+        private void EnsureCatInteractablesInstalled()
+        {
+            if (catInteractablesInstalled)
+            {
+                return;
+            }
+
+            CatInventoryInteractable.InstallMissingInteractables();
+            catInteractablesInstalled =
+                FindFirstObjectByType<CatInventoryInteractable>() != null;
+        }
+
+        private static bool MatchesRole(Component component, PlayerRole role)
+        {
+            PlayerRoleIdentity identity =
+                component != null ? component.GetComponent<PlayerRoleIdentity>() : null;
+            return identity == null || identity.Role == role;
         }
 
         private void BindMatchTimer()
@@ -419,32 +601,238 @@ namespace PawsAndLoot.UI
             {
                 ThrowableKind kind = ThrowableKind.Rock;
                 bool hasItem = carrier != null
-                    && carrier.TryGetSlot(index, out kind);
+                    && carrier.TryGetSlot(index, out kind)
+                    && ThrowableCatalog.CanUseInQuickSlot(kind);
                 int quantity = hasItem
                     ? carrier.GetSlotQuantity(index)
                     : 0;
                 bool selected = carrier != null && carrier.SelectedSlot == index;
                 QuickSlotViewModel model = new(
                     GameplayInputRouter.GetQuickSlotLabel(index),
-                    null,
+                    hasItem ? GetItemIcon(kind) : null,
                     quantity,
                     selected,
                     !hasItem,
                     0f,
-                    hasItem ? GetItemGlyph(kind) : string.Empty);
+                    hasItem && GetItemIcon(kind) == null
+                        ? GetItemGlyph(kind)
+                        : string.Empty);
                 quickSlots[index]?.Bind(model);
-
-                if (index < inventorySlots.Length)
-                {
-                    inventorySlots[index]?.Bind(new InventorySlotViewModel(
-                        GameplayInputRouter.GetQuickSlotLabel(index),
-                        null,
-                        quantity,
-                        selected,
-                        !hasItem,
-                        hasItem ? GetItemGlyph(kind) : string.Empty));
-                }
             }
+
+            BindInventorySlots();
+            BindCatExchangeSlots();
+        }
+
+        private void BindInventorySlots()
+        {
+            LootItem[] lootItems = inventoryOpen
+                ? FindVisibleLootItems()
+                : Array.Empty<LootItem>();
+            for (int index = 0; index < inventorySlots.Length; index++)
+            {
+                ThrowableKind kind = ThrowableKind.Rock;
+                bool quickSlotIndex = index < QuickSlotCount;
+                bool hasItem = quickSlotIndex
+                    && carrier != null
+                    && carrier.TryGetSlot(index, out kind)
+                    && ThrowableCatalog.CanUseInQuickSlot(kind);
+                int quantity = hasItem
+                    ? carrier.GetSlotQuantity(index)
+                    : 0;
+                bool selected = hasItem
+                    && carrier != null
+                    && carrier.SelectedSlot == index;
+                int lootIndex = index - QuickSlotCount;
+                LootDefinition definition =
+                    !quickSlotIndex && lootIndex >= 0 && lootIndex < lootItems.Length
+                        ? lootItems[lootIndex].Definition
+                        : null;
+                bool hasLootPrice = definition != null;
+                Sprite lootIcon = hasLootPrice ? GetLootIcon(definition) : null;
+
+                inventorySlots[index]?.Bind(new InventorySlotViewModel(
+                    quickSlotIndex
+                        ? GameplayInputRouter.GetQuickSlotLabel(index)
+                        : (index + 1).ToString(),
+                    hasItem ? GetItemIcon(kind) : lootIcon,
+                    quantity,
+                    selected,
+                    !(hasItem || hasLootPrice),
+                    hasItem && GetItemIcon(kind) == null
+                        ? GetItemGlyph(kind)
+                        : string.Empty,
+                    hasItem
+                        ? ThrowableCatalog.GetDisplayName(kind)
+                        : definition != null
+                            ? definition.DisplayName
+                            : string.Empty,
+                    hasLootPrice ? GetLootPrice(definition) : 0,
+                    hasLootPrice ? currencyIcon : null));
+            }
+        }
+
+        private LootItem[] FindVisibleLootItems()
+        {
+            LootItem[] all = FindObjectsByType<LootItem>(FindObjectsSortMode.None);
+            if (all.Length == 0)
+            {
+                return Array.Empty<LootItem>();
+            }
+
+            var visible = new List<LootItem>(all.Length);
+            foreach (LootItem item in all)
+            {
+                if (item == null
+                    || item.Definition == null
+                    || item.CurrentState == LootState.Sold)
+                {
+                    continue;
+                }
+
+                visible.Add(item);
+            }
+
+            visible.Sort((left, right) => string.Compare(
+                left.Definition.DisplayName,
+                right.Definition.DisplayName,
+                StringComparison.CurrentCulture));
+            return visible.ToArray();
+        }
+
+        private int GetLootPrice(LootDefinition definition)
+        {
+            if (definition == null)
+            {
+                return 0;
+            }
+
+            if (lootConfig == null && GameConfigService.IsInitialized)
+            {
+                lootConfig = GameConfigService.Current.Loot;
+            }
+
+            if (lootConfig != null)
+            {
+                return definition.GetPrice(lootConfig);
+            }
+
+            return definition.Rarity switch
+            {
+                LootRarity.Uncommon => 350,
+                LootRarity.Rare => 500,
+                _ => 200
+            };
+        }
+
+        private void BindCatExchangeSlots()
+        {
+            ToolCarrier sourceCarrier = exchangeCarrier ?? carrier;
+            for (int index = 0; index < exchangePlayerSlots.Length; index++)
+            {
+                ThrowableKind kind = ThrowableKind.Rock;
+                bool hasItem = sourceCarrier != null
+                    && sourceCarrier.TryGetSlot(index, out kind)
+                    && ThrowableCatalog.CanUseInQuickSlot(kind);
+                exchangePlayerSlots[index]?.Bind(new InventorySlotViewModel(
+                    GameplayInputRouter.GetQuickSlotLabel(index),
+                    hasItem ? GetItemIcon(kind) : null,
+                    hasItem ? sourceCarrier.GetSlotQuantity(index) : 0,
+                    sourceCarrier != null && sourceCarrier.SelectedSlot == index,
+                    !hasItem,
+                    hasItem && GetItemIcon(kind) == null
+                        ? GetItemGlyph(kind)
+                        : string.Empty,
+                    hasItem ? ThrowableCatalog.GetDisplayName(kind) : string.Empty));
+            }
+
+            for (int index = 0; index < exchangeCatSlots.Length; index++)
+            {
+                ThrowableKind kind = ThrowableKind.Rock;
+                bool hasItem = activeCatInventory != null
+                    && activeCatInventory.TryGetSlot(index, out kind)
+                    && ThrowableCatalog.CanUseInQuickSlot(kind);
+                exchangeCatSlots[index]?.Bind(new InventorySlotViewModel(
+                    (index + 1).ToString(),
+                    hasItem ? GetItemIcon(kind) : null,
+                    hasItem ? activeCatInventory.GetSlotQuantity(index) : 0,
+                    false,
+                    !hasItem,
+                    hasItem && GetItemIcon(kind) == null
+                        ? GetItemGlyph(kind)
+                        : string.Empty,
+                    hasItem ? ThrowableCatalog.GetDisplayName(kind) : string.Empty));
+            }
+        }
+
+        private void HandleExchangePlayerSlotClicked(int index)
+        {
+            if (!catExchangeOpen
+                || activeCatInventory == null
+                || exchangeCarrier == null
+                || !exchangeCarrier.TryGetSlot(index, out ThrowableKind kind))
+            {
+                return;
+            }
+
+            const int transferQuantity = 1;
+            if (!activeCatInventory.CanStore(kind, transferQuantity))
+            {
+                voiceFeed?.ShowMessage("고양이 가방", "빈 칸이 없어요", 2f);
+                return;
+            }
+
+            if (!exchangeCarrier.TryTakeOne(index, out kind))
+            {
+                return;
+            }
+
+            if (!activeCatInventory.TryStore(kind, transferQuantity))
+            {
+                exchangeCarrier.TryStore(kind, transferQuantity);
+                voiceFeed?.ShowMessage("고양이 가방", "아이템을 옮기지 못했어요", 2f);
+                return;
+            }
+
+            voiceFeed?.ShowMessage(
+                "고양이에게 전달",
+                ThrowableCatalog.GetDisplayName(kind),
+                1.5f);
+        }
+
+        private void HandleExchangeCatSlotClicked(int index)
+        {
+            if (!catExchangeOpen
+                || activeCatInventory == null
+                || exchangeCarrier == null
+                || !activeCatInventory.TryGetSlot(index, out ThrowableKind kind))
+            {
+                return;
+            }
+
+            const int transferQuantity = 1;
+            if (!exchangeCarrier.CanStore(kind, transferQuantity))
+            {
+                voiceFeed?.ShowMessage("도둑 가방", "퀵슬롯이 가득 찼어요", 2f);
+                return;
+            }
+
+            if (!activeCatInventory.TryTakeOne(index, out kind))
+            {
+                return;
+            }
+
+            if (!exchangeCarrier.TryStore(kind, transferQuantity))
+            {
+                activeCatInventory.TryStore(kind, transferQuantity);
+                voiceFeed?.ShowMessage("도둑 가방", "아이템을 옮기지 못했어요", 2f);
+                return;
+            }
+
+            voiceFeed?.ShowMessage(
+                "가방으로 받음",
+                ThrowableCatalog.GetDisplayName(kind),
+                1.5f);
         }
 
         private void BindBindingLabels()
@@ -646,6 +1034,69 @@ namespace PawsAndLoot.UI
                 second);
         }
 
+        private Sprite GetItemIcon(ThrowableKind kind)
+        {
+            if (itemIconCache.TryGetValue(kind, out Sprite cached))
+            {
+                return cached;
+            }
+
+            string path = GetItemIconResourcePath(kind);
+            Sprite sprite = string.IsNullOrWhiteSpace(path)
+                ? null
+                : Resources.Load<Sprite>(path);
+            itemIconCache[kind] = sprite;
+            return sprite;
+        }
+
+        private Sprite GetLootIcon(LootDefinition definition)
+        {
+            string stableId = definition != null
+                ? definition.StableId
+                : string.Empty;
+            if (string.IsNullOrWhiteSpace(stableId))
+            {
+                return null;
+            }
+
+            if (lootIconCache.TryGetValue(stableId, out Sprite cached))
+            {
+                return cached;
+            }
+
+            string path = stableId switch
+            {
+                "common-trinket" => "UI/ItemIcons/gold medal",
+                "uncommon-watch" => "UI/ItemIcons/golden watch",
+                "rare-jewel" => "UI/ItemIcons/blue gemstone",
+                _ => string.Empty
+            };
+            Sprite sprite = string.IsNullOrWhiteSpace(path)
+                ? null
+                : Resources.Load<Sprite>(path);
+            lootIconCache[stableId] = sprite;
+            return sprite;
+        }
+
+        private static string GetItemIconResourcePath(ThrowableKind kind)
+        {
+            return kind switch
+            {
+                ThrowableKind.Rock => "UI/ItemIcons/rock",
+                ThrowableKind.Banana => "UI/ItemIcons/banana",
+                ThrowableKind.GlueTrap => "UI/ItemIcons/catnip pouch",
+                ThrowableKind.SensorLight => "UI/ItemIcons/police lantern alarm",
+                ThrowableKind.TunaCan => "UI/ItemIcons/fish can",
+                ThrowableKind.DogTreat => "UI/ItemIcons/bone",
+                ThrowableKind.RubberChicken => "UI/ItemIcons/yellow chicken",
+                // No authored icons for these two yet; the can stands in, the
+                // same way PlacedTrapView greyboxes the props themselves.
+                ThrowableKind.Firework => "UI/ItemIcons/can",
+                ThrowableKind.FrozenOctopus => "UI/ItemIcons/can",
+                _ => string.Empty
+            };
+        }
+
         private static string GetItemGlyph(ThrowableKind kind)
         {
             return kind switch
@@ -654,6 +1105,11 @@ namespace PawsAndLoot.UI
                 ThrowableKind.Banana => "B",
                 ThrowableKind.GlueTrap => "G",
                 ThrowableKind.SensorLight => "S",
+                ThrowableKind.TunaCan => "T",
+                ThrowableKind.DogTreat => "D",
+                ThrowableKind.RubberChicken => "C",
+                ThrowableKind.Firework => "F",
+                ThrowableKind.FrozenOctopus => "O",
                 _ => "?"
             };
         }
@@ -666,8 +1122,8 @@ namespace PawsAndLoot.UI
                 visible,
                 $"[{GameplayInputRouter.InteractionBindingLabel}]",
                 visible ? scanner.CurrentPrompt : string.Empty,
-                false,
-                0f));
+                interactionInput != null && interactionInput.IsHolding,
+                interactionInput != null ? interactionInput.HoldProgress01 : 0f));
             PositionContextPrompt(visible);
         }
 
@@ -704,6 +1160,7 @@ namespace PawsAndLoot.UI
 
         private void ResolveSerializedTextFallbacks()
         {
+            matchTimer ??= FindText("Match Timer");
             objectiveText ??= FindText("Objective Text");
             catchProgressText ??= FindText("Catch Progress");
             catchProgressView ??= FindView<PoliceCatchProgressView>(
@@ -765,7 +1222,7 @@ namespace PawsAndLoot.UI
                 new Vector2(0.5f, 0f),
                 new Vector2(0.5f, 0f),
                 new Vector2(0f, 104f),
-                new Vector2(360f, 54f));
+                new Vector2(420f, 68f));
             ApplyRect(
                 "Context Interaction",
                 new Vector2(0.5f, 0f),
@@ -775,11 +1232,51 @@ namespace PawsAndLoot.UI
                 new Vector2(300f, 34f));
             ApplyRect(
                 "ANIMAL COMMANDS",
-                Vector2.zero,
-                Vector2.zero,
-                Vector2.zero,
-                new Vector2(24f, 126f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -24f),
                 new Vector2(292f, 214f));
+            ApplyRect(
+                "Inventory",
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -260f),
+                new Vector2(470f, 780f));
+            ApplyRect(
+                "Cat Exchange",
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -24f),
+                new Vector2(780f, 820f));
+            ApplyRect(
+                "Cat Exchange/Player Bag",
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -124f),
+                new Vector2(460f, 632f));
+            ApplyRect(
+                "Cat Exchange/Cat Bag",
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(504f, -424f),
+                new Vector2(252f, 302f));
+            ApplyPanelImage(
+                "Cat Exchange",
+                new Color(0.015f, 0.035f, 0.055f, 0.52f),
+                true);
+            ApplyPanelImage(
+                "Cat Exchange/Player Bag",
+                new Color(0.02f, 0.06f, 0.09f, 0.48f),
+                true);
+            ApplyPanelImage(
+                "Cat Exchange/Cat Bag",
+                new Color(0.02f, 0.06f, 0.09f, 0.50f),
+                true);
             ApplyRect(
                 "Police Catches",
                 new Vector2(0.5f, 1f),
@@ -787,6 +1284,13 @@ namespace PawsAndLoot.UI
                 new Vector2(0.5f, 1f),
                 new Vector2(0f, -16f),
                 new Vector2(330f, 108f));
+            ApplyRect(
+                "Match Timer",
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -128f),
+                new Vector2(170f, 32f));
             ApplyRect(
                 "Catch Progress",
                 new Vector2(0.5f, 1f),
@@ -798,9 +1302,10 @@ namespace PawsAndLoot.UI
 
         private void HideUnusedMatchTimer()
         {
-            matchTimer = null;
             Transform child = transform.Find("Match Timer");
-            if (child != null)
+            if (child != null
+                && (matchTimer == null
+                    || !matchTimer.transform.IsChildOf(child)))
             {
                 child.gameObject.SetActive(false);
             }
@@ -827,6 +1332,22 @@ namespace PawsAndLoot.UI
             rect.anchoredPosition = anchoredPosition;
             rect.sizeDelta = sizeDelta;
             rect.localScale = Vector3.one;
+        }
+
+        private void ApplyPanelImage(
+            string childName,
+            Color color,
+            bool raycastTarget)
+        {
+            Transform child = transform.Find(childName);
+            Image image = child != null ? child.GetComponent<Image>() : null;
+            if (image == null)
+            {
+                return;
+            }
+
+            image.color = color;
+            image.raycastTarget = raycastTarget;
         }
 
         private void LogGraphicAuditOnce()
@@ -902,6 +1423,9 @@ namespace PawsAndLoot.UI
 
     public static class HudRuntimeInstaller
     {
+        private const int InventorySlotCount = 25;
+        private const int CatBagSlotCount = 4;
+
         private static bool startedFromBootstrap;
         private static readonly Type[] LegacyPresenterTypes =
         {
@@ -1117,6 +1641,7 @@ namespace PawsAndLoot.UI
 
             PoliceCatchProgressView catchProgress =
                 BuildPoliceCatchProgress(canvasObject.transform);
+            TMP_Text matchTimer = BuildMatchTimer(canvasObject.transform);
 
             RoleStatusPanelView roleStatus = BuildRoleStatus(canvasObject.transform);
             QuickSlotView[] quickSlots = BuildQuickSlots(canvasObject.transform);
@@ -1128,13 +1653,17 @@ namespace PawsAndLoot.UI
             VoiceCommandFeedView voiceFeed = BuildVoiceFeed(canvasObject.transform);
             ContextInteractionPromptView context = BuildContextPrompt(canvasObject.transform);
             GameObject inventoryPanel = BuildInventory(canvasObject.transform, out InventorySlotView[] inventorySlots);
+            GameObject catExchangePanel = BuildCatExchange(
+                canvasObject.transform,
+                out InventorySlotView[] exchangePlayerSlots,
+                out InventorySlotView[] exchangeCatSlots);
             Button bagButton = BuildBagButton(canvasObject.transform);
             MinimapHudController minimap = BuildMinimap(canvasObject.transform);
             BuildSensorRadar(canvasObject.transform, canvasObject);
 
             var controller = canvasObject.AddComponent<RoleAwareHudController>();
             controller.Configure(
-                null,
+                matchTimer,
                 roleStatus,
                 quickSlots,
                 animalCommands,
@@ -1144,6 +1673,9 @@ namespace PawsAndLoot.UI
                 context,
                 inventorySlots,
                 inventoryPanel,
+                catExchangePanel,
+                exchangePlayerSlots,
+                exchangeCatSlots,
                 bagButton,
                 voiceButton,
                 minimap,
@@ -1166,7 +1698,7 @@ namespace PawsAndLoot.UI
             TMP_Text role = CreateText(panel.transform, "Role", "POLICE", 20f, TextAlignmentOptions.TopLeft);
             TMP_Text objective = CreateText(panel.transform, "Objective", "Protect your animal", 14f, TextAlignmentOptions.TopLeft);
             TMP_Text status = CreateText(panel.transform, "Status", "ACTIVE", 13f, TextAlignmentOptions.TopLeft);
-            Image tint = CreateImage(panel.transform, "Role Tint", new Color(0.15f, 0.45f, 1f, 1f));
+            Image tint = CreateImage(panel.transform, "Role Tint", new Color(0.15f, 0.45f, 1f, 0.7f));
             Anchor(role.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -12f), new Vector2(-32f, 30f));
             Anchor(objective.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -48f), new Vector2(-32f, 24f));
             Anchor(status.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -78f), new Vector2(-32f, 22f));
@@ -1222,8 +1754,13 @@ namespace PawsAndLoot.UI
         {
             GameObject panel = CreatePanel(parent, "ANIMAL COMMANDS", new Vector2(292f, 214f));
             RectTransform panelRect = panel.GetComponent<RectTransform>();
-            panelRect.pivot = Vector2.zero;
-            Anchor(panelRect, Vector2.zero, Vector2.zero, new Vector2(24f, 126f), new Vector2(292f, 214f));
+            panelRect.pivot = new Vector2(0f, 1f);
+            Anchor(
+                panelRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -24f),
+                new Vector2(292f, 214f));
 
             TMP_Text title = CreateText(
                 panel.transform,
@@ -1242,7 +1779,7 @@ namespace PawsAndLoot.UI
                     $"Ctrl Command {index + 1}",
                     new Vector2(252f, 32f));
                 Image rowImage = row.GetComponent<Image>();
-                rowImage.color = new Color(0.02f, 0.07f, 0.09f, 0.92f);
+                rowImage.color = new Color(0.02f, 0.07f, 0.09f, 0.54f);
                 RectTransform rowRect = row.GetComponent<RectTransform>();
                 rowRect.pivot = new Vector2(0f, 1f);
                 Anchor(
@@ -1295,18 +1832,64 @@ namespace PawsAndLoot.UI
 
         private static VoiceCommandFeedView BuildVoiceFeed(Transform parent)
         {
-            GameObject panel = CreatePanel(parent, "Voice Command Feed", new Vector2(360f, 54f));
+            GameObject panel = CreatePanel(parent, "Voice Command Feed", new Vector2(420f, 68f));
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.pivot = new Vector2(0.5f, 0f);
-            Anchor(panelRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 104f), new Vector2(360f, 54f));
+            Anchor(panelRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 104f), new Vector2(420f, 68f));
             CanvasGroup group = panel.AddComponent<CanvasGroup>();
             TMP_Text input = CreateText(panel.transform, "Input", string.Empty, 12f, TextAlignmentOptions.Center);
             TMP_Text command = CreateText(panel.transform, "Command", string.Empty, 11f, TextAlignmentOptions.Center);
-            Anchor(input.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(10f, -2f), new Vector2(-20f, -4f));
-            Anchor(command.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.5f), new Vector2(10f, 2f), new Vector2(-20f, -4f));
+            GameObject paw = BuildPawIcon(panel.transform);
+            Anchor(input.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(56f, -2f), new Vector2(-66f, -4f));
+            Anchor(command.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.5f), new Vector2(56f, 2f), new Vector2(-66f, -4f));
             var view = panel.AddComponent<VoiceCommandFeedView>();
-            view.Configure(input, command, group);
+            view.Configure(input, command, group, paw);
             return view;
+        }
+
+        private static GameObject BuildPawIcon(Transform parent)
+        {
+            var root = new GameObject("Interpretation Paw", typeof(RectTransform));
+            root.transform.SetParent(parent, false);
+            RectTransform rect = root.GetComponent<RectTransform>();
+            Anchor(
+                rect,
+                new Vector2(0f, 0.5f),
+                new Vector2(0f, 0.5f),
+                new Vector2(30f, 0f),
+                new Vector2(34f, 34f));
+            Color pawColor = new(0.75f, 0.9f, 1f, 0.92f);
+            BuildPawCircle(root.transform, "Pad", new Vector2(0f, -5f), new Vector2(18f, 15f), pawColor);
+            BuildPawCircle(root.transform, "Toe 1", new Vector2(-11f, 9f), new Vector2(8f, 8f), pawColor);
+            BuildPawCircle(root.transform, "Toe 2", new Vector2(-3.5f, 13f), new Vector2(8f, 8f), pawColor);
+            BuildPawCircle(root.transform, "Toe 3", new Vector2(4.5f, 13f), new Vector2(8f, 8f), pawColor);
+            BuildPawCircle(root.transform, "Toe 4", new Vector2(12f, 9f), new Vector2(8f, 8f), pawColor);
+            root.SetActive(false);
+            return root;
+        }
+
+        private static void BuildPawCircle(
+            Transform parent,
+            string name,
+            Vector2 position,
+            Vector2 size,
+            Color color)
+        {
+            var circleObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(CircleGraphic));
+            circleObject.transform.SetParent(parent, false);
+            CircleGraphic circle = circleObject.GetComponent<CircleGraphic>();
+            circle.color = color;
+            circle.raycastTarget = false;
+            Anchor(
+                circle.rectTransform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                position,
+                size);
         }
 
         private static Button BuildBagButton(Transform parent)
@@ -1345,7 +1928,7 @@ namespace PawsAndLoot.UI
             RectTransform viewport = viewportObject.GetComponent<RectTransform>();
             Stretch(viewport);
             CircleGraphic viewportImage = viewportObject.GetComponent<CircleGraphic>();
-            viewportImage.color = new Color(0.08f, 0.12f, 0.15f, 1f);
+            viewportImage.color = new Color(0.08f, 0.12f, 0.15f, 0.72f);
             Mask mask = viewportObject.GetComponent<Mask>();
             mask.showMaskGraphic = false;
 
@@ -1448,11 +2031,44 @@ namespace PawsAndLoot.UI
             Anchor(panelRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 230f), new Vector2(300f, 34f));
             TMP_Text key = CreateText(panel.transform, "Key", "[E]", 13f, TextAlignmentOptions.Center);
             TMP_Text action = CreateText(panel.transform, "Action", "", 12f, TextAlignmentOptions.Left);
-            Image progress = CreateImage(panel.transform, "Hold Progress", new Color(0.2f, 0.85f, 1f, 0.6f));
-            progress.type = Image.Type.Filled;
-            Anchor(key.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), new Vector2(74f, 28f));
-            Anchor(action.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(94f, 0f), new Vector2(-106f, 28f));
-            Stretch(progress.rectTransform);
+            var progressBackObject = new GameObject(
+                "Hold Progress Background",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(CircleGraphic));
+            progressBackObject.transform.SetParent(panel.transform, false);
+            CircleGraphic progressBack =
+                progressBackObject.GetComponent<CircleGraphic>();
+            progressBack.RingThickness = 3f;
+            progressBack.color = new Color(0.2f, 0.85f, 1f, 0.16f);
+            progressBack.raycastTarget = false;
+            Anchor(
+                progressBackObject.GetComponent<RectTransform>(),
+                new Vector2(0f, 0.5f),
+                new Vector2(0f, 0.5f),
+                new Vector2(37f, 0f),
+                new Vector2(28f, 28f));
+
+            var progressObject = new GameObject(
+                "Hold Progress",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(RadialProgressGraphic));
+            progressObject.transform.SetParent(panel.transform, false);
+            RadialProgressGraphic progress =
+                progressObject.GetComponent<RadialProgressGraphic>();
+            progress.RingThickness = 3.5f;
+            progress.color = new Color(0.24f, 0.95f, 0.62f, 0.94f);
+            progress.raycastTarget = false;
+            progress.enabled = false;
+            Anchor(
+                progressObject.GetComponent<RectTransform>(),
+                new Vector2(0f, 0.5f),
+                new Vector2(0f, 0.5f),
+                new Vector2(37f, 0f),
+                new Vector2(28f, 28f));
+            Anchor(key.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(46f, 28f));
+            Anchor(action.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(72f, 0f), new Vector2(-84f, 28f));
             var view = panel.AddComponent<ContextInteractionPromptView>();
             view.Configure(key, action, progress);
             return view;
@@ -1477,9 +2093,9 @@ namespace PawsAndLoot.UI
             panelRect.pivot = new Vector2(0.5f, 1f);
             Anchor(panelRect, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(330f, 108f));
             Image background = panel.GetComponent<Image>();
-            background.color = new Color(0.01f, 0.04f, 0.07f, 0.86f);
+            background.color = new Color(0.01f, 0.04f, 0.07f, 0.62f);
             var outline = panel.AddComponent<Outline>();
-            outline.effectColor = new Color(0f, 0.9f, 1f, 0.9f);
+            outline.effectColor = new Color(0f, 0.9f, 1f, 0.72f);
             outline.effectDistance = new Vector2(1.5f, -1.5f);
 
             TMP_Text title = CreateText(
@@ -1510,7 +2126,7 @@ namespace PawsAndLoot.UI
                     $"Catch Slot {index + 1}",
                     new Vector2(58f, 58f));
                 Image slotImage = slot.GetComponent<Image>();
-                slotImage.color = new Color(0.02f, 0.05f, 0.08f, 0.92f);
+                slotImage.color = new Color(0.02f, 0.05f, 0.08f, 0.56f);
                 RectTransform slotRect = slot.GetComponent<RectTransform>();
                 Anchor(
                     slotRect,
@@ -1526,7 +2142,7 @@ namespace PawsAndLoot.UI
                     typeof(CircleGraphic));
                 fillObject.transform.SetParent(slot.transform, false);
                 CircleGraphic fill = fillObject.GetComponent<CircleGraphic>();
-                fill.color = new Color(0.05f, 0.08f, 0.10f, 0.85f);
+                fill.color = new Color(0.05f, 0.08f, 0.10f, 0.62f);
                 fill.raycastTarget = false;
                 Anchor(
                     fill.rectTransform,
@@ -1543,7 +2159,7 @@ namespace PawsAndLoot.UI
                 ringObject.transform.SetParent(slot.transform, false);
                 CircleGraphic ring = ringObject.GetComponent<CircleGraphic>();
                 ring.RingThickness = 4f;
-                ring.color = new Color(0.20f, 0.28f, 0.34f, 0.9f);
+                ring.color = new Color(0.20f, 0.28f, 0.34f, 0.72f);
                 ring.raycastTarget = false;
                 Anchor(
                     ring.rectTransform,
@@ -1563,6 +2179,28 @@ namespace PawsAndLoot.UI
             return view;
         }
 
+        private static TMP_Text BuildMatchTimer(Transform parent)
+        {
+            GameObject panel = CreatePanel(parent, "Match Timer", new Vector2(170f, 32f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0.5f, 1f);
+            Anchor(
+                panelRect,
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -128f),
+                new Vector2(170f, 32f));
+            TMP_Text timer = CreateText(
+                panel.transform,
+                "Label",
+                "04:00",
+                20f,
+                TextAlignmentOptions.Center);
+            timer.color = new Color(0.92f, 0.98f, 1f, 0.92f);
+            Stretch(timer.rectTransform);
+            return timer;
+        }
+
         private static TMP_Text BuildCatchProgress(Transform parent)
         {
             GameObject panel = CreatePanel(parent, "Catch Progress", new Vector2(260f, 36f));
@@ -1576,34 +2214,228 @@ namespace PawsAndLoot.UI
 
         private static GameObject BuildInventory(Transform parent, out InventorySlotView[] slots)
         {
-            GameObject panel = CreatePanel(parent, "Inventory", new Vector2(560f, 300f));
-            Anchor(panel.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(560f, 300f));
-            TMP_Text title = CreateText(panel.transform, "Title", "INVENTORY   [TAB]", 18f, TextAlignmentOptions.TopLeft);
+            GameObject panel = CreatePanel(parent, "Inventory", new Vector2(470f, 780f));
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0f, 1f);
+            Anchor(
+                panelRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -260f),
+                new Vector2(470f, 780f));
+            TMP_Text title = CreateText(panel.transform, "Title", "INVENTORY   [TAB]", 20f, TextAlignmentOptions.TopLeft);
             Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(24f, -22f), new Vector2(-48f, 34f));
-            var layout = panel.AddComponent<GridLayoutGroup>();
-            layout.cellSize = new Vector2(104f, 84f);
-            layout.spacing = new Vector2(10f, 10f);
-            layout.padding = new RectOffset(24, 24, 62, 20);
-            slots = new InventorySlotView[4];
+            Transform grid = CreateGridRoot(panel.transform, "Grid", 0f, 0f);
+            var layout = grid.gameObject.AddComponent<GridLayoutGroup>();
+            layout.cellSize = new Vector2(70f, 70f);
+            layout.spacing = new Vector2(8f, 8f);
+            layout.padding = new RectOffset(40, 40, 82, 84);
+            layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            layout.constraintCount = 5;
+            slots = new InventorySlotView[InventorySlotCount];
             for (int index = 0; index < slots.Length; index++)
             {
-                GameObject slot = CreatePanel(panel.transform, $"Inventory Slot {index + 1}", new Vector2(104f, 84f));
-                TMP_Text key = CreateText(slot.transform, "Key", (index + 1).ToString(), 13f, TextAlignmentOptions.TopLeft);
-                TMP_Text quantity = CreateText(slot.transform, "Quantity", string.Empty, 13f, TextAlignmentOptions.BottomRight);
-                TMP_Text glyph = CreateText(slot.transform, "Item Glyph", string.Empty, 24f, TextAlignmentOptions.Center);
-                Image icon = CreateImage(slot.transform, "Item Icon", Color.white);
-                Image selected = CreateImage(slot.transform, "Selected Frame", new Color(1f, 0.82f, 0.2f, 0.35f));
-                Image disabled = CreateImage(slot.transform, "Disabled", new Color(0f, 0f, 0f, 0.45f));
-                Anchor(key.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -8f), new Vector2(30f, 24f));
-                Anchor(quantity.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-34f, 8f), new Vector2(26f, 24f));
-                Anchor(glyph.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(54f, 46f));
-                Anchor(icon.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(54f, 54f));
-                Stretch(selected.rectTransform); Stretch(disabled.rectTransform);
-                slots[index] = slot.AddComponent<InventorySlotView>();
-                slots[index].Configure(key, quantity, icon, selected, disabled, glyph);
+                slots[index] = BuildInventorySlot(
+                    grid,
+                    $"Inventory Slot {index + 1}",
+                    new Vector2(70f, 70f),
+                    (index + 1).ToString(),
+                    18f);
             }
             panel.SetActive(false);
             return panel;
+        }
+
+        private static GameObject BuildCatExchange(
+            Transform parent,
+            out InventorySlotView[] playerSlots,
+            out InventorySlotView[] catSlots)
+        {
+            GameObject panel = CreatePanel(parent, "Cat Exchange", new Vector2(780f, 820f));
+            Image panelImage = panel.GetComponent<Image>();
+            if (panelImage != null)
+            {
+                panelImage.color = new Color(0.015f, 0.035f, 0.055f, 0.52f);
+            }
+
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.pivot = new Vector2(0f, 1f);
+            Anchor(
+                panelRect,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -24f),
+                new Vector2(780f, 820f));
+
+            TMP_Text title = CreateText(
+                panel.transform,
+                "Title",
+                "\uACE0\uC591\uC774\uC640 \uC0C1\uD638\uC791\uC6A9",
+                24f,
+                TextAlignmentOptions.TopLeft);
+            Anchor(
+                title.rectTransform,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(54f, -24f),
+                new Vector2(480f, 42f));
+
+            TMP_Text quickTitle = CreateText(
+                panel.transform,
+                "Quick Slot Title",
+                "QUICK SLOTS",
+                15f,
+                TextAlignmentOptions.TopLeft);
+            Anchor(
+                quickTitle.rectTransform,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(42f, -88f),
+                new Vector2(220f, 24f));
+
+            GameObject playerBag = CreatePanel(panel.transform, "Player Bag", new Vector2(460f, 632f));
+            Image playerImage = playerBag.GetComponent<Image>();
+            if (playerImage != null)
+            {
+                playerImage.color = new Color(0.02f, 0.06f, 0.09f, 0.48f);
+            }
+
+            Anchor(
+                playerBag.GetComponent<RectTransform>(),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -124f),
+                new Vector2(460f, 632f));
+            TMP_Text playerTitle = CreateText(
+                playerBag.transform,
+                "Title",
+                "\uB3C4\uB451 \uAC00\uBC29",
+                21f,
+                TextAlignmentOptions.TopLeft);
+            Anchor(playerTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(22f, -18f), new Vector2(-44f, 34f));
+            Transform playerGridRoot = CreateGridRoot(playerBag.transform, "Grid", 0f, 0f);
+            var playerGrid = playerGridRoot.gameObject.AddComponent<GridLayoutGroup>();
+            playerGrid.cellSize = new Vector2(70f, 70f);
+            playerGrid.spacing = new Vector2(8f, 8f);
+            playerGrid.padding = new RectOffset(35, 35, 72, 72);
+            playerGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            playerGrid.constraintCount = 5;
+            playerSlots = new InventorySlotView[InventorySlotCount];
+            for (int index = 0; index < playerSlots.Length; index++)
+            {
+                playerSlots[index] = BuildInventorySlot(
+                    playerGridRoot,
+                    $"Player Exchange Slot {index + 1}",
+                    new Vector2(70f, 70f),
+                    (index + 1).ToString(),
+                    18f);
+            }
+
+            GameObject catBag = CreatePanel(panel.transform, "Cat Bag", new Vector2(252f, 302f));
+            Image catImage = catBag.GetComponent<Image>();
+            if (catImage != null)
+            {
+                catImage.color = new Color(0.02f, 0.06f, 0.09f, 0.50f);
+            }
+
+            Anchor(
+                catBag.GetComponent<RectTransform>(),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(504f, -424f),
+                new Vector2(252f, 302f));
+            TMP_Text catTitle = CreateText(
+                catBag.transform,
+                "Title",
+                "\uACE0\uC591\uC774 \uAC00\uBC29",
+                21f,
+                TextAlignmentOptions.TopLeft);
+            Anchor(catTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(22f, -18f), new Vector2(-44f, 34f));
+            Transform catGridRoot = CreateGridRoot(catBag.transform, "Grid", 0f, 0f);
+            var catGrid = catGridRoot.gameObject.AddComponent<GridLayoutGroup>();
+            catGrid.cellSize = new Vector2(82f, 82f);
+            catGrid.spacing = new Vector2(12f, 12f);
+            catGrid.padding = new RectOffset(38, 38, 74, 28);
+            catGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            catGrid.constraintCount = 2;
+            catSlots = new InventorySlotView[CatBagSlotCount];
+            for (int index = 0; index < catSlots.Length; index++)
+            {
+                catSlots[index] = BuildInventorySlot(
+                    catGridRoot,
+                    $"Cat Bag Slot {index + 1}",
+                    new Vector2(82f, 82f),
+                    (index + 1).ToString(),
+                    24f);
+            }
+
+            TMP_Text hint = CreateText(
+                panel.transform,
+                "Hint",
+                "\uC544\uC774\uD15C \uCE78\uC744 \uD074\uB9AD\uD574\uC11C \uC804\uB2EC\uD558\uAC70\uB098 \uB3CC\uB824\uBC1B\uAE30",
+                15f,
+                TextAlignmentOptions.Bottom);
+            hint.color = new Color(0.85f, 0.95f, 1f, 0.82f);
+            Anchor(
+                hint.rectTransform,
+                new Vector2(0f, 0f),
+                new Vector2(1f, 0f),
+                new Vector2(34f, 34f),
+                new Vector2(-42f, 28f));
+
+            panel.SetActive(false);
+            return panel;
+        }
+
+        private static Transform CreateGridRoot(
+            Transform parent,
+            string name,
+            float topOffset,
+            float bottomOffset)
+        {
+            var gridObject = new GameObject(name, typeof(RectTransform));
+            gridObject.transform.SetParent(parent, false);
+            RectTransform rect = gridObject.GetComponent<RectTransform>();
+            Stretch(rect);
+            rect.offsetMin = new Vector2(0f, bottomOffset);
+            rect.offsetMax = new Vector2(0f, -topOffset);
+            return gridObject.transform;
+        }
+
+        private static InventorySlotView BuildInventorySlot(
+            Transform parent,
+            string name,
+            Vector2 size,
+            string keyText,
+            float glyphSize)
+        {
+            GameObject slot = CreatePanel(parent, name, size);
+            TMP_Text key = CreateText(slot.transform, "Key", keyText, 12f, TextAlignmentOptions.TopLeft);
+            TMP_Text quantity = CreateText(slot.transform, "Quantity", string.Empty, 12f, TextAlignmentOptions.BottomRight);
+            TMP_Text itemName = CreateText(slot.transform, "Item Name", string.Empty, 11f, TextAlignmentOptions.Top);
+            TMP_Text price = CreateText(slot.transform, "Price", string.Empty, 12f, TextAlignmentOptions.Right);
+            TMP_Text glyph = CreateText(slot.transform, "Item Glyph", string.Empty, glyphSize, TextAlignmentOptions.Center);
+            Image icon = CreateImage(slot.transform, "Item Icon", Color.white);
+            Image priceIcon = CreateImage(slot.transform, "Currency Icon", Color.white);
+            Image selected = CreateImage(slot.transform, "Selected Frame", new Color(1f, 0.82f, 0.2f, 0.34f));
+            Image disabled = CreateImage(slot.transform, "Disabled", new Color(0f, 0f, 0f, 0.22f));
+            Anchor(key.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(7f, -6f), new Vector2(28f, 22f));
+            Anchor(quantity.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-30f, 6f), new Vector2(24f, 22f));
+            Anchor(itemName.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -17f), new Vector2(-16f, 22f));
+            Anchor(price.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-33f, 8f), new Vector2(44f, 18f));
+            Anchor(glyph.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, size - new Vector2(24f, 24f));
+            Anchor(icon.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, size - new Vector2(24f, 24f));
+            Anchor(priceIcon.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-10f, 8f), new Vector2(14f, 14f));
+            itemName.color = new Color(1f, 0.96f, 0.86f, 0.96f);
+            price.color = new Color(1f, 0.85f, 0.16f, 1f);
+            priceIcon.raycastTarget = false;
+            Stretch(selected.rectTransform);
+            Stretch(disabled.rectTransform);
+            Button button = slot.AddComponent<Button>();
+            button.targetGraphic = slot.GetComponent<Image>();
+            InventorySlotView view = slot.AddComponent<InventorySlotView>();
+            view.Configure(key, quantity, icon, selected, disabled, glyph, itemName, price, priceIcon);
+            return view;
         }
 
         private static GameObject CreatePanel(Transform parent, string name, Vector2 size)
@@ -1611,7 +2443,7 @@ namespace PawsAndLoot.UI
             var panel = new GameObject(name, typeof(RectTransform), typeof(Image));
             panel.transform.SetParent(parent, false);
             Image image = panel.GetComponent<Image>();
-            image.color = new Color(0.035f, 0.05f, 0.08f, 0.94f);
+            image.color = new Color(0.035f, 0.05f, 0.08f, 0.68f);
             panel.GetComponent<RectTransform>().sizeDelta = size;
             return panel;
         }

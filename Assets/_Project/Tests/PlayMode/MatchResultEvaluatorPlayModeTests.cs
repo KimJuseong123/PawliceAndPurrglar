@@ -51,6 +51,55 @@ namespace PawsAndLoot.Tests.PlayMode
             yield return null;
         }
 
+        /// <summary>
+        /// The counters the result screen reports have to come from the real
+        /// wallet, arrest controller and clock, and they have to be read at the
+        /// instant the match ends. A moment later the match scene unloads and
+        /// every one of them reads zero — which is how the old screen ended up
+        /// showing numbers painted into a picture instead.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator DecidingReportsTheCountersTheResultScreenNeeds()
+        {
+            MatchResultSession.Clear();
+            ResultFixture fixture = CreateFixture();
+
+            fixture.MatchRuntime.Tick(
+                fixture.MatchConfig.MatchDurationSeconds);
+            Assert.That(
+                fixture.Evaluator.EvaluatePendingRequests(),
+                Is.True);
+            MatchResultSession.TryStore(fixture.Evaluator.CurrentResult);
+
+            Assert.That(
+                MatchResultSession.TryGetSummary(out MatchSummary summary),
+                Is.True);
+            Assert.That(
+                summary.IsReported,
+                Is.True,
+                "The evaluator decided without reporting any counters, so the "
+                + "result screen would have nothing to show.");
+            Assert.That(
+                summary.ElapsedSeconds,
+                Is.EqualTo(fixture.MatchConfig.MatchDurationSeconds)
+                    .Within(0.01f),
+                "Elapsed time must be how long the match ran, not how long "
+                + "was left.");
+            Assert.That(
+                summary.TargetAmount,
+                Is.GreaterThan(0),
+                "The gold target came from the wallet, so it cannot be zero.");
+            Assert.That(
+                summary.RequiredCatchCount,
+                Is.GreaterThan(0),
+                "The arrest requirement came from the arrest controller, so "
+                + "it cannot be zero.");
+
+            DestroyFixture(fixture);
+            MatchResultSession.Clear();
+            yield return null;
+        }
+
         private static ResultFixture CreateFixture()
         {
             MatchConfig matchConfig =

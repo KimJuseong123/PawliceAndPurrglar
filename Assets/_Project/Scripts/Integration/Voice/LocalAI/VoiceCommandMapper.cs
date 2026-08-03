@@ -24,7 +24,7 @@ namespace PawsAndLoot.Integration.Voice
                     when kind == CompanionKind.Cat => CompanionCommandId.Scout,
                 "DISTRACT" or "DISTRACT_TARGET"
                     when kind == CompanionKind.Cat => CompanionCommandId.Distract,
-                "STEAL" or "FETCH_OBJECT"
+                "ROOF" or "CLIMB_ROOF" or "STEAL" or "FETCH_OBJECT"
                     when kind == CompanionKind.Cat => CompanionCommandId.Steal,
                 "HIDE" or "GUARD_AREA" or "MOVE_TO_POSITION"
                     when kind == CompanionKind.Cat => CompanionCommandId.Hide,

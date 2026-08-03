@@ -446,6 +446,19 @@ namespace PawsAndLoot.Gameplay.Items
             return slot <= 1;
         }
 
+        public static bool CanUseInQuickSlot(ThrowableKind kind)
+        {
+            return kind is ThrowableKind.Rock
+                or ThrowableKind.Banana
+                or ThrowableKind.GlueTrap
+                or ThrowableKind.SensorLight
+                or ThrowableKind.TunaCan
+                or ThrowableKind.DogTreat
+                or ThrowableKind.RubberChicken
+                or ThrowableKind.Firework
+                or ThrowableKind.FrozenOctopus;
+        }
+
         /// <summary>
         /// Name shown in the HUD. Here so the UI does not grow its own list that
         /// drifts out of step with the enum.

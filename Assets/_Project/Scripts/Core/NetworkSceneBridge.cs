@@ -57,5 +57,35 @@ namespace PawsAndLoot.Core
         {
             return _rematchHandler != null && _rematchHandler();
         }
+
+        /// <summary>
+        /// Leaving the match for the lobby. Its own handler because going back
+        /// to the lobby has to end the session first: the lobby that loads is a
+        /// fresh scene with its own NetworkManager, and a session still running
+        /// on the old one leaves two of them alive with the stale one owning the
+        /// singleton.
+        /// </summary>
+        private static Action _leaveHandler;
+
+        public static bool HasLeaveHandler => _leaveHandler != null;
+
+        public static void SetLeaveHandler(Action handler)
+        {
+            _leaveHandler = handler;
+        }
+
+        public static void ClearLeaveHandler()
+        {
+            _leaveHandler = null;
+        }
+
+        /// <summary>
+        /// Ends any running session. Safe to call offline, where it does
+        /// nothing.
+        /// </summary>
+        public static void LeaveSession()
+        {
+            _leaveHandler?.Invoke();
+        }
     }
 }

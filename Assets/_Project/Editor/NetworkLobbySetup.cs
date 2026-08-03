@@ -4,8 +4,9 @@ using PawsAndLoot.UI;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 namespace PawsAndLoot.Editor
 {
@@ -13,33 +14,30 @@ namespace PawsAndLoot.Editor
     /// Builds the direct-IP lobby into the Bootstrap scene.
     ///
     /// Host authority over direct IP (DEC-027), so the screen has to show this
-    /// machine's address and take the partner's. No Relay, no discovery.
+    /// machine's address and take the partner's. No Relay, no discovery service
+    /// beyond the LAN advert.
+    ///
+    /// The interface itself is a prefab. This used to build it inline: an
+    /// authored mockup stretched across the screen with transparent buttons
+    /// pinned over it at fixed pixel offsets, which only lined up at the
+    /// mockup's own 4:3.
     /// </summary>
     internal static class NetworkLobbySetup
     {
-        /// <summary>
-        /// Room rows in the lobby. A LAN playtest has one or two hosts; four is
-        /// headroom, not a target.
-        /// </summary>
-        private const int RoomSlotCount = 4;
-
         private const string NetworkPrefabsListPath =
             "Assets/DefaultNetworkPrefabs.asset";
 
-        private static readonly Color Panel =
-            new(0.06f, 0.08f, 0.12f, 0.96f);
-        private static readonly Color Field =
-            new(0.14f, 0.17f, 0.22f, 1f);
-        private static readonly Color HostColor =
-            new(0.08f, 0.28f, 0.62f, 1f);
-        private static readonly Color JoinColor =
-            new(0.13f, 0.42f, 0.29f, 1f);
-        private static readonly Color SwapColor =
-            new(0.42f, 0.29f, 0.55f, 1f);
-        private static readonly Color StartColor =
-            new(0.72f, 0.5f, 0.12f, 1f);
-        private static readonly Color LeaveColor =
-            new(0.4f, 0.16f, 0.16f, 1f);
+        private const string LobbyRootName = "LobbyCanvas";
+
+        /// <summary>
+        /// The scene's older title canvas. Its dark backdrop and the two accent
+        /// bars are what showed through as black margins beside the lobby, so
+        /// it is switched off rather than drawn behind an opaque lobby.
+        /// </summary>
+        private const string LegacyInterfaceRootName = "Scene UI";
+
+        private static readonly Color LobbyBackdrop =
+            new(0.949f, 0.898f, 0.855f, 1f);
 
         public static void Build(GameSceneId sceneId)
         {
@@ -84,8 +82,17 @@ namespace PawsAndLoot.Editor
 
             // Announces this host on the LAN and lists the ones it hears, so the
             // two players can meet without reading an IP to each other.
+            LanRoomDirectory directory =
+                manager.gameObject.AddComponent<LanRoomDirectory>();
+            directory.Configure(session);
+
+            // Netcode keeps a NetworkManager alive across scene loads whether or
+            // not a session ever started, so returning to the lobby used to
+            // leave two of them running with the stale one still holding the
+            // static singleton. Everything this lobby spawned then resolved to
+            // that one and reported that its owner was not listening.
             manager.gameObject
-                .AddComponent<LanRoomDirectory>()
+                .AddComponent<LobbySessionReset>()
                 .Configure(session);
 
             // NET-008 verification. On the persistent object because the press
@@ -99,7 +106,46 @@ namespace PawsAndLoot.Editor
             probeObject.AddComponent<
                 PawsAndLoot.TechnicalValidation.NetworkLobbyProbe>();
 
-            BuildInterface(session);
+            InstallInterface(session, directory);
+            DeactivateLegacyInterface();
+            RecolourCamera();
+        }
+
+        [MenuItem("Paws & Loot/Setup/Rebuild Bootstrap Lobby")]
+        public static void RebuildBootstrapLobby()
+        {
+            string path = GameSceneCatalog.GetPath(GameSceneId.Bootstrap);
+            Scene scene = EditorSceneManager.OpenScene(
+                path,
+                OpenSceneMode.Single);
+            DestroyRoot(scene, LobbyRootName);
+            // The name the inline builder used. Removed too, so rebuilding an
+            // older scene does not leave two lobbies stacked on each other.
+            DestroyRoot(scene, "Lobby UI");
+            DestroyRoot(scene, "NetworkManager");
+            DestroyRoot(scene, "Network Lobby Probe");
+            Build(GameSceneId.Bootstrap);
+
+            if (!EditorSceneManager.SaveScene(scene))
+            {
+                throw new System.InvalidOperationException(
+                    $"Failed to save scene: {path}");
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("Bootstrap lobby rebuilt.");
+        }
+
+        private static void DestroyRoot(Scene scene, string name)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name == name)
+                {
+                    UnityEngine.Object.DestroyImmediate(root);
+                    return;
+                }
+            }
         }
 
         private const string RoleBoardPrefabPath =
@@ -113,6 +159,14 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static GameObject CreateRoleBoardPrefab()
         {
+            GameObject existing =
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    RoleBoardPrefabPath);
+            if (existing != null)
+            {
+                return existing;
+            }
+
             string directory = "Assets/_Project/Prefabs/Network";
             if (!AssetDatabase.IsValidFolder(directory))
             {
@@ -187,293 +241,109 @@ namespace PawsAndLoot.Editor
             return manager;
         }
 
-        private static void BuildInterface(
-            NetworkSessionController session)
+        /// <summary>
+        /// Drops the lobby prefab into the scene and hands it the two scene
+        /// services it cannot reference from an asset.
+        /// </summary>
+        private static void InstallInterface(
+            NetworkSessionController session,
+            LanRoomDirectory directory)
         {
-            var canvasObject = new GameObject(
-                "Lobby UI",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(GraphicRaycaster));
-            Canvas canvas = canvasObject.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            // Above the existing flow panel.
-            canvas.sortingOrder = 10;
-            CanvasScaler scaler =
-                canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode =
-                CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-
-            RectTransform panel = CreateRect(
-                "Lobby Panel",
-                canvasObject.transform,
-                new Vector2(0.5f, 0.5f),
-                new Vector2(760f, 540f),
-                new Vector2(0f, -170f));
-            panel.gameObject.AddComponent<Image>().color = Panel;
-
-            // The room list sits at the top because it is the path most players
-            // will take. Typing an IP stays below it, unchanged, for networks
-            // that drop broadcast traffic.
-            Text roomListLabel = CreateLabel(
-                "Room List Label",
-                panel,
-                new Vector2(0f, 236f),
-                new Vector2(720f, 26f),
-                17,
-                TextAnchor.MiddleCenter);
-            roomListLabel.color = new Color(0.75f, 0.9f, 1f);
-
-            var roomButtons = new Button[RoomSlotCount];
-            var roomLabels = new Text[RoomSlotCount];
-            for (int index = 0; index < RoomSlotCount; index++)
+            GameObject prefab = LoadLobbyPrefab();
+            var instance =
+                PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            if (instance == null)
             {
-                Button roomButton = CreateButton(
-                    $"Room Slot {index}",
-                    panel,
-                    new Vector2(0f, 202f - index * 38f),
-                    new Vector2(700f, 34f),
-                    string.Empty,
-                    JoinColor);
-                roomButtons[index] = roomButton;
-                roomLabels[index] =
-                    roomButton.GetComponentInChildren<Text>();
-                // Hidden until a room is found, so an empty LAN shows nothing
-                // rather than four blank buttons.
-                roomButton.gameObject.SetActive(false);
+                throw new System.InvalidOperationException(
+                    $"Could not instantiate the lobby prefab: "
+                    + $"{LobbyCanvasBuilder.PrefabPath}");
             }
 
-            Text myAddress = CreateLabel(
-                "My Address",
-                panel,
-                new Vector2(0f, 34f),
-                new Vector2(720f, 30f),
-                20,
-                TextAnchor.MiddleCenter);
-            myAddress.color = new Color(0.75f, 0.9f, 1f);
+            instance.name = LobbyRootName;
 
-            Text status = CreateLabel(
-                "Status",
-                panel,
-                new Vector2(0f, 4f),
-                new Vector2(720f, 28f),
-                18,
-                TextAnchor.MiddleCenter);
-            status.color = new Color(0.82f, 0.85f, 0.9f);
+            var presenter = instance.GetComponent<NetworkLobbyPresenter>();
+            if (presenter == null)
+            {
+                throw new System.InvalidOperationException(
+                    "The lobby prefab has no NetworkLobbyPresenter. Rebuild it "
+                    + "with 'Paws & Loot/UI/Rebuild Lobby Canvas Prefab'.");
+            }
 
-            InputField joinAddress = CreateField(
-                "Join Address",
-                panel,
-                new Vector2(-150f, -34f),
-                new Vector2(300f, 34f),
-                "접속할 IP");
-            InputField port = CreateField(
-                "Port",
-                panel,
-                new Vector2(170f, -34f),
-                new Vector2(140f, 34f),
-                "포트");
-
-            Button host = CreateButton(
-                "Host Button",
-                panel,
-                new Vector2(-230f, -78f),
-                new Vector2(200f, 36f),
-                "방 만들기 (호스트)",
-                HostColor);
-            Button join = CreateButton(
-                "Join Button",
-                panel,
-                new Vector2(0f, -78f),
-                new Vector2(200f, 36f),
-                "이 IP로 접속",
-                JoinColor);
-            Button leave = CreateButton(
-                "Leave Button",
-                panel,
-                new Vector2(230f, -78f),
-                new Vector2(200f, 36f),
-                "세션 종료",
-                LeaveColor);
-
-            Text role = CreateLabel(
-                "Role",
-                panel,
-                new Vector2(0f, -122f),
-                new Vector2(720f, 30f),
-                20,
-                TextAnchor.MiddleCenter);
-            role.color = new Color(1f, 0.92f, 0.72f);
-
-            Button swap = CreateButton(
-                "Swap Role Button",
-                panel,
-                new Vector2(-115f, -166f),
-                new Vector2(220f, 36f),
-                "역할 바꾸기",
-                SwapColor);
-            Button start = CreateButton(
-                "Start Match Button",
-                panel,
-                new Vector2(115f, -166f),
-                new Vector2(220f, 36f),
-                "경기 시작",
-                StartColor);
-
-            Text hint = CreateLabel(
-                "Hint",
-                panel,
-                new Vector2(0f, -212f),
-                new Vector2(720f, 26f),
-                15,
-                TextAnchor.MiddleCenter);
-            hint.color = new Color(0.6f, 0.65f, 0.72f);
-            hint.text =
-                "한 명이 방 만들기 · 같은 PC면 127.0.0.1 · 경기 시작은 호스트만";
-
-            NetworkLobbyPresenter presenter =
-                panel.gameObject.AddComponent<NetworkLobbyPresenter>();
-            presenter.Configure(
-                session,
-                myAddress,
-                status,
-                role,
-                joinAddress,
-                port,
-                host,
-                join,
-                swap,
-                start,
-                leave);
-            presenter.ConfigureRoomList(
-                UnityEngine.Object.FindFirstObjectByType<
-                    LanRoomDirectory>(),
-                roomListLabel,
-                roomButtons,
-                roomLabels);
-
-            // No onClick.AddListener here on purpose. From an editor script it
-            // registers a non-persistent listener that is discarded when the
-            // scene is saved, so the built lobby's buttons did nothing and no
-            // session could ever start. The presenter binds them in OnEnable
-            // instead, which survives into the build.
+            presenter.ConfigureSession(session, directory);
+            // Without this the scene references written above are not recorded
+            // as prefab instance overrides and are gone on the next load.
+            PrefabUtility.RecordPrefabInstancePropertyModifications(presenter);
+            EditorUtility.SetDirty(instance);
         }
 
-        private static RectTransform CreateRect(
-            string name,
-            Transform parent,
-            Vector2 anchor,
-            Vector2 size,
-            Vector2 position)
+        private static GameObject LoadLobbyPrefab()
         {
-            var rect = new GameObject(
-                name,
-                typeof(RectTransform)).GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            rect.anchorMin = anchor;
-            rect.anchorMax = anchor;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
-            rect.anchoredPosition = position;
-            return rect;
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                LobbyCanvasBuilder.PrefabPath);
+            if (prefab != null)
+            {
+                return prefab;
+            }
+
+            // Generated on demand so a fresh clone can rebuild the scenes in one
+            // step rather than failing on a missing asset.
+            LobbyCanvasBuilder.Rebuild();
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                LobbyCanvasBuilder.PrefabPath);
+            if (prefab == null)
+            {
+                throw new System.IO.FileNotFoundException(
+                    "The lobby prefab is missing and could not be generated.",
+                    LobbyCanvasBuilder.PrefabPath);
+            }
+
+            return prefab;
         }
 
-        private static Text CreateLabel(
-            string name,
-            Transform parent,
-            Vector2 position,
-            Vector2 size,
-            int fontSize,
-            TextAnchor alignment)
+        /// <summary>
+        /// Switches off the scene's older title canvas.
+        ///
+        /// Left on, its dark backdrop and the two accent bars filled everything
+        /// the lobby did not cover, which is where the black margins in the
+        /// built lobby came from. It stays in the scene rather than being
+        /// deleted because the scene contract requires a canvas and a
+        /// navigation button to the match, and that check counts inactive
+        /// objects.
+        /// </summary>
+        private static void DeactivateLegacyInterface()
         {
-            RectTransform rect = CreateRect(
-                name,
-                parent,
-                new Vector2(0.5f, 0.5f),
-                size,
-                position);
-            Text label = rect.gameObject.AddComponent<Text>();
-            label.font = Resources.GetBuiltinResource<Font>(
-                "LegacyRuntime.ttf");
-            label.fontSize = fontSize;
-            label.alignment = alignment;
-            label.color = Color.white;
-            label.raycastTarget = false;
-            return label;
+            Scene scene = SceneManager.GetActiveScene();
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name == LegacyInterfaceRootName && root.activeSelf)
+                {
+                    root.SetActive(false);
+                    EditorUtility.SetDirty(root);
+                    return;
+                }
+            }
         }
 
-        private static InputField CreateField(
-            string name,
-            Transform parent,
-            Vector2 position,
-            Vector2 size,
-            string placeholder)
+        /// <summary>
+        /// The camera clears to the lobby's own ivory. The lobby draws an opaque
+        /// backdrop over the whole canvas anyway, but a mismatched clear colour
+        /// shows for a frame on load and in any editor view that is not playing.
+        /// </summary>
+        private static void RecolourCamera()
         {
-            RectTransform rect = CreateRect(
-                name,
-                parent,
-                new Vector2(0.5f, 0.5f),
-                size,
-                position);
-            rect.gameObject.AddComponent<Image>().color = Field;
+            Scene scene = SceneManager.GetActiveScene();
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                var camera = root.GetComponentInChildren<Camera>(true);
+                if (camera == null)
+                {
+                    continue;
+                }
 
-            Text text = CreateLabel(
-                "Text",
-                rect,
-                Vector2.zero,
-                size - new Vector2(16f, 8f),
-                18,
-                TextAnchor.MiddleLeft);
-            text.supportRichText = false;
-
-            Text hint = CreateLabel(
-                "Placeholder",
-                rect,
-                Vector2.zero,
-                size - new Vector2(16f, 8f),
-                18,
-                TextAnchor.MiddleLeft);
-            hint.text = placeholder;
-            hint.color = new Color(0.55f, 0.6f, 0.68f);
-
-            InputField field = rect.gameObject.AddComponent<InputField>();
-            field.textComponent = text;
-            field.placeholder = hint;
-            field.targetGraphic = rect.GetComponent<Image>();
-            return field;
-        }
-
-        private static Button CreateButton(
-            string name,
-            Transform parent,
-            Vector2 position,
-            Vector2 size,
-            string caption,
-            Color color)
-        {
-            RectTransform rect = CreateRect(
-                name,
-                parent,
-                new Vector2(0.5f, 0.5f),
-                size,
-                position);
-            Image image = rect.gameObject.AddComponent<Image>();
-            image.color = color;
-            Button button = rect.gameObject.AddComponent<Button>();
-            button.targetGraphic = image;
-
-            Text label = CreateLabel(
-                "Label",
-                rect,
-                Vector2.zero,
-                size,
-                17,
-                TextAnchor.MiddleCenter);
-            label.text = caption;
-            return button;
+                camera.backgroundColor = LobbyBackdrop;
+                EditorUtility.SetDirty(camera);
+                return;
+            }
         }
     }
 }
