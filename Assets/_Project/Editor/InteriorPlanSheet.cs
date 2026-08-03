@@ -45,7 +45,7 @@ namespace PawsAndLoot.Editor
                         && !name.EndsWith("_col")
                         && name != "interior_jail"
                         && name != "interior_police"
-                        && name != "interior_house01";
+                        && name != "interior_house03";
                 })
                 .Distinct()
                 .OrderBy(path => path)

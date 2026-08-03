@@ -60,7 +60,7 @@ namespace PawsAndLoot.Editor
             { "Bookstore", "interior_bookstore" },
             { "Jewellery", "interior_jewelry" },
             { "OneStorey", "interior_house02" },
-            { "TwoStorey", "interior_house03" }
+            { "TwoStorey", "interior_house01" }
         };
 
         /// <summary>
@@ -93,6 +93,7 @@ namespace PawsAndLoot.Editor
             string, Vector3> DoorWallForModel = new()
         {
             { "interior_bookstore", Vector3.forward },
+            { "interior_house01", Vector3.forward },
             { "interior_house02", Vector3.forward },
             { "interior_house03", Vector3.forward },
             { "interior_jewelry", Vector3.forward },
@@ -160,6 +161,11 @@ namespace PawsAndLoot.Editor
         private static readonly System.Collections.Generic.Dictionary<
             string, Vector2> DoorInPlan = new()
         {
+            { "interior_house01", new Vector2(0.521f, 0.145f) },
+
+            // Kept although nothing uses house03 at the moment. It is keyed by
+            // model name, so it costs nothing while the model is on the shelf
+            // and is right again the day it goes back in.
             { "interior_house03", new Vector2(0.472f, 0.391f) }
         };
 
