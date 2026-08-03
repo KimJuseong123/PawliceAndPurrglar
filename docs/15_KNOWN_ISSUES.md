@@ -4,6 +4,42 @@
 
 완료된 항목을 삭제하지 않고 해결 상태와 관련 작업을 기록한다.
 
+## ISSUE-054 — `origin/main`에 Play Mode 실패 13건이 있다 (OPEN, main 몫)
+
+**측정**: 깨끗한 `origin/main`(`6941897`)을 별도 worktree에 꺼내 실측했다 —
+**182개 중 13개 실패**. main 커밋 `6933723`도 메시지에 "Play Mode 실패 17개에서
+12개로"라고 적고 있어, main이 초록색이 아니라는 것은 기록에도 남아 있다.
+`13_CURRENT_STATE.md`의 "Play Mode 183개 통과"는 그보다 이전(`e4ef557`) 수치다.
+
+**목록** (실내 5, 너구리 5, 동료 표정 1, 경찰 HUD 1, 픽업 1):
+
+```text
+CompanionExpressionPlayModeTests.ShowingAFacePutsExactlyOneIconOnScreen
+HouseBackDoorPlayModeTests.TheInteriorCameraStaysBelowTheWalls
+HouseInteriorPlayModeTests.PocketingAValuablePaysTheThiefExactlyOnce
+HouseInteriorPlayModeTests.TheRoomIsTheModelsFurnishedInterior
+JumpAndCutawayPlayModeTests.AWallBetweenTheCameraAndThePlayerGetsOutOfTheWay
+PoliceHudPlayModeTests.HudShowsPoliceMatchLootArrestAndAlerts
+RaccoonGreetingPlayModeTests × 5
+RockPickupScenePlayModeTests.EveryPickupInTheSceneCanBeTakenByItsOwner
+ThiefJailPlayModeTests.JailHoldsTheThiefThenPutsThemBackOnTheGround
+```
+
+**실내 5건의 원인**: `HouseInteriorSetup`은 메시 파트 이름이 `IN_House1F_Wall*`인
+것을 찾아 반높이 칸막이를 세운다. 그런데 main이 넣은 실내 모델
+(`Assets/_Project/Art/Buildings/interior_house01.fbx`, 머티리얼
+`tripo_material_...`)은 그런 파트가 없는 **단일 메시**다. 그래서 칸막이가 0개
+생기고, 거기에 의존하는 "제거 가능한 면"·"실내 보물"·"실내 카메라 높이"가 연쇄로
+깨진다. main이 커밋해 둔 `Game.unity`에도 그 칸막이가 하나도 없어, main의 코드와
+씬은 서로 일치하고 **테스트만** 둘과 어긋나 있다.
+
+**교훈**: **임포트 모델로 갈아탈 때 그 모델의 파트 이름에 의존하는 코드를 함께
+옮긴다.** 이름이 안 맞아도 예외도 경고도 없다 — 세울 것을 못 찾았을 뿐이므로 조용히
+0개가 되고, 씬은 저장되고 생성기는 성공 로그를 남긴다. 세운 개수를 로그로 찍고
+0이면 실패로 만드는 편이 낫다.
+
+**관련**: `codex/mic-recording-feedback` 병합, `HouseInteriorSetup`
+
 ## ISSUE-053 — 로비 캐릭터가 허공에 서 있었다 (RESOLVED)
 
 **증상**: 밤 마을 광장 배경을 깔았는데 두 팀이 땅 없이 하늘에 떠 있었다.

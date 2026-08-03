@@ -64,6 +64,8 @@ namespace PawsAndLoot.Companions
                 case CompanionCommandOutcome.StealCarrying:
                 case CompanionCommandOutcome.StealDelivered:
                 case CompanionCommandOutcome.HideStored:
+                case CompanionCommandOutcome.RoofClimbStarted:
+                case CompanionCommandOutcome.RoofClimbReached:
                     return CompanionExpression.Happy;
 
                 case CompanionCommandOutcome.TrailMissing:
@@ -75,6 +77,7 @@ namespace PawsAndLoot.Companions
                 case CompanionCommandOutcome.StealNoLoot:
                 case CompanionCommandOutcome.StealOwnerBusy:
                 case CompanionCommandOutcome.HideUnavailable:
+                case CompanionCommandOutcome.RoofClimbUnavailable:
                     return CompanionExpression.Confused;
 
                 default:
