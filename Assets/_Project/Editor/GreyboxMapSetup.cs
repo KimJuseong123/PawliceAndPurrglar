@@ -404,6 +404,20 @@ namespace PawsAndLoot.Editor
                 controlBindings,
                 matchRuntime,
                 matchEndController);
+            // Treasure, sale point, hides and the throwables. Taken out with
+            // the old town and put back on the new one: without them the thief
+            // has no way to reach the gold target, so only the police can win.
+            //
+            // **Before the network sync**, which is what wires a link onto each
+            // piece. Put after it, the treasure existed on the host and was
+            // replicated to nobody: the regression read six pieces on one
+            // machine and loot links zero on both.
+            CreatePrototypeInteractionTargets(
+                villageRoot.transform,
+                locations,
+                ladders,
+                matchRuntime);
+
             CreateNetworkSync(
                 villageRoot.transform,
                 controlBindings,
@@ -764,7 +778,14 @@ namespace PawsAndLoot.Editor
             MapSandboxSetup.TownReport town,
             string kind)
         {
-            foreach (MapSandboxSetup.TownPlot plot in town.Plots)
+            return PlotFor(town.Plots, kind);
+        }
+
+        private static Vector3 PlotFor(
+            List<MapSandboxSetup.TownPlot> plots,
+            string kind)
+        {
+            foreach (MapSandboxSetup.TownPlot plot in plots)
             {
                 if (plot.Kind == kind)
                 {
@@ -2261,35 +2282,43 @@ namespace PawsAndLoot.Editor
                 GreyboxLocationId.ThiefSpawn,
                 ThiefSpawnPoints[0],
                 thiefColor);
+            // Where the town actually put the shops, not where they used to
+            // be. These four coordinates outlived three different towns and
+            // ended up pointing at open grass — and everything the thief needs
+            // hangs off them, so the treasure went to the grass with them.
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.Supermarket,
-                new Vector3(-9f, 0f, 0f),
+                PlotFor(_townPlots, "Supermarket"),
                 new Color(0.2f, 0.75f, 0.35f));
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.Bookstore,
-                new Vector3(9f, 0f, 0f),
+                PlotFor(_townPlots, "Bookstore"),
                 new Color(0.25f, 0.55f, 1f));
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.JewelryStore,
-                new Vector3(9f, 0f, -12f),
+                PlotFor(_townPlots, "Jewellery"),
                 new Color(0.85f, 0.35f, 0.9f));
+
+            // The raccoon has no plot of its own, so it gets a spot chosen on
+            // the new plan: open ground east of the square, on a block the
+            // thief has to cross the middle of the town to reach.
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.RaccoonMarket,
-                new Vector3(-9f, 0f, -12f),
+                new Vector3(28f, 0f, -8f),
                 marketColor);
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.CentralPlaza,
-                new Vector3(0f, 0f, -3f),
+                PlotFor(_townPlots, "Plaza"),
                 Color.white);
             return result;
         }
@@ -3344,9 +3373,9 @@ namespace PawsAndLoot.Editor
                     + new Vector3(0f, 0.5f, 4.5f),
                 locations[GreyboxLocationId.Supermarket].position
                     + new Vector3(0f, 0.5f, -4.5f),
-                new Vector3(-21f, 0.5f, -6f),
-                new Vector3(7f, 0.5f, 26f),
-                new Vector3(36f, 0.5f, 0f)
+                new Vector3(-24f, 0.5f, 40f),
+                new Vector3(30f, 0.5f, 34f),
+                new Vector3(8f, 0.5f, -19f)
             };
 
             for (int index = 0; index < lootSpots.Length; index++)
@@ -3516,9 +3545,12 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static void CreateShopShelfPickups(Transform parent)
         {
-            // In front of the supermarket, on the side away from the police
-            // counters so the two shops do not read as one.
-            Vector3 shelf = new Vector3(-20.5f, 0.5f, -16.5f);
+            // In front of the supermarket, taken from where the town put it
+            // rather than written down. The old coordinate ended up inside the
+            // lake garden when the town changed under it, and three of the four
+            // shelves were sealed in water.
+            Vector3 shelf = PlotFor(_townPlots, "Supermarket")
+                + new Vector3(-3.3f, 0.5f, -7f);
             (ThrowableKind Kind, Vector3 Offset, Color Tint,
                 PlayerRole? Owner)[] shelves =
             {
@@ -3602,17 +3634,21 @@ namespace PawsAndLoot.Editor
             // still builds, still validates and still logs "5 rock pickups
             // placed".
             //
-            // So these come off the road grid itself: the horizontals at
-            // z = 12 / -12 / -18 / 26 and the verticals at x = -24 / -18 / 0 /
-            // 18 / 24. An intersection is open ground by construction, and
+            // So these come off the road grid itself. The town changed and
+            // these did not, which put three of the five back inside a house
+            // or a lake — the check caught it, which is what it is for.
+            //
+            // The new grid runs its streets across at z = 34 / 10 / 6 / -9 and
+            // down at x = -19 / -11 / -3 / 5 / 14 / 20 / 31. A crossing is a
+            // road tile and therefore open ground by construction, and
             // CheckSpotIsClear below re-measures rather than trusting that.
             Vector3[] spots =
             {
-                new(-18f, 0.35f, 12f),
-                new(18f, 0.35f, -12f),
-                new(0f, 0.35f, 26f),
-                new(24f, 0.35f, 12f),
-                new(-24f, 0.35f, -18f)
+                new(-19f, 0.35f, 34f),
+                new(5f, 0.35f, 34f),
+                new(14f, 0.35f, 6f),
+                new(20f, 0.35f, -9f),
+                new(31f, 0.35f, 6f)
             };
 
             Material rockMaterial = LoadOrCreateMaterial(
