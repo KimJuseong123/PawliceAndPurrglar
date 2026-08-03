@@ -30,13 +30,15 @@ namespace PawsAndLoot.Integration.Voice
         private bool gatewayOwned;
         private bool ollamaOwned;
         private bool startupInProgress;
+        private bool gatewayCanHandleVoice;
         private readonly object processLogLock = new();
 
         public LocalAiRuntimeState State { get; private set; } =
             LocalAiRuntimeState.Unavailable;
         public string GatewayBaseUrl { get; private set; } =
             "http://127.0.0.1:8765";
-        public bool IsReady => State == LocalAiRuntimeState.Ready;
+        public bool IsReady => State == LocalAiRuntimeState.Ready
+            || (State == LocalAiRuntimeState.Degraded && gatewayCanHandleVoice);
         public event Action<LocalAiRuntimeState> StateChanged;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -122,6 +124,7 @@ namespace PawsAndLoot.Integration.Voice
                 configuration = LocalAiConfiguration.Load();
             }
 
+            gatewayCanHandleVoice = false;
             LocalAiGatewaySettings gateway = configuration.Data.gateway;
             LocalAiOllamaSettings ollama = configuration.Data.ollama;
             bool ollamaReady = false;
@@ -135,34 +138,35 @@ namespace PawsAndLoot.Integration.Voice
             {
                 if (!File.Exists(configuration.OllamaExecutable))
                 {
-                    SetState(LocalAiRuntimeState.Degraded);
-                    failed?.Invoke("OLLAMA_RUNTIME_MISSING");
-                    yield break;
+                    UnityEngine.Debug.LogWarning(
+                        "Ollama runtime missing; starting voice gateway in fallback mode.");
                 }
-
-                if (!StartOllama(ollama))
+                else if (!StartOllama(ollama))
                 {
-                    SetState(LocalAiRuntimeState.Degraded);
-                    failed?.Invoke("OLLAMA_START_FAILED");
-                    yield break;
+                    UnityEngine.Debug.LogWarning(
+                        "Ollama start failed; starting voice gateway in fallback mode.");
                 }
-
-                float deadline = Time.realtimeSinceStartup + gateway.startupTimeoutSeconds;
-                while (Time.realtimeSinceStartup < deadline && !ollamaReady)
+                else
                 {
-                    yield return new WaitForSecondsRealtime(0.5f);
-                    yield return healthClient.IsOllamaReady(
-                        BuildOllamaUrl(ollama.host, ollama.port),
-                        ollama.model,
-                        2,
-                        ready => ollamaReady = ready);
-                }
+                    float waitSeconds = Mathf.Min(
+                        Mathf.Max(1f, gateway.startupTimeoutSeconds),
+                        8f);
+                    float deadline = Time.realtimeSinceStartup + waitSeconds;
+                    while (Time.realtimeSinceStartup < deadline && !ollamaReady)
+                    {
+                        yield return new WaitForSecondsRealtime(0.5f);
+                        yield return healthClient.IsOllamaReady(
+                            BuildOllamaUrl(ollama.host, ollama.port),
+                            ollama.model,
+                            2,
+                            ready => ollamaReady = ready);
+                    }
 
-                if (!ollamaReady)
-                {
-                    SetState(LocalAiRuntimeState.Degraded);
-                    failed?.Invoke("OLLAMA_MODEL_NOT_READY");
-                    yield break;
+                    if (!ollamaReady)
+                    {
+                        UnityEngine.Debug.LogWarning(
+                            "Ollama model not ready; voice commands will use deterministic fallback first.");
+                    }
                 }
             }
 
@@ -172,15 +176,23 @@ namespace PawsAndLoot.Integration.Voice
             {
                 int port = gateway.port + index;
                 GatewayBaseUrl = BuildGatewayUrl(port);
+                LocalAiHealthResponse health = null;
                 yield return healthClient.GetGatewayHealth(
                     GatewayBaseUrl,
                     2,
-                    response => gatewayReady = response != null && response.IsReady,
+                    response =>
+                    {
+                        health = response;
+                        gatewayReady = response != null && response.CanHandleVoice;
+                    },
                     _ => { });
                 if (gatewayReady)
                 {
                     gatewayOwned = false;
-                    SetState(LocalAiRuntimeState.Ready);
+                    gatewayCanHandleVoice = true;
+                    SetState(health != null && health.IsReady
+                        ? LocalAiRuntimeState.Ready
+                        : LocalAiRuntimeState.Degraded);
                     yield break;
                 }
 
@@ -196,13 +208,20 @@ namespace PawsAndLoot.Integration.Voice
                     yield return healthClient.GetGatewayHealth(
                         GatewayBaseUrl,
                         2,
-                        response => gatewayReady = response != null && response.IsReady,
+                        response =>
+                        {
+                            health = response;
+                            gatewayReady = response != null && response.CanHandleVoice;
+                        },
                         _ => { });
                 }
 
                 if (gatewayReady)
                 {
-                    SetState(LocalAiRuntimeState.Ready);
+                    gatewayCanHandleVoice = true;
+                    SetState(health != null && health.IsReady
+                        ? LocalAiRuntimeState.Ready
+                        : LocalAiRuntimeState.Degraded);
                     yield break;
                 }
 
@@ -210,6 +229,7 @@ namespace PawsAndLoot.Integration.Voice
             }
 
             SetState(LocalAiRuntimeState.Error);
+            gatewayCanHandleVoice = false;
             failed?.Invoke("GATEWAY_NOT_READY");
         }
 

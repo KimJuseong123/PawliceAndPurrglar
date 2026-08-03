@@ -7,6 +7,7 @@ using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Integration.Network;
 using PawsAndLoot.Logging;
 using PawsAndLoot.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -153,8 +154,8 @@ namespace PawsAndLoot.TechnicalValidation
                 return false;
             }
 
-            InputField addressField = FindField("Join Address");
-            InputField portField = FindField("Port");
+            TMP_InputField addressField = FindField("Join Address");
+            TMP_InputField portField = FindField("Port");
             if (addressField != null)
             {
                 addressField.text = _address;
@@ -191,10 +192,10 @@ namespace PawsAndLoot.TechnicalValidation
             return null;
         }
 
-        private static InputField FindField(string objectName)
+        private static TMP_InputField FindField(string objectName)
         {
-            foreach (InputField field in
-                FindObjectsByType<InputField>(FindObjectsSortMode.None))
+            foreach (TMP_InputField field in
+                FindObjectsByType<TMP_InputField>(FindObjectsSortMode.None))
             {
                 if (field.name == objectName)
                 {

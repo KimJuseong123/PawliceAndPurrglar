@@ -21,6 +21,7 @@ class Runtime:
     def __init__(self, config: GatewayConfig):
         self.config = config
         self.status = "starting"
+        self.llm_ready = False
         self.stt = SttService(
             config.stt_model_path,
             config.stt_language,
@@ -36,7 +37,8 @@ class Runtime:
             self.stt.load()
         except Exception as error:
             self.stt.error = f"STT_LOAD_FAILED:{error}"
-        if not self.stt.ready or not self.ollama.ready():
+        self.llm_ready = self.ollama.ready()
+        if not self.stt.ready or not self.llm_ready:
             self.status = "degraded"
             return
         self.status = "ready"
@@ -67,7 +69,7 @@ def health() -> dict:
             "error": runtime.stt.error,
         },
         "llm": {
-            "ready": runtime.ollama.ready(),
+            "ready": runtime.llm_ready,
             "model": runtime.ollama.model,
         },
     }
@@ -83,8 +85,6 @@ async def voice_command(
 ) -> VoiceCommandResponse:
     if runtime.status not in {"ready", "degraded"} or not runtime.stt.ready:
         raise HTTPException(status_code=503, detail="LOCAL_AI_NOT_READY")
-    if not runtime.ollama.ready():
-        raise HTTPException(status_code=503, detail="OLLAMA_NOT_READY")
 
     request_id = str(uuid.uuid4())
     started = time.perf_counter()

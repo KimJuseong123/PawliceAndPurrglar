@@ -75,7 +75,7 @@ namespace PawsAndLoot.Companions
             {
                 if (ContainsAny(normalized, "지붕", "옥상", "climb", "roof"))
                 {
-                    return Match(CompanionCommandId.Scout, normalized, "지붕", "roof");
+                    return Match(CompanionCommandId.Steal, normalized, "지붕", "roof");
                 }
 
                 if (ContainsAny(normalized, "할퀴", "scratch"))

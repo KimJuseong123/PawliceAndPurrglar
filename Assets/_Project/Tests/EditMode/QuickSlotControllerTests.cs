@@ -152,5 +152,61 @@ namespace PawsAndLoot.Tests.EditMode
                 Is.EqualTo(ThrowableUse.Thrown));
             Assert.That(item.Quantity, Is.GreaterThan(1));
         }
+
+        [Test]
+        public void CanStoreChecksWholeQuantity()
+        {
+            var slots = new QuickSlotController();
+            slots.TryStore(ThrowableKind.Rock, 8, 9, out _);
+
+            Assert.That(slots.CanStore(ThrowableKind.Rock, 1, 9), Is.True);
+            Assert.That(slots.CanStore(ThrowableKind.Rock, 2, 9), Is.True);
+            slots.TryStore(ThrowableKind.Banana, 1, 9, out _);
+            slots.TryStore(ThrowableKind.GlueTrap, 1, 9, out _);
+            slots.TryStore(ThrowableKind.SensorLight, 1, 9, out _);
+
+            Assert.That(slots.CanStore(ThrowableKind.Rock, 2, 9), Is.False);
+        }
+
+        [Test]
+        public void TakingSlotRemovesTheWholeStack()
+        {
+            var slots = new QuickSlotController();
+            slots.TryStore(ThrowableKind.Banana, 3, 9, out int slot);
+
+            Assert.That(
+                slots.TryTakeSlot(
+                    slot,
+                    out ThrowableKind kind,
+                    out int quantity),
+                Is.True);
+            Assert.That(kind, Is.EqualTo(ThrowableKind.Banana));
+            Assert.That(quantity, Is.EqualTo(3));
+            Assert.That(slots.TryGet(slot, out _), Is.False);
+        }
+
+        [Test]
+        public void TakingOneLeavesTheRestOfTheStack()
+        {
+            var slots = new QuickSlotController();
+            slots.TryStore(ThrowableKind.Banana, 3, 9, out int slot);
+
+            Assert.That(slots.TryTakeOne(slot, out ThrowableKind kind), Is.True);
+            Assert.That(kind, Is.EqualTo(ThrowableKind.Banana));
+            Assert.That(slots.TryGet(slot, out ThrowableKind remaining), Is.True);
+            Assert.That(remaining, Is.EqualTo(ThrowableKind.Banana));
+            Assert.That(slots.GetQuantity(slot), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void CatalogIdentifiesQuickSlotEligibleItems()
+        {
+            Assert.That(
+                ThrowableCatalog.CanUseInQuickSlot(ThrowableKind.Rock),
+                Is.True);
+            Assert.That(
+                ThrowableCatalog.CanUseInQuickSlot(ThrowableKind.Firework),
+                Is.True);
+        }
     }
 }

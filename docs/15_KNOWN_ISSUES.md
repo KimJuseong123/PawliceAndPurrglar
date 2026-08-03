@@ -1,8 +1,274 @@
 # 알려진 문제와 공백
 
-마지막 갱신: 2026-07-27
+마지막 갱신: 2026-08-04
 
 완료된 항목을 삭제하지 않고 해결 상태와 관련 작업을 기록한다.
+
+## ISSUE-054 — `origin/main`에 Play Mode 실패 13건이 있다 (OPEN, main 몫)
+
+**측정**: 깨끗한 `origin/main`(`6941897`)을 별도 worktree에 꺼내 실측했다 —
+**182개 중 13개 실패**. main 커밋 `6933723`도 메시지에 "Play Mode 실패 17개에서
+12개로"라고 적고 있어, main이 초록색이 아니라는 것은 기록에도 남아 있다.
+`13_CURRENT_STATE.md`의 "Play Mode 183개 통과"는 그보다 이전(`e4ef557`) 수치다.
+
+**목록** (실내 5, 너구리 5, 동료 표정 1, 경찰 HUD 1, 픽업 1):
+
+```text
+CompanionExpressionPlayModeTests.ShowingAFacePutsExactlyOneIconOnScreen
+HouseBackDoorPlayModeTests.TheInteriorCameraStaysBelowTheWalls
+HouseInteriorPlayModeTests.PocketingAValuablePaysTheThiefExactlyOnce
+HouseInteriorPlayModeTests.TheRoomIsTheModelsFurnishedInterior
+JumpAndCutawayPlayModeTests.AWallBetweenTheCameraAndThePlayerGetsOutOfTheWay
+PoliceHudPlayModeTests.HudShowsPoliceMatchLootArrestAndAlerts
+RaccoonGreetingPlayModeTests × 5
+RockPickupScenePlayModeTests.EveryPickupInTheSceneCanBeTakenByItsOwner
+ThiefJailPlayModeTests.JailHoldsTheThiefThenPutsThemBackOnTheGround
+```
+
+**실내 5건의 원인**: `HouseInteriorSetup`은 메시 파트 이름이 `IN_House1F_Wall*`인
+것을 찾아 반높이 칸막이를 세운다. 그런데 main이 넣은 실내 모델
+(`Assets/_Project/Art/Buildings/interior_house01.fbx`, 머티리얼
+`tripo_material_...`)은 그런 파트가 없는 **단일 메시**다. 그래서 칸막이가 0개
+생기고, 거기에 의존하는 "제거 가능한 면"·"실내 보물"·"실내 카메라 높이"가 연쇄로
+깨진다. main이 커밋해 둔 `Game.unity`에도 그 칸막이가 하나도 없어, main의 코드와
+씬은 서로 일치하고 **테스트만** 둘과 어긋나 있다.
+
+**교훈**: **임포트 모델로 갈아탈 때 그 모델의 파트 이름에 의존하는 코드를 함께
+옮긴다.** 이름이 안 맞아도 예외도 경고도 없다 — 세울 것을 못 찾았을 뿐이므로 조용히
+0개가 되고, 씬은 저장되고 생성기는 성공 로그를 남긴다. 세운 개수를 로그로 찍고
+0이면 실패로 만드는 편이 낫다.
+
+**관련**: `codex/mic-recording-feedback` 병합, `HouseInteriorSetup`
+
+## ISSUE-053 — 로비 캐릭터가 허공에 서 있었다 (RESOLVED)
+
+**증상**: 밤 마을 광장 배경을 깔았는데 두 팀이 땅 없이 하늘에 떠 있었다.
+
+**원인**: 4:3 원화를 16:9에 덮어 배치할 때 달을 지키려고 **위쪽을 조금만 잘랐다**.
+그러면 보이는 범위가 원화 0.042~0.697이 되고, 광장의 조명 웅덩이(0.66~0.81)와 앞
+경계(0.589)는 대부분 화면 아래로 나간다. 배경은 정상적으로 그려지고 있었기 때문에
+"배경이 안 나온다"가 아니라 "캐릭터가 뜬다"로 보였다.
+
+**계약 테스트 전부가 통과했다.** 요소마다 크기·위치·스프라이트가 모두 맞았고 틀린
+것은 **두 요소 사이의 관계**뿐이었다. `EveryImageHasItsSprite`,
+`CharactersAndLogoKeepTheirAspect`, `VillagePlateCoversTheCanvasWithoutStretching`
+셋 다 이 상태를 정상으로 보고한다.
+
+**교훈**: **배경 위에 무언가를 세웠으면 배경의 어느 지점에 서 있는지 잰다.**
+원화 안의 특징(지평선·바닥 경계) 위치를 fraction으로 재고, 그것과 발 위치의 관계를
+테스트로 고정한다 (`CharactersStandOnTheSquareAndNotInTheSky`).
+그리고 **화면비가 다른 판을 덮어 배치할 때 무엇을 버릴지 먼저 계산한다** —
+16:9는 4:3의 75%만 보여주므로 원화의 상단 특징과 하단 특징을 동시에 담을 수 있는지가
+산수로 정해진다. 이 판은 담을 수 없었고, 그래서 하늘을 택하고 광장은 앞 경계까지만
+올린 뒤 발밑 조명을 직접 그려 넣었다.
+
+**부수 효과**: 발을 땅으로 내리려 캐릭터를 키우니 팀 아트가 넓어져 방 목록과의
+여유 2px가 사라졌다. 목록 폭은 글자 길이가 아니라 **두 팀 사이에 남은 간격**이
+정하는 값이다 (600→400).
+
+**현재 상태**: 배경 자체는 작업자 요청으로 단색으로 되돌렸다(`UI-014` REVERTED).
+위의 두 교훈은 배경 그림과 무관하게 유효하므로 남겨 둔다 — 다음에 어떤 판을
+깔더라도 같은 함정을 밟는다.
+
+**관련**: `UI-014`, `LobbyCanvasBuilder`, `LobbyUiContractTests`
+
+## ISSUE-052 — 두 번째 경기를 시작할 수 없었다 (RESOLVED)
+
+**증상**: 한 판을 끝내고 `로비로`로 돌아와 다시 `호스트`를 누르면 연결이 되지 않고
+`게임 시작`이 영원히 비활성이었다. 콘솔에:
+
+```text
+NetworkManagerOwner is not listening, start a server or host before spawning objects.
+```
+
+**원인 두 가지가 겹쳤다.**
+
+1. **NGO가 NetworkManager를 무조건 영속화한다.** 세션을 시작할 때가 아니라
+   활성화되는 순간이다 — `NetworkManager.cs:1093`:
+
+   ```csharp
+   if (Singleton == null) { SetSingleton(); }              // 비어 있을 때만
+   if (!NetworkManagerCheckForParent()) { DontDestroyOnLoad(gameObject); }  // 항상
+   ```
+
+   그래서 Bootstrap을 두 번째로 로드하면 매니저가 **두 개** 살아 있고, 낡은 쪽이
+   계속 `Singleton`이다. `NetworkSessionController`·`LanRoomDirectory`·
+   `NetworkRematchCoordinator`도 두 벌이 된다.
+
+2. **`로비로` 버튼이 세션을 종료하지 않았다.** `SceneNavigationButton`은
+   `GameSceneLoader.Load(Bootstrap)`만 불렀다.
+
+새 로비는 씬에 직렬화된 대로 **새** 컨트롤러를 가리키므로 `StartHost`는 성공한다.
+그런데 역할 보드를 스폰할 때 `NetworkObject.cs:359`가
+
+```csharp
+public NetworkManager NetworkManager => NetworkManagerOwner ? NetworkManagerOwner : NetworkManager.Singleton;
+```
+
+로 **낡은 싱글턴**으로 폴백하고, 그건 리스닝 중이 아니므로 위 오류를 낸다. 보드가
+없으니 역할 배정이 없고, `게임 시작` 조건(`ready && isHost`)이 영원히 거짓이다.
+
+**해결 세 겹.**
+
+- `LobbySessionReset`이 Bootstrap 로드 시 살아남은 매니저를 `Shutdown` 완료까지
+  기다렸다 파기하고, 씬의 매니저를 `SetSingleton()`으로 주인으로 세운다. 파기된
+  쪽 컴포넌트가 나가면서 `NetworkSceneBridge` 정적 핸들러를 지우므로, 그 뒤에
+  살아남은 코디네이터들을 다시 등록한다.
+- `로비로`가 `NetworkSceneBridge.LeaveSession()`으로 세션을 먼저 끝낸다.
+- 역할 보드를 `Instantiate` + `Spawn()` 대신
+  `NetworkObject.InstantiateAndSpawn(networkManager)`로 스폰해 매니저를 명시한다.
+  (`NetworkManagerOwner` 필드는 `internal`이라 직접 설정할 수 없다.)
+
+**교훈**: `NetworkManager.Singleton`이 로비가 실제로 쓰는 매니저와 같다는 보장은
+어디에도 없다. 씬에 배치된 매니저는 씬을 다시 로드할 때마다 하나씩 늘어난다.
+`LobbyReentryPlayModeTests`가 그 불변식을 단정한다.
+
+## ISSUE-050 — 결과 화면이 매번 같은 가짜 숫자를 보여줬다 (RESOLVED)
+
+**증상**: 어떤 경기를 하든 결과 화면의 플레이 시간·체포 수·골드가 똑같았다.
+
+**원인**: 로비와 같은 병에 하나가 더 붙었다. `BasicSceneSetup.CreateResultInterface`가
+목업을 `preserveAspect`로 깔고 투명·무캡션 버튼 3개를 픽셀 좌표로 얹은 것까지는
+로비와 같은데, **실제 결과 라벨 4개를 `CreateHiddenResultText`로 만들었다** —
+`fontSize 1`, 완전 투명, `SetActive(false)`. 즉 화면의 숫자는 전부 그림이었고
+`MatchResult`의 값은 한 글자도 표시되지 않았다.
+
+```csharp
+Text text = CreateText(name, parent, string.Empty, 1, FontStyle.Normal,
+    Transparent, Vector2.zero, Vector2.one);
+text.gameObject.SetActive(false);   // ← 결과가 보일 수 없다
+```
+
+**해결**: `ResultCanvas.prefab`으로 재조립하고 프레젠터를 TMP로 옮겼다. 통계는
+`MatchSummary`를 새로 만들어 평가기가 결정 시점에 채운다 — 그 순간이 지갑·체포
+카운터·시계를 동시에 들고 있는 유일한 지점이고, 직후 경기 씬이 언로드되면 전부
+0이 된다. `MatchResult`(판정 타입)는 건드리지 않았다.
+
+**남은 것**: 목업의 `사용 아이템`·`발각 횟수`는 세는 곳이 없어 칸을 뺐다. 카드는
+3개다.
+
+**교훈**: "라벨이 존재하는가"를 보는 검사는 이 증상을 못 잡는다.
+`ResultUiContractTests.NoLabelIsHiddenOrUnreadable`이 활성 여부·글자 크기·알파를
+전부 단정한다.
+
+## ISSUE-051 — 컴파일이 깨진 채로 `-executeMethod`가 낡은 코드를 실행했다 (RESOLVED)
+
+**증상**: 추출기의 크롭 좌표를 두 번 고치고 배치 실행했는데 산출물이 그대로였다.
+로그에는 `Cut 3 sprites`가 정상으로 찍혔다.
+
+**원인**: 무관한 어셈블리(`PawsAndLoot.Tests.EditMode`)가 옛 프레젠터 API를 참조해
+컴파일에 실패하고 있었다. Unity는 이때 **직전에 성공한 어셈블리를 그대로 쓰고
+`-executeMethod`를 실행한다.** 실패한 것은 테스트 어셈블리인데 영향은 에디터
+도구에 나타났고, 도구는 성공 로그를 남겼다.
+
+**해결**: 테스트를 새 API로 고쳤다.
+
+**교훈**: 배치 실행 결과가 코드 변경을 반영하지 않으면 **먼저 `grep "error CS"`로
+로그 전체를 본다.** 내가 실행한 도구가 아니라 전혀 다른 어셈블리가 원인일 수 있다.
+성공 로그는 낡은 코드가 남긴 것일 수 있다.
+
+**재발 (2026-08-04)**: 같은 함정을 다시 밟았다. 이번 원인은 다른 것이다 —
+**실행이 끝나기 전에 로그를 읽었다.** `grep -c "error CS"`가 0을 냈고 그것을
+"컴파일 통과"로 읽었는데, 로그는 아직 쓰이는 중이었고 실제로는 오류 2건이 있었다.
+**배치 실행의 로그는 종료 통보를 받은 뒤에만 판독한다.**
+
+## ISSUE-049 — 실내 바닥 테스트가 간헐적으로 실패한다 (OPEN, 간헐)
+
+**증상**: `InteriorFloorPlayModeTests.TheThiefStandsOnTheInteriorFloorAndStaysThere`가
+때때로 실패한다.
+
+```text
+Outside, the thief's feet are at y=0.06 against 'building_house_1f Anchor' at y=4.93.
+  Expected: greater than 4.82865286f
+  But was:  0.0599999428f
+```
+
+도둑이 실내로 들어가지 못하고 바깥 지면(y=0.06)에 남는다.
+
+**관측 이력** (2026-08-03):
+
+| 실행 | 결과 |
+|---|---|
+| 전체 Play Mode (1회차) | 실패 |
+| 이 클래스만 격리 (1회차) | 실패 |
+| 전체 Play Mode (2회차, 결과 화면 작업 후) | 통과 |
+| 이 클래스만 격리 (2회차) | 통과 |
+| 전체 Play Mode (3회차, 2026-08-04 로비 아트 작업 후) | **실패** |
+
+3회차 실패 시점에도 이 테스트가 의존하는 것은 아무것도 바뀌지 않았다. 2회차와
+3회차 사이의 변경은 로비 캐릭터 아트와 네트워크 재진입 수정뿐이다. 관측 4회 중
+2회 실패 — 재현율이 절반에 가깝다.
+
+**주의**: 코드를 고쳐서 통과한 것이 아니다. 두 차례 실행 사이에 이 테스트가
+의존하는 것은 아무것도 바꾸지 않았다 — 관련 파일(`InteriorFloorPlayModeTests.cs`,
+`Scripts/Gameplay/Interiors/`, `Game.unity`)은 전부 2026-08-02가 마지막 수정이다.
+**따라서 해결된 것으로 보지 않는다.**
+
+**단서**: 1회차 실패는 그래픽 모드 캡처 실행 직후였고, 그 실행이
+`QualitySettings.antiAliasing`을 바꿔 놓은 상태였다. 2회차 전에 캡처 도구가
+설정을 원복하도록 고쳤다. 인과는 확인되지 않았다.
+
+**다음**: 이 클래스만 여러 번 반복 실행해 재현율을 먼저 잰다. 재현되면
+`ISSUE-040`·`ISSUE-044` 계열(캡슐 발바닥 정렬, 물리 콜백 안 이동)을 본다.
+
+## ISSUE-046 — 로비가 목업 그림 위에 얹은 투명 버튼이었다 (RESOLVED)
+
+**증상**: 빌드된 로비에서 UI가 하나도 안 맞고 버튼이 눌리지 않는다. 좌우에 검은
+여백이 남는다.
+
+**원인 두 가지.**
+
+1. `NetworkLobbySetup.BuildInterface`가 `lobby_default.png`(1448×1086)를
+   `preserveAspect`로 화면에 깔고, 그 위에 **캡션이 빈 문자열이고 색이 완전 투명인
+   버튼**을 픽셀 좌표로 고정했다. Canvas 기준 해상도도 목업 크기인 1448×1086이었다.
+   목업의 4:3과 다른 화면비에서는 그림만 레터박스로 줄어들고 버튼은 제자리에
+   남으므로, 그림 속 버튼과 실제 클릭 영역이 어긋난다. 버튼은 죽어 있던 것이
+   아니라 **다른 자리에 있었다.**
+2. 검은 여백은 로비 캔버스(`sortingOrder = 10`) 밑에 깔린 `Scene UI` 캔버스다.
+   `BasicSceneSetup`이 만드는 어두운 배경과 좌우 상단의 파랑·빨강 막대가 목업이
+   덮지 못한 자리에 그대로 비쳤다.
+
+**해결**: 목업에서 로고와 캐릭터 4종을 잘라내고 버튼·패널·발광·아이콘은 코드로
+그려 `LobbyCanvas.prefab`으로 조립했다. `Scene UI`는 비활성화했다 — 삭제하지 않은
+것은 씬 계약이 캔버스와 이동 버튼을 요구하고 그 검사가 비활성 오브젝트도 세기
+때문이다.
+
+**교훈**: 완성된 화면 이미지를 배경으로 쓰는 구현은 **에디터에서도 빌드에서도
+정상으로 보이고 로그도 남기지 않는다.** 어긋남은 창 크기를 바꿔야만 드러난다.
+`Capture Lobby Layout`이 네 해상도를 PNG로 남기므로 이제 눈으로 잡을 수 있다.
+
+## ISSUE-047 — TMP가 사각형이 한 줄보다 낮으면 아무것도 안 그린다 (RESOLVED)
+
+**증상**: "호스트 주소"·"포트" 캡션과 접속 상태 문구가 화면에서 사라졌다. 컴포넌트는
+활성이고 텍스트도 들어 있고 색도 배경과 다르다.
+
+**원인**: `TMP_Text.overflowMode = Ellipsis`는 rect 높이가 한 줄 상자보다 작으면
+**말줄임을 하는 대신 통째로 그리지 않는다.** 캡션은 22pt에 rect 24px, 상태 문구는
+28pt에 rect 40px이었다. 둘 다 몇 픽셀 모자랐다.
+
+같은 40px rect의 마이크 상태 문구는 `Overflow`라서 멀쩡히 보였다 — 그래서 레이아웃
+문제처럼 보였다.
+
+**해결**: `Ellipsis`를 쓰지 않는다. 모든 텍스트 rect를 글자 크기의 1.45배 이상으로
+잡는 `LineBox()`를 통과시킨다. Play Mode 테스트가 보이는 라벨마다
+`preferredHeight <= rect.height`를 단정한다.
+
+**교훈**: "라벨이 존재하는가"를 검사하는 테스트는 이 증상을 절대 잡지 못한다.
+`preferredHeight`를 재야 한다.
+
+## ISSUE-048 — 방이 하나 발견되면 주소 패널이 캐릭터를 밀어올렸다 (RESOLVED)
+
+**원인**: LAN 방 목록을 하단 컨트롤의 `VerticalLayoutGroup` 안에 넣었다. 목록은
+발견된 방 수만큼 자라는데 스택은 위로 자라므로, 방이 하나만 떠도 주소 패널이
+83px 올라가 캐릭터 영역을 침범한다. 방이 없는 상태로만 렌더해 보면 아무 문제가
+없어 보인다.
+
+**해결**: 방 목록을 스택에서 빼 두 팀 사이의 빈 가운데에 따로 띄웠다. 컨트롤 밴드는
+네트워크 행과 상태 줄만으로 높이가 고정된다. `FullRoomListStaysInTheGapBetweenTheTeams`가
+방 4개가 모두 뜬 최악의 경우로 세로·가로 여유를 단정한다.
+
+**교훈**: 내용에 따라 크기가 변하는 요소를 고정 배치 옆에 두면, **가장 흔한 상태
+(비어 있음)로만 확인했을 때 통과한다.** 최악의 경우 크기로 검사한다.
 
 ## ISSUE-034 — 집 출입이 앞문이 아니라 뒷문이었다 (RESOLVED)
 

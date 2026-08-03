@@ -54,7 +54,7 @@ namespace PawsAndLoot.Companions
                 CompanionCommandId.Guard => true,
                 CompanionCommandId.Scout => true,
                 CompanionCommandId.Distract => true,
-                CompanionCommandId.Steal => true,
+                CompanionCommandId.Steal => false,
                 CompanionCommandId.Hide => true,
                 // Barking happens where the dog already stands.
                 CompanionCommandId.Bark => false,
@@ -77,6 +77,9 @@ namespace PawsAndLoot.Companions
                 "FETCH_OBJECT" => kind == CompanionKind.Cat
                     ? CompanionCommandId.Steal
                     : CompanionCommandId.Search,
+                "ROOF" or "CLIMB_ROOF" => kind == CompanionKind.Cat
+                    ? CompanionCommandId.Steal
+                    : CompanionCommandId.None,
                 "CHASE_TARGET" => kind == CompanionKind.Dog
                     ? CompanionCommandId.Track
                     : CompanionCommandId.Distract,
@@ -138,7 +141,7 @@ namespace PawsAndLoot.Companions
                 CompanionCommandId.Bark => "BARK",
                 CompanionCommandId.Scout => "SCOUT",
                 CompanionCommandId.Distract => "DISTRACT",
-                CompanionCommandId.Steal => "STEAL",
+                CompanionCommandId.Steal => "ROOF",
                 CompanionCommandId.Hide => "HIDE",
                 CompanionCommandId.Stop => "STOP",
                 CompanionCommandId.FollowOwner => "FOLLOW OWNER",

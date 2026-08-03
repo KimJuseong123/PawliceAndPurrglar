@@ -26,6 +26,11 @@ namespace PawsAndLoot.Gameplay.Players
         void CancelHold(PlayerInteractionContext context);
     }
 
+    public interface IInteractionPriority
+    {
+        int InteractionPriority { get; }
+    }
+
     public static class InteractionResolver
     {
         public static bool IsValid(

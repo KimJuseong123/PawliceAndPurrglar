@@ -37,6 +37,43 @@ namespace PawsAndLoot.Tests.PlayMode
             LocalPlayerRoleSelector.ClearOverriddenRole();
         }
 
+        /// <summary>
+        /// A room you can actually walk out of, picked the same way every run.
+        ///
+        /// <c>FindFirstObjectByType</c> hands back whatever instance ID came
+        /// first, which is not a property of the map: the scene has fourteen
+        /// interiors and only thirteen pairs of doorways, because the jail cell
+        /// is a room nobody walks into. Regenerating the scene reshuffles the IDs,
+        /// and the run that lands on the cell fails looking for a door that was
+        /// never meant to exist.
+        ///
+        /// Ordered by name, and required to have the doorways this fixture is
+        /// about, so the choice is the map's and not the serialiser's.
+        /// </summary>
+        private static HouseInterior InteriorWithDoors()
+        {
+            HouseDoorway[] doors = Object
+                .FindObjectsByType<HouseDoorway>(FindObjectsSortMode.None);
+            HouseInterior interior = Object
+                .FindObjectsByType<HouseInterior>(FindObjectsSortMode.None)
+                .OrderBy(candidate => candidate.name)
+                .FirstOrDefault(candidate => doors.Any(door =>
+                        door.Interior == candidate
+                        && door.LeadsInside
+                        && door.Side == HouseDoorSide.Front)
+                    && doors.Any(door =>
+                        door.Interior == candidate
+                        && !door.LeadsInside
+                        && door.Side == HouseDoorSide.Front));
+
+            Assert.That(
+                interior,
+                Is.Not.Null,
+                "No interior in the scene has a front doorway in and out, so "
+                + "there is nothing for this fixture to walk through.");
+            return interior;
+        }
+
         private static HouseDoorway Door(
             HouseInterior interior,
             bool leadsInside,
@@ -69,8 +106,7 @@ namespace PawsAndLoot.Tests.PlayMode
             var state = thief.GetComponent<PlayerInteriorState>();
             var controller = thief.GetComponent<CharacterController>();
 
-            HouseInterior interior =
-                Object.FindFirstObjectByType<HouseInterior>();
+            HouseInterior interior = InteriorWithDoors();
             HouseDoorway wayIn =
                 Door(interior, true, HouseDoorSide.Front);
             HouseDoorway wayOut =
@@ -164,8 +200,7 @@ namespace PawsAndLoot.Tests.PlayMode
                 .First(p => p.Role == PlayerRole.Thief);
             var scanner = thief.GetComponent<PlayerInteractionScanner>();
 
-            HouseInterior interior =
-                Object.FindFirstObjectByType<HouseInterior>();
+            HouseInterior interior = InteriorWithDoors();
             HouseDoorway wayOut =
                 Door(interior, false, HouseDoorSide.Front);
 

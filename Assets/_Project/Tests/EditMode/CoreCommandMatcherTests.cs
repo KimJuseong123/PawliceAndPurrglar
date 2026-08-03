@@ -20,7 +20,7 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(result.Accepted, Is.True);
         }
 
-        [TestCase("지붕으로 올라가", CompanionCommandId.Scout)]
+        [TestCase("지붕으로 올라가", CompanionCommandId.Steal)]
         [TestCase("할퀴어", CompanionCommandId.Distract)]
         [TestCase("소리 질러", CompanionCommandId.Distract)]
         [TestCase("은신처를 찾아", CompanionCommandId.Hide)]

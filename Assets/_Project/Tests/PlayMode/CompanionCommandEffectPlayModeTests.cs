@@ -1,6 +1,7 @@
 using System.Collections;
 using NUnit.Framework;
 using PawsAndLoot.Companions;
+using PawsAndLoot.Gameplay.Map;
 using PawsAndLoot.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -31,6 +32,16 @@ namespace PawsAndLoot.Tests.PlayMode
                 at,
                 null,
                 target);
+        }
+
+        private static CompanionCommandRequest CatRoofRequest(float at = 0f)
+        {
+            return new CompanionCommandRequest(
+                CompanionCommandId.Steal,
+                PlayerRole.Thief,
+                CompanionKind.Cat,
+                CompanionCommandInputSource.Keyboard,
+                at);
         }
 
         [UnityTest]
@@ -195,6 +206,52 @@ namespace PawsAndLoot.Tests.PlayMode
             Object.DestroyImmediate(resolverObject);
             Object.DestroyImmediate(boardObject);
             Object.DestroyImmediate(police);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CatRoofCommandTargetsTheNearestRooftop()
+        {
+            var mapObject = new GameObject("Map");
+            GreyboxMapDefinition map =
+                mapObject.AddComponent<GreyboxMapDefinition>();
+            GameObject nearRoof = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            nearRoof.name = "Near Rooftop";
+            nearRoof.transform.position = new Vector3(4f, 3.9f, 0f);
+            nearRoof.transform.localScale = new Vector3(6f, 0.6f, 6f);
+            GameObject farRoof = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            farRoof.name = "Far Rooftop";
+            farRoof.transform.position = new Vector3(20f, 3.9f, 0f);
+            farRoof.transform.localScale = new Vector3(6f, 0.6f, 6f);
+            map.Configure(
+                56f,
+                44f,
+                new GreyboxLocationReference[0],
+                new GreyboxRouteReference[0],
+                new[] { nearRoof.transform, farRoof.transform },
+                new Transform[0],
+                new Transform[0]);
+
+            var resolverObject = new GameObject("Resolver");
+            CompanionCommandResolver resolver =
+                resolverObject.AddComponent<CompanionCommandResolver>();
+            resolver.Configure(null, null, null, 26f);
+
+            CompanionCommandResolver.Resolution resolution =
+                resolver.Resolve(CatRoofRequest(), Vector3.zero, 0f);
+
+            Assert.That(resolution.Accepted, Is.True);
+            Assert.That(
+                resolution.Outcome,
+                Is.EqualTo(CompanionCommandOutcome.RoofClimbStarted));
+            Assert.That(resolution.Destination.HasValue, Is.True);
+            Assert.That(resolution.Destination.Value.x, Is.EqualTo(4f).Within(0.01f));
+            Assert.That(resolution.Destination.Value.y, Is.GreaterThan(nearRoof.transform.position.y));
+
+            Object.DestroyImmediate(resolverObject);
+            Object.DestroyImmediate(mapObject);
+            Object.DestroyImmediate(nearRoof);
+            Object.DestroyImmediate(farRoof);
             yield return null;
         }
 

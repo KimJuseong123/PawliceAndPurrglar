@@ -1,6 +1,6 @@
 # 현재 상태
 
-마지막 갱신: 2026-08-01
+마지막 갱신: 2026-08-04
 
 이 문서는 작업 시작 시 가장 먼저 확인하는 현재 저장소 상태다.
 
@@ -571,6 +571,63 @@ VSync 상한에 붙어 있다. `ART-012` 머티리얼 통합과 정적 배칭을
 
 ## 현재 작업
 
+- 작업 ID: `UI-014` 밤 마을 광장 로비 배경 → **되돌림**
+- 상태: `REVERTED` (작업자 요청으로 단색 배경으로 복귀)
+- 결과: 밤 마을 광장 판을 적용해 4해상도 육안 검사와 Edit 241/241·Play 162/162,
+  Windows 빌드까지 통과시켰으나, 작업자가 **이전의 단색 느낌**을 요청해
+  되돌렸다. 배경은 다시 목업에서 뽑은 크림 한 색(`F2E5DA`)이고, 밤 전용이던
+  것들(어둠 오버레이, 밝은 글자 팔레트, 상태 줄 반투명 띠, 등불 발밑 조명,
+  팀 색 후광)을 함께 제거했다. 캐릭터 밴드(232/432)와 방 목록 폭(600)도
+  원래 값으로 돌렸다.
+- 남긴 것: 역할 선택 시 1.04배 확대와 선택되지 않은 쪽 밝기 감소. 배경과
+  무관한 선택 피드백이라 단색에서도 유효하다
+- 남긴 파일: `ArtSource/Lobby/background.png`. 프로젝트로 들여온 스프라이트만
+  지웠으므로 다시 적용하려면 임포터에 다시 넣으면 된다
+- 밤 작업에서 얻은 함정 2개는 문서에 남겼다 (`ISSUE-053`): 배경 위에 세운
+  것은 배경의 어느 지점에 서 있는지 재야 하고, 레이아웃 그룹 자식에는 배경을
+  깔 수 없다
+
+## 이전 작업
+
+- 작업 ID: `ISSUE-052` 로비 재진입 불가 수정, `UI-013` 역할 선택 캐릭터 아트
+- 상태: `DONE` (저장소 몫)
+- 결과: 한 판을 끝내고 로비로 돌아오면 두 번째 경기를 시작할 수 없었다. 원인은
+  NGO가 `NetworkManager`를 **세션과 무관하게 활성화 시점에** 영속화하고
+  `Singleton`은 비어 있을 때만 잡는 것이다 — Bootstrap을 다시 로드하면 매니저가
+  둘이 되고 낡은 쪽이 싱글턴을 쥔다. 새 로비가 스폰하는 `NetworkObject`는 그
+  낡은 싱글턴으로 폴백해 `NetworkManagerOwner is not listening`을 냈고, 역할
+  보드가 없으니 `게임 시작`이 영원히 비활성이었다. `LobbySessionReset`이 살아남은
+  매니저를 종료·파기하고 씬의 매니저를 주인으로 세운다. `로비로`가 세션을 먼저
+  끝내고, 역할 보드는 매니저를 명시해 스폰한다.
+- 남은 것: 역할 선택 캐릭터 아트 4장(`police_dog_idle`·`police_dog_selected`·
+  `thief_cat_idle`·`thief_cat_selected`)은 **작업자가 PNG를 제공해야** 착수한다.
+  `LobbyCharacterView`와 `RoleSelectionState`는 미리 작성해 뒀다
+
+## 이전 작업
+
+- 작업 ID: `UI-010` 로비 화면 재구현, `UI-011` 결과 화면 재구현
+- 상태: `DONE` (저장소 몫)
+- 결과: 로비가 **목업 이미지 한 장 위에 캡션 없는 투명 버튼을 픽셀 좌표로 얹은
+  것**이었다. 화면비가 목업의 4:3과 달라지는 순간 버튼과 그림이 어긋났고, 좌우의
+  검은 여백은 그 아래 깔린 `Scene UI` 캔버스가 비친 것이었다. 기능 로직은 멀쩡했다.
+  목업에서 로고와 캐릭터 4종을 잘라내고, 버튼·패널·발광·아이콘은 코드로 그려서
+  `LobbyCanvas.prefab`으로 조립했다. 텍스트는 전부 TMP + 던파 비트비트 V2다.
+  방 목록은 세로 스택에서 빼 캐릭터 사이의 빈 가운데로 띄웠다 — 스택에 두면 방이
+  하나만 떠도 주소 패널이 캐릭터 쪽으로 밀려 올라간다.
+  Edit Mode 223/223, Play Mode 157/158 통과. 남은 1건은 실내 바닥 회귀
+  (`ISSUE-049`)로 이번 작업과 무관하며 격리 실행해도 실패한다.
+  결과 화면은 같은 병에 하나가 더 있었다 — 실제 결과 라벨 4개가 `fontSize 1` +
+  투명 + `SetActive(false)`여서 **화면의 숫자가 전부 그림이었고 경기 값은 한
+  글자도 표시되지 않았다** (`ISSUE-050`). `ResultCanvas.prefab`으로 다시 짓고,
+  통계는 `MatchSummary`를 새로 만들어 평가기가 결정 시점에 채운다.
+  목업의 `사용 아이템`·`발각 횟수`는 세는 곳이 없어 카드를 3개로 줄였다
+  (`UI-012`).
+- 남은 것: 관문 B 2인 실기 플레이테스트. 결과 화면 통계가 클라이언트에서도
+  호스트와 같은 값을 내는지는 미실측이다 — 두 기계가 각자 자기 평가기로 채우므로
+  복제되지 않는 카운터가 있으면 어긋날 수 있다
+
+## 이전 작업
+
 - 작업 ID: 모델 감면 실행
 - 상태: `DONE`
 - 결과: 이 PC의 Blender 5.2로 12개 모델을 헤드리스로 감면했다.
@@ -1123,6 +1180,52 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 | 2026-07-29 | 실내 획득 후 Edit/Play Mode | **158/158**, **125/125 통과** |
 | 2026-07-29 | 실내 3버그 수정 후 Edit/Play Mode | **158/158**, **127/127 통과** |
 | 2026-07-29 | 문 6회 왕복 | 매회 바닥 위 유지 |
+| 2026-08-03 | 목업 컷아웃 5종 육안 검사 | 로고 모자 조각·강아지 소매 조각 발견, 연결 성분 필터로 제거 |
+| 2026-08-03 | 로비 크롬 스프라이트 7종 육안 검사 | chamfer·베벨·발바닥·마이크 모두 의도대로 |
+| 2026-08-03 | 로비 렌더 1280×720 / 1600×900 / 1920×1080 / 1440×1080 | 잘림·겹침·검은 여백 없음 |
+| 2026-08-03 | 로비 재구현 후 Edit Mode | **223/223 통과** (신규 13개) |
+| 2026-08-03 | 로비 재구현 후 Play Mode | **157/158 통과** (신규 7개). 실패 1건은 `ISSUE-049` |
+| 2026-08-03 | 너구리 3건 격리 실행 | 통과 — 전체 실행 실패는 테스트 오염이었고 teardown으로 해소 |
+| 2026-08-03 | `InteriorFloorPlayModeTests` 격리 실행 | 실패 유지 → 기존 회귀 `ISSUE-049` |
+| 2026-08-03 | Windows Playtest 빌드 | 성공, 씬 3개 |
+| 2026-08-03 | `-netJoinMode ui` 2프로세스 | 양쪽 `passed: true`, `pressedControl` 호스트/참가 버튼, 역할 배정 |
+| 2026-08-03 | 결과 목업 컷아웃 9종 육안 검사 | 도둑 타이틀에 부제 조각 발견, 창 높이 조정으로 제거 |
+| 2026-08-03 | 결과 렌더 4해상도 | 배지 겹침·뒤집힌 집 아이콘·빈 캡션 발견 후 수정, 재확인 정상 |
+| 2026-08-03 | 결과 화면 재구현 후 Edit Mode | **236/236 통과** (결과 계약 13개 신규) |
+| 2026-08-03 | 결과 화면 재구현 후 Play Mode | **159/159 통과** (통계 보고 1개 신규) |
+| 2026-08-03 | 두 화면 재빌드 후 `-netJoinMode ui` 2프로세스 | 양쪽 `passed: true` |
+| 2026-08-03 | `-netScenario full` 2프로세스 | 경기 완주 후 새 결과 씬 로드까지 예외 0건. 화면 수치는 미판독 |
+| 2026-08-03 | `InteriorFloorPlayModeTests` 격리 재실행 | 통과 — 간헐 실패로 재분류 (`ISSUE-049`) |
+| 2026-08-04 | 재진입 버그 원인 규명 | NGO 소스 3개 지점으로 확정 (`ISSUE-052`) |
+| 2026-08-04 | `LobbyReentryPlayModeTests` | **2/2 통과**. 리셋 직전 낡은 매니저가 싱글턴임을 단정해 재현까지 증명 |
+| 2026-08-04 | 재진입 수정 후 Edit Mode | **236/236 통과** |
+| 2026-08-04 | 재진입 수정 후 Play Mode | **161/161 통과** (신규 2개) |
+| 2026-08-04 | Bootstrap 씬에 `LobbySessionReset` 배치 확인 | GUID 참조 1건 확인 |
+| 2026-08-04 | Windows 빌드 + `-netJoinMode ui` 2프로세스 | 성공, 양쪽 `passed: true` |
+| 2026-08-04 | 2연속 경기 실기 | **미실측** — `로비로`를 사람이 눌러야 한다 |
+| 2026-08-04 | 팀 페어 아트 4장 임포트 육안 검사 | 알파 없는 1장 발견 → 작업자 재출력, 프레이밍 4장 통일 |
+| 2026-08-04 | 로비 렌더 4해상도 (새 아트) | 외곽·눈 정상, 겹침 없음 |
+| 2026-08-04 | 아트 적용 후 Edit Mode | **238/238 통과** (신규 2) |
+| 2026-08-04 | 아트 적용 후 Play Mode | **161/162** — 실패 1건은 `ISSUE-049` 간헐 |
+| 2026-08-04 | Windows 빌드 | 성공, 씬 3개 |
+| 2026-08-04 | 밤 배경 첫 크롭 육안 검사 | **두 팀이 허공에 떠 있었다** — 광장이 화면 밖. 계약 테스트는 전부 통과 (`ISSUE-053`) |
+| 2026-08-04 | 상태 띠 육안 검사 | 보이지 않음 — 레이아웃 그룹 자식이라 행의 한 칸으로 배치됨. 그룹 밖으로 빼서 해소 |
+| 2026-08-04 | 원화 특징 위치 측정 | 달 0.072~0.180, 광장 앞 경계 0.589, 조명 웅덩이 0.66~0.81 |
+| 2026-08-04 | 밤 배경 재크롭 후 4해상도 육안 검사 | 4:3 포함 빈 가장자리 없음, 달 유지, 발이 광장 경계에서 76px 이내 |
+| 2026-08-04 | 밤 배경 후 Edit Mode | **241/241 통과** (신규 3). 방 목록 여유 실패 1건은 목록 폭 600→400으로 해소 |
+| 2026-08-04 | 밤 배경 후 Play Mode | **162/162 통과** — `ISSUE-049` 간헐 항목도 이번엔 통과 |
+| 2026-08-04 | 로비 텍스트 색 런타임 덮어쓰기 검색 | 없음 — 팔레트가 빌드에서도 유지된다 |
+| 2026-08-04 | 밤 배경 후 Windows 빌드 | 성공 |
+| 2026-08-04 | 단색 복귀 후 4해상도 육안 검사 | 4:3 포함 검은 띠 없음, 크림 한 색 |
+| 2026-08-04 | 단색 복귀 후 Edit Mode | **239/239 통과** (밤 전용 3개 제거, 단색 계약 1개 추가) |
+| 2026-08-04 | 단색 복귀 후 Play Mode | **162/162 통과** |
+| 2026-08-04 | 단색 복귀 후 Windows 빌드 | 성공, 씬 3개 |
+
+| 2026-08-04 | `origin/main` 병합 (99커밋, 충돌 19건) | 해소 완료. 씬은 main 쪽을 취하고 에디터 스크립트로 재생성 |
+| 2026-08-04 | 병합 후 Edit Mode | **253/253 통과** |
+| 2026-08-04 | **깨끗한 `origin/main` 기준선** (별도 worktree) | **182개 중 13개 실패** — main이 초록색이 아니다 (`ISSUE-054`) |
+| 2026-08-04 | 병합 후 Play Mode (수정 전) | 195개 중 16개 실패 — 13개는 main 것, 3개가 내 회귀 |
+| 2026-08-04 | 내 회귀 3건 수정 후 Play Mode | **195개 중 13개 실패. 실패 목록이 기준선과 정확히 일치** — 회귀 0건 |
 
 기능 완료, 단계 변경, 경로 변경 시 이 문서를 함께 갱신한다.
 # Voice MVP implementation state
@@ -1133,3 +1236,23 @@ transcription and Intent candidates; the Unity NGO Host is responsible for
 Pet Cognition, live action validation, deterministic random decisions, and
 networked result presentation. Runtime WebGL and two-client transport smoke
 testing remain required before submission.
+
+## 2026-08-02 HUD, inventory, and local voice follow-up
+
+- The runtime HUD prefab now restores the match timer under the police catch
+  board and uses more transparent dark panels across the core HUD surfaces.
+- Voice feedback now shows the raw transcript first and then the interpreted
+  animal command with a paw marker, so failed or slow interpretation no longer
+  hides what the microphone captured.
+- The inventory panel is a 5x5 square-slot grid. Only quick-slot-eligible
+  interaction items can be stored in player quick slots.
+- A thief can interact with the cat via `E` to open an exchange UI with the
+  player bag and cat bag side by side; clicking slots transfers eligible item
+  stacks between them.
+- The Windows LocalAI gateway now tries deterministic dog/cat command fallback
+  before calling Ollama. If STT is ready but Ollama is missing or slow, Unity
+  accepts the gateway as degraded but usable for fallback voice commands.
+- Verification: LocalAI command tests 6/6 passed, HUD contract EditMode tests
+  4/4 passed, QuickSlot EditMode tests 11/11 passed, the Windows playtest build
+  succeeded at `Builds/Playtest/Windows/PawsAndLoot.exe`, and the LocalAI
+  bundled Windows build succeeded at `Build/Windows/PawsAndLoot.exe`.

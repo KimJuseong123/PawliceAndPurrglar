@@ -467,6 +467,7 @@ namespace PawsAndLoot.Editor
 
             // ART-012 runs last so it sees every generated object.
             SceneOptimizationPass.Run(villageRoot);
+            NormalizeSceneCanvasScales();
 
             string scenePath = GameSceneCatalog.GetPath(GameSceneId.Game);
             if (!EditorSceneManager.SaveScene(scene, scenePath))
@@ -477,6 +478,15 @@ namespace PawsAndLoot.Editor
 
             AssetDatabase.SaveAssets();
             ValidateScene();
+            NormalizeSceneCanvasScales();
+            if (!EditorSceneManager.SaveScene(
+                SceneManager.GetActiveScene(),
+                scenePath))
+            {
+                throw new InvalidOperationException(
+                    $"Failed to resave MAP-001 scene after UI normalization: {scenePath}");
+            }
+
             foreach (string missing in
                 PlaceholderModelLibrary.MissingAssetPaths)
             {
@@ -486,6 +496,27 @@ namespace PawsAndLoot.Editor
             }
 
             Debug.Log("MAP-001 greybox village created and validated.");
+        }
+
+        private static void NormalizeSceneCanvasScales()
+        {
+            foreach (Canvas canvas in UnityEngine.Object.FindObjectsByType<Canvas>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None))
+            {
+                RectTransform rect = canvas.GetComponent<RectTransform>();
+                if (rect == null)
+                {
+                    continue;
+                }
+
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+                rect.localScale = Vector3.one;
+                EditorUtility.SetDirty(rect);
+            }
         }
 
         [MenuItem("Paws & Loot/Setup/Validate MAP-001 Greybox Village")]
@@ -1281,6 +1312,12 @@ namespace PawsAndLoot.Editor
                     controller,
                     resolver,
                     courier);
+
+                if (kind == CompanionKind.Cat)
+                {
+                    agentObject.AddComponent<CatInventoryInteractable>()
+                        .Configure(agent, matchRuntime);
+                }
 
                 // Real leg bones are swung so the animals walk rather than
                 // slide. Reported so a rig without recognisable legs is
@@ -4606,6 +4643,7 @@ namespace PawsAndLoot.Editor
                 typeof(Canvas),
                 typeof(CanvasScaler),
                 typeof(GraphicRaycaster));
+            canvasObject.transform.localScale = Vector3.one;
             Canvas canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
@@ -4613,6 +4651,14 @@ namespace PawsAndLoot.Editor
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
+
+            RectTransform canvasRect =
+                canvasObject.GetComponent<RectTransform>();
+            canvasRect.anchorMin = Vector2.zero;
+            canvasRect.anchorMax = Vector2.one;
+            canvasRect.offsetMin = Vector2.zero;
+            canvasRect.offsetMax = Vector2.zero;
+            canvasRect.localScale = Vector3.one;
 
             RectTransform hudRoot = CreateRect(
                 "Common HUD",

@@ -69,7 +69,14 @@ namespace PawsAndLoot.Gameplay.Items
 
         public bool CanStore(ThrowableKind kind)
         {
-            return _slots.CanStore(kind, maximumStackSize);
+            return ThrowableCatalog.CanUseInQuickSlot(kind)
+                && _slots.CanStore(kind, maximumStackSize);
+        }
+
+        public bool CanStore(ThrowableKind kind, int quantity)
+        {
+            return ThrowableCatalog.CanUseInQuickSlot(kind)
+                && _slots.CanStore(kind, quantity, maximumStackSize);
         }
 
         public bool SelectSlot(int index)
@@ -114,6 +121,7 @@ namespace PawsAndLoot.Gameplay.Items
         public bool TryPickUp(ThrowableKind kind)
         {
             if (ResolveMatchState()?.IsGameplayActive != true
+                || !ThrowableCatalog.CanUseInQuickSlot(kind)
                 || !_slots.TryStore(
                     kind,
                     1,
@@ -127,6 +135,51 @@ namespace PawsAndLoot.Gameplay.Items
                 GameLogCategory.Player,
                 $"{Role} picked up {kind}.",
                 this);
+            PublishChanged();
+            return true;
+        }
+
+        public bool TryStore(ThrowableKind kind, int quantity)
+        {
+            if (ResolveMatchState()?.IsGameplayActive != true
+                || !ThrowableCatalog.CanUseInQuickSlot(kind)
+                || !_slots.CanStore(kind, quantity, maximumStackSize)
+                || !_slots.TryStore(
+                    kind,
+                    quantity,
+                    maximumStackSize,
+                    out _))
+            {
+                return false;
+            }
+
+            PublishChanged();
+            return true;
+        }
+
+        public bool TryTakeSlot(
+            int index,
+            out ThrowableKind kind,
+            out int quantity)
+        {
+            if (!_slots.TryTakeSlot(index, out kind, out quantity))
+            {
+                return false;
+            }
+
+            PublishChanged();
+            return true;
+        }
+
+        public bool TryTakeOne(
+            int index,
+            out ThrowableKind kind)
+        {
+            if (!_slots.TryTakeOne(index, out kind))
+            {
+                return false;
+            }
+
             PublishChanged();
             return true;
         }

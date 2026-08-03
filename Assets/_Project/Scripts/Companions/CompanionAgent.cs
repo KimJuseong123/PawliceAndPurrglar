@@ -475,6 +475,11 @@ namespace PawsAndLoot.Companions
             if (PlanarDistance(transform.position, _commandDestination)
                 <= arriveDistance)
             {
+                if (TryCompleteRoofTraversal())
+                {
+                    return;
+                }
+
                 // CAT-005. Arriving at loot means picking it up, then walking
                 // it home; the command is not finished until it is handed over.
                 if (TryBeginLootEscort())
@@ -496,6 +501,22 @@ namespace PawsAndLoot.Companions
             {
                 RecoverToOwner(CompanionCommandRejection.TargetUnreachable);
             }
+        }
+
+        private bool TryCompleteRoofTraversal()
+        {
+            if (companionKind != CompanionKind.Cat
+                || _activeRequest.CommandId != CompanionCommandId.Steal)
+            {
+                return false;
+            }
+
+            WarpTo(_commandDestination);
+            ReportOutcome(CompanionCommandOutcome.RoofClimbReached);
+            _commandElapsedSeconds = 0f;
+            _stuckElapsedSeconds = 0f;
+            _stateMachine.TryTransitionTo(CompanionState.ExecuteCommand);
+            return true;
         }
 
         /// <summary>

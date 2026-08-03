@@ -42,7 +42,32 @@ namespace PawsAndLoot.Editor
             + "\uc74c\uc131 \uc785\ub825 \uc900\ube44 \uc911"
             + "\uc74c\uc131 \uba85\ub839 \ub179\uc74c \ucc98\ub9ac \uc644\ub8cc \uc2dc\ub3c4 \uc8fc\uc138\uc694"
             + "5\ucd08 \ub3d9\uc548 \ub4e3\uace0 \uc788\uc5b4\uc694"
-            + "\uba85\ub839\uc744 \ud574\uc11d\ud558\uace0 \uc788\uc5b4\uc694";
+            + "\uba85\ub839\uc744 \ud574\uc11d\ud558\uace0 \uc788\uc5b4\uc694"
+            // Lobby wording. The atlas is dynamic, so a missing glyph would be
+            // fetched at runtime rather than drawn as a box, but baking the
+            // screen a player stares at first keeps that work off the first
+            // frame.
+            + "\uc5ed\ud560 \ubc14\uafb8\uae30 \uac8c\uc784 \uc2dc\uc791 \ub9c8\uc774\ud06c \ud655\uc778 \uc911 \ud638\uc2a4\ud2b8 \ucc38\uac00 \ub098\uac00\uae30 \uc8fc\uc18c \ud3ec\ud2b8"
+            + "\ub0b4 \uc5ed\ud560 \ub300\uae30 \uacbd\ucc30 \ub3c4\ub451 \uac19\uc740 PC \uc138\uc158 \uc9c4\ud589 \uac00\ub4dd \ucc38 \uac00\ub2a5"
+            + "\ud638\uc2a4\ud2b8\ub85c \uc2dc\uc791\ud558\uac70\ub098 \uc0c1\ub300\uc758 IP\ub85c \ucc38\uac00\ud558\uc138\uc694."
+            + "\uc0c1\ub300 \ud50c\ub808\uc774\uc5b4\ub97c \uae30\ub2e4\ub9ac\uace0 \uc788\uc2b5\ub2c8\ub2e4."
+            + "\ud638\uc2a4\ud2b8\uc5d0 \uc5f0\uacb0\ud558\ub294 \uc911\uc785\ub2c8\ub2e4."
+            + "\uc0c1\ub300 \ud50c\ub808\uc774\uc5b4\uc640 \uc5f0\uacb0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uac8c\uc784 \uc2dc\uc791\uc744 \ub204\ub974\uc138\uc694."
+            + "\ud638\uc2a4\ud2b8\uac00 \uc2dc\uc791\ud558\uae30\ub97c \uae30\ub2e4\ub9bd\ub2c8\ub2e4."
+            + "\uac19\uc740 \ub124\ud2b8\uc6cc\ud06c\uc5d0\uc11c \ubc29\uc744 \ucc3e\ub294 \uc911\uc785\ub2c8\ub2e4. \ud55c \uba85\uc774 \uba3c\uc800 \ub20c\ub7ec\uc57c \ud569\ub2c8\ub2e4."
+            + "\uac19\uc740 \ub124\ud2b8\uc6cc\ud06c\uc5d0\uc11c \ubc29 \uac1c\ub97c \ucc3e\uc558\uc2b5\ub2c8\ub2e4. \ub20c\ub7ec\uc11c \ucc38\uac00\ud558\uc138\uc694."
+            + "\uac19\uc740 \ub124\ud2b8\uc6cc\ud06c \ubc29 \ucc3e\uae30\ub97c \uc4f8 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \uc544\ub798\uc5d0 IP\ub97c \uc9c1\uc811 \uc785\ub825\ud558\uc138\uc694."
+            + "\ub9c8\uc774\ud06c \uad8c\ud55c\uc744 \ud655\uc778\ud558\ub294 \uc911\uc785\ub2c8\ub2e4. \uac70\ubd80\ub418\uc5c8\uc2b5\ub2c8\ub2e4."
+            + "\uc0ac\uc6a9 \uac00\ub2a5\ud55c \ub9c8\uc774\ud06c\ub97c \ucc3e\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4."
+            + "\ub9c8\uc774\ud06c\ub97c \uc5f4 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4. \ub2e4\ub978 \ud504\ub85c\uadf8\ub7a8\uc5d0\uc11c \uc0ac\uc6a9 \uc911\uc785\ub2c8\ub2e4."
+            + "\ub9c8\uc774\ud06c \uc785\ub825\uc744 \ub4e3\uace0 \uc788\uc2b5\ub2c8\ub2e4. \ub9d0\ud574 \ubcf4\uc138\uc694."
+            + "\ub9c8\uc774\ud06c \uc785\ub825\uc774 \uc815\uc0c1\uc801\uc73c\ub85c \uac10\uc9c0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ucd5c\ub300"
+            + "\uc785\ub825\uc774 \uac10\uc9c0\ub418\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. \ub9c8\uc774\ud06c \ubcfc\ub968\uc744 \ud655\uc778\ud558\uc138\uc694."
+            + "\uc774\ubbf8 \uc138\uc158\uc774 \uc2e4\ud589 \uc911\uc785\ub2c8\ub2e4. \ud3ec\ud2b8\ub294 \uc774\uc0c1\uc758 \uc22b\uc790\uc5ec\uc57c \ud569\ub2c8\ub2e4."
+            + "IP \ud615\uc2dd\uc774 \uc62c\ubc14\ub974\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. \uc608: 192.168.0.10"
+            + "\ud638\uc2a4\ud2b8 \ub300\uae30 \uc911 \uc0c1\ub300\uc5d0\uac8c \ub0b4 IP\ub97c \uc54c\ub824\uc8fc\uc138\uc694."
+            + "\ud638\uc2a4\ud2b8 \uc2dc\uc791\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc811\uc18d \ub85c \uc911..."
+            + "\uc0c1\ub300\uac00 \uc811\uc18d\uc744 \uc885\ub8cc\ud588\uc2b5\ub2c8\ub2e4. \ud655\uc778 \uc911";
 
         [MenuItem("Paws & Loot/UI/Sync HUD Canvas To Resources")]
         public static void SyncHudCanvasToResources()
@@ -165,8 +190,15 @@ namespace PawsAndLoot.Editor
             GameObject root = CreateRoot("ContextInteractionPromptView");
             TMP_Text key = CreateText(root.transform, "Key", "[E]");
             TMP_Text action = CreateText(root.transform, "Action", "Interact");
-            Image progress = CreateImage(root.transform, "Hold Progress");
-            progress.type = Image.Type.Filled;
+            var progressObject = new GameObject(
+                "Hold Progress",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(RadialProgressGraphic));
+            progressObject.transform.SetParent(root.transform, false);
+            RadialProgressGraphic progress =
+                progressObject.GetComponent<RadialProgressGraphic>();
+            progress.RingThickness = 3.5f;
             root.AddComponent<ContextInteractionPromptView>().Configure(key, action, progress);
             return root;
         }
@@ -195,11 +227,23 @@ namespace PawsAndLoot.Editor
             GameObject root = CreateRoot("InventorySlotView");
             TMP_Text key = CreateText(root.transform, "Key", "1");
             TMP_Text quantity = CreateText(root.transform, "Quantity", string.Empty);
+            TMP_Text itemName = CreateText(root.transform, "Item Name", string.Empty);
+            TMP_Text price = CreateText(root.transform, "Price", string.Empty);
             TMP_Text glyph = CreateText(root.transform, "Item Glyph", string.Empty);
             Image icon = CreateImage(root.transform, "Item Icon");
+            Image priceIcon = CreateImage(root.transform, "Currency Icon");
             Image selected = CreateImage(root.transform, "Selected Frame");
             Image disabled = CreateImage(root.transform, "Disabled");
-            root.AddComponent<InventorySlotView>().Configure(key, quantity, icon, selected, disabled, glyph);
+            root.AddComponent<InventorySlotView>().Configure(
+                key,
+                quantity,
+                icon,
+                selected,
+                disabled,
+                glyph,
+                itemName,
+                price,
+                priceIcon);
             return root;
         }
 

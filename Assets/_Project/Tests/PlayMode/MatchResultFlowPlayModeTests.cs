@@ -52,16 +52,17 @@ namespace PawsAndLoot.Tests.PlayMode
                 Object.FindFirstObjectByType<
                     ResultScreenPresenter>();
             Assert.That(presenter, Is.Not.Null);
-            Assert.That(presenter.WinnerText, Is.EqualTo("POLICE WIN"));
+            // The winner is announced by artwork, so the badges are what say
+            // which side won in text.
+            Assert.That(presenter.PoliceBadgeText, Is.EqualTo("승리"));
+            Assert.That(presenter.ThiefBadgeText, Is.EqualTo("패배"));
             Assert.That(
                 presenter.ReasonText,
-                Is.EqualTo("THIEF ARRESTED"));
-            Assert.That(
-                presenter.SoldAmountText,
-                Is.EqualTo("SOLD 350 GOLD"));
-            Assert.That(
-                presenter.RemainingTimeText,
-                Is.EqualTo("TIME 00:42"));
+                Does.StartWith("도둑을 "));
+            // No summary was reported, so the screen shows the gold the verdict
+            // carries and declines to invent the rest.
+            Assert.That(presenter.GoldValueText, Is.EqualTo("350"));
+            Assert.That(presenter.ElapsedText, Is.EqualTo("--:--"));
 
             MatchResultSession.Clear();
         }

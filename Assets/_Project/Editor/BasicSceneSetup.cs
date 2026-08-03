@@ -24,6 +24,14 @@ namespace PawsAndLoot.Editor
         private static readonly Color ThiefRed = new(0.62f, 0.12f, 0.09f, 1f);
         private static readonly Color MerchantGold = new(0.95f, 0.64f, 0.15f, 1f);
         private static readonly Color MutedText = new(0.7f, 0.75f, 0.82f, 1f);
+        private static readonly Color Transparent = new(1f, 1f, 1f, 0f);
+
+        /// <summary>
+        /// Root name of the result prefab instance in the scene. Kept distinct
+        /// from the other scenes' "Scene UI" so a rebuild can tell the new
+        /// screen from whatever an older version of this file left behind.
+        /// </summary>
+        private const string ResultRootName = "ResultCanvas";
 
         [MenuItem("Paws & Loot/Setup/Rebuild Basic Scenes")]
         public static void CreateBasicScenes()
@@ -77,6 +85,49 @@ namespace PawsAndLoot.Editor
 
             EditorSceneManager.OpenScene(GameSceneCatalog.GetPath(GameSceneId.Bootstrap), OpenSceneMode.Single);
             Debug.Log("BASE-003 scene validation passed.");
+        }
+
+        [MenuItem("Paws & Loot/Setup/Rebuild Result UI")]
+        public static void RebuildResultUi()
+        {
+            EnsureSceneDirectory();
+
+            string path = GameSceneCatalog.GetPath(GameSceneId.Result);
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException(
+                    $"Required scene is missing: {path}",
+                    path);
+            }
+
+            Scene scene = EditorSceneManager.OpenScene(
+                path,
+                OpenSceneMode.Single);
+            DestroyRoot(scene, ResultRootName);
+            // The name the inline builder used, so rebuilding an older scene
+            // does not leave two result screens stacked on each other.
+            DestroyRoot(scene, "Scene UI");
+            if (!SceneHasComponent<Camera>(scene))
+            {
+                CreateCamera();
+            }
+
+            if (!SceneHasComponent<EventSystem>(scene))
+            {
+                CreateEventSystem();
+            }
+
+            CreateResultInterface();
+            NormalizeSceneCanvasScales();
+            if (!EditorSceneManager.SaveScene(scene))
+            {
+                throw new InvalidOperationException(
+                    $"Failed to save scene: {path}");
+            }
+
+            ValidateSceneContents(GameSceneId.Result, scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Result UI rebuilt.");
         }
 
         [MenuItem("Paws & Loot/Setup/Ensure Bootstrap Services")]
@@ -146,6 +197,7 @@ namespace PawsAndLoot.Editor
             CreateEventSystem();
             CreateProjectServices(sceneId);
             NetworkLobbySetup.Build(sceneId);
+            NormalizeSceneCanvasScales();
 
             string path = GameSceneCatalog.GetPath(sceneId);
             if (!EditorSceneManager.SaveScene(scene, path))
@@ -172,12 +224,19 @@ namespace PawsAndLoot.Editor
             string subtitle,
             IReadOnlyList<ButtonSpec> buttons)
         {
+            if (sceneId == GameSceneId.Result)
+            {
+                CreateResultInterface();
+                return;
+            }
+
             var canvasObject = new GameObject(
                 "Scene UI",
                 typeof(RectTransform),
                 typeof(Canvas),
                 typeof(CanvasScaler),
                 typeof(GraphicRaycaster));
+            canvasObject.transform.localScale = Vector3.one;
 
             Canvas canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -188,6 +247,11 @@ namespace PawsAndLoot.Editor
             scaler.matchWidthOrHeight = 0.5f;
 
             RectTransform canvasRect = canvasObject.GetComponent<RectTransform>();
+            canvasRect.anchorMin = Vector2.zero;
+            canvasRect.anchorMax = Vector2.one;
+            canvasRect.offsetMin = Vector2.zero;
+            canvasRect.offsetMax = Vector2.zero;
+            canvasRect.localScale = Vector3.one;
             CreateStretchImage("Background", canvasRect, BackgroundColor);
 
             RectTransform policeBar = CreateRect("Police Accent", canvasRect);
@@ -198,13 +262,12 @@ namespace PawsAndLoot.Editor
             SetRect(thiefBar, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(360f, 18f), new Vector2(-220f, -44f));
             thiefBar.gameObject.AddComponent<Image>().color = ThiefRed;
 
-            bool isResultScene = sceneId == GameSceneId.Result;
             RectTransform panel = CreateRect("Flow Panel", canvasRect);
             SetRect(
                 panel,
                 new Vector2(0.5f, 0.5f),
                 new Vector2(0.5f, 0.5f),
-                new Vector2(860f, isResultScene ? 620f : 500f),
+                new Vector2(860f, 500f),
                 Vector2.zero);
             panel.gameObject.AddComponent<Image>().color = PanelColor;
 
@@ -215,63 +278,30 @@ namespace PawsAndLoot.Editor
                 20,
                 FontStyle.Bold,
                 MerchantGold,
-                new Vector2(0f, isResultScene ? 230f : 170f),
+                new Vector2(0f, 170f),
                 new Vector2(720f, 32f));
 
-            Text titleLabel = CreateText(
+            CreateText(
                 "Title",
                 panel,
                 title,
                 64,
                 FontStyle.Bold,
                 Color.white,
-                new Vector2(0f, isResultScene ? 155f : 95f),
+                new Vector2(0f, 95f),
                 new Vector2(780f, 88f));
 
-            Text subtitleLabel = CreateText(
+            CreateText(
                 "Subtitle",
                 panel,
                 subtitle,
                 22,
                 FontStyle.Normal,
                 MutedText,
-                new Vector2(0f, isResultScene ? 88f : 25f),
+                new Vector2(0f, 25f),
                 new Vector2(760f, 40f));
 
-            if (isResultScene)
-            {
-                MatchResultSession.Clear();
-                Text soldAmountLabel = CreateText(
-                    "Sold Amount",
-                    panel,
-                    "SOLD 0 GOLD",
-                    28,
-                    FontStyle.Bold,
-                    MerchantGold,
-                    new Vector2(0f, 28f),
-                    new Vector2(700f, 42f));
-                Text remainingTimeLabel = CreateText(
-                    "Remaining Time",
-                    panel,
-                    "TIME 00:00",
-                    25,
-                    FontStyle.Normal,
-                    MutedText,
-                    new Vector2(0f, -18f),
-                    new Vector2(700f, 38f));
-                ResultScreenPresenter presenter =
-                    panel.gameObject.AddComponent<
-                        ResultScreenPresenter>();
-                presenter.Configure(
-                    titleLabel,
-                    subtitleLabel,
-                    soldAmountLabel,
-                    remainingTimeLabel);
-            }
-
-            float firstButtonY = isResultScene
-                ? -105f
-                : buttons.Count == 1 ? -105f : -70f;
+            float firstButtonY = buttons.Count == 1 ? -105f : -70f;
             for (int index = 0; index < buttons.Count; index++)
             {
                 ButtonSpec spec = buttons[index];
@@ -292,6 +322,65 @@ namespace PawsAndLoot.Editor
                 MutedText,
                 new Vector2(0f, -470f),
                 new Vector2(900f, 30f));
+        }
+
+        /// <summary>
+        /// Drops the result prefab into the scene.
+        ///
+        /// This used to build the screen inline: the authored mockup stretched
+        /// across the canvas with three transparent, captionless buttons pinned
+        /// over it, and four result labels created at font size one, fully
+        /// transparent and switched off. The clock, the arrests and the gold a
+        /// player read were painted into the picture, so they were the same
+        /// after every match.
+        /// </summary>
+        private static void CreateResultInterface()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                ResultCanvasBuilder.PrefabPath);
+            if (prefab == null)
+            {
+                // Generated on demand so a fresh clone can rebuild the scenes
+                // in one step rather than failing on a missing asset.
+                ResultCanvasBuilder.Rebuild();
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    ResultCanvasBuilder.PrefabPath);
+            }
+
+            if (prefab == null)
+            {
+                throw new FileNotFoundException(
+                    "The result prefab is missing and could not be generated.",
+                    ResultCanvasBuilder.PrefabPath);
+            }
+
+            var instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            if (instance == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not instantiate the result prefab: "
+                    + ResultCanvasBuilder.PrefabPath);
+            }
+
+            instance.name = ResultRootName;
+            EditorUtility.SetDirty(instance);
+
+            // The screen fills the canvas with its own cream, but a mismatched
+            // clear colour shows for a frame on load and in every editor view
+            // that is not playing.
+            foreach (GameObject root in
+                     SceneManager.GetActiveScene().GetRootGameObjects())
+            {
+                var camera = root.GetComponentInChildren<Camera>(true);
+                if (camera == null)
+                {
+                    continue;
+                }
+
+                camera.backgroundColor = new Color(0.988f, 0.941f, 0.886f, 1f);
+                EditorUtility.SetDirty(camera);
+                break;
+            }
         }
 
         private static void CreateEventSystem()
@@ -387,6 +476,29 @@ namespace PawsAndLoot.Editor
             return null;
         }
 
+        private static bool SceneHasComponent<T>(Scene scene)
+            where T : Component
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.GetComponentInChildren<T>(true) != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void DestroyRoot(Scene scene, string name)
+        {
+            GameObject root = FindRoot(scene, name);
+            if (root != null)
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
         private static void CreateButton(
             RectTransform parent,
             string label,
@@ -447,7 +559,7 @@ namespace PawsAndLoot.Editor
             return text;
         }
 
-        private static void CreateStretchImage(string name, RectTransform parent, Color color)
+        private static Image CreateStretchImage(string name, RectTransform parent, Color color)
         {
             RectTransform rect = CreateRect(name, parent);
             rect.anchorMin = Vector2.zero;
@@ -458,6 +570,7 @@ namespace PawsAndLoot.Editor
             Image image = rect.gameObject.AddComponent<Image>();
             image.color = color;
             image.raycastTarget = false;
+            return image;
         }
 
         private static RectTransform CreateRect(string name, Transform parent)
@@ -480,6 +593,27 @@ namespace PawsAndLoot.Editor
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = size;
             rect.anchoredPosition = position;
+        }
+
+        private static void NormalizeSceneCanvasScales()
+        {
+            foreach (Canvas canvas in UnityEngine.Object.FindObjectsByType<Canvas>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None))
+            {
+                RectTransform rect = canvas.GetComponent<RectTransform>();
+                if (rect == null)
+                {
+                    continue;
+                }
+
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+                rect.localScale = Vector3.one;
+                EditorUtility.SetDirty(rect);
+            }
         }
 
         private static void ApplyBuildSettings()
@@ -531,6 +665,7 @@ namespace PawsAndLoot.Editor
             GameConfigBootstrap configBootstrap = null;
             GameLogBootstrap logBootstrap = null;
             ResultScreenPresenter resultPresenter = null;
+            ApplicationQuitButton quitButton = null;
 
             foreach (GameObject root in scene.GetRootGameObjects())
             {
@@ -542,6 +677,9 @@ namespace PawsAndLoot.Editor
                 resultPresenter ??=
                     root.GetComponentInChildren<
                         ResultScreenPresenter>(true);
+                quitButton ??=
+                    root.GetComponentInChildren<
+                        ApplicationQuitButton>(true);
 
                 foreach (SceneNavigationButton button in root.GetComponentsInChildren<SceneNavigationButton>(true))
                 {
@@ -610,6 +748,11 @@ namespace PawsAndLoot.Editor
                 }
 
                 resultPresenter.ValidateOrThrow();
+                if (quitButton == null)
+                {
+                    throw new InvalidOperationException(
+                        "Result scene must contain one ApplicationQuitButton.");
+                }
             }
         }
 
