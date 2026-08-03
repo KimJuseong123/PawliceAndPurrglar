@@ -118,7 +118,7 @@ namespace PawsAndLoot.Editor
         {
             { "interior_bookstore", new Vector2(0.528f, 0.207f) },
             { "interior_house02", new Vector2(0.552f, 0.292f) },
-            { "interior_house03", new Vector2(0.472f, 0.391f) },
+            { "interior_house03", new Vector2(0.467f, 0.440f) },
             { "interior_jewelry", new Vector2(0.463f, 0.169f) },
             { "interior_supermarket", new Vector2(0.448f, 0.178f) }
         };
@@ -152,7 +152,7 @@ namespace PawsAndLoot.Editor
         private static readonly System.Collections.Generic.Dictionary<
             string, Vector2> DoorInPlan = new()
         {
-            { "interior_house03", new Vector2(0.472f, 0.391f) }
+            { "interior_house03", new Vector2(0.471f, 0.336f) }
         };
 
         /// <summary>
@@ -700,7 +700,11 @@ namespace PawsAndLoot.Editor
             // A door in the middle of a room is a door with room on both sides,
             // and the side that is not the street is where the player is put
             // down. Sitting it on the wall gives the arrival somewhere to be.
-            float toWall = Mathf.Abs(Vector3.Dot(inner.extents, doorway))
+            bool bothMarked = DoorInPlan.ContainsKey(stem)
+                && SpawnInPlan.ContainsKey(stem);
+            float toWall = bothMarked
+                ? 0f
+                : Mathf.Abs(Vector3.Dot(inner.extents, doorway))
                 - Vector3.Dot(doorAt - inner.center, doorway)
                 - 0.4f;
             if (toWall > 0f)
@@ -714,7 +718,9 @@ namespace PawsAndLoot.Editor
             // land inside that trigger: entering fired the exit on the same
             // frame and the player bounced straight back into the street. The
             // same mistake as ISSUE-043, one room further in.
-            float toExit = Vector3.Dot(doorAt - frontEntry.position, doorway);
+            float toExit = bothMarked
+                ? ExitClearance
+                : Vector3.Dot(doorAt - frontEntry.position, doorway);
             if (toExit < ExitClearance)
             {
                 frontEntry.position -= doorway * (ExitClearance - toExit);

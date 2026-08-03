@@ -183,6 +183,7 @@ namespace PawsAndLoot.Gameplay.Camera
             // could work around.
             _released = false;
             SetCursorLocked(active);
+            _swallowDelta = true;
 
             if (!active || _followed == null)
             {
@@ -214,6 +215,7 @@ namespace PawsAndLoot.Gameplay.Camera
 
         private Bounds _room;
         private bool _hasRoom;
+        private bool _swallowDelta;
 
         /// <summary>
         /// Tells the camera which room it is in, so it can stay inside it.
@@ -309,6 +311,7 @@ namespace PawsAndLoot.Gameplay.Camera
             {
                 _released = false;
                 SetCursorLocked(true);
+                _swallowDelta = true;
             }
         }
 
@@ -330,6 +333,22 @@ namespace PawsAndLoot.Gameplay.Camera
             if (mouse != null && !_released)
             {
                 Vector2 delta = mouse.delta.ReadValue();
+
+                // The first frame after the cursor is captured is thrown away.
+                //
+                // Locking the pointer teleports it to the middle of the window,
+                // and that jump arrives as one enormous delta — several hundred
+                // pixels of it. Fed to the yaw it spins the view most of the way
+                // round in a single frame, which is the view "sometimes going
+                // odd" that was reported: it only happens on the frames the
+                // cursor is taken, which is entering a room and clicking back in
+                // after Escape.
+                if (_swallowDelta)
+                {
+                    _swallowDelta = false;
+                    delta = Vector2.zero;
+                }
+
                 _yaw += delta.x * degreesPerPixel;
                 // Mouse up raises the view, which means a shallower angle.
                 pitchDegrees = Mathf.Clamp(

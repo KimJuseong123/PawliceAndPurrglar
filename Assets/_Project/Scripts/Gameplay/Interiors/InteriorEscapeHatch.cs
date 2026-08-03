@@ -91,16 +91,16 @@ namespace PawsAndLoot.Gameplay.Interiors
         }
 
         /// <summary>
-        /// T or G. Two keys because this is the one thing a stuck player has to
-        /// be able to find, and one of them being taken by something else on
-        /// somebody's layout should not leave them in the room.
+        /// T, and only T.
+        ///
+        /// It was T or G on the argument that a stuck player must be able to
+        /// find it. Two keys for one action is two keys that cannot be used for
+        /// anything else, and G is wanted elsewhere.
         /// </summary>
         private static bool WasRequested()
         {
             Keyboard keyboard = Keyboard.current;
-            return keyboard != null
-                && (keyboard.tKey.wasPressedThisFrame
-                    || keyboard.gKey.wasPressedThisFrame);
+            return keyboard != null && keyboard.tKey.wasPressedThisFrame;
         }
 
         private void Escape()
