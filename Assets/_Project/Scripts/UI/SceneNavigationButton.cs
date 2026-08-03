@@ -45,6 +45,16 @@ namespace PawsAndLoot.UI
                 return;
             }
 
+            // Going to the lobby ends the session first. The lobby that loads
+            // brings its own NetworkManager, and Netcode keeps the old one alive
+            // across scenes while still holding the static singleton — so a
+            // session left running made the second match unable to spawn
+            // anything at all.
+            if (targetScene == GameSceneId.Bootstrap)
+            {
+                NetworkSceneBridge.LeaveSession();
+            }
+
             GameSceneLoader.Load(targetScene);
         }
     }

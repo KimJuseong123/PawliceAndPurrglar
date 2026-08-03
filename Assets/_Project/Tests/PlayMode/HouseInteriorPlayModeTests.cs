@@ -429,6 +429,11 @@ namespace PawsAndLoot.Tests.PlayMode
 
             InteriorValuablePickup piece = pickups[0];
             int before = wallet.SoldAmount;
+            IHoldInteractable holdInteraction = piece;
+            Assert.That(holdInteraction.HoldDurationSeconds, Is.GreaterThan(0f));
+            Assert.That(
+                holdInteraction.CanBeginHold(new PlayerInteractionContext(thief)),
+                Is.True);
 
             // The officer cannot loot the place. Loot is thief-only by type, and
             // an officer who could pocket valuables would be playing the thief's
@@ -441,7 +446,7 @@ namespace PawsAndLoot.Tests.PlayMode
                 "A valuable the officer can take is not the thief's loot.");
 
             Assert.That(
-                piece.TryInteract(new PlayerInteractionContext(thief)),
+                holdInteraction.CompleteHold(new PlayerInteractionContext(thief)),
                 Is.True);
             Assert.That(
                 wallet.SoldAmount,

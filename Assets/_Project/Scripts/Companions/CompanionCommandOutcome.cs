@@ -66,7 +66,16 @@ namespace PawsAndLoot.Companions
         StealCarrying = 19,
 
         /// <summary>CAT-005. Cat handed the loot to its owner.</summary>
-        StealDelivered = 20
+        StealDelivered = 20,
+
+        /// <summary>Cat found a nearby rooftop and is climbing to it.</summary>
+        RoofClimbStarted = 21,
+
+        /// <summary>Cat reached the rooftop landing.</summary>
+        RoofClimbReached = 22,
+
+        /// <summary>No usable rooftop was close enough for the cat.</summary>
+        RoofClimbUnavailable = 23
     }
 
     public static class CompanionCommandOutcomeText
@@ -122,6 +131,12 @@ namespace PawsAndLoot.Companions
                     "보물을 물고 돌아옵니다.",
                 CompanionCommandOutcome.StealDelivered =>
                     "보물을 건네주었습니다.",
+                CompanionCommandOutcome.RoofClimbStarted =>
+                    "가까운 지붕으로 올라갑니다.",
+                CompanionCommandOutcome.RoofClimbReached =>
+                    "지붕 위에 도착했습니다.",
+                CompanionCommandOutcome.RoofClimbUnavailable =>
+                    "근처에 올라갈 지붕이 없습니다.",
                 _ => string.Empty
             };
 

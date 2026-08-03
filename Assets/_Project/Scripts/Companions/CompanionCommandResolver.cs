@@ -1,4 +1,5 @@
 using PawsAndLoot.Gameplay.Loot;
+using PawsAndLoot.Gameplay.Map;
 using UnityEngine;
 
 namespace PawsAndLoot.Companions
@@ -42,6 +43,9 @@ namespace PawsAndLoot.Companions
 
         [SerializeField, Min(1f)]
         private float hideSearchRange = 12f;
+
+        [SerializeField, Min(1f)]
+        private float roofSearchRange = 28f;
 
         /// <summary>
         /// CAT-003 and CAT-005 report what the cat noticed so the HUD can name
@@ -123,7 +127,7 @@ namespace PawsAndLoot.Companions
                 case CompanionCommandId.Scout:
                     return ResolveScout(companionPosition);
                 case CompanionCommandId.Steal:
-                    return ResolveSteal(companionPosition);
+                    return ResolveRoofClimb(companionPosition);
                 case CompanionCommandId.Hide:
                     return ResolveHide(companionPosition);
                 default:
@@ -211,6 +215,109 @@ namespace PawsAndLoot.Companions
                 true,
                 CompanionCommandOutcome.ScoutReported,
                 destination);
+        }
+
+        private Resolution ResolveRoofClimb(Vector3 companionPosition)
+        {
+            if (!TryFindNearestRooftop(
+                    companionPosition,
+                    out Vector3 destination))
+            {
+                return new Resolution(
+                    false,
+                    CompanionCommandOutcome.RoofClimbUnavailable,
+                    null);
+            }
+
+            return new Resolution(
+                true,
+                CompanionCommandOutcome.RoofClimbStarted,
+                destination);
+        }
+
+        private bool TryFindNearestRooftop(
+            Vector3 companionPosition,
+            out Vector3 destination)
+        {
+            destination = Vector3.zero;
+            float bestDistance = float.PositiveInfinity;
+
+            foreach (GreyboxMapDefinition map in
+                Object.FindObjectsByType<GreyboxMapDefinition>(
+                    FindObjectsSortMode.None))
+            {
+                foreach (Transform rooftop in map.Rooftops)
+                {
+                    TryUseRooftopCandidate(
+                        companionPosition,
+                        rooftop,
+                        ref bestDistance,
+                        ref destination);
+                }
+            }
+
+            if (!float.IsPositiveInfinity(bestDistance))
+            {
+                return true;
+            }
+
+            foreach (Transform candidate in
+                Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            {
+                if (candidate == null
+                    || !candidate.name.Contains(
+                        "Rooftop",
+                        System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                TryUseRooftopCandidate(
+                    companionPosition,
+                    candidate,
+                    ref bestDistance,
+                    ref destination);
+            }
+
+            return !float.IsPositiveInfinity(bestDistance);
+        }
+
+        private void TryUseRooftopCandidate(
+            Vector3 companionPosition,
+            Transform rooftop,
+            ref float bestDistance,
+            ref Vector3 destination)
+        {
+            if (rooftop == null)
+            {
+                return;
+            }
+
+            Vector3 point = ResolveRooftopLanding(rooftop);
+            float distance = PlanarDistance(companionPosition, point);
+            if (distance > roofSearchRange || distance >= bestDistance)
+            {
+                return;
+            }
+
+            bestDistance = distance;
+            destination = point;
+        }
+
+        private static Vector3 ResolveRooftopLanding(Transform rooftop)
+        {
+            Collider roofCollider = rooftop.GetComponent<Collider>();
+            if (roofCollider != null)
+            {
+                Physics.SyncTransforms();
+                Bounds bounds = roofCollider.bounds;
+                return new Vector3(
+                    rooftop.position.x,
+                    bounds.max.y + 0.7f,
+                    rooftop.position.z);
+            }
+
+            return rooftop.position + Vector3.up;
         }
 
         /// <summary>

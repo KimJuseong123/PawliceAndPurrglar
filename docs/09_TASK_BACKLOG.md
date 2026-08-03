@@ -309,6 +309,11 @@ HUD 표시가 동작하고 테스트로 고정돼 있다.
 | UI-006 | P0 | DONE | 체포 게이지 (`ARREST-005`에 통합) |
 | UI-007 | P0 | DONE | 역할별 목표 안내 |
 | UI-008 | P1 | TODO | 첫 경기 안내 |
+| UI-010 | P0 | DONE | 로비 화면 재구현 (`LobbyCanvas.prefab`, `ISSUE-046`) |
+| UI-011 | P1 | DONE | 결과 화면 재구현 (`ResultCanvas.prefab`, `ISSUE-050`) |
+| UI-012 | P2 | TODO | `사용 아이템`·`발각 횟수` 카운터. 없어서 결과 카드를 3개로 줄였다 |
+| UI-013 | P0 | DONE | 역할 선택 캐릭터 아트 4장 적용 (하이파이브 포즈 교체) |
+| UI-014 | P1 | REVERTED | 밤 마을 광장 로비 배경. 적용·검증까지 통과했으나 작업자가 단색 복귀를 요청 |
 
 ## Epic 10. 멀티플레이
 
@@ -521,3 +526,16 @@ The first implementation slice includes browser capture, upload validation,
 STT, absolute-command matching, structured Intent candidates, Host cognition,
 NGO result events, and fallback keyboard input. Streaming STT, fine-tuning,
 persistent analytics, and multi-instance server deployment remain later work.
+
+## 2026-08-02 follow-up status
+
+- DONE: HUD timer restored under the police catch board.
+- DONE: Core HUD, inventory, and voice panels use more transparent backplates.
+- DONE: Voice feed displays both raw transcript and interpreted animal command.
+- DONE: Thief-to-cat `E` interaction opens a two-panel exchange UI.
+- DONE: Player inventory surface is represented as a 5x5 square-slot grid.
+- DONE: Quick slots reject non-interaction catalog entries.
+- DONE: LocalAI deterministic command fallback runs before Ollama, reducing
+  common dog/cat command interpretation latency.
+- TODO: Manual playtest pass for the cat exchange UI with real item pickup
+  order and live microphone input on the target machine.

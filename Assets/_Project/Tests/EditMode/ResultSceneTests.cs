@@ -28,6 +28,12 @@ namespace PawsAndLoot.Tests.EditMode
                     root.GetComponentsInChildren<
                         SceneNavigationButton>(true))
                 .ToArray();
+            ApplicationQuitButton[] quitButtons = scene
+                .GetRootGameObjects()
+                .SelectMany(root =>
+                    root.GetComponentsInChildren<
+                        ApplicationQuitButton>(true))
+                .ToArray();
 
             Assert.That(presenters, Has.Length.EqualTo(1));
             Assert.DoesNotThrow(presenters[0].ValidateOrThrow);
@@ -38,6 +44,7 @@ namespace PawsAndLoot.Tests.EditMode
                     GameSceneId.Game,
                     GameSceneId.Bootstrap
                 }));
+            Assert.That(quitButtons, Has.Length.EqualTo(1));
         }
     }
 }

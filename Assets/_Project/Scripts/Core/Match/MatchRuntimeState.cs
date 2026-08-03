@@ -30,6 +30,13 @@ namespace PawsAndLoot.Match
         public float ReadyCountdownRemainingSeconds { get; private set; }
         public float RemainingMatchSeconds { get; private set; }
 
+        /// <summary>
+        /// The configured length of a match. Exposed so the result screen can
+        /// report how long the match ran rather than how long was left.
+        /// </summary>
+        public float MatchDurationSeconds =>
+            matchConfig != null ? matchConfig.MatchDurationSeconds : 0f;
+
         public void Configure(
             MatchConfig configuredMatchConfig,
             bool shouldStartCountdownAutomatically)

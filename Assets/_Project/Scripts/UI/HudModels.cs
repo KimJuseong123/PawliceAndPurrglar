@@ -153,7 +153,10 @@ namespace PawsAndLoot.UI
             int quantity,
             bool selected,
             bool disabled,
-            string iconGlyph = "")
+            string iconGlyph = "",
+            string itemName = "",
+            int price = 0,
+            Sprite priceIcon = null)
         {
             KeyLabel = keyLabel;
             Icon = icon;
@@ -161,6 +164,9 @@ namespace PawsAndLoot.UI
             Selected = selected;
             Disabled = disabled;
             IconGlyph = iconGlyph ?? string.Empty;
+            ItemName = itemName ?? string.Empty;
+            Price = Mathf.Max(0, price);
+            PriceIcon = priceIcon;
         }
 
         public string KeyLabel { get; }
@@ -169,5 +175,9 @@ namespace PawsAndLoot.UI
         public bool Selected { get; }
         public bool Disabled { get; }
         public string IconGlyph { get; }
+        public string ItemName { get; }
+        public int Price { get; }
+        public Sprite PriceIcon { get; }
+        public bool HasPrice => Price > 0;
     }
 }

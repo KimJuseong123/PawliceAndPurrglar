@@ -23,6 +23,22 @@ namespace PawsAndLoot.Tests.EditMode
             "Assets/_Project/Resources/ThrowTrajectoryMaterial.mat";
         private const string ThrowLandingMaterialPath =
             "Assets/_Project/Resources/ThrowLandingMarkerMaterial.mat";
+        private const string CurrencyCoinPath =
+            "Assets/_Project/Resources/UI/CurrencyCoin.png";
+        private static readonly string[] ItemIconPaths =
+        {
+            "Assets/_Project/Resources/UI/ItemIcons/rock.png",
+            "Assets/_Project/Resources/UI/ItemIcons/banana.png",
+            "Assets/_Project/Resources/UI/ItemIcons/catnip pouch.png",
+            "Assets/_Project/Resources/UI/ItemIcons/police lantern alarm.png",
+            "Assets/_Project/Resources/UI/ItemIcons/bone.png",
+            "Assets/_Project/Resources/UI/ItemIcons/fish can.png",
+            "Assets/_Project/Resources/UI/ItemIcons/yellow chicken.png",
+            "Assets/_Project/Resources/UI/ItemIcons/can.png",
+            "Assets/_Project/Resources/UI/ItemIcons/gold medal.png",
+            "Assets/_Project/Resources/UI/ItemIcons/golden watch.png",
+            "Assets/_Project/Resources/UI/ItemIcons/blue gemstone.png"
+        };
 
         [Test]
         public void RoleAwareHudPrefabIsVisibleAndComplete()
@@ -53,15 +69,22 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(prefab.GetComponent<RoleAwareHudController>(), Is.Not.Null);
             Assert.That(prefab.GetComponent<CanvasGroup>(), Is.Not.Null);
             Assert.That(prefab.transform.Find("Voice Command Feed"), Is.Not.Null);
+            Assert.That(prefab.transform.Find("Voice Command Feed/Interpretation Paw"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Quick Slots"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Bag Button"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Voice Button"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Voice Button/Label"), Is.Not.Null);
-            Assert.That(prefab.transform.Find("Match Timer"), Is.Null);
+            Assert.That(prefab.transform.Find("Match Timer"), Is.Not.Null);
             Assert.That(prefab.transform.Find("TopRightMinimap"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Objective Text"), Is.Null);
             Assert.That(prefab.transform.Find("Police Catches"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Catch Progress"), Is.Null);
+            Assert.That(prefab.transform.Find("Inventory/Grid/Inventory Slot 25"), Is.Not.Null);
+            Assert.That(prefab.transform.Find("Inventory/Grid/Inventory Slot 5/Price"), Is.Not.Null);
+            Assert.That(prefab.transform.Find("Inventory/Grid/Inventory Slot 5/Currency Icon"), Is.Not.Null);
+            Assert.That(prefab.transform.Find("Cat Exchange/Player Bag/Grid/Player Exchange Slot 25"), Is.Not.Null);
+            Assert.That(prefab.transform.Find("Cat Exchange/Cat Bag/Grid/Cat Bag Slot 4"), Is.Not.Null);
+            Assert.That(prefab.transform.Find("Context Interaction/Hold Progress"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Sensor Radar"), Is.Not.Null);
             Assert.That(prefab.transform.Find("ANIMAL COMMANDS"), Is.Not.Null);
 
@@ -77,6 +100,9 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(
                 prefab.GetComponentsInChildren<SensorArcGraphic>(true),
                 Has.Length.EqualTo(7));
+            Assert.That(
+                prefab.GetComponentsInChildren<RadialProgressGraphic>(true),
+                Has.Length.EqualTo(1));
 
             AssertRect(
                 prefab.transform.Find("TopRightMinimap") as RectTransform,
@@ -98,6 +124,13 @@ namespace PawsAndLoot.Tests.EditMode
                 new Vector2(0f, 24f),
                 new Vector2(286f, 70f));
             AssertRect(
+                prefab.transform.Find("Voice Command Feed") as RectTransform,
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0f, 104f),
+                new Vector2(420f, 68f));
+            AssertRect(
                 prefab.transform.Find("Police Catches") as RectTransform,
                 new Vector2(0.5f, 1f),
                 new Vector2(0.5f, 1f),
@@ -114,11 +147,59 @@ namespace PawsAndLoot.Tests.EditMode
                 prefab.transform.Find("Police Catches/Catch Slot 3"),
                 Is.Not.Null);
             AssertRect(
+                prefab.transform.Find("Match Timer") as RectTransform,
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -128f),
+                new Vector2(170f, 32f));
+            GridLayoutGroup inventoryGrid =
+                prefab.transform.Find("Inventory/Grid").GetComponent<GridLayoutGroup>();
+            Assert.That(inventoryGrid, Is.Not.Null);
+            Assert.That(inventoryGrid.cellSize, Is.EqualTo(new Vector2(70f, 70f)));
+            Assert.That(
+                inventoryGrid.constraint,
+                Is.EqualTo(GridLayoutGroup.Constraint.FixedColumnCount));
+            Assert.That(inventoryGrid.constraintCount, Is.EqualTo(5));
+            AssertRect(
+                prefab.transform.Find("Inventory") as RectTransform,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -260f),
+                new Vector2(470f, 780f));
+            AssertRect(
+                prefab.transform.Find("Cat Exchange") as RectTransform,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -24f),
+                new Vector2(780f, 820f));
+            Image catExchangeBackground =
+                prefab.transform.Find("Cat Exchange").GetComponent<Image>();
+            Assert.That(catExchangeBackground, Is.Not.Null);
+            Assert.That(catExchangeBackground.color.a, Is.GreaterThan(0.4f));
+            Assert.That(catExchangeBackground.raycastTarget, Is.True);
+            AssertRect(
+                prefab.transform.Find("Cat Exchange/Player Bag") as RectTransform,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -124f),
+                new Vector2(460f, 632f));
+            AssertRect(
+                prefab.transform.Find("Cat Exchange/Cat Bag") as RectTransform,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(504f, -424f),
+                new Vector2(252f, 302f));
+            AssertRect(
                 prefab.transform.Find("ANIMAL COMMANDS") as RectTransform,
-                Vector2.zero,
-                Vector2.zero,
-                Vector2.zero,
-                new Vector2(24f, 126f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(24f, -24f),
                 new Vector2(292f, 214f));
             Assert.That(
                 prefab.transform.Find("ANIMAL COMMANDS/Ctrl Command 1"),
@@ -145,6 +226,17 @@ namespace PawsAndLoot.Tests.EditMode
                 Is.False,
                 "HUD font must keep its preloaded atlas data in player builds.");
             AssertBuildSafeMaterial(font.material, RuntimeFontPath);
+            Assert.That(
+                AssetDatabase.LoadAssetAtPath<Sprite>(CurrencyCoinPath),
+                Is.Not.Null,
+                "The currency icon must import as a Sprite so runtime HUD binding can load it.");
+            foreach (string path in ItemIconPaths)
+            {
+                Assert.That(
+                    AssetDatabase.LoadAssetAtPath<Sprite>(path),
+                    Is.Not.Null,
+                    $"The HUD item icon must import as a Sprite: {path}");
+            }
 
             GameObject prefab =
                 AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
@@ -183,7 +275,12 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(File.Exists(GameScenePath), Is.True, GameScenePath);
             string scene = File.ReadAllText(GameScenePath);
             Assert.That(scene, Does.Not.Contain("Generated/Validation"));
-            Assert.That(scene, Does.Not.Contain("m_LocalScale: {x: 0, y: 0, z: 0}"));
+            Assert.That(
+                scene,
+                Does.Contain("m_Name: Scene UI"),
+                "The generated scene still needs its legacy UI canvas for "
+                + "scene-level presenters; the production HUD prefab is "
+                + "validated separately above.");
             Assert.That(scene, Does.Contain("9a7b02d3845aed24d8e4dde4734911bb"));
             Assert.That(scene, Does.Contain("6961fc7c68093c5479876c83455dcc7e"));
             Assert.That(scene, Does.Contain("7df0df2c17208144480fcd43b5ce3548"));

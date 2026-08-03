@@ -97,6 +97,15 @@ namespace PawsAndLoot.Integration.Voice
                 "paws-local-ai",
                 StringComparison.OrdinalIgnoreCase)
             && string.Equals(status, "ready", StringComparison.OrdinalIgnoreCase);
+
+        public bool CanHandleVoice => string.Equals(
+                service,
+                "paws-local-ai",
+                StringComparison.OrdinalIgnoreCase)
+            && stt != null
+            && stt.ready
+            && (string.Equals(status, "ready", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(status, "degraded", StringComparison.OrdinalIgnoreCase));
     }
 
     [Serializable]

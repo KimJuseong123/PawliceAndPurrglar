@@ -44,6 +44,40 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ScannerPrefersHigherPriorityTargetBeforeDistance()
+        {
+            var state = new MutableMatchStateReader
+            {
+                IsGameplayActive = true
+            };
+            PlayerInteractionScanner thief = CreateScanner(
+                PlayerRole.Thief,
+                state);
+            PrototypeInteractable loot = CreateTarget(
+                "Nearby Loot",
+                new Vector3(0.6f, 0f, 0f),
+                PlayerInteractionType.Loot);
+            PriorityInteractable catBag = CreatePriorityTarget(
+                "Cat Bag",
+                new Vector3(1.2f, 0f, 0f),
+                PlayerInteractionType.Loot,
+                50);
+            Physics.SyncTransforms();
+
+            thief.RefreshTarget();
+
+            Assert.That(thief.CurrentTarget, Is.SameAs(catBag));
+            Assert.That(thief.TryInteractCurrent(), Is.True);
+            Assert.That(catBag.InteractionCount, Is.EqualTo(1));
+            Assert.That(loot.InteractionCount, Is.EqualTo(0));
+
+            Object.Destroy(thief.gameObject);
+            Object.Destroy(loot.gameObject);
+            Object.Destroy(catBag.gameObject);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator InteractionRequiresPlayingAndSurvivesDestroyedTarget()
         {
             var state = new MutableMatchStateReader();
@@ -106,6 +140,22 @@ namespace PawsAndLoot.Tests.PlayMode
             return interactable;
         }
 
+        private static PriorityInteractable CreatePriorityTarget(
+            string name,
+            Vector3 position,
+            PlayerInteractionType type,
+            int priority)
+        {
+            GameObject target =
+                GameObject.CreatePrimitive(PrimitiveType.Cube);
+            target.name = name;
+            target.transform.position = position;
+            PriorityInteractable interactable =
+                target.AddComponent<PriorityInteractable>();
+            interactable.Configure(type, name, priority);
+            return interactable;
+        }
+
         private sealed class MutableMatchStateReader : IMatchStateReader
         {
             public MatchState CurrentState => IsGameplayActive
@@ -113,6 +163,44 @@ namespace PawsAndLoot.Tests.PlayMode
                 : MatchState.Ready;
 
             public bool IsGameplayActive { get; set; }
+        }
+
+        private sealed class PriorityInteractable :
+            MonoBehaviour,
+            IPlayerInteractable,
+            IInteractionPriority
+        {
+            private PlayerInteractionType interactionType;
+            private string prompt;
+
+            public Transform InteractionTransform => transform;
+            public PlayerInteractionType InteractionType => interactionType;
+            public string Prompt => prompt;
+            public bool IsAvailable => true;
+            public int InteractionPriority { get; private set; }
+            public int InteractionCount { get; private set; }
+
+            public void Configure(
+                PlayerInteractionType configuredType,
+                string configuredPrompt,
+                int configuredPriority)
+            {
+                interactionType = configuredType;
+                prompt = configuredPrompt;
+                InteractionPriority = configuredPriority;
+            }
+
+            public bool TryInteract(PlayerInteractionContext context)
+            {
+                if (context.Player == null
+                    || !context.Player.CanInteract(interactionType))
+                {
+                    return false;
+                }
+
+                InteractionCount++;
+                return true;
+            }
         }
     }
 }

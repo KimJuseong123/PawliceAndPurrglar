@@ -46,6 +46,72 @@ Claude Code 전용 작업 지침서다.
 > 저장된 씬에서 확인하는 법: `.unity` 파일의 `m_OnClick:` 밑이
 > `m_Calls: []`이면 연결이 없는 것이다.
 
+> **`Preserve Aspect`는 rect 안에서 가운데 정렬한다.** rect가 그림보다 넓으면
+> 그림이 화면 중앙 쪽으로 밀린다. 팀 아트 rect를 팀 그룹 폭으로 잡았더니 넓은
+> 하이파이브 포즈가 안쪽으로 밀려 방 목록과 겹쳤다. **rect를 그 자리에 올 수 있는
+> 가장 넓은 스프라이트에 맞추고** 원하는 쪽 가장자리에 앵커한다. 그리고 rect가
+> 스프라이트보다 좁으면 폭이 제한 변수가 되어 **포즈를 바꿀 때 캐릭터가 작아진다.**
+
+> **작업자가 준 PNG에 알파가 있다고 가정하지 않는다.** 네 장 중 하나가 24bpp
+> RGB로 와서 로비에 검은 사각형으로 떴다. 그리고 네 장의 프레이밍이 서로 달라
+> 고정 높이로 배치하니 역할을 고를 때 캐릭터가 줄어들었다. `Import Lobby Pair Art`가
+> 알파 유무를 검사하고 넷 다 불투명 경계로 잘라 맞춘다.
+>
+> 배경을 키잉할 때 **밝기 하나로 자르지 않는다.** 그 파일의 배경은 값 23인데
+> 아트의 신발·외곽선은 값 3으로 **배경보다 더 어두웠다.** "이보다 어두우면 배경"
+> 규칙은 도둑의 다리를 지우고 배경은 남겼다. 배경은 **띠**로 잡는다.
+
+> **`NetworkManager.Singleton`이 로비가 쓰는 매니저와 같다고 가정하지 않는다.**
+> NGO는 세션 시작과 무관하게 **활성화 시점에** `DontDestroyOnLoad`를 부르고
+> `Singleton`은 비어 있을 때만 잡는다. 씬에 배치된 매니저는 **씬을 다시 로드할
+> 때마다 하나씩 늘어나고**, 낡은 쪽이 계속 싱글턴이다. `NetworkObject`는 소유
+> 매니저가 없으면 싱글턴으로 폴백하므로, 새 로비가 스폰하는 모든 것이 리스닝하지
+> 않는 낡은 매니저로 간다 — `NetworkManagerOwner is not listening` (`ISSUE-052`).
+> 첫 판은 정상이고 두 번째 판만 죽으므로 로비 코드를 의심하게 된다.
+>
+> 스폰은 `NetworkObject.InstantiateAndSpawn(networkManager)`로 매니저를 명시한다
+> (`NetworkManagerOwner` 필드는 `internal`이라 직접 못 넣는다). 그리고 씬을 나갈
+> 때 세션을 끝낸다 — 씬 로더만 부르면 세션이 살아서 따라온다.
+
+> **배치 실행의 로그는 종료 통보를 받은 뒤에만 판독한다.** 실행 중에
+> `grep -c "error CS"`를 하면 0이 나오고 그게 "통과"로 읽힌다. 실제로는 오류가
+> 있었고, 두 번 속았다 (`ISSUE-051`).
+
+> **배치 실행 결과가 코드 변경을 반영하지 않으면 로그에서 `error CS`부터 찾는다.**
+> 어느 한 어셈블리라도 컴파일에 실패하면 Unity는 **직전에 성공한 어셈블리로
+> `-executeMethod`를 그대로 실행한다.** 깨진 것은 테스트 어셈블리였는데 증상은
+> 에디터 도구에 나타났고, 도구는 멀쩡한 성공 로그를 남겼다. 추출기 좌표를 두 번
+> 고치고 두 번 다 산출물이 그대로여서 좌표를 의심했다 (`ISSUE-051`).
+> **성공 로그는 낡은 코드가 남긴 것일 수 있다.**
+
+> **라벨을 "일단 만들어 두고 숨기지" 않는다.** 결과 화면의 승자·사유·골드·시간
+> 라벨이 `fontSize 1` + 완전 투명 + `SetActive(false)`로 만들어져 있었다. 컴포넌트는
+> 존재하므로 "라벨이 있는가"를 보는 검사는 전부 통과하고, 화면의 숫자는 목업 그림에
+> 박힌 고정값이었다 — **어떤 경기를 해도 같은 결과가 나왔다** (`ISSUE-050`).
+> 활성 여부·글자 크기·알파를 함께 단정한다 (`NoLabelIsHiddenOrUnreadable`).
+
+> **완성된 화면 이미지를 UI 배경으로 깔지 않는다.** 로비가 목업 PNG 한 장을
+> `preserveAspect`로 깔고 그 위에 **캡션이 빈 문자열이고 완전 투명인 버튼**을 픽셀
+> 좌표로 고정한 것이었다. 목업의 4:3이 아닌 화면비에서는 그림만 레터박스로 줄고
+> 버튼은 제자리에 남아 서로 어긋난다. 버튼이 죽은 게 아니라 **다른 자리에 있었다**
+> (`ISSUE-046`). 에디터에서도 빌드에서도 정상으로 보이고 로그도 남지 않는다.
+> 창 크기를 바꿔야만 드러나므로 `Capture Lobby Layout`으로 네 해상도를 찍어 본다.
+>
+> 좌우의 검은 여백은 로비 밑에 깔린 `Scene UI` 캔버스였다. 캔버스를 하나 더 얹기
+> 전에 **밑에 무엇이 있는지** 본다.
+
+> **TMP는 사각형이 한 줄보다 낮으면 `Ellipsis`에서 아무것도 그리지 않는다.**
+> 말줄임을 하는 게 아니라 통째로 사라진다. 22pt 캡션에 24px rect, 28pt 상태 문구에
+> 40px rect가 그랬다 — 몇 픽셀 차이다 (`ISSUE-047`). 같은 40px에 `Overflow`인 옆
+> 라벨은 멀쩡히 보여서 레이아웃 문제로 보인다. **텍스트 rect는 글자 크기의 1.45배
+> 이상**으로 잡고, 검사는 "라벨이 있는가"가 아니라 `preferredHeight <= rect.height`로
+> 한다.
+
+> **내용에 따라 자라는 요소를 고정 배치 옆에 두지 않는다.** LAN 방 목록을 하단
+> 컨트롤의 `VerticalLayoutGroup`에 넣었더니 방이 하나만 발견돼도 주소 패널이 83px
+> 올라가 캐릭터를 침범했다 (`ISSUE-048`). **가장 흔한 상태(비어 있음)로만 렌더해
+> 보면 통과한다.** 최악의 경우 크기로 검사하고, 자라는 것은 빈 공간으로 띄운다.
+
 > **맵 배치를 바꿨으면 `Capture Map Overview`로 평면도를 본다.** 건물이 도로
 > 위에 얹혀 있거나 벽 밖으로 나가 있어도 테스트·검증기·플레이 카메라 중 어느
 > 것도 잡지 못한다. 실제로 주택 2채가 골목을 막고 경찰서가 벽을 3m 뚫고 나간
@@ -126,6 +192,20 @@ Claude Code 전용 작업 지침서다.
 >    `DynamicRootNames`, 그리고 `RaccoonBinGreeter`가 참조하는 transform만
 >    제외된다. 새로 움직이는 것을 추가하면 제외 규칙도 함께 넣는다.
 
+
+> **배경 위에 무언가를 세웠으면 배경의 어느 지점에 서 있는지 잰다.** 밤 광장 판을
+> 깔고 달을 지키려 위쪽만 조금 잘랐더니, 광장이 전부 화면 아래로 나가 두 팀이
+> 하늘에 떠 있었다 (`ISSUE-053`). 요소마다 크기·위치·스프라이트가 다 맞았으므로
+> **계약 테스트 전부가 통과했다** — 틀린 것은 두 요소 사이의 관계뿐이었다. 원화의
+> 지평선·바닥 경계를 fraction으로 재고 발 위치와의 관계를 테스트로 고정한다
+> (`CharactersStandOnTheSquareAndNotInTheSky`).
+>
+> 그리고 **화면비가 다른 판을 덮어 배치할 때 무엇을 버릴지 먼저 산수로 정한다.**
+> 16:9는 4:3의 75%만 보여주므로, 원화의 상단 특징(달 0.072)과 하단 특징(웅덩이
+> 0.72)을 동시에 담을 수 있는지는 계산으로 결정된다. 이 판은 담을 수 없었다.
+>
+> **레이아웃 그룹 자식에 배경을 깔지 않는다.** 그룹이 자식의 앵커를 덮어쓰므로,
+> 채우기로 만든 띠가 배경이 아니라 **행의 한 칸**으로 배치된다. 예외도 로그도 없다.
 
 > **오브젝트의 원점이 그 오브젝트의 중심이라고 가정하지 않는다.** 집 모델은 배치될 때
 > 실루엣 전체로 재중심되고 그 실루엣에는 앞으로 튀어나온 현관이 들어간다. 그래서 벽이
@@ -222,6 +302,7 @@ Ensure Bootstrap Services         Bootstrap 서비스 오브젝트 보장
 Rebuild MAP-001 Greybox Village   Game 씬 마을 재생성
 Validate MAP-001 Greybox Village  장소·경로·폭·충돌 검사
 Capture Map Overview              Game 씬 상공 평면도 → Logs/map-overview.png
+Rebuild Bootstrap Lobby           Bootstrap 로비 재생성 (프리팹 인스턴스 배치)
 Report House Model Layout         집 모델 부품·치수 보고 (실내를 손대기 전에 먼저 잰다)
 Report Interior Faces             실내 네 면의 부품 배정과 **어디에도 안 속한 것** 보고
 Create Default Config Assets      Settings/Configs 7개 에셋 생성
@@ -231,6 +312,32 @@ Validate Logging                  로그 레벨과 중복 억제 검사
 Create Default Loot Data          Data/Loot 3개 에셋 생성
 Validate Default Loot Data        보물 데이터 검사
 ```
+
+### UI
+
+```text
+Rebuild Lobby (Art, Prefab, Scene)  아래 셋을 순서대로 실행. 로비를 손댔으면 이것만 쓴다
+Extract Lobby Art From Mockup       목업에서 로고·캐릭터 4종 컷아웃 → UI/Lobby/Elements/
+Generate Lobby Chrome Sprites       버튼·패널·입력칸·발광·아이콘을 코드로 그려 굽는다
+Rebuild Lobby Canvas Prefab         LobbyCanvas.prefab 재생성
+Capture Lobby Layout                로비를 4개 해상도로 렌더 → Logs/lobby-*.png
+
+Import Lobby Pair Art               ArtSource/Lobby의 팀 페어 PNG 4장 → UI/Lobby/Sprites/
+                                    알파 없으면 배경 키잉, 넷 다 불투명 경계로 잘라 크기 통일
+Rebuild Result (Art, Prefab, Scene) 결과 화면 전체 재생성. 결과를 손댔으면 이것만 쓴다
+Extract Result Art From Mockups     승패 목업에서 타이틀·VS 밴드·아이콘 컷아웃
+Rebuild Result Canvas Prefab        ResultCanvas.prefab 재생성
+Capture Result Layout               결과를 4개 해상도로 렌더 → Logs/result-*.png
+
+Create Role-Aware HUD Prefabs       HUD 프리팹과 던파 비트비트 TMP 폰트 에셋 생성
+Sync HUD Canvas To Resources        HUD 프리팹을 Resources로 복사
+```
+
+UI 스프라이트는 순서 의존이다 — 컷아웃과 크롬이 없으면 프리팹 빌더가 파일
+없음으로 멈춘다. `Rebuild ... (Art, Prefab, Scene)`가 그 순서를 보장한다.
+
+컷아웃 코어는 `MockupCutter`, 빌더 헬퍼는 `UiBuildKit`에 공용으로 있다. 두 화면
+중 하나만 고치면 다른 하나도 같이 재생성한다.
 
 ### Technical Validation
 

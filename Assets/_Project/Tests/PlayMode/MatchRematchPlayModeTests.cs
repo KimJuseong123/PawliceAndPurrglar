@@ -176,16 +176,12 @@ namespace PawsAndLoot.Tests.PlayMode
             ResultScreenPresenter presenter =
                 Object.FindFirstObjectByType<ResultScreenPresenter>();
             Assert.That(presenter, Is.Not.Null);
-            Assert.That(presenter.WinnerText, Is.EqualTo("THIEF WIN"));
+            Assert.That(presenter.PoliceBadgeText, Is.EqualTo("패배"));
+            Assert.That(presenter.ThiefBadgeText, Is.EqualTo("승리"));
             Assert.That(
                 presenter.ReasonText,
-                Is.EqualTo("SALE TARGET REACHED"));
-            Assert.That(
-                presenter.SoldAmountText,
-                Is.EqualTo("SOLD 1,000 GOLD"));
-            Assert.That(
-                presenter.RemainingTimeText,
-                Is.EqualTo("TIME 01:30"));
+                Is.EqualTo("목표 골드를 모아 탈출에 성공했습니다"));
+            Assert.That(presenter.GoldValueText, Is.EqualTo("1,000"));
 
             MatchResultSession.Clear();
         }

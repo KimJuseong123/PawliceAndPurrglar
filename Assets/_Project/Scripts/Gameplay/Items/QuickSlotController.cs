@@ -54,15 +54,18 @@ namespace PawsAndLoot.Gameplay.Items
             if (existing >= 0)
             {
                 int available = safeMaximum - _quantities[existing];
-                if (available <= 0)
+                if (available >= safeQuantity)
+                {
+                    _quantities[existing] += safeQuantity;
+                    SelectedSlot = existing;
+                    slot = existing;
+                    return true;
+                }
+
+                if (FindEmptySlot() < 0 || safeQuantity > safeMaximum)
                 {
                     return false;
                 }
-
-                _quantities[existing] += Math.Min(safeQuantity, available);
-                SelectedSlot = existing;
-                slot = existing;
-                return true;
             }
 
             int empty = FindEmptySlot();
@@ -160,9 +163,71 @@ namespace PawsAndLoot.Gameplay.Items
 
         public bool CanStore(ThrowableKind kind, int maximumStackSize)
         {
+            return CanStore(kind, 1, maximumStackSize);
+        }
+
+        public bool CanStore(
+            ThrowableKind kind,
+            int quantity,
+            int maximumStackSize)
+        {
+            int safeQuantity = Math.Max(1, quantity);
             int safeMaximum = Math.Max(1, maximumStackSize);
-            return FindStackableSlot(kind, safeMaximum) >= 0
-                || FindEmptySlot() >= 0;
+            int existing = FindStackableSlot(kind, safeMaximum);
+            if (existing >= 0
+                && safeMaximum - _quantities[existing] >= safeQuantity)
+            {
+                return true;
+            }
+
+            return FindEmptySlot() >= 0
+                && safeQuantity <= safeMaximum;
+        }
+
+        public bool TryTakeSlot(
+            int slot,
+            out ThrowableKind kind,
+            out int quantity)
+        {
+            kind = ThrowableKind.Rock;
+            quantity = 0;
+            if (!TryGet(slot, out kind))
+            {
+                return false;
+            }
+
+            quantity = Math.Max(1, _quantities[slot]);
+            _slots[slot] = EmptyValue;
+            _quantities[slot] = 0;
+            if (SelectedSlot == slot)
+            {
+                SelectFirstOccupiedSlot();
+            }
+
+            return true;
+        }
+
+        public bool TryTakeOne(
+            int slot,
+            out ThrowableKind kind)
+        {
+            kind = ThrowableKind.Rock;
+            if (!TryGet(slot, out kind))
+            {
+                return false;
+            }
+
+            _quantities[slot] = Math.Max(0, _quantities[slot] - 1);
+            if (_quantities[slot] <= 0)
+            {
+                _slots[slot] = EmptyValue;
+                if (SelectedSlot == slot)
+                {
+                    SelectFirstOccupiedSlot();
+                }
+            }
+
+            return true;
         }
 
         public bool HasSelectedItem => TryGet(SelectedSlot, out _);

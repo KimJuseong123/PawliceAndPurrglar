@@ -244,6 +244,18 @@ namespace PawsAndLoot.Gameplay.Items
             return slot <= 1;
         }
 
+        public static bool CanUseInQuickSlot(ThrowableKind kind)
+        {
+            return kind is ThrowableKind.Rock
+                or ThrowableKind.Banana
+                or ThrowableKind.GlueTrap
+                or ThrowableKind.SensorLight
+                or ThrowableKind.Bone
+                or ThrowableKind.TunaCan
+                or ThrowableKind.RubberChicken
+                or ThrowableKind.NoiseCan;
+        }
+
         /// <summary>
         /// Name shown in the HUD. Here so the UI does not grow its own list that
         /// drifts out of step with the enum.
@@ -255,6 +267,10 @@ namespace PawsAndLoot.Gameplay.Items
                 ThrowableKind.Banana => "바나나",
                 ThrowableKind.GlueTrap => "끈끈이",
                 ThrowableKind.SensorLight => "센서등",
+                ThrowableKind.Bone => "강아지 간식",
+                ThrowableKind.TunaCan => "참치 캔",
+                ThrowableKind.RubberChicken => "닭 장난감",
+                ThrowableKind.NoiseCan => "소음 캔",
                 _ => "돌"
             };
         }

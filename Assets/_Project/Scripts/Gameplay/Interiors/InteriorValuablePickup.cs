@@ -22,7 +22,7 @@ namespace PawsAndLoot.Gameplay.Interiors
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class InteriorValuablePickup
-        : MonoBehaviour, IPlayerInteractable
+        : MonoBehaviour, IPlayerInteractable, IHoldInteractable
     {
         [SerializeField]
         private int sourceId;
@@ -35,6 +35,9 @@ namespace PawsAndLoot.Gameplay.Interiors
         /// </summary>
         [SerializeField, Min(1)]
         private int value = 50;
+
+        [SerializeField, Min(0.1f)]
+        private float holdDurationSeconds = 1.15f;
 
         [SerializeField]
         private MonoBehaviour matchStateSource;
@@ -65,7 +68,8 @@ namespace PawsAndLoot.Gameplay.Interiors
         public PlayerInteractionType InteractionType =>
             PlayerInteractionType.Loot;
 
-        public string Prompt => $"챙기기 ({value}골드)";
+        public string Prompt => $"뒤지기 ({value}골드)";
+        public float HoldDurationSeconds => holdDurationSeconds;
 
         public void Configure(
             int configuredSourceId,
@@ -83,6 +87,25 @@ namespace PawsAndLoot.Gameplay.Interiors
 
         public bool TryInteract(PlayerInteractionContext context)
         {
+            return TryCompletePickup(context);
+        }
+
+        public bool CanBeginHold(PlayerInteractionContext context)
+        {
+            return CanCompletePickup(context);
+        }
+
+        public bool CompleteHold(PlayerInteractionContext context)
+        {
+            return TryCompletePickup(context);
+        }
+
+        public void CancelHold(PlayerInteractionContext context)
+        {
+        }
+
+        private bool CanCompletePickup(PlayerInteractionContext context)
+        {
             if (context.Player == null || !IsAvailable)
             {
                 return false;
@@ -93,6 +116,18 @@ namespace PawsAndLoot.Gameplay.Interiors
             {
                 return false;
             }
+
+            return true;
+        }
+
+        private bool TryCompletePickup(PlayerInteractionContext context)
+        {
+            if (!CanCompletePickup(context))
+            {
+                return false;
+            }
+
+            var wallet = context.Player.GetComponent<ThiefLootWallet>();
 
             // The wallet refuses a second credit for the same shelf, so a press
             // that arrives after the first one pays nothing and takes nothing.

@@ -43,6 +43,11 @@ namespace PawsAndLoot.Gameplay.Players
 
         public void RefreshTarget()
         {
+            RefreshTarget(ContextInteractionKey.E);
+        }
+
+        public void RefreshTarget(ContextInteractionKey key)
+        {
             currentTargetComponent = null;
             if (identity == null
                 || playerConfig == null
@@ -58,6 +63,7 @@ namespace PawsAndLoot.Gameplay.Players
                 Physics.AllLayers,
                 QueryTriggerInteraction.Collide);
             float nearestDistance = float.PositiveInfinity;
+            int highestPriority = int.MinValue;
 
             for (int index = 0; index < count; index++)
             {
@@ -70,8 +76,7 @@ namespace PawsAndLoot.Gameplay.Players
                 MonoBehaviour component =
                     FindInteractableComponent(nearby);
                 if (component is not IPlayerInteractable candidate
-                    || !candidate.IsAvailable
-                    || !identity.CanInteract(candidate.InteractionType))
+                    || !InteractionResolver.IsValid(candidate, identity, key))
                 {
                     continue;
                 }
@@ -79,19 +84,20 @@ namespace PawsAndLoot.Gameplay.Players
                 float distance = (
                     candidate.InteractionTransform.position
                     - transform.position).sqrMagnitude;
-                if (distance >= nearestDistance)
+                int priority = candidate is IInteractionPriority prioritized
+                    ? prioritized.InteractionPriority
+                    : 0;
+                if (priority < highestPriority
+                    || (priority == highestPriority
+                        && distance >= nearestDistance))
                 {
                     continue;
                 }
 
+                highestPriority = priority;
                 nearestDistance = distance;
                 currentTargetComponent = component;
             }
-        }
-
-        public void RefreshTarget(ContextInteractionKey key)
-        {
-            RefreshTarget();
         }
 
         public bool TryInteractCurrent()
@@ -99,14 +105,18 @@ namespace PawsAndLoot.Gameplay.Players
             IPlayerInteractable target = CurrentTarget;
             if (target == null
                 || !IsGameplayActive()
-                || !target.IsAvailable
-                || !identity.CanInteract(target.InteractionType))
+                || !InteractionResolver.IsValid(
+                    target,
+                    identity,
+                    ContextInteractionKey.E))
             {
                 return false;
             }
 
-            bool succeeded = target.TryInteract(
-                new PlayerInteractionContext(identity));
+            bool succeeded = InteractionResolver.TryExecute(
+                target,
+                new PlayerInteractionContext(identity),
+                ContextInteractionKey.E);
             RefreshTarget();
             return succeeded;
         }
