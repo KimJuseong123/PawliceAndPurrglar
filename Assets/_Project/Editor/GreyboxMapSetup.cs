@@ -45,6 +45,8 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Settings/Configs/LootConfig.asset";
         private const string CommonLootDefinitionPath =
             "Assets/_Project/Data/Loot/common-trinket.asset";
+        private const string RareLootDefinitionPath =
+            "Assets/_Project/Data/Loot/rare-jewel.asset";
 
         private static readonly Color GroundColor =
             new(0.28f, 0.34f, 0.31f);
@@ -171,6 +173,11 @@ namespace PawsAndLoot.Editor
         /// The cat stays a little under the dog so the two silhouettes are still
         /// distinguishable at a glance.
         /// </summary>
+        private const string ExpressionIconDirectory =
+            "Assets/_Project/Art/Icons";
+        public const string ExpressionAnchorName = "Expression";
+        private const float ExpressionIconHeight = 0.34f;
+        private const float ExpressionDisplaySeconds = 1.6f;
         private const float AuthoredDogHeight = 1.36f;
         private const float AuthoredCatHeight = 1.2f;
 
@@ -249,70 +256,67 @@ namespace PawsAndLoot.Editor
             Transform routesRoot =
                 CreateChild("Route Network", villageRoot.transform);
 
-            CreateGroundAndBoundaries(
-                environmentRoot,
-                ground,
-                wall);
-            CreateRoadNetwork(roadsRoot, road, plaza);
-
+            // The town itself comes from the sandbox generator, which is where
+            // it was designed and where it is iterated on. Both maps have
+            // always been the same eighty by seventy-two metres in the same
+            // coordinates, so this is a swap rather than a translation.
+            //
             var rooftops = new List<Transform>();
             var ladders = new List<Transform>();
             var pendingLadderClimbs = new List<LadderTraversal>();
-            CreateStore(
-                "Supermarket",
-                new Vector3(-9f, 0f, 6f),
-                supermarket,
-                roof,
-                ladder,
-                buildingsRoot,
-                featuresRoot,
-                LadderSide.West,
-                rooftops,
-                ladders,
-                pendingLadderClimbs,
-                "building_supermarket");
-            CreateStore(
-                "Bookstore",
-                new Vector3(9f, 0f, 6f),
-                bookstore,
-                roof,
-                ladder,
-                buildingsRoot,
-                featuresRoot,
-                LadderSide.East,
-                rooftops,
-                ladders,
-                pendingLadderClimbs,
-                "building_bookstore");
-            CreateStore(
-                "Jewelry Store",
-                new Vector3(9f, 0f, -6f),
-                jewelry,
-                roof,
-                ladder,
-                buildingsRoot,
-                featuresRoot,
-                LadderSide.East,
-                rooftops,
-                ladders,
-                pendingLadderClimbs);
-            CreateRaccoonMarket(
-                buildingsRoot,
-                MarketGold,
-                wall);
-            CreateCentralPlaza(featuresRoot, plaza, wall);
 
-            List<Transform> trashBins = CreateTrashBins(
-                featuresRoot,
-                trash);
+            // The three shops are held back and put up below. They are not
+            // just buildings here: each one carries an interior, a walkable
+            // roof and a ladder, and the scene contract requires three of each.
+            // The sandbox knows about none of that, but it does know where
+            // their plots are, which is what it hands back.
+            //
+            // Removing them outright is the plan — see TASK-PORT-001 — but it
+            // has to happen together with re-siting the roofs, the ladders and
+            // the treasure, not before.
+            MapSandboxSetup.TownReport town = MapSandboxSetup.BuildTown(
+                environmentRoot,
+                buildingsRoot,
+                MapSandboxSetup.Measure(),
+                null);
+            _townPlots = town.Plots;
+            Debug.Log(
+                $"[MAP-001] Town laid from the sandbox: {town.Roads} road "
+                + $"tiles, {town.Destinations} buildings, {town.Houses} "
+                + $"houses, {town.SetPieces} set pieces, {town.Dressing} "
+                + "pieces of dressing.");
+
+
+
+            // The hides. Four of them, which is what the scene contract wants
+            // and what gives a thief somewhere to break line of sight in each
+            // quarter of the town.
+            List<Transform> trashBins = CreateTrashBins(featuresRoot, trash);
             Dictionary<GreyboxLocationId, Transform> locations =
                 CreateLocationAnchors(
                     locationsRoot,
                     PoliceBlue,
                     ThiefRed,
                     MarketGold);
+            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints thiefSpawns =
+                CreateThiefSpawnPoints(locationsRoot, ThiefRed);
             List<GreyboxRouteReference> routes =
                 CreateRoutes(routesRoot, locations);
+
+            // A bin with a raccoon in it, and nothing else.
+            //
+            // The trading yard is gone: fences, floor and counter around a
+            // merchant who lives in a dustbin. The bin is the shop — the
+            // raccoon rises out of it when somebody comes near, which is the
+            // whole signpost — and a yard drawn round that only made the thing
+            // it marks harder to spot.
+            CreateRaccoonInBin(buildingsRoot, RaccoonMarketCentre);
+
+            CreateLadders(
+                buildingsRoot,
+                ladder,
+                ladders,
+                pendingLadderClimbs);
 
             var mapObject = new GameObject("Greybox Map Definition");
             mapObject.transform.SetParent(villageRoot.transform);
@@ -364,7 +368,11 @@ namespace PawsAndLoot.Editor
                     playerConfig,
                     false)
             };
-            ConfigureArrestSystem(controlBindings, matchRuntime);
+            ConfigureArrestSystem(
+                controlBindings,
+                matchRuntime,
+                map,
+                thiefSpawns);
             ConfigureMatchResultEvaluator(
                 controlBindings,
                 matchRuntime);
@@ -383,11 +391,6 @@ namespace PawsAndLoot.Editor
             ConfigureMatchResultFlow(
                 matchRuntime,
                 matchEndController);
-            CreatePrototypeInteractionTargets(
-                villageRoot.transform,
-                locations,
-                ladders,
-                matchRuntime);
 
             CreateRouteLine(
                 map.GetRoute(GreyboxMapDefinition.CrossingRouteId),
@@ -398,10 +401,6 @@ namespace PawsAndLoot.Editor
                 LoadPlayerMoveSpeed(),
                 traversalProbe,
                 villageRoot.transform);
-            CreateAuthoredSceneDressing(
-                villageRoot.transform,
-                locations,
-                matchRuntime);
             CompanionCommandDispatcher companionDispatcher =
                 CreateCompanions(
                     villageRoot.transform,
@@ -419,6 +418,20 @@ namespace PawsAndLoot.Editor
                 controlBindings,
                 matchRuntime,
                 matchEndController);
+            // Treasure, sale point, hides and the throwables. Taken out with
+            // the old town and put back on the new one: without them the thief
+            // has no way to reach the gold target, so only the police can win.
+            //
+            // **Before the network sync**, which is what wires a link onto each
+            // piece. Put after it, the treasure existed on the host and was
+            // replicated to nobody: the regression read six pieces on one
+            // machine and loot links zero on both.
+            CreatePrototypeInteractionTargets(
+                villageRoot.transform,
+                locations,
+                ladders,
+                matchRuntime);
+
             CreateNetworkSync(
                 villageRoot.transform,
                 controlBindings,
@@ -429,6 +442,28 @@ namespace PawsAndLoot.Editor
             perfObject.transform.SetParent(villageRoot.transform);
             perfObject.AddComponent<
                 PawsAndLoot.TechnicalValidation.ScenePerformanceProbe>();
+
+            // Every building the town put up, paired with what kind it is.
+            // The kind is what picks the room: a jeweller gets cases and a
+            // house gets bedrooms, and neither is decided by which order they
+            // happened to be created in.
+            var enterable =
+                new List<(Transform Building, string Kind)>();
+            foreach (MapSandboxSetup.TownPlot plot in _townPlots)
+            {
+                if (plot.Instance != null)
+                {
+                    enterable.Add((plot.Instance, plot.Kind));
+                }
+            }
+
+            HouseInteriorSetup.Build(
+                villageRoot.transform,
+                matchRuntime,
+                enterable,
+                LoadOrCreateMaterial2,
+                CreateCube,
+                CreateChild);
 
             // ART-012 runs last so it sees every generated object.
             SceneOptimizationPass.Run(villageRoot);
@@ -522,14 +557,20 @@ namespace PawsAndLoot.Editor
 
             map.ValidateOrThrow();
             resultFlow.ValidateOrThrow();
-            if (map.Locations.Count != 7
-                || map.Rooftops.Count < 3
-                || map.Ladders.Count < 3
-                || map.TrashBins.Count < 4
-                || map.Routes.Count < 9)
+            // Locations and routes still have to be all there — they are what
+            // the map means, and a town with six of seven is a town where one
+            // destination silently does not exist.
+            //
+            // The furniture counts are gone with the furniture. Roofs, ladders
+            // and bins were surveyed against streets that no longer exist and
+            // come back against the new ones during playtesting
+            // (TASK-PORT-002..005). Demanding three of each here would mean
+            // keeping three of each somewhere arbitrary just to get the scene
+            // to build, which is how a placeholder becomes permanent.
+            if (map.Locations.Count != 7 || map.Routes.Count < 9)
             {
                 throw new InvalidOperationException(
-                    "MAP-001 scene is missing required locations, routes, rooftops, ladders, or trash bins.");
+                    "MAP-001 scene is missing required locations or routes.");
             }
         }
 
@@ -770,6 +811,39 @@ namespace PawsAndLoot.Editor
             return material;
         }
 
+        /// <summary>
+        /// Where the town left a plot for one of the shops.
+        ///
+        /// Throws rather than falling back to a coordinate of its own. A shop
+        /// dropped at the origin because a name was misspelled would stand in
+        /// the middle of a road with its interior, its roof and its ladder, and
+        /// nothing in the scene would object.
+        /// </summary>
+        private static Vector3 PlotFor(
+            MapSandboxSetup.TownReport town,
+            string kind)
+        {
+            return PlotFor(town.Plots, kind);
+        }
+
+        private static Vector3 PlotFor(
+            List<MapSandboxSetup.TownPlot> plots,
+            string kind)
+        {
+            foreach (MapSandboxSetup.TownPlot plot in plots)
+            {
+                if (plot.Kind == kind)
+                {
+                    return plot.Centre;
+                }
+            }
+
+            throw new InvalidOperationException(
+                $"The town has no plot called '{kind}'. The main game asked "
+                + "the sandbox to leave one empty and the sandbox does not "
+                + "know that name.");
+        }
+
         private static void CreateGroundAndBoundaries(
             Transform parent,
             Material ground,
@@ -982,13 +1056,6 @@ namespace PawsAndLoot.Editor
 
             // Interiors last, because they need the finished houses: each one
             // takes its exit point from the building it belongs to.
-            HouseInteriorSetup.Build(
-                root,
-                matchRuntime,
-                _enterableHouses,
-                LoadOrCreateMaterial2,
-                CreateCube,
-                CreateChild);
         }
 
         /// <summary>
@@ -1272,6 +1339,16 @@ namespace PawsAndLoot.Editor
                             CompanionProceduralAnimator>();
                 hop.Configure(agent, visualRoot, legs);
 
+                BuildExpressionIcons(agentObject, agent, kind);
+
+                // THROW-004. What the other player's food acts on. Host side,
+                // like everything else the animals do.
+                agentObject.AddComponent<CompanionLure>();
+
+                // And what a bang acts on. Weaker than food on purpose: an
+                // animal already at a tin stays there.
+                agentObject.AddComponent<CompanionNoiseAttention>();
+
                 if (legs.LegCount == 0)
                 {
                     Debug.LogWarning(
@@ -1470,7 +1547,8 @@ namespace PawsAndLoot.Editor
                     player.GetComponent<PoliceWallet>(),
                     player.GetComponent<
                         PawsAndLoot.Animation.CompanionLegAnimator>(),
-                    player.GetComponent<PlayerInteriorState>());
+                    player.GetComponent<PlayerInteriorState>(),
+                    FindCompanionFace(binding.Identity));
                 links.Add(link);
             }
 
@@ -1481,7 +1559,9 @@ namespace PawsAndLoot.Editor
             syncObject.AddComponent<Unity.Netcode.NetworkObject>();
             NetworkMatchMirror mirror =
                 syncObject.AddComponent<NetworkMatchMirror>();
-            mirror.Configure(matchRuntime);
+            mirror.Configure(
+                matchRuntime,
+                matchRuntime.GetComponent<MatchResultEvaluator>());
 
             var bridgeObject = new GameObject("Network Input Bridge");
             bridgeObject.transform.SetParent(parent);
@@ -1504,6 +1584,22 @@ namespace PawsAndLoot.Editor
             trapObject
                 .AddComponent<NetworkItemCoordinator>()
                 .Configure(matchRuntime);
+
+            // Where loud things are written down. One per match rather than one
+            // per listener, because a bang is a fact about the town and not
+            // about whoever happened to be near it.
+            var noiseObject = new GameObject("Noise Board");
+            noiseObject.transform.SetParent(parent);
+            PawsAndLoot.Gameplay.Sensing.NoiseBoard noiseBoard =
+                noiseObject.AddComponent<
+                    PawsAndLoot.Gameplay.Sensing.NoiseBoard>();
+            noiseObject
+                .AddComponent<PawsAndLoot.Animation.NoisePingView>()
+                .Configure(
+                    noiseBoard,
+                    LoadOrCreateMaterial(
+                        "Greybox_NoiseRing",
+                        new Color(1f, 0.85f, 0.3f)));
 
             // Disconnect handling deliberately lives on the persistent
             // NetworkManager object in Bootstrap, not here: one handler for the
@@ -1598,6 +1694,100 @@ namespace PawsAndLoot.Editor
         /// MAP-003. A climbable ladder. Collected rather than configured here
         /// because the match runtime does not exist yet when stores are built.
         /// </summary>
+        /// <summary>
+        /// A ladder up the east side of the buildings that get one.
+        ///
+        /// No slab on top. The town's buildings are scanned models with pitched,
+        /// tiled roofs; a flat plate laid over one reads as a lid rather than a
+        /// roof, and what the thief needs is a way up, not somewhere tidy to
+        /// stand. The climb puts them on the model's own ridge and playing it
+        /// decides whether that is worth keeping.
+        ///
+        /// East, not south. The town camera is fixed at one angle and a ladder
+        /// on the near face is a ladder behind the building from every seat.
+        ///
+        /// The shops and the single-storey houses. The jeweller is where the
+        /// crown jewel is and giving it a roof route as well would make one
+        /// building carry two answers.
+        /// </summary>
+        private static void CreateLadders(
+            Transform parent,
+            Material ladderMaterial,
+            ICollection<Transform> ladders,
+            ICollection<LadderTraversal> pending)
+        {
+            Transform root = CreateChild("Ladders", parent);
+            var wanted = new HashSet<string>
+            {
+                "Supermarket",
+                "Bookstore",
+                "OneStorey"
+            };
+
+            int built = 0;
+            foreach (MapSandboxSetup.TownPlot plot in _townPlots)
+            {
+                if (!wanted.Contains(plot.Kind) || plot.Instance == null)
+                {
+                    continue;
+                }
+
+                Bounds shell = default;
+                bool measured = false;
+                foreach (Renderer part in
+                    plot.Instance.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!measured)
+                    {
+                        shell = part.bounds;
+                        measured = true;
+                    }
+                    else
+                    {
+                        shell.Encapsulate(part.bounds);
+                    }
+                }
+
+                if (!measured)
+                {
+                    continue;
+                }
+
+                built++;
+                var foot = new Vector3(
+                    shell.max.x + 0.7f,
+                    shell.min.y,
+                    shell.center.z);
+
+                // Named without the building's kind in it. "OneStorey Ladder"
+                // contains "OneStorey", and the test that checks every copy of
+                // a house model is the same size counts by name — it read the
+                // rails as houses 1.6 m deep next to houses 8 m deep.
+                GameObject rail = CreateCube(
+                    $"Ladder {built} Rail",
+                    foot + Vector3.up * (shell.size.y * 0.5f),
+                    new Vector3(0.2f, shell.size.y, 1f),
+                    ladderMaterial,
+                    root,
+                    false);
+                UnityEngine.Object.DestroyImmediate(
+                    rail.GetComponent<Collider>());
+                ladders.Add(rail.transform);
+
+                CreateLadderTraversal(
+                    $"Ladder {built} Climb",
+                    foot,
+                    new Vector3(
+                        shell.center.x,
+                        shell.max.y + 0.45f,
+                        shell.center.z),
+                    root,
+                    pending);
+            }
+
+            Debug.Log($"[MAP-003] {built} ladders on the east faces.");
+        }
+
         private static void CreateLadderTraversal(
             string name,
             Vector3 groundPosition,
@@ -1677,6 +1867,12 @@ namespace PawsAndLoot.Editor
         /// can be generated once at the end.
         /// </summary>
         private static readonly List<Transform> _enterableHouses = new();
+
+        /// <summary>
+        /// What the town built and where, kept from the swap so the interiors
+        /// know which room belongs behind which door.
+        /// </summary>
+        private static List<MapSandboxSetup.TownPlot> _townPlots = new();
 
         private static float HouseScale()
         {
@@ -2082,10 +2278,16 @@ namespace PawsAndLoot.Editor
         private static void CreateRaccoonMarket(
             Transform parent,
             Color accentColor,
-            Material boundaryMaterial)
+            Material boundaryMaterial,
+            Vector3 centre)
         {
             Transform marketRoot =
                 CreateChild("Raccoon Trading Yard", parent);
+
+            // Everything below is measured against the yard's old home at
+            // (-9, -6), and every piece of it is placed in world space rather
+            // than relative to this node. Moving the node therefore does
+            // nothing; the whole yard is shifted at the end instead.
             Material accent = LoadOrCreateMaterial(
                 "RaccoonMarket",
                 accentColor);
@@ -2123,6 +2325,19 @@ namespace PawsAndLoot.Editor
                 "RACCOON MARKET",
                 new Vector3(-9f, 2.2f, -9.7f),
                 marketRoot);
+
+            // And now the whole yard moves, in one place.
+            //
+            // Each piece above sets `transform.position` after being parented,
+            // which is a world coordinate — so parenting them under a moved
+            // node leaves them exactly where they were. The fences stayed at
+            // the old address and blocked a route across the middle of the
+            // town, which is how this was found.
+            Vector3 shift = centre - new Vector3(-9f, 0f, -6f);
+            foreach (Transform piece in marketRoot)
+            {
+                piece.position += shift;
+            }
         }
 
         private static void CreateCentralPlaza(
@@ -2156,12 +2371,16 @@ namespace PawsAndLoot.Editor
             Material material)
         {
             var result = new List<Transform>();
+            // Four verges the new town leaves open, one to a quarter, so a
+            // thief running in any direction has one within reach. The old set
+            // was a neat rectangle around an origin the town no longer has
+            // anything at.
             Vector3[] positions =
             {
-                new(-20f, 0f, 8f),
-                new(20f, 0f, 8f),
-                new(-20f, 0f, -8f),
-                new(20f, 0f, -8f)
+                new(-25f, 0f, 8f),
+                new(25f, 0f, 12f),
+                new(-4f, 0f, 37f),
+                new(28f, 0f, -19f)
             };
 
             for (int index = 0; index < positions.Length; index++)
@@ -2207,49 +2426,135 @@ namespace PawsAndLoot.Editor
                 Color marketColor)
         {
             var result = new Dictionary<GreyboxLocationId, Transform>();
+            // On the pavement outside the station's front door, facing the
+            // street. The old spot was (-24, 0), which the new town put inside
+            // somebody's living room — an officer who starts in a wall reads as
+            // a broken game before the match has begun.
+            //
+            // The station stands at (5.7, 20.2) on a twelve metre plot and
+            // faces south like every building here, so its door is six metres
+            // down plus room to stand.
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.PoliceSpawn,
-                new Vector3(-24f, 0f, 0f),
+                PoliceSpawnPoint,
                 policeColor);
+
+            // The thief's first corner. Which one is drawn per match rather
+            // than chosen here — this anchor is the one the map contract wants
+            // and the one anything unaware of the draw falls back to.
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.ThiefSpawn,
-                new Vector3(24f, 0f, -18f),
+                ThiefSpawnPoints[0],
                 thiefColor);
+            // Where the town actually put the shops, not where they used to
+            // be. These four coordinates outlived three different towns and
+            // ended up pointing at open grass — and everything the thief needs
+            // hangs off them, so the treasure went to the grass with them.
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.Supermarket,
-                new Vector3(-9f, 0f, 0f),
+                PlotFor(_townPlots, "Supermarket"),
                 new Color(0.2f, 0.75f, 0.35f));
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.Bookstore,
-                new Vector3(9f, 0f, 0f),
+                PlotFor(_townPlots, "Bookstore"),
                 new Color(0.25f, 0.55f, 1f));
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.JewelryStore,
-                new Vector3(9f, 0f, -12f),
+                PlotFor(_townPlots, "Jewellery"),
                 new Color(0.85f, 0.35f, 0.9f));
+
+            // The raccoon has no plot of its own, so it gets a spot chosen on
+            // the new plan: open ground east of the square, on a block the
+            // thief has to cross the middle of the town to reach.
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.RaccoonMarket,
-                new Vector3(-9f, 0f, -12f),
+                RaccoonMarketCentre,
                 marketColor);
             AddLocation(
                 result,
                 parent,
                 GreyboxLocationId.CentralPlaza,
-                new Vector3(0f, 0f, -3f),
+                PlotFor(_townPlots, "Plaza"),
                 Color.white);
             return result;
+        }
+
+        /// <summary>
+        /// Where the officer starts, and which way they are looking.
+        ///
+        /// Facing the street rather than the building. Starting a player nose
+        /// to a wall costs them the first second of every match working out
+        /// which way is out.
+        /// </summary>
+        /// <summary>
+        /// Where the raccoon trades, on the block east of the square.
+        ///
+        /// One number, read by the yard and by the location anchor. They used
+        /// to be written twice and the sale point ended up a metre and a half
+        /// from a yard nobody had moved.
+        /// </summary>
+        private static readonly Vector3 RaccoonMarketCentre =
+            new(28f, 0f, -8f);
+
+        private static readonly Vector3 PoliceSpawnPoint =
+            new(5.7f, 0f, 12.5f);
+
+        private const float PoliceSpawnFacing = 180f;
+
+        /// <summary>
+        /// The five corners the thief may start at, and come back to.
+        ///
+        /// Out at the edges, and spread so that no two are a short run apart —
+        /// five spawns clustered on one side would be one spawn with extra
+        /// steps. Kept off the lake garden in the south-west and off the forest
+        /// in the north-west, both of which fill their plots.
+        /// </summary>
+        private static readonly Vector3[] ThiefSpawnPoints =
+        {
+            new(-24f, 0f, 45f),
+            new(48f, 0f, 45f),
+            new(48f, 0f, 6f),
+            new(48f, 0f, -18f),
+            new(-8f, 0f, -19f)
+        };
+
+        /// <summary>
+        /// Builds the five corners and the draw between them.
+        /// </summary>
+        private static PawsAndLoot.Gameplay.Players.ThiefSpawnPoints
+            CreateThiefSpawnPoints(Transform parent, Color thiefColor)
+        {
+            var holder = new GameObject("Thief Spawn Points");
+            holder.transform.SetParent(parent, false);
+
+            var anchors = new List<Transform>();
+            for (int index = 0; index < ThiefSpawnPoints.Length; index++)
+            {
+                var anchor = new GameObject($"Thief Spawn {index + 1}");
+                anchor.transform.SetParent(holder.transform, false);
+                anchor.transform.position = ThiefSpawnPoints[index];
+                anchors.Add(anchor.transform);
+            }
+
+            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints draw =
+                holder.AddComponent<
+                    PawsAndLoot.Gameplay.Players.ThiefSpawnPoints>();
+            draw.Configure(anchors);
+            Debug.Log(
+                $"[MAP-001] {anchors.Count} thief spawn corners placed.");
+            return draw;
         }
 
         private static List<GreyboxRouteReference> CreateRoutes(
@@ -2463,6 +2768,16 @@ namespace PawsAndLoot.Editor
             marker.transform.position =
                 PlayerRoleSpawnResolver.Resolve(map, role).position
                 + Vector3.up;
+
+            // The officer faces the street rather than the station they came
+            // out of. Everything spawns looking down +Z by default, and the
+            // station is north of its own door, so the officer started nose to
+            // the wall.
+            if (role == PlayerRole.Police)
+            {
+                marker.transform.rotation =
+                    Quaternion.Euler(0f, PoliceSpawnFacing, 0f);
+            }
 
             Transform visualRoot = CreateChild(
                 "VisualRoot",
@@ -2686,13 +3001,33 @@ namespace PawsAndLoot.Editor
                 player.AddComponent<LootCarryMovementPenalty>();
             carryPenalty.Configure(lootCarrier, motor);
 
+            // Taking something takes time now, and how long depends on how big
+            // it is. Without this the thief still steals, instantly, which is
+            // what the game did before — so a scene missing it is slower to
+            // notice than a scene that breaks.
+            LootPickupProgress pickupProgress =
+                player.AddComponent<LootPickupProgress>();
+            pickupProgress.Configure(lootCarrier, motor);
+
             // THROW-001/002/003. A prop slot separate from the loot slot, so
             // picking up a rock never costs the thief their jewels.
             player.AddComponent<PawsAndLoot.Gameplay.Players.StunState>();
 
+            // What the octopus lands on. Separate from the stun because the two
+            // stack and mean different things — held still and able to see, or
+            // running blind, or both.
+            player.AddComponent<PawsAndLoot.Gameplay.Players.BlindedState>();
+
             // MAP-008. Which house this player is inside, if any. Read by the
             // doorway, the indoor camera and the dog's report.
-            player.AddComponent<PlayerInteriorState>();
+            PlayerInteriorState interiorState =
+                player.AddComponent<PlayerInteriorState>();
+
+            // The way out that does not need the door to work. Ten seconds, so
+            // it rescues a player wedged behind a counter without rescuing one
+            // who is simply cornered.
+            player.AddComponent<InteriorEscapeHatch>()
+                .Configure(interiorState);
             PawsAndLoot.Gameplay.Items.ToolCarrier toolCarrier =
                 player.AddComponent<PawsAndLoot.Gameplay.Items.ToolCarrier>();
             toolCarrier.Configure(identity, matchRuntime);
@@ -2849,9 +3184,192 @@ namespace PawsAndLoot.Editor
             return followCamera;
         }
 
+        /// <summary>
+        /// The four icons an animal can put above its head, and the anchor that
+        /// carries them.
+        ///
+        /// All four are built now and switched at runtime rather than spawned
+        /// on demand: they fire several times a second during a chase and the
+        /// first of each would otherwise arrive a frame late.
+        ///
+        /// The anchor is excluded from static batching by name. A baked
+        /// renderer does not move when its transform does, and this one turns to
+        /// face the camera every frame — batched, the icons would sit frozen at
+        /// whatever angle the bake caught them.
+        /// </summary>
+        /// <summary>
+        /// The expression view belonging to this player's animal.
+        ///
+        /// The animals are not network objects, so their state has no way home
+        /// on its own — it rides on the owner's link. Found by owner rather
+        /// than by index because the two animals are otherwise identical
+        /// components and picking the first one would give the thief the dog's
+        /// face.
+        /// </summary>
+        private static PawsAndLoot.Animation.CompanionExpressionView
+            FindCompanionFace(PlayerRoleIdentity owner)
+        {
+            foreach (CompanionAgent agent in
+                UnityEngine.Object.FindObjectsByType<CompanionAgent>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None))
+            {
+                if (agent.Owner == owner.transform)
+                {
+                    return agent.GetComponent<
+                        PawsAndLoot.Animation.CompanionExpressionView>();
+                }
+            }
+
+            return null;
+        }
+
+        private static void BuildExpressionIcons(
+            GameObject agentObject,
+            CompanionAgent agent,
+            CompanionKind kind)
+        {
+            float headHeight = kind == CompanionKind.Dog
+                ? AuthoredDogHeight
+                : AuthoredCatHeight;
+
+            var anchorObject = new GameObject(ExpressionAnchorName);
+            anchorObject.transform.SetParent(agentObject.transform, false);
+            anchorObject.transform.localPosition =
+                new Vector3(0f, headHeight + 0.45f, 0f);
+
+            (CompanionExpression Face, string Stem)[] icons =
+            {
+                (CompanionExpression.Alert, "icon_alert"),
+                (CompanionExpression.Thinking, "icon_thinking"),
+                (CompanionExpression.Happy, "icon_happy"),
+                (CompanionExpression.Confused, "icon_confused")
+            };
+
+            CompanionExpressionView view =
+                agentObject.AddComponent<CompanionExpressionView>();
+
+            foreach ((CompanionExpression face, string stem) in icons)
+            {
+                var slot = new GameObject(face.ToString());
+                slot.transform.SetParent(anchorObject.transform, false);
+
+                string path = $"{ExpressionIconDirectory}/{stem}.fbx";
+                var source =
+                    AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (source == null)
+                {
+                    Debug.LogWarning(
+                        $"[ART-016] Expression icon missing: {path}. "
+                        + $"{face} will show nothing.");
+                    continue;
+                }
+
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(
+                    source,
+                    slot.transform);
+                instance.transform.localPosition = Vector3.zero;
+                instance.transform.localRotation = Quaternion.identity;
+                FitIconToHeight(instance, ExpressionIconHeight);
+                StripColliders(instance);
+                PaintIcon(instance, face);
+                view.Register(face, slot);
+            }
+
+            view.Configure(anchorObject.transform, ExpressionDisplaySeconds);
+
+            CompanionExpressionPresenter presenter =
+                agentObject.AddComponent<CompanionExpressionPresenter>();
+            presenter.Configure(agent, view);
+        }
+
+        /// <summary>
+        /// Scales an icon so its tallest side is the requested height,
+        /// regardless of what the model was authored at. The four came from
+        /// different sources and a heart three times the size of a light bulb
+        /// reads as a bug.
+        /// </summary>
+        private static void FitIconToHeight(GameObject instance, float height)
+        {
+            if (!PlaceholderModelLibrary.TryGetWorldBounds(
+                    instance,
+                    out Bounds bounds)
+                || bounds.size.y <= 0.0001f)
+            {
+                return;
+            }
+
+            float scale = height / bounds.size.y;
+            instance.transform.localScale = Vector3.one * scale;
+
+            if (PlaceholderModelLibrary.TryGetWorldBounds(
+                    instance,
+                    out Bounds scaled))
+            {
+                instance.transform.position +=
+                    instance.transform.parent.position - scaled.center;
+            }
+        }
+
+        /// <summary>
+        /// Gives an icon its colour, rather than trusting the model's own.
+        ///
+        /// They imported white. The buildings in this project carry their
+        /// colour in the embedded material and have no texture folder at all;
+        /// these four shipped with a `.fbm` texture that did not bind, and a
+        /// material expecting a map it cannot find renders white.
+        ///
+        /// Painting them here is also the better answer regardless. These are
+        /// read at a third of a metre tall while both players are running, and
+        /// a flat saturated colour survives that where a photographic texture
+        /// turns to mud. It matches how this project already handles trees,
+        /// bins and roads.
+        /// </summary>
+        private static void PaintIcon(
+            GameObject instance,
+            CompanionExpression face)
+        {
+            string path =
+                $"Assets/_Project/Materials/Greybox/Icon_{face}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                Debug.LogWarning(
+                    $"[ART-016] Missing icon material {path}, so {face} "
+                    + "stays white.");
+                return;
+            }
+
+            foreach (Renderer renderer in
+                instance.GetComponentsInChildren<Renderer>(true))
+            {
+                var materials = new Material[
+                    renderer.sharedMaterials.Length == 0
+                        ? 1
+                        : renderer.sharedMaterials.Length];
+                for (int index = 0; index < materials.Length; index++)
+                {
+                    materials[index] = material;
+                }
+
+                renderer.sharedMaterials = materials;
+            }
+        }
+
+        private static void StripColliders(GameObject instance)
+        {
+            foreach (Collider collider in
+                instance.GetComponentsInChildren<Collider>(true))
+            {
+                UnityEngine.Object.DestroyImmediate(collider);
+            }
+        }
+
         private static void ConfigureArrestSystem(
             IReadOnlyList<PlayerRoleControlBinding> bindings,
-            MatchRuntimeState matchRuntime)
+            MatchRuntimeState matchRuntime,
+            GreyboxMapDefinition map,
+            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints thiefSpawns)
         {
             PlayerRoleIdentity police = null;
             PlayerRoleIdentity thief = null;
@@ -2887,6 +3405,60 @@ namespace PawsAndLoot.Editor
             ArrestCompletionController completion =
                 police.gameObject.AddComponent<ArrestCompletionController>();
             completion.Configure(progress, matchRuntime);
+
+            // The cells and the way out. The station is where a caught thief is
+            // taken; the release is their own spawn rather than the station
+            // door, which would put them back within arm's reach of the officer
+            // who just caught them and hand over the next two arrests.
+            // The cell is a room now, not a spot outside the station.
+            //
+            // Standing in the street with the controls off for ten seconds
+            // reads as the game having frozen. Ten seconds in something that is
+            // plainly a cell reads as a sentence.
+            Transform cell = HouseInteriorSetup.BuildJail(
+                police.transform.root,
+                CreateChild,
+                out int jailInteriorId);
+            Transform release = map.GetLocation(GreyboxLocationId.ThiefSpawn);
+            if (cell == null)
+            {
+                // Fall back to the old spot rather than refusing to build. A
+                // town with a clumsy jail is playable; a town that will not
+                // load is not.
+                cell = map.GetLocation(GreyboxLocationId.PoliceSpawn);
+                jailInteriorId = PlayerInteriorState.Outside;
+            }
+
+            if (cell == null || release == null)
+            {
+                throw new InvalidOperationException(
+                    "ARREST-007 requires a cell and the thief spawn anchors "
+                    + "for the jail.");
+            }
+
+            ThiefJailState jail =
+                thief.gameObject.AddComponent<ThiefJailState>();
+            ArrestJailCoordinator coordinator =
+                police.gameObject.AddComponent<ArrestJailCoordinator>();
+            coordinator.Configure(
+                completion,
+                jail,
+                cell,
+                release,
+                config,
+                thiefSpawns,
+                jailInteriorId);
+
+            // And the first corner of the match, drawn the same way as every
+            // corner after it. A fixed start undid half of what the corners are
+            // for: the officer knew where the opening ten seconds would be
+            // spent even without knowing where the next thirty would.
+            thief.gameObject
+                .AddComponent<PawsAndLoot.Gameplay.Players.ThiefStartSpawn>()
+                .Configure(
+                    matchRuntime,
+                    thiefSpawns,
+                    thief.GetComponent<PlayerInteriorState>());
         }
 
         private static void ConfigureMatchResultEvaluator(
@@ -3008,9 +3580,9 @@ namespace PawsAndLoot.Editor
                     + new Vector3(0f, 0.5f, 4.5f),
                 locations[GreyboxLocationId.Supermarket].position
                     + new Vector3(0f, 0.5f, -4.5f),
-                new Vector3(-21f, 0.5f, -6f),
-                new Vector3(7f, 0.5f, 26f),
-                new Vector3(36f, 0.5f, 0f)
+                new Vector3(-24f, 0.5f, 40f),
+                new Vector3(30f, 0.5f, 34f),
+                new Vector3(8f, 0.5f, -19f)
             };
 
             for (int index = 0; index < lootSpots.Length; index++)
@@ -3021,17 +3593,39 @@ namespace PawsAndLoot.Editor
                         : $"Loot {index + 1}",
                     lootSpots[index],
                     new Color(0.75f, 0.3f, 0.95f),
-                    root);
+                    root,
+                    CommonLootDefinitionPath,
+                    matchRuntime);
             }
+
+            // The flagship piece, at the jeweller's, behind glass. One of them
+            // rather than several: an alarm on everything is an alarm on
+            // nothing, and the decision it creates only exists while the quiet
+            // options are still there.
+            CreateLootTarget(
+                "Crown Jewel",
+                locations[GreyboxLocationId.JewelryStore].position
+                    + new Vector3(-1.8f, 0.5f, 0f),
+                new Color(0.98f, 0.83f, 0.35f),
+                root,
+                RareLootDefinitionPath,
+                matchRuntime);
+
+            var alarmObject = new GameObject("Loot Alarm");
+            alarmObject.transform.SetParent(root);
+            alarmObject.AddComponent<LootAlarm>();
 
             Debug.Log(
                 $"[ISSUE-011] {lootSpots.Length} loot pieces placed.");
 
             CreateRockPickups(root, matchRuntime);
+            CreateShopShelfPickups(root);
+            // At the bin, which is the shop. The offset was measured against a
+            // fence in a yard that no longer exists.
             CreateSaleZone(
                 "Prototype Sale Point",
                 locations[GreyboxLocationId.RaccoonMarket].position
-                    + new Vector3(-1.8f, 0.5f, 0f),
+                    + new Vector3(0f, 0.5f, -1.8f),
                 MarketGold,
                 root,
                 matchRuntime);
@@ -3145,6 +3739,103 @@ namespace PawsAndLoot.Editor
         /// tool. Spots sit in road gaps that the loot placement already proved
         /// clear of the validated routes.
         /// </summary>
+        /// <summary>
+        /// The supermarket shelf the thief steals from.
+        ///
+        /// Until now the only thing anybody could throw was a rock off the
+        /// street, so both sides had the same one option and the thief's half of
+        /// the item layer existed in the enum and nowhere else. These are the
+        /// two props that are the thief's, and they come from a shop rather than
+        /// the ground because taking them is itself a thing a thief does.
+        ///
+        /// Role-restricted, unlike the rocks. A rock in the road is nobody's;
+        /// a shelf inside a shop is not something the officer helps themselves
+        /// to.
+        /// </summary>
+        private static void CreateShopShelfPickups(Transform parent)
+        {
+            // In front of the supermarket, taken from where the town put it
+            // rather than written down. The old coordinate ended up inside the
+            // lake garden when the town changed under it, and three of the four
+            // shelves were sealed in water.
+            // On the street south of the raccoon's yard.
+            //
+            // In front of the supermarket turned out to be inside a house's
+            // doorway trigger, so pressing there asked the game whether you
+            // meant to take a banana or go indoors. Inside the yard was worse —
+            // the shelves landed in its north fence. Outside it, on the
+            // pavement, has room and nothing competing for the key.
+            Vector3 shelf = RaccoonMarketCentre
+                + new Vector3(-3.3f, 0.5f, -11f);
+            (ThrowableKind Kind, Vector3 Offset, Color Tint,
+                PlayerRole? Owner)[] shelves =
+            {
+                (ThrowableKind.Banana, Vector3.zero,
+                    new Color(0.94f, 0.86f, 0.28f), PlayerRole.Thief),
+                (ThrowableKind.DogTreat, new Vector3(2.2f, 0f, 0f),
+                    new Color(0.66f, 0.5f, 0.32f), PlayerRole.Thief),
+                // The firework is the thief's, off the bookstore shelf in the
+                // design document; it sits here with the rest until that shop
+                // has an interior to take it from.
+                (ThrowableKind.Firework, new Vector3(4.4f, 0f, 0f),
+                    new Color(0.86f, 0.3f, 0.34f), PlayerRole.Thief),
+                // The chicken is nobody's. It makes a noise and does nothing
+                // else, so there is no advantage in it to hand to one side, and
+                // both players want it for opposite reasons.
+                (ThrowableKind.RubberChicken, new Vector3(6.6f, 0f, 0f),
+                    new Color(0.98f, 0.82f, 0.2f), null),
+                // One of them, and the thief's. It is the strongest thing they
+                // can do to somebody already looking at them, so it is rare.
+                (ThrowableKind.FrozenOctopus, new Vector3(8.8f, 0f, 0f),
+                    new Color(0.72f, 0.42f, 0.6f), PlayerRole.Thief)
+            };
+
+            int id = 101;
+            foreach ((ThrowableKind kind, Vector3 offset, Color tint,
+                PlayerRole? owner) in shelves)
+            {
+                Vector3 spot = shelf + offset;
+                var pickup = new GameObject($"{kind} Shelf");
+                pickup.transform.SetParent(parent);
+                pickup.transform.position = spot;
+
+                var trigger = pickup.AddComponent<SphereCollider>();
+                trigger.radius = 0.6f;
+                trigger.isTrigger = true;
+
+                Transform presentation = CreateChild(
+                    "PresentationRoot",
+                    pickup.transform);
+                presentation.localPosition = Vector3.zero;
+
+                Material tinted = LoadOrCreateMaterial(
+                    $"Greybox_Shelf_{kind}",
+                    tint);
+                GameObject marker = CreateCube(
+                    $"{kind} Marker",
+                    spot + Vector3.up * 0.15f,
+                    new Vector3(0.4f, 0.3f, 0.4f),
+                    tinted,
+                    presentation,
+                    false);
+                UnityEngine.Object.DestroyImmediate(
+                    marker.GetComponent<Collider>());
+
+                pickup.AddComponent<ThrowablePickup>().Configure(
+                    kind,
+                    presentation,
+                    owner.HasValue,
+                    owner ?? PlayerRole.Thief,
+                    14f,
+                    id++);
+
+                CheckSpotIsClear(pickup.transform, spot);
+            }
+
+            Debug.Log(
+                $"[THROW-006] {shelves.Length} shop shelf pickups placed.");
+        }
+
         private static void CreateRockPickups(
             Transform parent,
             MatchRuntimeState matchRuntime)
@@ -3159,17 +3850,21 @@ namespace PawsAndLoot.Editor
             // still builds, still validates and still logs "5 rock pickups
             // placed".
             //
-            // So these come off the road grid itself: the horizontals at
-            // z = 12 / -12 / -18 / 26 and the verticals at x = -24 / -18 / 0 /
-            // 18 / 24. An intersection is open ground by construction, and
+            // So these come off the road grid itself. The town changed and
+            // these did not, which put three of the five back inside a house
+            // or a lake — the check caught it, which is what it is for.
+            //
+            // The new grid runs its streets across at z = 34 / 10 / 6 / -9 and
+            // down at x = -19 / -11 / -3 / 5 / 14 / 20 / 31. A crossing is a
+            // road tile and therefore open ground by construction, and
             // CheckSpotIsClear below re-measures rather than trusting that.
             Vector3[] spots =
             {
-                new(-18f, 0.35f, 12f),
-                new(18f, 0.35f, -12f),
-                new(0f, 0.35f, 26f),
-                new(24f, 0.35f, 12f),
-                new(-24f, 0.35f, -18f)
+                new(-19f, 0.35f, 34f),
+                new(5f, 0.35f, 34f),
+                new(14f, 0.35f, 6f),
+                new(20f, 0.35f, -9f),
+                new(31f, 0.35f, 6f)
             };
 
             Material rockMaterial = LoadOrCreateMaterial(
@@ -3261,7 +3956,10 @@ namespace PawsAndLoot.Editor
             (ThrowableKind kind, int price, Vector3 offset)[] counters =
             {
                 (ThrowableKind.GlueTrap, 60, new Vector3(0f, 0f, 0f)),
-                (ThrowableKind.SensorLight, 90, new Vector3(2.2f, 0f, 0f))
+                (ThrowableKind.SensorLight, 90, new Vector3(2.2f, 0f, 0f)),
+                // Cheapest of the three. It buys a few seconds of the cat not
+                // scouting, which is worth less than holding the thief still.
+                (ThrowableKind.TunaCan, 40, new Vector3(4.4f, 0f, 0f))
             };
 
             foreach ((ThrowableKind kind, int price, Vector3 offset)
@@ -3278,9 +3976,14 @@ namespace PawsAndLoot.Editor
 
                 Material counterMaterial = LoadOrCreateMaterial(
                     $"Greybox_{kind}",
-                    kind == ThrowableKind.GlueTrap
-                        ? new Color(0.24f, 0.2f, 0.16f)
-                        : new Color(0.86f, 0.88f, 0.9f));
+                    kind switch
+                    {
+                        ThrowableKind.GlueTrap =>
+                            new Color(0.24f, 0.2f, 0.16f),
+                        ThrowableKind.TunaCan =>
+                            new Color(0.55f, 0.62f, 0.72f),
+                        _ => new Color(0.86f, 0.88f, 0.9f)
+                    });
                 GameObject marker = CreateCube(
                     $"{kind} Counter Marker",
                     spot + Vector3.up * 0.2f,
@@ -3346,6 +4049,23 @@ namespace PawsAndLoot.Editor
             Color color,
             Transform parent)
         {
+            CreateLootTarget(
+                name,
+                position,
+                color,
+                parent,
+                CommonLootDefinitionPath,
+                null);
+        }
+
+        private static void CreateLootTarget(
+            string name,
+            Vector3 position,
+            Color color,
+            Transform parent,
+            string definitionPath,
+            MatchRuntimeState matchRuntime)
+        {
             var target = new GameObject(name);
             target.name = name;
             target.transform.SetParent(parent);
@@ -3384,17 +4104,67 @@ namespace PawsAndLoot.Editor
 
             LootDefinition definition =
                 AssetDatabase.LoadAssetAtPath<LootDefinition>(
-                    CommonLootDefinitionPath);
+                    definitionPath);
             if (definition == null)
             {
                 throw new GameConfigurationException(
                     $"Game scene requires LootDefinition at "
-                    + $"'{CommonLootDefinitionPath}'.");
+                    + $"'{definitionPath}'.");
             }
 
             definition.ValidateOrThrow();
             LootItem loot = target.AddComponent<LootItem>();
             loot.Configure(definition, presentationRoot);
+
+            // Anything the town is wired to notice goes behind glass. The two
+            // belong together: the alarm is what makes the piece worth taking
+            // loudly, and the case is what makes taking it loud.
+            if (definition.RaisesAlarm && matchRuntime != null)
+            {
+                BuildDisplayCase(loot, parent, matchRuntime);
+            }
+        }
+
+        /// <summary>
+        /// Puts a piece behind glass the thief has to break.
+        ///
+        /// The glass is a separate object rather than a material on the case,
+        /// because the case has to be able to take it away — and a renderer
+        /// switched off is easier to be sure about than a material swapped for
+        /// a transparent one.
+        /// </summary>
+        private static void BuildDisplayCase(
+            LootItem contents,
+            Transform parent,
+            MatchRuntimeState matchRuntime)
+        {
+            var caseObject = new GameObject($"{contents.name} Case");
+            caseObject.transform.SetParent(parent);
+            caseObject.transform.position = contents.transform.position;
+
+            // A trigger, so the thief can stand inside it to break it. Solid,
+            // they would be held at arm's length by the very thing they are
+            // trying to reach.
+            var reach = caseObject.AddComponent<BoxCollider>();
+            reach.size = new Vector3(1.6f, 1.8f, 1.6f);
+            reach.center = new Vector3(0f, 0.5f, 0f);
+            reach.isTrigger = true;
+
+            GameObject pane = CreateCube(
+                "Glass",
+                contents.transform.position + Vector3.up * 0.45f,
+                new Vector3(1.1f, 1.3f, 1.1f),
+                LoadOrCreateMaterial(
+                    "Greybox_DisplayGlass",
+                    new Color(0.62f, 0.86f, 0.95f)),
+                caseObject.transform,
+                false);
+            UnityEngine.Object.DestroyImmediate(pane.GetComponent<Collider>());
+
+            caseObject.AddComponent<LootDisplayCase>().Configure(
+                contents,
+                pane.transform,
+                matchRuntime);
         }
 
         private static void CreateSaleZone(
@@ -3426,13 +4196,14 @@ namespace PawsAndLoot.Editor
             UnityEngine.Object.DestroyImmediate(
                 placeholder.GetComponent<Collider>());
 
-            PlaceholderModelLibrary.TryInstantiateProp(
-                "object_secret_market_stall",
-                target.transform,
-                new Vector3(0f, -0.5f, 1.4f),
-                new Vector3(0f, 180f, 0f),
-                1f,
-                LoadOrCreateMaterial("RaccoonMarket", MarketGold));
+            // No stall. The shop is the bin the raccoon lives in, and a gold
+            // market stall standing beside it is a second thing claiming to be
+            // the shop — the merchant ended up perched on a podium in front of
+            // the object that actually matters.
+            //
+            // The flat disc above stays: it is where the trigger is, drawn on
+            // the ground, and a sale point you cannot see the edge of is one
+            // players learn by failing to sell.
 
             LootSaleZone saleZone =
                 target.AddComponent<LootSaleZone>();
@@ -3846,6 +4617,19 @@ namespace PawsAndLoot.Editor
                 marker,
                 banner,
                 markerLabel);
+
+            // The emergency exit's countdown, on the canvas itself.
+            //
+            // It was on the distraction marker, which spends almost all of its
+            // life switched off — and Update does not run on a disabled object,
+            // so the countdown never counted. Nothing about it belongs to the
+            // marker; it was simply the object in hand.
+            Transform escapeHost = marker.parent != null
+                ? marker.parent
+                : marker;
+            escapeHost.gameObject
+                .AddComponent<InteriorEscapePresenter>()
+                .Configure(roleSelector);
         }
 
         private static void CreateSceneInterface(

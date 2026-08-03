@@ -110,20 +110,26 @@ namespace PawsAndLoot.Tests.EditMode
                 .GroupBy(target => target.InteractionType)
                 .ToDictionary(group => group.Key, group => group.Count());
 
-            // Six ISSUE-011 loot pieces plus the two LOOT-005 hiding spots.
+            // Six ISSUE-011 loot pieces, the alarmed crown jewel and the case
+            // it stands in, plus the two LOOT-005 hiding spots.
             Assert.That(
                 byType[PlayerInteractionType.Loot],
-                Is.EqualTo(8),
+                Is.EqualTo(10),
                 "Loot is thief-only, and the count is the thief's whole "
                 + "victory path.");
             Assert.That(
                 byType[PlayerInteractionType.Sale],
                 Is.EqualTo(1),
                 "One place to sell.");
+            // At least three, not exactly three. It was one per store when the
+            // stores were the only buildings with a roof worth reaching; the
+            // town now puts one up the east face of every shop and every
+            // single-storey house, and how many that is belongs to the town
+            // rather than to this list.
             Assert.That(
                 byType[PlayerInteractionType.Traversal],
-                Is.EqualTo(3),
-                "The MAP-003 climbable ladders, one per store.");
+                Is.GreaterThanOrEqualTo(3),
+                "The MAP-003 climbable ladders.");
 
             // Everything either role may touch: the plaza marker, the rock
             // pickups, the shop counters and both sides of every house door.
@@ -205,7 +211,12 @@ namespace PawsAndLoot.Tests.EditMode
                 .SelectMany(root =>
                     root.GetComponentsInChildren<LootItem>(true))
                 .ToArray();
-            Assert.That(loot, Has.Length.EqualTo(6));
+            // A floor rather than an exact number. What matters is stated as
+            // arithmetic just below — the gold on the map against the target —
+            // and a hard count says nothing extra while having to be edited
+            // every time a piece is added. This one was 6 and became wrong the
+            // day the crown jewel was placed, which is the whole argument.
+            Assert.That(loot, Has.Length.AtLeast(6));
 
             MatchConfig matchConfig =
                 UnityEditor.AssetDatabase.LoadAssetAtPath<MatchConfig>(
@@ -230,7 +241,10 @@ namespace PawsAndLoot.Tests.EditMode
                 .SelectMany(root =>
                     root.GetComponentsInChildren<LadderTraversal>(true))
                 .ToArray();
-            Assert.That(ladders, Has.Length.EqualTo(3));
+            // Three or more. How many the town puts up is the town's decision;
+            // what this cares about is that climbing exists at all and that
+            // every one of them is wired.
+            Assert.That(ladders, Has.Length.GreaterThanOrEqualTo(3));
             foreach (LadderTraversal ladder in ladders)
             {
                 Assert.DoesNotThrow(ladder.ValidateOrThrow);

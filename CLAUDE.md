@@ -156,6 +156,13 @@ Claude Code 전용 작업 지침서다.
 > 추적해서 `[TearDown]`에서 `DestroyImmediate`한다. 그리고 같은 프레임에 만든
 > 콜라이더는 물리 씬에 아직 없으므로 `Physics.SyncTransforms()`를 부른다.
 
+> **테스트가 "전부 통과"해도 방금 쓴 코드를 돌린 것이 아닐 수 있다.** 한 어셈블리가
+> 컴파일에 실패하면 Unity는 **이전에 컴파일된 어셈블리로 테스트를 돌리고**, 종료 코드
+> 0에 "172개 전부 통과"를 찍는다. 실제로는 지운 지 오래인 테스트가 돌고 있었다.
+> 결과 XML에서 **이번에 추가·개명한 테스트 이름을 실제로 찾아본다** — 없으면 낡은
+> 결과다. 로그의 `error CS` 개수도 함께 센다. 어셈블리가 나뉘어 있어서 EditMode는
+> 멀쩡히 돌고 PlayMode만 깨져 있을 수 있다.
+
 > **에디터 스크립트가 채운 `List`는 씬 저장에서 사라진다.** `onClick.AddListener`와
 > 같은 종류인데 컴포넌트 목록에서도 일어난다. 센서 신호 호 7개를 `AddBar`로
 > 넘겼더니 빌드에서 목록이 비어 있어서 칸수 계산이 아무 일도 하지 않았다
@@ -206,6 +213,45 @@ Claude Code 전용 작업 지침서다.
 >
 > **레이아웃 그룹 자식에 배경을 깔지 않는다.** 그룹이 자식의 앵커를 덮어쓰므로,
 > 채우기로 만든 띠가 배경이 아니라 **행의 한 칸**으로 배치된다. 예외도 로그도 없다.
+
+> **임포트한 모델이 씬에서 흰색으로 나오면 머티리얼 리맵이 비어 있는 것이다.**
+> FBX는 임포터의 머티리얼 리맵이 채워져야 자기 텍스처를 쓴다. 비어 있어도 **예외도
+> 경고도 없고** 씬은 저장되고 검증기는 통과한다 — 흰 덩어리 하나가 늘 뿐이다.
+> `Rebuild Map Sandbox`가 이제 `Repair Model Textures`를 먼저 부르지만, 다른 씬을
+> 만들 때는 손으로 돌린다 (`ISSUE-058`).
+>
+> 헷갈리는 점: **`Capture Model Sheet`은 멀쩡하게 나온다.** 컨택트 시트는 모델을
+> 그때그때 인스턴스화하고 씬은 저장된 참조를 들고 있어서, 같은 모델이 도구마다
+> 다르게 보인다. 씬이 틀렸다는 뜻이지 모델이 틀렸다는 뜻이 아니다.
+
+> **평면도로 색과 재질을 판단하지 않는다.** 평면도는 에디터 프로세스가 에디터 조명으로
+> 80m 상공에서 찍는다. "무엇이 어디에 있는가"에는 정확하고 "어떻게 보이는가"에는
+> 아니다 — 같은 오후에 두 번 잘못된 결론을 만들었다 (`ISSUE-060`). 창을 밖에서
+> 긁는 것도 안 된다. 앞에 있던 다른 창을 두 번 찍었다.
+>
+> 빌드가 스스로 찍게 한다.
+>
+> ```bash
+> "Builds/Sandbox/Windows/MapSandbox.exe" -sandboxShot Logs/sandbox-ingame.png -shotSeconds 6
+> ```
+
+> **바닥에 까는 타일을 구울 때 조명을 켜지 않는다.** 구워 넣고 싶은 것은 그 땅의
+> 색이지 조명에 대한 두 번째 의견이 아니다. 정면 직사광은 위를 보는 면을 전부
+> N·L = 1에, 즉 밝기 곡선의 끝에 앉힌다. 감면이 남긴 법선의 미세한 흔들림이 그
+> 절벽에서 떨어져 아스팔트가 흰 잡음으로 터졌다 — **연석과 차선은 완벽했다.**
+> 옆을 보는 면과 별도 지오메트리라서다. 그래서 텍스처 문제처럼 보였다 (`ISSUE-059`).
+>
+> 타일이 이상하게 나오면 `Logs/baked-raw/`의 보정 전 렌더를 먼저 본다. **렌더가
+> 틀렸는지 보정이 틀렸는지**는 고치는 곳이 전혀 다르다.
+
+> **실내 모델의 문이 어느 벽에 있는지는 평면도를 찍어서 정한다.** 게임 스크린샷으로
+> 세 번 정했고 세 번 다 틀렸다 — 실내 카메라는 궤도 카메라라 스크린샷 한 장에서
+> 북쪽과 동쪽을 구분할 방법이 없다. `Capture Interior Plans`는 위에서 방위를 고정해
+> 찍으므로 그림과 상수가 같은 좌표에 있다. 화단과 현관 슬래브가 정면 벽 바깥에 있다.
+>
+> 넓이 탐침만 믿지 않는다. **구멍이 항상 문은 아니다** — 유리 상점 정면은 탐침이 보는
+> 띠를 채우고, 간판 레일이나 낮은 선반 줄은 그 띠를 비운다. `DoorWallForModel`에
+> 적어두는 편이 낫다. 모델은 다섯 개이고, 평면도를 보는 사람은 1초에 답한다.
 
 > **오브젝트의 원점이 그 오브젝트의 중심이라고 가정하지 않는다.** 집 모델은 배치될 때
 > 실루엣 전체로 재중심되고 그 실루엣에는 앞으로 튀어나온 현관이 들어간다. 그래서 벽이
@@ -303,6 +349,15 @@ Rebuild MAP-001 Greybox Village   Game 씬 마을 재생성
 Validate MAP-001 Greybox Village  장소·경로·폭·충돌 검사
 Capture Map Overview              Game 씬 상공 평면도 → Logs/map-overview.png
 Rebuild Bootstrap Lobby           Bootstrap 로비 재생성 (프리팹 인스턴스 배치)
+
+Capture Sandbox Overview          샌드박스 상공 평면도 → Logs/sandbox-overview.png
+                                  + 배치 목록 Logs/sandbox-placements.txt
+                                  좌표 격자를 얹으려면
+                                  python Tools/annotate_sandbox_plan.py
+                                  **좌표 확인용이다. 색 판단에 쓰지 않는다**
+Repair Model Textures             임포터 머티리얼 리맵을 채운다 (흰 모델 고침)
+Bake Road Tile Textures           바닥 타일을 위에서 Unlit으로 굽는다
+                                  보정 전 렌더는 Logs/baked-raw/
 Report House Model Layout         집 모델 부품·치수 보고 (실내를 손대기 전에 먼저 잰다)
 Report Interior Faces             실내 네 면의 부품 배정과 **어디에도 안 속한 것** 보고
 Create Default Config Assets      Settings/Configs 7개 에셋 생성
@@ -364,7 +419,7 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 - 결과 XML의 실제 테스트 수와 실패 목록
 - **테스트 0개 발견은 성공이 아니다**
 
-현재 기준선: Edit Mode 161개, Play Mode 142개 (`ISSUE-045` 시점).
+현재 기준선: Edit Mode 215개, Play Mode 183개 (2026-08-03).
 테스트를 추가하면 `13_CURRENT_STATE.md`의 `최근 검증` 표에 실제 수치를 기록한다.
 
 ### 런타임 검증 (자체 보고 프로브 패턴)
@@ -390,15 +445,15 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 빌드를 두 번 띄우고 결과 JSON을 비교한다. 호스트를 1초 먼저 띄운다.
 
 ```bash
-"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby host   -netScenario full -netMatchSeconds 16
-"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby client -netScenario full -netMatchSeconds 16
+"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby host   -netScenario full -netMatchSeconds 60
+"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby client -netScenario full -netMatchSeconds 60
 ```
 
 `-netScenario` 3종:
 
 | 값 | 검증 대상 | 권장 `-netMatchSeconds` |
 |---|---|---|
-| `full` | NET-005·006·007. 획득 → 판매 연타 → 체포 → 승자 비교 | 16 |
+| `full` | NET-005·006·007. 획득 → 판매 연타 → **체포 3회** → 승자 비교 | 60 |
 | `rematch` | NET-008. 클라이언트만 재경기를 눌러 양쪽 복귀 확인 | 40 |
 | `disconnect` | NET-009. 클라이언트가 먼저 나가고 호스트 처리 1회 확인 | 20 |
 
@@ -417,6 +472,15 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 `full`은 호스트가 캐릭터를 보물·판매처·상대 옆으로 **배치**한다. 이동 경로는
 `MAP-001`이 담당하고 여기서 검증하는 것은 요청이 호스트에 도달하는지와 결과가
 클라이언트로 돌아오는지다.
+
+승리에 체포가 3회 필요하고 그 사이에 감옥 11초가 있으므로 `full`은 **60초**가
+필요하다. 16초는 체포 1회 시절의 값이고, 그대로 두면 승자가 나오지 않아
+`passed=false`가 고정된다 — 회귀가 실패하는 것이 아니라 **꺼진다.**
+
+경찰은 도둑이 감옥에 있는 동안에는 배치하지 않는다. 감옥 안의 도둑 위에 서 있으면
+출소하는 순간 즉시 잡히는데, 그건 게임이 하는 일이 아니다. 결과의
+`peakArrestCount`와 `jailSpells`가 3회까지 갔는지 보여준다 — 없으면 실패가
+"승자 없음"까지만 말하고 체포가 깨진 것인지 감옥이 안 풀린 것인지 구분되지 않는다.
 
 프로브는 경기가 `Playing`에서 벗어나면 즉시 기록한다. 승패가 정해지면 경기 씬이
 언로드되어 프로브가 사라지기 때문이다. 같은 이유로 스폰 수와 원격 제어 여부는
@@ -474,14 +538,50 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 `Assets/_Project/Scripts/Integration/`의 외부 에셋 어댑터 자리는 아직 비어
 있다. `Assets/_Project/UI/`도 비어 있고 HUD는 전부 코드로 조립한다.
 
-## 8. 프로토타입 단계 대체 수단
+## 8. 모델을 새로 넣을 때
+
+**삼각형이 많으면 넣기 전에 Blender에서 감면한다.** 넣고 나서 정리하는 것이 아니라
+임포트 절차의 일부다.
+
+이 프로젝트의 모델은 거의 전부 Tripo 생성물이고 **약 95만 삼각형**으로 나온다. 손으로
+만든 3~5만짜리와 화면에서 구분되지 않는데 빌드 용량과 프레임에는 그대로 실린다. 표정
+아이콘 넷이 385만 삼각형을 차지하고 있던 것을 뒤늦게 발견했고, 그때는 이미 본 게임 씬에
+들어가 있었다. WebGL 제출이 목표이므로 용량이 곧 첫 로딩 시간이다.
+
+```bash
+blender --background --python Tools/decimate_fbx.py -- <in.fbx> <out.fbx> <목표 삼각형>
+```
+
+| 종류 | 목표 삼각형 |
+|---|---:|
+| 아이콘 | 2,000 |
+| 소품·가로등·나무 | 5,000 |
+| 건물 외관 | 40,000 |
+| 실내 | 100,000 |
+
+실내는 플레이어가 가장 가까이서 오래 보므로 덜 깎는다.
+
+> **바꿔 넣기 전에 옆에서 찍어 확인한다.** 텍스처는 벽에 있으므로 위에서만 보면 UV가
+> 찢어진 것을 놓친다. `Capture Model Sheet`의 카메라 각도를 잠시 눕히면 된다.
+>
+> **교체는 제자리 덮어쓰기다.** 새 파일로 넣으면 GUID가 새로 생기고 씬의 모든 참조가
+> 끊긴다.
+
+**예외: 위에서만 보이고 반복해서 깔리는 것은 감면하지 않고 굽는다.** 도로와 잔디가
+그렇다. `Bake Road Tile Textures`가 위에서 찍은 512px 그림을 삼각형 2개짜리 평면에
+입히므로, 원본이 95만이어도 빌드에 들어가지 않는다. 모델을 고치면 다시 구워야 한다.
+
+측정은 `Report Model Weights`. 파일 크기로 짐작하지 않는다. 현황은
+`docs/20_DECIMATION_LIST.md`.
+
+## 9. 프로토타입 단계 대체 수단
 
 - 동물 명령: 숫자키 `1`~`4`. 실제 STT·자연어 분류·LLM 호출은 구현하지 않는다.
 - 3D 모델: 그레이박스 도형. 최종 모델은 별도로 제작 중이며
   `PlayerVisualRoot.ReplaceVisual`이 교체 지점이다.
 - 이 두 가지를 "AI 음성 기능 완료" 또는 "최종 아트 적용"으로 표현하지 않는다.
 
-## 9. 작업 완료 시 갱신할 문서
+## 10. 작업 완료 시 갱신할 문서
 
 한 작업을 끝내면 다음을 같은 변경에 포함한다.
 
@@ -494,7 +594,7 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 | `docs/15_KNOWN_ISSUES.md` | 문제를 발견·해결했을 때만 |
 | `docs/03_GAME_RULES.md` | 밸런스 수치를 바꿨을 때 (코드만 바꾸지 않는다) |
 
-## 10. 보고 형식
+## 11. 보고 형식
 
 작업 완료 보고는 `AGENTS.md` 10절의 6개 항목을 사용한다.
 

@@ -86,8 +86,31 @@ namespace PawsAndLoot.UI
             BindAlert(target.position);
         }
 
+        /// <summary>
+        /// Whether this machine can draw a minimap at all.
+        ///
+        /// A headless run has no graphics device, so `RenderTexture.Create`
+        /// quietly fails and the camera is left pointing at a texture that does
+        /// not exist. URP then walks into its depth-normal prepass with no
+        /// surface to attach and takes the whole process down — the editor
+        /// segfaults, the results file is never written, and the failure looks
+        /// like the test framework rather than a minimap.
+        ///
+        /// That is the entire reason Play Mode could only be run with a window
+        /// open. Asked here rather than guarded at the call sites, so nothing
+        /// downstream has to remember.
+        /// </summary>
+        private static bool CanRender =>
+            SystemInfo.graphicsDeviceType
+                != UnityEngine.Rendering.GraphicsDeviceType.Null;
+
         private void EnsureCamera()
         {
+            if (!CanRender)
+            {
+                return;
+            }
+
             if (minimapCamera == null)
             {
                 GameObject cameraObject = new("MinimapCamera");

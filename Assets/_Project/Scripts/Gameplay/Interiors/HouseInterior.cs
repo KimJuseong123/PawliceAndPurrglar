@@ -85,8 +85,38 @@ namespace PawsAndLoot.Gameplay.Interiors
         /// the loot scatter, the dog's pointer — only need somewhere in the room and
         /// have no opinion about which door.
         /// </summary>
+        /// <summary>
+        /// The cell's id, which is not a house's.
+        ///
+        /// The jail is built out of the same parts as a room — same model
+        /// handling, same collision, same floor — so it turns up in every
+        /// search for a HouseInterior. It has no door, it is deliberately
+        /// small, and nobody walks into it by choice, so the things that are
+        /// true of houses are not true of it.
+        /// </summary>
+        public const int JailId = 900;
+
+        public bool IsJail => InteriorId == JailId;
+
         public Vector3 EntryPosition => EntryPositionFor(HouseDoorSide.Front);
         public Vector3 ExitPosition => ExitPositionFor(HouseDoorSide.Front);
+
+        /// <summary>
+        /// Which way a player faces on arriving inside.
+        ///
+        /// Taken from the entry marker, which the generator turns to look at
+        /// the far wall. It used to be left to whatever the player happened to
+        /// be facing in the street, so the same door gave a different view
+        /// every time and the room had to be found again on each visit.
+        /// </summary>
+        public Quaternion EntryFacingFor(HouseDoorSide side)
+        {
+            Transform point = side == HouseDoorSide.Back
+                ? backEntryPoint
+                : frontEntryPoint;
+            point ??= frontEntryPoint;
+            return point != null ? point.rotation : transform.rotation;
+        }
 
         public Vector3 EntryPositionFor(HouseDoorSide side)
         {

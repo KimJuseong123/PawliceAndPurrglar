@@ -68,7 +68,12 @@ namespace PawsAndLoot.Tests.PlayMode
                 fixture.Completion.TryCompleteArrest(),
                 Is.True);
             Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(1));
-            Assert.That(fixture.Completion.IsCompleted, Is.False);
+
+            // Latched after every catch, and released by the jail. It used to
+            // stay unlatched until the third, which let the officer standing on
+            // the thief catch them again the very next frame.
+            Assert.That(fixture.Completion.IsCompleted, Is.True);
+            fixture.Completion.ClearForNextArrest();
 
             fixture.Progress.Tick(
                 fixture.ArrestConfig.ArrestDurationSeconds);
@@ -76,7 +81,8 @@ namespace PawsAndLoot.Tests.PlayMode
                 fixture.Completion.TryCompleteArrest(),
                 Is.True);
             Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(2));
-            Assert.That(fixture.Completion.IsCompleted, Is.False);
+            Assert.That(fixture.Completion.IsCompleted, Is.True);
+            fixture.Completion.ClearForNextArrest();
 
             fixture.Progress.Tick(
                 fixture.ArrestConfig.ArrestDurationSeconds);

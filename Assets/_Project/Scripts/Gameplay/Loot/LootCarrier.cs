@@ -67,10 +67,36 @@ namespace PawsAndLoot.Gameplay.Loot
             }
 
             LootItem previous = HeldLoot;
+            Vector3 liftedFrom = loot.transform.position;
             HeldLoot = loot;
             _completedRequests.Add(requestId);
             HeldLootChanged?.Invoke(previous, HeldLoot);
+            RaiseAlarmIfWatched(loot, liftedFrom);
             return true;
+        }
+
+        /// <summary>
+        /// Sounds the shop's alarm if this piece is one of the watched ones.
+        ///
+        /// Done on acquisition rather than at the case, because the two are not
+        /// the same moment: the glass going is loud, and the ring leaving its
+        /// cushion is what the shop is actually wired to notice. A thief who
+        /// breaks a case and takes nothing has made a noise; a thief who takes
+        /// the ring has set off an alarm.
+        ///
+        /// The position is where the piece was, not where the thief is. The
+        /// mark on the officer's screen should point at the empty cushion —
+        /// pointing it at the thief would make the alarm a tracker, and there
+        /// is a separate, shorter reveal for that.
+        /// </summary>
+        private void RaiseAlarmIfWatched(LootItem loot, Vector3 liftedFrom)
+        {
+            if (loot.Definition == null || !loot.Definition.RaisesAlarm)
+            {
+                return;
+            }
+
+            FindFirstObjectByType<LootAlarm>()?.Raise(liftedFrom, identity);
         }
 
         public bool TryDrop()
@@ -111,7 +137,39 @@ namespace PawsAndLoot.Gameplay.Loot
 
             HeldLoot = null;
             HeldLootChanged?.Invoke(previous, null);
+            ReportDropNoise(previous, dropPosition);
             return true;
+        }
+
+        /// <summary>
+        /// Tells the town that something heavy just hit the ground.
+        ///
+        /// Only for things heavy enough to be heard. A pocket piece gets a
+        /// radius of zero and nothing is written down — an event nobody could
+        /// act on is worse than no event, because it teaches the officer to
+        /// ignore the one signal that matters.
+        ///
+        /// Reported on the drop rather than on the pickup, because dropping is
+        /// the moment the thief chooses. Picking a thing up is something they
+        /// did quietly on purpose; putting it down to run is a decision with a
+        /// price, and this is the price.
+        /// </summary>
+        private void ReportDropNoise(LootItem dropped, Vector3 at)
+        {
+            if (dropped?.Definition == null)
+            {
+                return;
+            }
+
+            float radius = LootCarryRules.DropNoiseRadius(
+                dropped.Definition.CarryType);
+            if (radius <= 0f)
+            {
+                return;
+            }
+
+            FindFirstObjectByType<PawsAndLoot.Gameplay.Sensing.NoiseBoard>()
+                ?.Report(at, radius, identity == null ? null : identity.Role);
         }
 
         /// <summary>

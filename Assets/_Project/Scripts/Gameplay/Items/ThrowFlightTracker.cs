@@ -141,7 +141,22 @@ namespace PawsAndLoot.Gameplay.Items
             StunState stun = victim.GetComponent<StunState>();
             bool landed = stun?.TryApply(
                 ThrowableCatalog.GetStunSeconds(flight.Kind)) == true;
-            if (landed)
+
+            // Sight is taken separately from time, because they are separate
+            // things. The octopus stuns nobody and blinds; the rock blinds
+            // nobody and stuns. Asking both questions of every hit means a prop
+            // that did both would need no new branch here.
+            float blindSeconds =
+                ThrowableCatalog.GetBlindSeconds(flight.Kind);
+            bool blinded = blindSeconds > 0f
+                && victim.GetComponent<PawsAndLoot.Gameplay.Players.BlindedState>()
+                    ?.TryApply(blindSeconds) == true;
+            landed = landed || blinded;
+
+            // Money moves on a hold, not on a blinding. Taking the thief's
+            // purse for covering their eyes would make the octopus strictly
+            // better than the rock, and the rock is what the officer has.
+            if (stun?.IsStunned == true && blindSeconds <= 0f)
             {
                 PawsAndLoot.Gameplay.Loot.LootConfiscationRule.Apply(
                     victim,

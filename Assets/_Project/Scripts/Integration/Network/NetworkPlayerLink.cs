@@ -48,6 +48,65 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableWritePermission.Server);
 
         /// <summary>
+        /// Where this player's animal is, and how fast it is walking.
+        ///
+        /// The animals were never replicated at all. Both machines ran their own
+        /// copy of the agent, and because commands only ever reach the host, the
+        /// client's animal followed its owner and did nothing else — no orders,
+        /// no lures, no scouting. It looked like a pet that had stopped
+        /// listening, and only came to light when a prop made somebody watch it.
+        ///
+        /// Host simulates and the client is shown the result, exactly like the
+        /// players. Two simulations of the same object driven by different
+        /// inputs cannot agree, and this one was not even trying to.
+        /// </summary>
+        private readonly NetworkVariable<Vector3> _companionPosition =
+            new(
+                Vector3.zero,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<float> _companionYaw =
+            new(
+                0f,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        /// <summary>
+        /// Metres per second, sent rather than measured.
+        ///
+        /// A replicated position arrives in steps and sits still between
+        /// packets, so a client measuring frame-to-frame movement reads mostly
+        /// zero and the legs stop. The host knows the real speed.
+        /// </summary>
+        private readonly NetworkVariable<float> _companionSpeed =
+            new(
+                0f,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        /// <summary>
+        /// What this player's animal is showing above its head.
+        ///
+        /// The animals are scene objects rather than spawned network objects,
+        /// so nothing about them replicates on its own — their whole state
+        /// lives on the host. That was invisible while they only moved, because
+        /// their positions are driven from the host anyway, and it showed up the
+        /// moment they had something to say: the thief could not see their own
+        /// cat react.
+        ///
+        /// The face and a counter are packed into one int. Without the counter
+        /// the same face twice in a row is not a change, so a dog that fails to
+        /// find a trail twice would look like it heard the second order and
+        /// ignored it — which is the exact confusion these icons exist to fix.
+        /// </summary>
+        private readonly NetworkVariable<int> _companionFace =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        /// <summary>
         /// NET-006. The thief's running total, written only by the host.
         /// </summary>
         private readonly NetworkVariable<int> _soldAmount =
@@ -115,6 +174,17 @@ namespace PawsAndLoot.Integration.Network
 
         [SerializeField]
         private ArrestProgressController arrestProgress;
+
+        [SerializeField]
+        private PawsAndLoot.Animation.CompanionExpressionView companionFace;
+
+        [SerializeField]
+        private PawsAndLoot.Companions.CompanionAgent companionAgent;
+
+        private Vector3 _companionLastPosition;
+
+        private int _lastCompanionFaceSequence;
+        private int _companionFaceSequence;
 
         [SerializeField]
         private PawsAndLoot.Gameplay.Items.ToolUseAction toolUse;
@@ -232,6 +302,27 @@ namespace PawsAndLoot.Integration.Network
         /// Counts stuns so a client can tell a fresh hit from a value that
         /// happens to be the same, the way arrest interruptions are counted.
         /// </summary>
+        /// <summary>
+        /// How many times this officer has caught the thief, and how long this
+        /// thief has left in the cells.
+        ///
+        /// Display only — neither decides anything. They are here because the
+        /// screen was reading them off components that only ever run on the
+        /// host: a client watched the whole match with the counter stuck on
+        /// zero and no idea how long they were locked up for. The rules were
+        /// working and the player could not see them, which is a different
+        /// failure from the rules not working and is just as bad to play.
+        /// </summary>
+        private readonly NetworkVariable<int> _catchCount =
+            new(0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        private readonly NetworkVariable<float> _jailSeconds =
+            new(0f,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
         private readonly NetworkVariable<int> _stunCount =
             new(
                 0,
@@ -333,8 +424,15 @@ namespace PawsAndLoot.Integration.Network
             PawsAndLoot.Animation.CompanionLegAnimator configuredLegAnimator =
                 null,
             PawsAndLoot.Gameplay.Interiors.PlayerInteriorState
-                configuredInteriorState = null)
+                configuredInteriorState = null,
+            PawsAndLoot.Animation.CompanionExpressionView
+                configuredCompanionFace = null)
         {
+            companionFace = configuredCompanionFace;
+            companionAgent = configuredCompanionFace != null
+                ? configuredCompanionFace
+                    .GetComponent<PawsAndLoot.Companions.CompanionAgent>()
+                : null;
             interiorState = configuredInteriorState;
             policeWallet = configuredPoliceWallet;
             legAnimator = configuredLegAnimator;
@@ -358,6 +456,34 @@ namespace PawsAndLoot.Integration.Network
             // on one walking into a doorway. A client's capsule passes through the
             // same trigger while following replicated positions.
             interiorState?.SetAuthority(IsServer);
+
+            // Same reason as the interior: a client running its own sentence
+            // teleports the thief on its screen only, and its clock drifts from
+            // the host's.
+            GetComponent<PawsAndLoot.Gameplay.Arrest.ThiefJailState>()
+                ?.SetAuthority(IsServer);
+
+            // The animal's own presenter decides faces from events the host
+            // raises, so on a client it would either say nothing or disagree
+            // with what the host sent. Turning it off leaves exactly one writer.
+            // The client stops simulating its own animal. Left running, it
+            // walks after its owner on that screen while the host walks it
+            // somewhere else, and the two never agree.
+            if (!IsServer && companionAgent != null)
+            {
+                companionAgent.enabled = false;
+            }
+
+            if (!IsServer && companionFace != null)
+            {
+                var presenter = companionFace
+                    .GetComponent<
+                        PawsAndLoot.Companions.CompanionExpressionPresenter>();
+                if (presenter != null)
+                {
+                    presenter.enabled = false;
+                }
+            }
 
             // The host simulates both players. Every other machine only
             // displays them, so its motor and controller are switched off to
@@ -680,6 +806,136 @@ namespace PawsAndLoot.Integration.Network
             motor.Move(_submittedMove, deltaTime);
         }
 
+        /// <summary>
+        /// Sends the face the host's animal is already showing.
+        ///
+        /// Read off the view rather than driven from the events, so there is
+        /// one decision about which face to show and the client cannot disagree
+        /// with the host about it.
+        /// </summary>
+        private void PublishCompanionTransform()
+        {
+            if (companionAgent == null)
+            {
+                return;
+            }
+
+            Transform animal = companionAgent.transform;
+            Vector3 position = animal.position;
+            _companionPosition.Value = position;
+            _companionYaw.Value = animal.eulerAngles.y;
+            _companionSpeed.Value = Time.deltaTime > 0f
+                ? Vector3.Distance(
+                    new Vector3(position.x, 0f, position.z),
+                    new Vector3(
+                        _companionLastPosition.x,
+                        0f,
+                        _companionLastPosition.z))
+                    / Time.deltaTime
+                : 0f;
+            _companionLastPosition = position;
+        }
+
+        /// <summary>
+        /// Places the client's animal where the host says it is.
+        ///
+        /// Eased rather than snapped, because the packets arrive far apart
+        /// compared with the frame rate and a snapped animal reads as a
+        /// stutter. The legs are driven from the sent speed rather than from
+        /// this movement, which is mostly zero between packets.
+        /// </summary>
+        private void ApplyCompanionTransform(float deltaTime)
+        {
+            if (companionAgent == null)
+            {
+                return;
+            }
+
+            // The local brain is switched off first, and only here.
+            //
+            // Position was already being replicated and the animal still stood
+            // somewhere else on the client, because the client was *also*
+            // running its own CompanionAgent: two writers to one transform,
+            // every frame, one easing toward the host's answer and the other
+            // walking off to its own. Neither is wrong on its own and the
+            // result is an animal in two places.
+            //
+            // Whoever is being told where the animal is does not get to decide
+            // where the animal is. The same rule as every other divergence this
+            // project has met.
+            if (companionAgent.enabled)
+            {
+                companionAgent.enabled = false;
+            }
+
+            Transform animal = companionAgent.transform;
+            animal.position = Vector3.MoveTowards(
+                animal.position,
+                _companionPosition.Value,
+                Mathf.Max(0.5f, _companionSpeed.Value * 2f) * deltaTime);
+            animal.rotation = Quaternion.Slerp(
+                animal.rotation,
+                Quaternion.Euler(0f, _companionYaw.Value, 0f),
+                Mathf.Clamp01(deltaTime * 10f));
+
+            companionAgent
+                .GetComponent<PawsAndLoot.Animation.CompanionLegAnimator>()
+                ?.SetExternalSpeed(_companionSpeed.Value);
+        }
+
+        private void PublishCompanionFace()
+        {
+            if (companionFace == null)
+            {
+                return;
+            }
+
+            int face = companionFace.IsShowing
+                ? (int)companionFace.Current
+                : 0;
+            int current = _companionFace.Value & 0xF;
+            if (face == current)
+            {
+                return;
+            }
+
+            _companionFaceSequence++;
+            _companionFace.Value = (_companionFaceSequence << 4) | face;
+        }
+
+        /// <summary>
+        /// Shows what the host says the animal is showing.
+        ///
+        /// Acts on the counter rather than the face so the same face twice in a
+        /// row still re-triggers, and ignores a repeat of a sequence it has
+        /// already drawn.
+        /// </summary>
+        private void ApplyCompanionFace()
+        {
+            if (companionFace == null)
+            {
+                return;
+            }
+
+            int packed = _companionFace.Value;
+            int sequence = packed >> 4;
+            if (sequence == _lastCompanionFaceSequence)
+            {
+                return;
+            }
+
+            _lastCompanionFaceSequence = sequence;
+            var face = (PawsAndLoot.Companions.CompanionExpression)(packed & 0xF);
+            if (face == PawsAndLoot.Companions.CompanionExpression.None)
+            {
+                companionFace.Hide();
+            }
+            else
+            {
+                companionFace.Show(face);
+            }
+        }
+
         private void Update()
         {
             if (!IsSpawned)
@@ -700,10 +956,14 @@ namespace PawsAndLoot.Integration.Network
                             motor.LastPlanarVelocity.magnitude
                             / motor.EffectiveMoveSpeed)
                         : 0f;
+                PublishCompanionFace();
+                PublishCompanionTransform();
                 PublishGameplayState();
                 return;
             }
 
+            ApplyCompanionFace();
+            ApplyCompanionTransform(Time.deltaTime);
             ApplyReplicatedTransform(Time.deltaTime);
             ApplyReplicatedGameplayState();
         }
@@ -723,6 +983,24 @@ namespace PawsAndLoot.Integration.Network
             if (stun != null)
             {
                 _stunSeconds.Value = stun.RemainingSeconds;
+            }
+
+            // Read off whichever of the two this player happens to have. The
+            // officer carries the tally and the thief carries the sentence, so
+            // one of these is always null and that is fine — asking is cheaper
+            // than a second link type.
+            var completion =
+                GetComponent<PawsAndLoot.Gameplay.Arrest.ArrestCompletionController>();
+            if (completion != null)
+            {
+                _catchCount.Value = completion.CurrentCatchCount;
+            }
+
+            var jail =
+                GetComponent<PawsAndLoot.Gameplay.Arrest.ThiefJailState>();
+            if (jail != null)
+            {
+                _jailSeconds.Value = jail.RemainingSeconds;
             }
 
             if (toolCarrier != null)
@@ -778,6 +1056,15 @@ namespace PawsAndLoot.Integration.Network
             {
                 policeWallet.ApplyReplicated(_policeAmount.Value);
             }
+
+            // Written into the same components the screen already reads, rather
+            // than handed to the HUD separately. One reader, two writers that
+            // never run on the same machine — the host simulates and the client
+            // is told, which is how everything else here works.
+            GetComponent<PawsAndLoot.Gameplay.Arrest.ArrestCompletionController>()
+                ?.ApplyReplicatedCatchCount(_catchCount.Value);
+            GetComponent<PawsAndLoot.Gameplay.Arrest.ThiefJailState>()
+                ?.ApplyReplicatedRemaining(_jailSeconds.Value);
 
             if (interiorState != null)
             {

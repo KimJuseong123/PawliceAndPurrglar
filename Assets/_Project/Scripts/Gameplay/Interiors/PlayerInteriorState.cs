@@ -53,6 +53,79 @@ namespace PawsAndLoot.Gameplay.Interiors
         public bool IsIndoors => currentInteriorId != Outside;
 
         /// <summary>
+        /// How high a step the character will walk up indoors.
+        ///
+        /// Small. Outdoors a generous step is what gets a player over kerbs and
+        /// doorsteps without jumping. Indoors it is what let them walk up onto
+        /// a door threshold, from there onto a partition, and over it into a
+        /// back room with no way out — a room the model draws as sealed and the
+        /// collision therefore seals.
+        ///
+        /// A quarter of a metre still clears anything a room has on its floor.
+        /// </summary>
+        private const float IndoorStepOffset = 0.25f;
+
+        /// <summary>
+        /// How wide the character is indoors, as a radius in metres.
+        ///
+        /// Outdoors they are 0.45 across the radius, which is nine tenths of a
+        /// metre of shoulder plus the controller's skin. Interior doorways are
+        /// drawn about a metre and a quarter wide and the coarse collision copy
+        /// of a wall bulges into that, so a doorway that is plainly open on
+        /// screen is one nobody can walk through — which is exactly what was
+        /// reported of the bookstore.
+        ///
+        /// Narrowing indoors is the honest fix for a character built for
+        /// streets being asked to use domestic doors. Nothing outdoors changes.
+        ///
+        /// Down to 0.24 after 0.3 still would not fit the bookstore's inner
+        /// doorway. Under half a metre across the shoulders is not a shape
+        /// anybody reads off the screen, and the alternative is cutting
+        /// triangles out of a wall that is drawn with a hole already in it.
+        /// </summary>
+        private const float IndoorRadius = 0.24f;
+
+        private CharacterController _controller;
+        private float _outdoorStepOffset = -1f;
+        private float _outdoorRadius = -1f;
+
+        private void Awake()
+        {
+            _controller = GetComponent<CharacterController>();
+            if (_controller != null)
+            {
+                _outdoorStepOffset = _controller.stepOffset;
+                _outdoorRadius = _controller.radius;
+            }
+        }
+
+        /// <summary>
+        /// Applies the step height that belongs to where the player now is.
+        ///
+        /// The outdoor value is remembered rather than written down, because it
+        /// comes from the player config and this is not the place that decides
+        /// it.
+        /// </summary>
+        private void ApplyStepOffset()
+        {
+            if (_controller == null || _outdoorStepOffset < 0f)
+            {
+                return;
+            }
+
+            _controller.stepOffset = IsIndoors
+                ? Mathf.Min(IndoorStepOffset, _outdoorStepOffset)
+                : _outdoorStepOffset;
+
+            if (_outdoorRadius > 0f)
+            {
+                _controller.radius = IsIndoors
+                    ? Mathf.Min(IndoorRadius, _outdoorRadius)
+                    : _outdoorRadius;
+            }
+        }
+
+        /// <summary>
         /// Host side, and the one place the value changes.
         /// </summary>
         public void SetInterior(int interiorId)
@@ -63,6 +136,7 @@ namespace PawsAndLoot.Gameplay.Interiors
             }
 
             currentInteriorId = interiorId;
+            ApplyStepOffset();
             InteriorChanged?.Invoke(interiorId);
         }
 

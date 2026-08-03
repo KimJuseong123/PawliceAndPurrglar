@@ -205,7 +205,7 @@ namespace PawsAndLoot.Tests.EditMode
                 ThrowableCatalog.CanUseInQuickSlot(ThrowableKind.Rock),
                 Is.True);
             Assert.That(
-                ThrowableCatalog.CanUseInQuickSlot(ThrowableKind.NoiseCan),
+                ThrowableCatalog.CanUseInQuickSlot(ThrowableKind.Firework),
                 Is.True);
         }
     }

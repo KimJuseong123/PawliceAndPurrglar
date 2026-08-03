@@ -50,6 +50,7 @@ namespace PawsAndLoot.UI
 
         private MatchRuntimeState matchRuntime;
         private ArrestCompletionController arrestCompletion;
+        private PawsAndLoot.Gameplay.Arrest.ThiefJailState jailState;
         private ThiefLootWallet thiefWallet;
         private ToolCarrier carrier;
         private VoiceCommandInput voice;
@@ -359,6 +360,8 @@ namespace PawsAndLoot.UI
             matchRuntime ??= FindFirstObjectByType<MatchRuntimeState>();
             arrestCompletion ??=
                 FindFirstObjectByType<ArrestCompletionController>();
+            jailState ??= FindFirstObjectByType<
+                PawsAndLoot.Gameplay.Arrest.ThiefJailState>();
             thiefWallet ??= FindFirstObjectByType<ThiefLootWallet>();
             if (lootConfig == null && GameConfigService.IsInitialized)
             {
@@ -540,6 +543,24 @@ namespace PawsAndLoot.UI
 
             if (catchProgressText == null)
             {
+                return;
+            }
+
+            // The sentence goes where the tally goes, because they are one
+            // sentence in the player's head: how many times, and how long until
+            // I can play again. Split across the screen they read as two
+            // unrelated numbers.
+            //
+            // Shown only while it is running. A countdown reading zero all
+            // match is a permanent piece of furniture that says nothing, and
+            // the eye stops going to it before the one moment it matters.
+            if (jailState != null && jailState.IsJailed)
+            {
+                catchProgressText.text = role == PlayerRole.Thief
+                    ? $"붙잡힌 횟수 {current} / {required}"
+                        + $"    유치장 {jailState.RemainingSeconds:0.0}초"
+                    : $"도둑 체포 {current} / {required}"
+                        + $"    유치 중 {jailState.RemainingSeconds:0.0}초";
                 return;
             }
 
@@ -1065,10 +1086,13 @@ namespace PawsAndLoot.UI
                 ThrowableKind.Banana => "UI/ItemIcons/banana",
                 ThrowableKind.GlueTrap => "UI/ItemIcons/catnip pouch",
                 ThrowableKind.SensorLight => "UI/ItemIcons/police lantern alarm",
-                ThrowableKind.Bone => "UI/ItemIcons/bone",
                 ThrowableKind.TunaCan => "UI/ItemIcons/fish can",
+                ThrowableKind.DogTreat => "UI/ItemIcons/bone",
                 ThrowableKind.RubberChicken => "UI/ItemIcons/yellow chicken",
-                ThrowableKind.NoiseCan => "UI/ItemIcons/can",
+                // No authored icons for these two yet; the can stands in, the
+                // same way PlacedTrapView greyboxes the props themselves.
+                ThrowableKind.Firework => "UI/ItemIcons/can",
+                ThrowableKind.FrozenOctopus => "UI/ItemIcons/can",
                 _ => string.Empty
             };
         }
@@ -1081,10 +1105,11 @@ namespace PawsAndLoot.UI
                 ThrowableKind.Banana => "B",
                 ThrowableKind.GlueTrap => "G",
                 ThrowableKind.SensorLight => "S",
-                ThrowableKind.Bone => "D",
                 ThrowableKind.TunaCan => "T",
+                ThrowableKind.DogTreat => "D",
                 ThrowableKind.RubberChicken => "C",
-                ThrowableKind.NoiseCan => "N",
+                ThrowableKind.Firework => "F",
+                ThrowableKind.FrozenOctopus => "O",
                 _ => "?"
             };
         }

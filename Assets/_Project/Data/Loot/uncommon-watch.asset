@@ -15,3 +15,5 @@ MonoBehaviour:
   stableId: uncommon-watch
   displayName: Fine Watch
   rarity: 1
+  carryType: 0
+  raisesAlarm: 0

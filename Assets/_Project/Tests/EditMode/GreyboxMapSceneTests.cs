@@ -19,7 +19,12 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(map, Is.Not.Null);
             Assert.DoesNotThrow(() => map.ValidateOrThrow());
             Assert.That(map.Locations.Count, Is.EqualTo(7));
-            Assert.That(map.Rooftops.Count, Is.GreaterThanOrEqualTo(3));
+            // No rooftops asserted. They were flat plates laid over the old
+            // greybox shops; the town's buildings are scanned models with
+            // pitched roofs and a plate over one reads as a lid. The ladders
+            // stayed — a way up is the part that mattered — and where they
+            // arrive is the model's own ridge.
+            Assert.That(map.Rooftops, Has.No.Null);
             Assert.That(map.Ladders.Count, Is.GreaterThanOrEqualTo(3));
             Assert.That(map.TrashBins.Count, Is.GreaterThanOrEqualTo(4));
         }

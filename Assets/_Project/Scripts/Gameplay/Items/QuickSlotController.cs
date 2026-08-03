@@ -19,6 +19,23 @@ namespace PawsAndLoot.Gameplay.Items
 
         public int SelectedSlot { get; private set; }
 
+        /// <summary>
+        /// Points at a slot only when the player is not already holding one.
+        ///
+        /// Picking something up used to select it, which took the choice away
+        /// mid-chase: a thief holding the firework ran over a banana and threw
+        /// the banana. Selecting on the first pickup is still worth doing —
+        /// with every slot empty there is no choice to take away.
+        /// </summary>
+        private void SelectIfNothingHeld(int slot)
+        {
+            if (_slots[SelectedSlot] == EmptyValue
+                || _quantities[SelectedSlot] <= 0)
+            {
+                SelectedSlot = slot;
+            }
+        }
+
         public bool SelectSlot(int slot)
         {
             if (slot < 0 || slot >= SlotCount)
@@ -54,18 +71,15 @@ namespace PawsAndLoot.Gameplay.Items
             if (existing >= 0)
             {
                 int available = safeMaximum - _quantities[existing];
-                if (available >= safeQuantity)
-                {
-                    _quantities[existing] += safeQuantity;
-                    SelectedSlot = existing;
-                    slot = existing;
-                    return true;
-                }
-
-                if (FindEmptySlot() < 0 || safeQuantity > safeMaximum)
+                if (available <= 0)
                 {
                     return false;
                 }
+
+                _quantities[existing] += Math.Min(safeQuantity, available);
+                slot = existing;
+                SelectIfNothingHeld(existing);
+                return true;
             }
 
             int empty = FindEmptySlot();
@@ -76,8 +90,8 @@ namespace PawsAndLoot.Gameplay.Items
 
             _slots[empty] = Encode(kind);
             _quantities[empty] = Math.Min(safeQuantity, safeMaximum);
-            SelectedSlot = empty;
             slot = empty;
+            SelectIfNothingHeld(empty);
             return true;
         }
 
@@ -96,8 +110,13 @@ namespace PawsAndLoot.Gameplay.Items
                 _quantities[SelectedSlot] - 1);
             if (_quantities[SelectedSlot] <= 0)
             {
+                // Emptied, and the selection stays on it.
+                //
+                // It used to jump to the first slot that still had something,
+                // which meant using the last banana armed whatever was in slot
+                // one — and the next press threw it. The player had chosen a
+                // slot; running it dry is not them choosing a different one.
                 _slots[SelectedSlot] = EmptyValue;
-                SelectFirstOccupiedSlot();
             }
 
             return true;
@@ -117,10 +136,9 @@ namespace PawsAndLoot.Gameplay.Items
             {
                 _slots[slot] = EmptyValue;
                 _quantities[slot] = 0;
-                if (SelectedSlot == slot)
-                {
-                    SelectFirstOccupiedSlot();
-                }
+                // Cleared from outside — the network, or a match reset. The
+                // selection stays put for the same reason it does when a slot
+                // is used up.
 
                 return true;
             }

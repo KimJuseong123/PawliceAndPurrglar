@@ -67,6 +67,13 @@ namespace PawsAndLoot.Editor
                 .AddComponent<NetworkRematchCoordinator>()
                 .Configure(manager);
 
+            // The verdict travels the same road, and for the same reason. It is
+            // decided in the match scene at the moment that scene starts
+            // unloading, so anything living there is being destroyed as the
+            // value changes — a NetworkVariable on it never reaches the client.
+            manager.gameObject
+                .AddComponent<NetworkMatchResultMessenger>();
+
             // NET-009. One handler for the whole session, in the one place that
             // outlives every scene load.
             manager.gameObject

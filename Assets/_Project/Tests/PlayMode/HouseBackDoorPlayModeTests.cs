@@ -49,7 +49,7 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator TheThiefGoesInTheBackAndOutTheFront()
+        public IEnumerator TheThiefGoesInAndOutByTheFrontDoor()
         {
             yield return SceneManager.LoadSceneAsync(
                 GameSceneCatalog.GetPath(GameSceneId.Game),
@@ -68,42 +68,47 @@ namespace PawsAndLoot.Tests.PlayMode
             var controller = thief.GetComponent<CharacterController>();
 
             HouseInterior interior =
-                Object.FindFirstObjectByType<HouseInterior>();
-            HouseDoorway backIn =
-                Door(interior, true, HouseDoorSide.Back);
+                Object
+                .FindObjectsByType<HouseInterior>(FindObjectsSortMode.None)
+                .First(room => !room.IsJail);
+            // In and out by the same door.
+            //
+            // This test used to go in the back and out the front, which was the
+            // point of having two. Rooms are authored models now and most are
+            // drawn with one opening; a second door meant a prompt on a solid
+            // wall that led into a bookcase. What still has to hold is that the
+            // one door works both ways and puts the player on the floor.
+            HouseDoorway frontIn =
+                Door(interior, true, HouseDoorSide.Front);
             HouseDoorway frontOut =
                 Door(interior, false, HouseDoorSide.Front);
 
             Assert.That(
-                backIn.TryInteract(new PlayerInteractionContext(thief)),
+                frontIn.TryInteract(new PlayerInteractionContext(thief)),
                 Is.True,
-                "The back door has to let somebody in.");
+                "The front door has to let somebody in.");
             yield return null;
 
             Assert.That(state.IsIndoors, Is.True);
 
-            // At the back of the room, not the front. The two entry points are what
-            // make the two doors different; landing at the same spot from either
-            // would make the back door decoration.
+            // Where the room says, and clear of the way out.
+            //
+            // Arriving inside the exit trigger is the failure this guards: it
+            // fires on the frame the player lands and throws them straight back
+            // into the street, which reads as the door not working at all.
             Vector3 arrived = thief.transform.position;
-            float atBack = Vector3.Distance(
-                arrived,
-                interior.EntryPositionFor(HouseDoorSide.Back));
-            float atFront = Vector3.Distance(
-                arrived,
-                interior.EntryPositionFor(HouseDoorSide.Front));
             Assert.That(
-                atBack,
-                Is.LessThan(atFront - 3f),
-                $"Coming in the back put the thief {atBack:0.0} m from the back "
-                + $"entry and {atFront:0.0} m from the front one — the two ends "
-                + "of the room are not distinct.");
+                Vector3.Distance(
+                    arrived,
+                    interior.EntryPositionFor(HouseDoorSide.Front)),
+                Is.LessThan(1.5f),
+                "The front door did not put the thief at its own entry point.");
 
             // Standing on the floor, not buried in it.
             Assert.That(
                 controller.bounds.min.y,
                 Is.GreaterThanOrEqualTo(interior.FloorHeight - 0.02f),
-                "The back door placed the thief inside the floor.");
+                "The front door placed the thief inside the floor.");
 
             for (int frame = 0; frame < 60; frame++)
             {
@@ -124,13 +129,17 @@ namespace PawsAndLoot.Tests.PlayMode
 
             Assert.That(state.IsIndoors, Is.False);
 
-            Transform house = backIn.transform.parent;
-            Vector3 local =
-                house.InverseTransformPoint(thief.transform.position);
+            // Out where the room says its exit is, rather than behind the
+            // house. Measured against the exit point rather than in the
+            // building's local space: the doorways hang above the buildings
+            // now, so `parent` is the town's Buildings node and its local Z
+            // means nothing.
             Assert.That(
-                local.z,
-                Is.GreaterThan(0f),
-                "Leaving by the front door put the thief behind the house.");
+                Vector3.Distance(
+                    thief.transform.position,
+                    interior.ExitPositionFor(HouseDoorSide.Front)),
+                Is.LessThan(2.5f),
+                "Leaving by the front door did not put the thief at its step.");
         }
 
         /// <summary>
@@ -158,11 +167,34 @@ namespace PawsAndLoot.Tests.PlayMode
                 "No interior camera, so this proves nothing.");
 
             HouseInterior interior =
-                Object.FindFirstObjectByType<HouseInterior>();
-            Renderer wall = interior
-                .GetComponentsInChildren<Renderer>(true)
-                .First(r => r.name == "BD_House1F_Wall_Left");
-            float wallTop = wall.bounds.max.y;
+                Object
+                .FindObjectsByType<HouseInterior>(FindObjectsSortMode.None)
+                .First(room => !room.IsJail);
+            // The top of the room, measured rather than looked up by name.
+            //
+            // It used to ask for "BD_House1F_Wall_Left", which was a part of
+            // the one hand-built interior this was written against. Every room
+            // since is a single welded mesh with no named parts, so the lookup
+            // threw and took the test's cleanup with it — which then leaked its
+            // player into the raccoon tests next door.
+            Bounds shell = default;
+            bool measured = false;
+            foreach (Renderer part in
+                interior.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!measured)
+                {
+                    shell = part.bounds;
+                    measured = true;
+                }
+                else
+                {
+                    shell.Encapsulate(part.bounds);
+                }
+            }
+
+            Assert.That(measured, Is.True, "The room draws nothing.");
+            float wallTop = shell.max.y;
 
             // The highest the camera can ever be above the player's feet.
             float highest = camera.LookOffset.y

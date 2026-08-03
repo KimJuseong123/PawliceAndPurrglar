@@ -234,6 +234,18 @@ namespace PawsAndLoot.Gameplay.Interiors
                 : 0f;
             player.position = destination
                 + Vector3.up * (feetToPivot + 0.06f);
+
+            // Facing the far wall, every time, on the way in.
+            //
+            // Left alone, the player kept whichever way they were walking down
+            // the street, so the same doorway gave a different view of the same
+            // room on every visit and the room had to be read again each time.
+            // Going out keeps their heading: the street is the same street
+            // whichever way they came from.
+            if (leadsInside)
+            {
+                player.rotation = interior.EntryFacingFor(side);
+            }
             if (hadController)
             {
                 controller.enabled = true;

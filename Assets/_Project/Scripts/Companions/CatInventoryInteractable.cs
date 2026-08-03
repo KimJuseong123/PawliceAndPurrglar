@@ -28,7 +28,17 @@ namespace PawsAndLoot.Companions
         public Transform InteractionTransform => transform;
         public PlayerInteractionType InteractionType => PlayerInteractionType.Generic;
         public string Prompt => "고양이 가방 열기";
-        public int InteractionPriority => 0;
+        /// <summary>
+        /// Below everything else, because the cat is the one interactable the
+        /// player never walks up to.
+        ///
+        /// It follows the thief at their feet, so it is permanently the nearest
+        /// candidate and a distance-ranked scanner hands it every contest it
+        /// enters. At priority 0 it took the target away from a rock the player
+        /// was standing on. Losing every tie still leaves it reachable, because
+        /// nothing else is in range when the player means to open the bag.
+        /// </summary>
+        public int InteractionPriority => -1;
         public bool IsAvailable =>
             (agent == null || agent.CompanionKind == CompanionKind.Cat)
             && ResolveMatchState()?.IsGameplayActive == true;

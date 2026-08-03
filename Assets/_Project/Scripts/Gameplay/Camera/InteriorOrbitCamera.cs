@@ -51,7 +51,7 @@ namespace PawsAndLoot.Gameplay.Camera
         private float distance = 6.5f;
 
         [SerializeField, Range(5f, 80f)]
-        private float pitchDegrees = 34f;
+        private float pitchDegrees = 26f;
 
         /// <summary>
         /// Low, which is the whole reason the cursor is locked. Unlocked, a slow
@@ -74,7 +74,7 @@ namespace PawsAndLoot.Gameplay.Camera
         /// <c>InteriorSightlinePlayModeTests</c> is there to enforce.
         /// </summary>
         [SerializeField]
-        private Vector2 pitchLimits = new(14f, 38f);
+        private Vector2 pitchLimits = new(14f, 28f);
 
         [SerializeField, Min(0.01f)]
         private float smoothTimeSeconds = 0.08f;
@@ -183,11 +183,15 @@ namespace PawsAndLoot.Gameplay.Camera
             // could work around.
             _released = false;
             SetCursorLocked(active);
+            _swallowDelta = true;
 
             if (!active || _followed == null)
             {
+                ClearRoomBounds();
                 return;
             }
+
+            AdoptRoomOf(_followed);
 
             // Start behind the player rather than at whatever yaw was left over
             // from the last visit, so walking in never begins facing a wall.
@@ -196,15 +200,89 @@ namespace PawsAndLoot.Gameplay.Camera
             _velocity = Vector3.zero;
         }
 
+        /// <summary>
+        /// How far inside the walls the camera is kept, in metres.
+        ///
+        /// The rooms are one welded mesh, so a wall between the camera and the
+        /// player cannot be singled out and faded — there is nothing to single
+        /// out. Keeping the camera inside the room instead means no outer wall
+        /// is ever between the two, which is the same result by a different
+        /// road and costs nothing.
+        ///
+        /// Half a metre in, so the near plane does not clip through.
+        /// </summary>
+        private const float WallStandoff = 0.5f;
+
+        private Bounds _room;
+        private bool _hasRoom;
+        private bool _swallowDelta;
+
+        /// <summary>
+        /// Tells the camera which room it is in, so it can stay inside it.
+        ///
+        /// Given rather than found: the room is a box the generator already
+        /// measured, and asking the camera to work it out from colliders every
+        /// frame would be a second opinion about the same thing.
+        /// </summary>
+        public void SetRoomBounds(Bounds room)
+        {
+            _room = room;
+            _hasRoom = true;
+        }
+
+        public void ClearRoomBounds()
+        {
+            _hasRoom = false;
+        }
+
+        /// <summary>
+        /// Works out which room the player is standing in and keeps to it.
+        ///
+        /// By floor area rather than by an id, so nothing has to be threaded
+        /// through: the rooms are laid out well apart from each other off the
+        /// map, and a point is inside exactly one of them.
+        /// </summary>
+        private void AdoptRoomOf(Transform player)
+        {
+            foreach (Gameplay.Interiors.HouseInterior room in
+                FindObjectsByType<Gameplay.Interiors.HouseInterior>(
+                    FindObjectsSortMode.None))
+            {
+                Vector2 half = room.FloorHalfExtents;
+                Vector3 centre = room.transform.position;
+                if (Mathf.Abs(player.position.x - centre.x) > half.x
+                    || Mathf.Abs(player.position.z - centre.z) > half.y)
+                {
+                    continue;
+                }
+
+                SetRoomBounds(new Bounds(
+                    new Vector3(centre.x, player.position.y, centre.z),
+                    new Vector3(half.x * 2f, 1f, half.y * 2f)));
+                return;
+            }
+
+            ClearRoomBounds();
+        }
+
         private Vector3 DesiredPosition()
         {
             Quaternion rotation = Quaternion.Euler(
                 pitchDegrees,
                 _yaw,
                 0f);
-            return _followed.position
+            Vector3 wanted = _followed.position
                 + lookOffset
                 - rotation * Vector3.forward * distance;
+
+            // Not clamped to the room any more.
+            //
+            // Keeping the camera inside the walls did stop them coming between
+            // it and the player, but it did it by dragging the camera in and
+            // down until the view was a cupboard. A room you cannot see across
+            // is worse than a wall you occasionally see through. The wall is
+            // dealt with by not drawing it, not by moving the camera.
+            return wanted;
         }
 
         /// <summary>
@@ -233,6 +311,7 @@ namespace PawsAndLoot.Gameplay.Camera
             {
                 _released = false;
                 SetCursorLocked(true);
+                _swallowDelta = true;
             }
         }
 
@@ -254,6 +333,22 @@ namespace PawsAndLoot.Gameplay.Camera
             if (mouse != null && !_released)
             {
                 Vector2 delta = mouse.delta.ReadValue();
+
+                // The first frame after the cursor is captured is thrown away.
+                //
+                // Locking the pointer teleports it to the middle of the window,
+                // and that jump arrives as one enormous delta — several hundred
+                // pixels of it. Fed to the yaw it spins the view most of the way
+                // round in a single frame, which is the view "sometimes going
+                // odd" that was reported: it only happens on the frames the
+                // cursor is taken, which is entering a room and clicking back in
+                // after Escape.
+                if (_swallowDelta)
+                {
+                    _swallowDelta = false;
+                    delta = Vector2.zero;
+                }
+
                 _yaw += delta.x * degreesPerPixel;
                 // Mouse up raises the view, which means a shallower angle.
                 pitchDegrees = Mathf.Clamp(

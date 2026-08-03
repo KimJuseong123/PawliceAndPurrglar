@@ -210,13 +210,21 @@ namespace PawsAndLoot.Tests.PlayMode
             PoliceSupplyCounter[] counters = Object
                 .FindObjectsByType<PoliceSupplyCounter>(
                     FindObjectsSortMode.None);
+            // Derived from the catalog rather than listed. What this defends is
+            // that the officer buys their props instead of finding them, and a
+            // written-down pair turns adding a third prop into a failing test
+            // about nothing.
+            ThrowableKind[] policeProps = System.Enum
+                .GetValues(typeof(ThrowableKind))
+                .Cast<ThrowableKind>()
+                .Where(kind =>
+                    ThrowableCatalog.GetOwner(kind) == PlayerRole.Police)
+                .ToArray();
+            Assert.That(policeProps, Is.Not.Empty);
             Assert.That(
                 counters.Select(counter => counter.Kind),
-                Is.EquivalentTo(new[]
-                {
-                    ThrowableKind.GlueTrap,
-                    ThrowableKind.SensorLight
-                }));
+                Is.EquivalentTo(policeProps),
+                "Every police prop has to be on sale, and nothing else.");
             foreach (PoliceSupplyCounter counter in counters)
             {
                 Assert.That(counter.Price, Is.GreaterThan(0));

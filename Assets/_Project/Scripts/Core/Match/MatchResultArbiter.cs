@@ -4,16 +4,36 @@ namespace PawsAndLoot.Match
 {
     public sealed class MatchResultArbiter
     {
-        private bool _arrestRequested;
         private bool _saleCheckRequested;
         private bool _timeoutRequested;
 
         public bool HasResult { get; private set; }
         public MatchResult CurrentResult { get; private set; }
 
+        /// <summary>
+        /// How many times the thief has been caught this match.
+        ///
+        /// One arrest used to end it, which made a four-minute match capable of
+        /// finishing in thirty seconds and gave the thief no way back from a
+        /// single mistake. Counting means the officer has to do it three times
+        /// and the chase resumes in between.
+        /// </summary>
+        public int ArrestCount { get; private set; }
+
+        /// <summary>
+        /// Records a completed arrest. Unlike the sale and timeout requests this
+        /// is not deduplicated here: each call is a separate catch, and the
+        /// caller latches its own completion so one arrest cannot report twice.
+        /// </summary>
         public bool RequestArrest()
         {
-            return QueueRequest(ref _arrestRequested);
+            if (HasResult)
+            {
+                return false;
+            }
+
+            ArrestCount++;
+            return true;
         }
 
         public bool RequestSaleCheck()
@@ -29,6 +49,7 @@ namespace PawsAndLoot.Match
         public bool TryResolve(
             int soldAmount,
             int targetAmount,
+            int arrestsToWin,
             float remainingSeconds,
             out MatchResult result)
         {
@@ -40,13 +61,21 @@ namespace PawsAndLoot.Match
                     "Target amount must be positive.");
             }
 
+            if (arrestsToWin <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(arrestsToWin),
+                    arrestsToWin,
+                    "Arrests to win must be positive.");
+            }
+
             if (HasResult)
             {
                 result = CurrentResult;
                 return false;
             }
 
-            if (_arrestRequested)
+            if (ArrestCount >= arrestsToWin)
             {
                 return Decide(
                     MatchWinner.Police,
@@ -82,9 +111,27 @@ namespace PawsAndLoot.Match
             return false;
         }
 
+        /// <summary>
+        /// Stores a verdict decided elsewhere, for a client mirroring the host.
+        /// Latches exactly like a locally decided one so a late local request
+        /// cannot overwrite it.
+        /// </summary>
+        public void Adopt(MatchResult result)
+        {
+            if (HasResult)
+            {
+                return;
+            }
+
+            CurrentResult = result;
+            HasResult = true;
+            _saleCheckRequested = false;
+            _timeoutRequested = false;
+        }
+
         public void Reset()
         {
-            _arrestRequested = false;
+            ArrestCount = 0;
             _saleCheckRequested = false;
             _timeoutRequested = false;
             HasResult = false;
@@ -115,7 +162,6 @@ namespace PawsAndLoot.Match
                 soldAmount,
                 remainingSeconds);
             HasResult = true;
-            _arrestRequested = false;
             _saleCheckRequested = false;
             _timeoutRequested = false;
             result = CurrentResult;

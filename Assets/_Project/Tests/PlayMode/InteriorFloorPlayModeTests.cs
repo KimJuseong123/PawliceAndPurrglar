@@ -53,7 +53,13 @@ namespace PawsAndLoot.Tests.PlayMode
                 .First(p => p.Role == PlayerRole.Thief);
 
             HouseInterior interior =
-                Object.FindFirstObjectByType<HouseInterior>();
+                Object
+                    .FindObjectsByType<HouseInterior>(
+                        FindObjectsSortMode.None)
+                    .OrderBy(
+                        interior => interior.name,
+                        System.StringComparer.Ordinal)
+                    .First();
             Assert.That(
                 interior,
                 Is.Not.Null,

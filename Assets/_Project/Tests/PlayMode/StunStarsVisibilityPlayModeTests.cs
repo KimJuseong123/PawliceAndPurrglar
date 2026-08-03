@@ -148,6 +148,21 @@ namespace PawsAndLoot.Tests.PlayMode
             UnityEngine.Camera view = UnityEngine.Camera.main;
             Assert.That(view, Is.Not.Null);
 
+            // Pointed at the thief before anything is measured.
+            //
+            // The camera follows whichever character this machine drives, and
+            // the thief now starts at one of five outskirt corners — so it was
+            // eighty metres away looking somewhere else, and every star failed
+            // the frustum check for a reason that has nothing to do with stars.
+            //
+            // What this test is actually about is which way the star meshes
+            // face. Putting the camera where it can see them is setting up the
+            // question, not answering it.
+            view.transform.position = thief.transform.position
+                + new Vector3(0f, 9f, -9f);
+            view.transform.LookAt(thief.transform.position + Vector3.up * 2f);
+            yield return null;
+
             // Above the player, or the stars are inside the character.
             foreach (MeshRenderer renderer in starRenderers)
             {

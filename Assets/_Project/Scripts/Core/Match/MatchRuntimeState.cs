@@ -37,6 +37,14 @@ namespace PawsAndLoot.Match
         public float MatchDurationSeconds =>
             matchConfig != null ? matchConfig.MatchDurationSeconds : 0f;
 
+        /// <summary>
+        /// How many arrests end the match, read from the same config the clock
+        /// comes from. The evaluator needs it and has no config of its own; the
+        /// thief's target reaches it through the wallet for the same reason.
+        /// </summary>
+        public int ArrestsToWin =>
+            matchConfig != null ? matchConfig.ArrestsToWin : 0;
+
         public void Configure(
             MatchConfig configuredMatchConfig,
             bool shouldStartCountdownAutomatically)

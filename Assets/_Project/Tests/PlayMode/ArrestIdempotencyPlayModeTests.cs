@@ -20,45 +20,56 @@ namespace PawsAndLoot.Tests.PlayMode
     /// </summary>
     public sealed class ArrestIdempotencyPlayModeTests
     {
+        private const int Target = 1000;
+        private const int ArrestsToWin = 3;
+
+        /// <summary>
+        /// Once the match is decided nothing later can change it.
+        ///
+        /// The arbiter used to swallow duplicate arrest reports itself, because
+        /// one arrest ended the match and a second was always a duplicate. With
+        /// three needed it has to count each one, so the guard against a single
+        /// catch being reported twice moved to
+        /// <see cref="ArrestCompletionController"/> — which is what the
+        /// completion test below covers. What stays here is the part that never
+        /// changed: after a result exists, it is frozen.
+        /// </summary>
         [Test]
-        public void ArbiterDecidesOnceNoMatterHowManyArrestRequestsArrive()
+        public void ArbiterKeepsItsResultNoMatterWhatArrivesLater()
         {
             var arbiter = new MatchResultArbiter();
-
-            // Ten callers all claim the arrest completed.
-            int accepted = 0;
-            for (int index = 0; index < 10; index++)
+            for (int index = 0; index < ArrestsToWin; index++)
             {
-                if (arbiter.RequestArrest())
-                {
-                    accepted++;
-                }
+                arbiter.RequestArrest();
             }
 
             Assert.That(
-                arbiter.TryResolve(0, 1000, 42f, out MatchResult first),
+                arbiter.TryResolve(
+                    0,
+                    Target,
+                    ArrestsToWin,
+                    42f,
+                    out MatchResult first),
                 Is.True);
             Assert.That(first.Winner, Is.EqualTo(MatchWinner.Police));
             Assert.That(
                 first.Reason,
                 Is.EqualTo(MatchEndReason.ThiefArrested));
 
-            // Every later resolve returns the same stored result and reports
-            // that nothing new was decided.
             for (int index = 0; index < 5; index++)
             {
+                Assert.That(arbiter.RequestArrest(), Is.False);
                 Assert.That(
                     arbiter.TryResolve(
                         5000,
-                        1000,
+                        Target,
+                        ArrestsToWin,
                         10f,
                         out MatchResult again),
                     Is.False);
                 Assert.That(again.Winner, Is.EqualTo(first.Winner));
                 Assert.That(again.Reason, Is.EqualTo(first.Reason));
             }
-
-            Assert.That(accepted, Is.GreaterThan(0));
         }
 
         [Test]
@@ -66,26 +77,35 @@ namespace PawsAndLoot.Tests.PlayMode
         {
             var arbiter = new MatchResultArbiter();
 
-            // Both conditions land in the same evaluation window and the sale
-            // has already met the target.
-            arbiter.RequestArrest();
+            // Both conditions land in the same evaluation window: the officer's
+            // third catch and a sale that has already met the target.
+            for (int index = 0; index < ArrestsToWin; index++)
+            {
+                arbiter.RequestArrest();
+            }
+
             arbiter.RequestSaleCheck();
             arbiter.RequestTimeout();
 
             Assert.That(
-                arbiter.TryResolve(1500, 1000, 0f, out MatchResult result),
+                arbiter.TryResolve(
+                    1500,
+                    Target,
+                    ArrestsToWin,
+                    0f,
+                    out MatchResult result),
                 Is.True);
             Assert.That(
                 result.Winner,
                 Is.EqualTo(MatchWinner.Police),
                 "DEC-025 puts arrest ahead of a target sale.");
             Assert.That(
-                arbiter.TryResolve(1500, 1000, 0f, out _),
+                arbiter.TryResolve(1500, Target, ArrestsToWin, 0f, out _),
                 Is.False);
         }
 
         [UnityTest]
-        public IEnumerator CompletionControllerFiresVictoryExactlyOnce()
+        public IEnumerator CompletionForwardsEachCatchExactlyOnce()
         {
             var state = new GameObject("Match Runtime");
             state.SetActive(false);
@@ -153,25 +173,30 @@ namespace PawsAndLoot.Tests.PlayMode
                 }
             }
 
+            // Eight callers, one catch, one request. That is the idempotency
+            // this test is named for, and it is per catch rather than per
+            // match: the arbiter needs to hear about all three, and it needs to
+            // hear about each of them exactly once.
             Assert.That(succeeded, Is.EqualTo(1));
             Assert.That(completion.CurrentCatchCount, Is.EqualTo(1));
-            Assert.That(victoryRequests, Is.Zero);
-            Assert.That(completion.IsCompleted, Is.False);
-
-            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
-            Assert.That(completion.TryCompleteArrest(), Is.True);
-            Assert.That(completion.CurrentCatchCount, Is.EqualTo(2));
-            Assert.That(victoryRequests, Is.Zero);
-            Assert.That(completion.IsCompleted, Is.False);
-
-            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
-            Assert.That(completion.TryCompleteArrest(), Is.True);
-            Assert.That(completion.CurrentCatchCount, Is.EqualTo(3));
             Assert.That(victoryRequests, Is.EqualTo(1));
             Assert.That(completion.IsCompleted, Is.True);
 
+            completion.ClearForNextArrest();
+            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
+            Assert.That(completion.TryCompleteArrest(), Is.True);
+            Assert.That(completion.CurrentCatchCount, Is.EqualTo(2));
+            Assert.That(victoryRequests, Is.EqualTo(2));
+            Assert.That(completion.IsCompleted, Is.True);
+
+            completion.ClearForNextArrest();
+            progress.Tick(arrestConfig.ArrestDurationSeconds + 0.5f);
+            Assert.That(completion.TryCompleteArrest(), Is.True);
+            Assert.That(completion.CurrentCatchCount, Is.EqualTo(3));
+            Assert.That(victoryRequests, Is.EqualTo(3));
+
             Assert.That(completion.TryCompleteArrest(), Is.False);
-            Assert.That(victoryRequests, Is.EqualTo(1));
+            Assert.That(victoryRequests, Is.EqualTo(3));
 
             Object.DestroyImmediate(completionObject);
             Object.DestroyImmediate(progressObject);

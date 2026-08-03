@@ -90,10 +90,10 @@ namespace PawsAndLoot.Gameplay.Items
         {
             return kind switch
             {
-                ThrowableKind.Bone => new Color(0.9f, 0.78f, 0.56f),
+                ThrowableKind.DogTreat => new Color(0.9f, 0.78f, 0.56f),
                 ThrowableKind.TunaCan => new Color(0.38f, 0.7f, 0.82f),
                 ThrowableKind.RubberChicken => new Color(1f, 0.82f, 0.18f),
-                ThrowableKind.NoiseCan => new Color(0.75f, 0.82f, 0.88f),
+                ThrowableKind.Firework => new Color(0.75f, 0.82f, 0.88f),
                 _ => new Color(0.35f, 0.35f, 0.38f)
             };
         }

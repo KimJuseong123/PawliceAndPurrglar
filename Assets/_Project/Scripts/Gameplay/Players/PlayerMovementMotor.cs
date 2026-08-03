@@ -1,6 +1,8 @@
 using System;
 using PawsAndLoot.Config;
+using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Match;
+using PawsAndLoot.Gameplay.Loot;
 using UnityEngine;
 
 namespace PawsAndLoot.Gameplay.Players
@@ -71,6 +73,49 @@ namespace PawsAndLoot.Gameplay.Players
                 return stun != null && stun.IsStunned;
             }
         }
+
+        /// <summary>
+        /// Held in the cells after an arrest.
+        ///
+        /// Kept separate from the stun rather than reusing it. A stun has an
+        /// immunity window afterwards so a thief cannot be chain-stunned, and
+        /// borrowing that here would hand the thief immunity for coming out of
+        /// jail. They are also different on screen — one is a few seconds of
+        /// stars, the other is being taken off the map.
+        ///
+        /// Only the thief carries the component, so the police never resolve one
+        /// and never stop moving.
+        ///
+        /// **This no longer stops them moving.** The sentence used to be served
+        /// standing perfectly still, which is indistinguishable from the game
+        /// having hung — and it was the reason for building a cell in the first
+        /// place. The cell is sealed on all four sides with no door, so walking
+        /// about inside it for ten seconds costs nothing and reads as waiting
+        /// rather than as a freeze. Anything that still wants to know they are
+        /// serving time asks this.
+        /// </summary>
+        public bool IsJailed
+        {
+            get
+            {
+                ThiefJailState jail = ResolveJail();
+                return jail != null && jail.IsJailed;
+            }
+        }
+
+        private ThiefJailState _jail;
+        private bool _lookedForJail;
+
+        private ThiefJailState ResolveJail()
+        {
+            if (!_lookedForJail)
+            {
+                _jail = GetComponent<ThiefJailState>();
+                _lookedForJail = true;
+            }
+
+            return _jail;
+        }
         /// <summary>
         /// Cached after the first look so the lookup is not repeated every
         /// frame, and so a player deliberately built without a stun component
@@ -122,10 +167,38 @@ namespace PawsAndLoot.Gameplay.Players
                 : 0f;
         public bool IsLootCarryPenaltyActive =>
             _lootCarryPenaltyActive;
+
+        /// <summary>
+        /// What the thief is carrying, in terms of how much it slows them.
+        ///
+        /// A pocket item is carried and costs nothing, so this is asked
+        /// alongside the flag rather than instead of it: something can be held
+        /// without being heavy, and code that wants to know "are your hands
+        /// full" is asking a different question from "are you slow".
+        /// </summary>
+        public LootCarryType CarriedWeight { get; private set; } =
+            LootCarryType.OneHand;
+
+        /// <summary>
+        /// A temporary change to this character's pace, on top of whatever they
+        /// are carrying.
+        ///
+        /// Multiplied with the carry penalty rather than replacing it, because
+        /// the two are different facts: an alarm makes the officer faster and a
+        /// gold bar makes the thief slower, and a thief who is both alarmed and
+        /// laden is both. Written as a multiplier so nothing has to know what
+        /// else is already applied.
+        /// </summary>
+        public float BoostMultiplier { get; private set; } = 1f;
+        public float BoostRemainingSeconds { get; private set; }
+
         public float MovementSpeedMultiplier =>
-            _lootCarryPenaltyActive && playerConfig != null
-                ? playerConfig.LootCarrySpeedMultiplier
-                : 1f;
+            (_lootCarryPenaltyActive && playerConfig != null
+                ? LootCarryRules.SpeedMultiplier(
+                    CarriedWeight,
+                    playerConfig.LootCarrySpeedMultiplier)
+                : 1f)
+            * BoostMultiplier;
         public float EffectiveMoveSpeed =>
             playerConfig != null
                 ? playerConfig.MoveSpeed * MovementSpeedMultiplier
@@ -148,16 +221,69 @@ namespace PawsAndLoot.Gameplay.Players
             matchStateSource = matchStateReader as MonoBehaviour;
             orientationReference = movementOrientation;
             _lootCarryPenaltyActive = false;
+            ClearBoost();
         }
 
         public void SetLootCarryPenalty(bool active)
         {
+            SetLootCarryPenalty(active, LootCarryType.OneHand);
+        }
+
+        public void SetLootCarryPenalty(
+            bool active,
+            LootCarryType carryType)
+        {
             _lootCarryPenaltyActive = active;
+            CarriedWeight = carryType;
+        }
+
+        /// <summary>
+        /// Speeds this character up, or slows them down, for a while.
+        ///
+        /// Replaces rather than stacks. Two alarms going off should not make
+        /// the officer twice as fast, and the second one should not be ignored
+        /// either — it restarts the clock, which is what an alarm going off
+        /// again means.
+        /// </summary>
+        public void ApplyBoost(float multiplier, float seconds)
+        {
+            if (seconds <= 0f || multiplier <= 0f)
+            {
+                return;
+            }
+
+            BoostMultiplier = multiplier;
+            BoostRemainingSeconds = seconds;
+        }
+
+        public void ClearBoost()
+        {
+            BoostMultiplier = 1f;
+            BoostRemainingSeconds = 0f;
+        }
+
+        public void TickBoost(float deltaTime)
+        {
+            if (BoostRemainingSeconds <= 0f || deltaTime <= 0f)
+            {
+                return;
+            }
+
+            BoostRemainingSeconds -= deltaTime;
+            if (BoostRemainingSeconds <= 0f)
+            {
+                ClearBoost();
+            }
         }
 
         public void Move(Vector2 input, float deltaTime)
         {
             ValidateDependencies();
+
+            // Counted down here rather than in Update, so a character whose
+            // simulation is paused does not quietly burn through an alarm they
+            // were never able to run during.
+            TickBoost(deltaTime);
             if (deltaTime <= 0f)
             {
                 LastPlanarVelocity = Vector3.zero;
@@ -267,6 +393,7 @@ namespace PawsAndLoot.Gameplay.Players
             {
                 return false;
             }
+
 
             // Set, not added. Falling speed at the moment of the press is whatever
             // the ground-stick term left behind, and adding to it would make the

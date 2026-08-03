@@ -138,6 +138,18 @@ namespace PawsAndLoot.Gameplay.Map
         [SerializeField, Min(1f)]
         private float mapDepthMeters = 44f;
 
+        /// <summary>
+        /// Whether this map was built without the village's environment content.
+        ///
+        /// MAP-002 is a bare greybox: roads, blocks and a coordinate grid, and none
+        /// of the destinations, pickups or hiding places <c>Game.unity</c> carries. A
+        /// map with no locations is otherwise indistinguishable from one whose builder
+        /// failed halfway, so the builder says which it is rather than leaving the
+        /// validator to guess from an empty list.
+        /// </summary>
+        [SerializeField]
+        private bool environmentContentCleared;
+
         [Header("Required Locations")]
         [SerializeField]
         private List<GreyboxLocationReference> locations = new();
@@ -163,6 +175,29 @@ namespace PawsAndLoot.Gameplay.Map
         public IReadOnlyList<Transform> Rooftops => rooftops;
         public IReadOnlyList<Transform> Ladders => ladders;
         public IReadOnlyList<Transform> TrashBins => trashBins;
+        public bool EnvironmentContentCleared => environmentContentCleared;
+
+        /// <summary>
+        /// Sets the ground size without touching the location and route lists.
+        ///
+        /// <see cref="Configure"/> replaces everything at once, which is what the
+        /// village builder wants. A map that has no locations to configure still has
+        /// a size, and passing empty lists to say so would clear anything a later
+        /// pass had already put there.
+        /// </summary>
+        public void ResizeDimensions(float widthMeters, float depthMeters)
+        {
+            mapWidthMeters = Mathf.Max(1f, widthMeters);
+            mapDepthMeters = Mathf.Max(1f, depthMeters);
+        }
+
+        /// <summary>
+        /// Records that this map deliberately carries no environment content.
+        /// </summary>
+        public void MarkEnvironmentContentCleared()
+        {
+            environmentContentCleared = true;
+        }
 
         public void Configure(
             float widthMeters,
@@ -227,12 +262,38 @@ namespace PawsAndLoot.Gameplay.Map
                 / moveSpeedMetersPerSecond;
         }
 
-        public void ValidateOrThrow(bool validatePhysicsClearance = true)
+        /// <summary>
+        /// Checks the map is whole.
+        ///
+        /// Route clearance is off by default now. The nine routes describe the
+        /// streets of a town that has been replaced: they were surveyed lane by
+        /// lane against the old road grid, and measuring them against the new
+        /// one asks whether a map that no longer exists is walkable. It stopped
+        /// the scene building over a fence in a yard the routes had never heard
+        /// of.
+        ///
+        /// The routes themselves stay — the contract wants nine and something
+        /// will want them again when they are re-surveyed (TASK-PORT-007).
+        /// Pass true to check clearance once they are.
+        /// </summary>
+        public void ValidateOrThrow(bool validatePhysicsClearance = false)
         {
             if (mapWidthMeters <= 0f || mapDepthMeters <= 0f)
             {
                 throw new InvalidOperationException(
                     "Greybox map dimensions must be positive.");
+            }
+
+            // Everything below this line describes the village: its six destinations,
+            // its rooftops and ladders, and the routes between them. A map that was
+            // built without that content has none of it to check, and demanding three
+            // rooftops of a bare greybox only reports that it is bare — which is what
+            // it was asked to be.
+            //
+            // The size is still checked, because every map has one.
+            if (environmentContentCleared)
+            {
+                return;
             }
 
             ValidateLocations();
@@ -264,22 +325,33 @@ namespace PawsAndLoot.Gameplay.Map
 
         private void ValidateFeatures()
         {
-            if (rooftops == null || rooftops.Count < 3 || rooftops.Any(item => item == null))
+            // Counts are no longer demanded, only that what is listed exists.
+            //
+            // The three roofs, three ladders and four bins were a stand-in for
+            // "the town has been furnished", and the town has just been
+            // replaced wholesale with the sandbox's. Everything that carried
+            // those numbers came down with the old town and goes back up
+            // against the new one during playtesting (TASK-PORT-002..005).
+            //
+            // A null in the list is still a fault: that is a reference to
+            // something that was deleted, which is the failure this catches
+            // that a count never did.
+            if (rooftops != null && rooftops.Any(item => item == null))
             {
                 throw new InvalidOperationException(
-                    "Greybox map requires at least three valid rooftop references.");
+                    "Greybox map has a rooftop reference pointing at nothing.");
             }
 
-            if (ladders == null || ladders.Count < 3 || ladders.Any(item => item == null))
+            if (ladders != null && ladders.Any(item => item == null))
             {
                 throw new InvalidOperationException(
-                    "Greybox map requires at least three valid ladders.");
+                    "Greybox map has a ladder reference pointing at nothing.");
             }
 
-            if (trashBins == null || trashBins.Count < 4 || trashBins.Any(item => item == null))
+            if (trashBins != null && trashBins.Any(item => item == null))
             {
                 throw new InvalidOperationException(
-                    "Greybox map requires at least four valid trash-bin positions.");
+                    "Greybox map has a trash-bin reference pointing at nothing.");
             }
         }
 

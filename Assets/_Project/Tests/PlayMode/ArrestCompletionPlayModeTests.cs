@@ -11,8 +11,25 @@ namespace PawsAndLoot.Tests.PlayMode
 {
     public sealed class ArrestCompletionPlayModeTests
     {
+        /// <summary>
+        /// Three catches, three requests, and the arbiter is the one that
+        /// decides.
+        ///
+        /// This used to assert that the controller sent one request, on the
+        /// third catch. It reads as the careful thing to do and it broke the
+        /// officer entirely: the arbiter counts the requests it is sent and
+        /// needs three of them, so forwarding only the third meant three
+        /// catches produced one request, and winning would have taken nine.
+        /// A two-process run measured it — the thief was jailed four times, two
+        /// arrests were counted, and the match was declared undecided.
+        ///
+        /// Counting in two places is the same shape as the bug that had the
+        /// host and the client disagreeing about who had won (`ISSUE-046`).
+        /// The tally here is for the screen. The tally that ends a match lives
+        /// in one place, and it is not this one.
+        /// </summary>
         [UnityTest]
-        public IEnumerator CompletionCountsThreeArrestsAndRequestsVictoryOnce()
+        public IEnumerator CompletionCountsCatchesAndForwardsEveryOne()
         {
             ArrestFixture fixture = CreateFixture();
             int completed = 0;
@@ -24,52 +41,50 @@ namespace PawsAndLoot.Tests.PlayMode
             fixture.Scanner.RefreshTarget();
             Assert.That(fixture.Scanner.HasTarget, Is.True);
             Assert.That(fixture.Movement.CanMove, Is.True);
-
-            fixture.Progress.Tick(
-                fixture.ArrestConfig.ArrestDurationSeconds);
-            Assert.That(fixture.Completion.TryCompleteArrest(), Is.True);
-
-            Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(1));
             Assert.That(fixture.Completion.RequiredCatchCount, Is.EqualTo(3));
-            Assert.That(fixture.Completion.IsCompleted, Is.False);
-            Assert.That(fixture.Progress.IsCompleted, Is.False);
-            Assert.That(fixture.Progress.ProgressNormalized, Is.Zero);
-            Assert.That(
-                fixture.MatchRuntime.CurrentState,
-                Is.EqualTo(MatchState.Playing));
-            Assert.That(fixture.MatchRuntime.IsGameplayActive, Is.True);
-            Assert.That(fixture.Movement.CanMove, Is.True);
-            fixture.Scanner.RefreshTarget();
-            Assert.That(fixture.Scanner.HasTarget, Is.True);
-            Assert.That(completed, Is.EqualTo(1));
-            Assert.That(victoryRequests, Is.Zero);
 
-            Assert.That(fixture.Completion.TryCompleteArrest(), Is.False);
-            Assert.That(completed, Is.EqualTo(1));
-            Assert.That(victoryRequests, Is.Zero);
+            for (int catches = 1; catches <= 3; catches++)
+            {
+                fixture.Progress.Tick(
+                    fixture.ArrestConfig.ArrestDurationSeconds);
+                Assert.That(
+                    fixture.Completion.TryCompleteArrest(),
+                    Is.True,
+                    $"Catch {catches} never landed.");
 
-            fixture.Progress.Tick(
-                fixture.ArrestConfig.ArrestDurationSeconds);
-            Assert.That(fixture.Completion.TryCompleteArrest(), Is.True);
-            Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(2));
-            Assert.That(fixture.Completion.IsCompleted, Is.False);
-            Assert.That(fixture.Progress.IsCompleted, Is.False);
-            Assert.That(completed, Is.EqualTo(2));
-            Assert.That(victoryRequests, Is.Zero);
+                Assert.That(
+                    fixture.Completion.CurrentCatchCount,
+                    Is.EqualTo(catches));
+                Assert.That(completed, Is.EqualTo(catches));
+                Assert.That(
+                    victoryRequests,
+                    Is.EqualTo(catches),
+                    "Every catch has to reach the arbiter, or it can never "
+                    + "count to three.");
 
-            fixture.Progress.Tick(
-                fixture.ArrestConfig.ArrestDurationSeconds);
-            Assert.That(fixture.Completion.TryCompleteArrest(), Is.True);
-            Assert.That(fixture.Completion.CurrentCatchCount, Is.EqualTo(3));
-            Assert.That(fixture.Completion.IsCompleted, Is.True);
-            Assert.That(fixture.Progress.IsCompleted, Is.True);
-            Assert.That(fixture.Progress.ProgressNormalized, Is.EqualTo(1f));
-            Assert.That(completed, Is.EqualTo(3));
-            Assert.That(victoryRequests, Is.EqualTo(1));
+                // Latched after every catch, not only the last. Left unlatched
+                // the officer standing on the thief would catch them again on
+                // the very next frame.
+                Assert.That(fixture.Completion.IsCompleted, Is.True);
+                Assert.That(
+                    fixture.Completion.TryCompleteArrest(),
+                    Is.False,
+                    "A latched catch should not land twice.");
+                Assert.That(completed, Is.EqualTo(catches));
+                Assert.That(victoryRequests, Is.EqualTo(catches));
 
-            Assert.That(fixture.Completion.TryCompleteArrest(), Is.False);
-            Assert.That(completed, Is.EqualTo(3));
-            Assert.That(victoryRequests, Is.EqualTo(1));
+                // What the jail does when it lets the thief out.
+                fixture.Completion.ClearForNextArrest();
+                Assert.That(fixture.Completion.IsCompleted, Is.False);
+                Assert.That(fixture.Progress.IsCompleted, Is.False);
+                Assert.That(fixture.Progress.ProgressNormalized, Is.Zero);
+
+                Assert.That(
+                    fixture.MatchRuntime.CurrentState,
+                    Is.EqualTo(MatchState.Playing));
+                fixture.Scanner.RefreshTarget();
+                Assert.That(fixture.Scanner.HasTarget, Is.True);
+            }
 
             DestroyFixture(fixture);
             yield return null;
@@ -173,15 +188,26 @@ namespace PawsAndLoot.Tests.PlayMode
             return player;
         }
 
+        /// <summary>
+        /// Takes the fixture apart at once rather than at the end of the frame.
+        ///
+        /// `Object.Destroy` is deferred, and a test that ends right after
+        /// calling it hands the next test a world that still contains this
+        /// one's officer and thief. The next test builds its own pair, the
+        /// range sensor finds the wrong one, and eight tests across arrest,
+        /// pickups and the HUD fail in a full run while every one of them
+        /// passes on its own. That is what this looked like.
+        /// </summary>
         private static void DestroyFixture(ArrestFixture fixture)
         {
-            Object.Destroy(fixture.MatchConfig);
-            Object.Destroy(fixture.ArrestConfig);
-            Object.Destroy(fixture.PlayerConfig);
-            Object.Destroy(fixture.MatchRuntimeObject);
-            Object.Destroy(fixture.Police);
-            Object.Destroy(fixture.Thief);
-            Object.Destroy(fixture.Target);
+            Object.DestroyImmediate(fixture.MatchConfig);
+            Object.DestroyImmediate(fixture.ArrestConfig);
+            Object.DestroyImmediate(fixture.PlayerConfig);
+            Object.DestroyImmediate(fixture.MatchRuntimeObject);
+            Object.DestroyImmediate(fixture.Police);
+            Object.DestroyImmediate(fixture.Thief);
+            Object.DestroyImmediate(fixture.Target);
+            Physics.SyncTransforms();
         }
 
         private readonly struct ArrestFixture

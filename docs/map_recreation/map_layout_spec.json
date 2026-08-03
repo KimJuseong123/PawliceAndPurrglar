@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "status": "analysis_only_no_scene_generated",
+  "reference_image": "C:\\Users\\SSAFY\\Desktop\\NHN 게임 공모전\\village_map_reference.png",
+  "coordinate_system": {
+    "normalized_origin": "north_west_of_playable_village_only",
+    "normalized_axes": { "x": "west_to_east", "y": "north_to_south" },
+    "unity_ground_plane": "X/Z metres",
+    "normalized_to_unity": "x_m=(x-0.5)*80; z_m=(0.5-y)*68; y_m=0"
+  },
+  "map_bounds": {
+    "width_m": 80,
+    "depth_m": 68,
+    "reason": "Matches current GreyboxMapDefinition dimensions and preserves the existing scene contract.",
+    "minimum_route_clear_width_m": 2.4
+  },
+  "road_centerlines": [
+    { "id": "north_arterial", "points": [[0.02, 0.22], [0.98, 0.22]], "clear_width_m": 4.0 },
+    { "id": "central_east_west", "points": [[0.11, 0.56], [0.89, 0.56]], "clear_width_m": 4.0 },
+    { "id": "south_arterial", "points": [[0.10, 0.80], [0.90, 0.80]], "clear_width_m": 4.0 },
+    { "id": "west_perimeter", "points": [[0.10, 0.22], [0.10, 0.80]], "clear_width_m": 3.0 },
+    { "id": "police_west", "points": [[0.34, 0.22], [0.34, 0.56]], "clear_width_m": 3.0 },
+    { "id": "police_east", "points": [[0.63, 0.22], [0.63, 0.56]], "clear_width_m": 3.0 },
+    { "id": "east_perimeter", "points": [[0.89, 0.22], [0.89, 0.80]], "clear_width_m": 3.0 }
+  ],
+  "intersections": [
+    { "id": "north_west", "position": [0.10, 0.22] },
+    { "id": "police_north_west", "position": [0.34, 0.22] },
+    { "id": "police_north_east", "position": [0.63, 0.22] },
+    { "id": "north_east", "position": [0.89, 0.22] },
+    { "id": "plaza_west", "position": [0.34, 0.56] },
+    { "id": "plaza_east", "position": [0.63, 0.56] },
+    { "id": "south_west", "position": [0.10, 0.80] },
+    { "id": "south_east", "position": [0.89, 0.80] }
+  ],
+  "blocks_and_lots": [
+    { "id": "north_residential", "bounds": [0.04, 0.02, 0.91, 0.18], "use": "outer homes and roof route" },
+    { "id": "west_commercial", "bounds": [0.13, 0.27, 0.30, 0.55], "use": "supermarket" },
+    { "id": "civic_core", "bounds": [0.37, 0.27, 0.59, 0.55], "use": "police station" },
+    { "id": "east_commercial", "bounds": [0.67, 0.27, 0.82, 0.55], "use": "bookstore" },
+    { "id": "central_plaza", "bounds": [0.39, 0.60, 0.62, 0.76], "use": "fountain and seating" },
+    { "id": "south_residential", "bounds": [0.07, 0.82, 0.88, 0.98], "use": "outer homes and roof route" }
+  ],
+  "buildings": [
+    { "asset_id": "building_police_station", "source_file": "Assets/_Project/Art/Buildings/building_police_station.fbx", "normalized_x": 0.49, "normalized_y": 0.40, "rotation_y": 0, "scale": 1.0, "roof_color_variant": "blue_baked", "lot_width": 15, "lot_depth": 14, "entrance_direction": "+Z" },
+    { "asset_id": "building_supermarket", "source_file": "Assets/_Project/Art/Buildings/building_supermarket.fbx", "normalized_x": 0.22, "normalized_y": 0.41, "rotation_y": 0, "scale": 1.0, "roof_color_variant": "green_baked", "lot_width": 14, "lot_depth": 13, "entrance_direction": "+Z" },
+    { "asset_id": "building_bookstore", "source_file": "Assets/_Project/Art/Buildings/building_bookstore.fbx", "normalized_x": 0.72, "normalized_y": 0.42, "rotation_y": 0, "scale": 1.0, "roof_color_variant": "brown_baked", "lot_width": 15, "lot_depth": 13, "entrance_direction": "+Z" },
+    { "asset_id": "house_2f_nw", "source_file": "Assets/_Project/Art/Buildings/building_house_1f_with_interior.fbx", "normalized_x": 0.12, "normalized_y": 0.10, "rotation_y": 180, "scale": 1.0, "roof_color_variant": "substitute_source_baked", "lot_width": 12, "lot_depth": 12, "entrance_direction": "-Z", "substitution_for": "building_house_2f" },
+    { "asset_id": "house_1f_north_west", "source_file": "Assets/_Project/Art/Buildings/building_house_1f.fbx", "normalized_x": 0.30, "normalized_y": 0.10, "rotation_y": 180, "scale": 1.0, "roof_color_variant": "green", "lot_width": 12, "lot_depth": 12, "entrance_direction": "-Z" },
+    { "asset_id": "house_2f_north_east", "source_file": "Assets/_Project/Art/Buildings/building_house_1f_with_interior.fbx", "normalized_x": 0.57, "normalized_y": 0.10, "rotation_y": 180, "scale": 1.0, "roof_color_variant": "substitute_source_baked", "lot_width": 12, "lot_depth": 12, "entrance_direction": "-Z", "substitution_for": "building_house_2f" },
+    { "asset_id": "house_1f_ne", "source_file": "Assets/_Project/Art/Buildings/building_house_1f.fbx", "normalized_x": 0.79, "normalized_y": 0.10, "rotation_y": 180, "scale": 1.0, "roof_color_variant": "red", "lot_width": 12, "lot_depth": 12, "entrance_direction": "-Z" },
+    { "asset_id": "house_1f_west", "source_file": "Assets/_Project/Art/Buildings/building_house_1f.fbx", "normalized_x": 0.07, "normalized_y": 0.38, "rotation_y": 90, "scale": 1.0, "roof_color_variant": "blue", "lot_width": 12, "lot_depth": 12, "entrance_direction": "+X" },
+    { "asset_id": "house_2f_west", "source_file": "Assets/_Project/Art/Buildings/building_house_1f_with_interior.fbx", "normalized_x": 0.08, "normalized_y": 0.57, "rotation_y": 90, "scale": 1.0, "roof_color_variant": "substitute_source_baked", "lot_width": 12, "lot_depth": 12, "entrance_direction": "+X", "substitution_for": "building_house_2f" },
+    { "asset_id": "house_2f_east", "source_file": "Assets/_Project/Art/Buildings/building_house_1f_with_interior.fbx", "normalized_x": 0.86, "normalized_y": 0.37, "rotation_y": 270, "scale": 1.0, "roof_color_variant": "substitute_source_baked", "lot_width": 12, "lot_depth": 12, "entrance_direction": "-X", "substitution_for": "building_house_2f" },
+    { "asset_id": "house_1f_east", "source_file": "Assets/_Project/Art/Buildings/building_house_1f.fbx", "normalized_x": 0.87, "normalized_y": 0.56, "rotation_y": 270, "scale": 1.0, "roof_color_variant": "orange", "lot_width": 12, "lot_depth": 12, "entrance_direction": "-X" },
+    { "asset_id": "house_1f_sw", "source_file": "Assets/_Project/Art/Buildings/building_house_1f.fbx", "normalized_x": 0.12, "normalized_y": 0.81, "rotation_y": 0, "scale": 1.0, "roof_color_variant": "red", "lot_width": 12, "lot_depth": 12, "entrance_direction": "+Z" },
+    { "asset_id": "house_2f_south_west", "source_file": "Assets/_Project/Art/Buildings/building_house_1f_with_interior.fbx", "normalized_x": 0.33, "normalized_y": 0.91, "rotation_y": 0, "scale": 1.0, "roof_color_variant": "substitute_source_baked", "lot_width": 12, "lot_depth": 12, "entrance_direction": "+Z", "substitution_for": "building_house_2f" },
+    { "asset_id": "house_1f_south", "source_file": "Assets/_Project/Art/Buildings/building_house_1f.fbx", "normalized_x": 0.53, "normalized_y": 0.91, "rotation_y": 0, "scale": 1.0, "roof_color_variant": "charcoal", "lot_width": 12, "lot_depth": 12, "entrance_direction": "+Z" },
+    { "asset_id": "house_1f_south_east", "source_file": "Assets/_Project/Art/Buildings/building_house_1f.fbx", "normalized_x": 0.72, "normalized_y": 0.91, "rotation_y": 0, "scale": 1.0, "roof_color_variant": "yellow", "lot_width": 12, "lot_depth": 12, "entrance_direction": "+Z" },
+    { "asset_id": "house_2f_se", "source_file": null, "normalized_x": 0.88, "normalized_y": 0.72, "rotation_y": 270, "scale": 1.0, "roof_color_variant": "blue", "lot_width": 12, "lot_depth": 12, "entrance_direction": "-X" }
+  ],
+  "plaza": { "position": [0.50, 0.68], "size_m": [18, 12], "map_shape_pass": "road_and_empty_plaza_only", "fountain_position": null, "planned_benches": 0, "planned_tree_or_bush_sites": 0 },
+  "ladders": [],
+  "trash_bins": [],
+  "hiding_spots": [
+    { "id": "hide_west_alley", "type": "alley", "position": [0.12, 0.58] },
+    { "id": "hide_north_east_alley", "type": "alley", "position": [0.90, 0.25] },
+    { "id": "hide_south_central_alley", "type": "alley", "position": [0.52, 0.95] },
+  ],
+  "spawns": {
+    "police": { "position": [0.49, 0.50], "facing": "north_to_station", "existing_anchor": "PoliceSpawn" },
+    "thief": { "position": [0.95, 0.06], "facing": "southwest_to_alley", "existing_anchor": "ThiefSpawn" }
+  },
+  "major_paths": [
+    { "id": "police_patrol_central_loop", "type": "police_patrol_and_track", "clear_width_m": 3.0, "waypoints": [[0.49, 0.50], [0.34, 0.56], [0.34, 0.22], [0.63, 0.22], [0.63, 0.56], [0.50, 0.56], [0.49, 0.50]] },
+    { "id": "thief_escape_outer_east", "type": "thief_escape", "clear_width_m": 3.0, "waypoints": [[0.49, 0.42], [0.63, 0.42], [0.63, 0.56], [0.89, 0.56], [0.89, 0.22], [0.95, 0.06]] },
+    { "id": "thief_escape_south_west", "type": "thief_escape", "clear_width_m": 3.0, "waypoints": [[0.49, 0.42], [0.34, 0.56], [0.10, 0.56], [0.10, 0.80], [0.12, 0.94]] },
+    { "id": "cat_rooftop_outer_loop", "type": "cat_rooftop_future_data", "requires": "Deferred from map-shape pass; requires LadderTraversal plus roof anchors; no NavMesh", "waypoints": [[0.15, 0.09], [0.30, 0.10], [0.57, 0.10], [0.79, 0.10], [0.86, 0.37], [0.88, 0.72], [0.72, 0.91], [0.53, 0.91], [0.33, 0.91], [0.12, 0.81], [0.08, 0.57], [0.07, 0.38], [0.15, 0.09]] }
+  ],
+  "compatibility_anchors_required_by_current_game": {
+    "Supermarket": [0.22, 0.41],
+    "Bookstore": [0.72, 0.42],
+    "CentralPlaza": [0.50, 0.68],
+    "PoliceSpawn": [0.49, 0.50],
+    "ThiefSpawn": [0.95, 0.06],
+    "JewelryStore": null,
+    "RaccoonMarket": [0.92, 0.66],
+    "note": "JewelryStore is required by current GreyboxMapDefinition but absent from the reference; choose its future semantic location before implementation."
+  }
+}

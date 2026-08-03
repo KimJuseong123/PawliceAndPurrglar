@@ -71,3 +71,7 @@ LocalAI/service/__pycache__/
 LocalAI/service/tests/__pycache__/
 __pycache__/
 *.py[cod]
+
+# Map sandbox player output. A throwaway town for walking around in, rebuilt from
+# MapSandboxSetup whenever it is wanted.
+/Builds/Sandbox/

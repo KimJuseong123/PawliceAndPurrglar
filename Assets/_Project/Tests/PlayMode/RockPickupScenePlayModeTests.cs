@@ -118,6 +118,19 @@ namespace PawsAndLoot.Tests.PlayMode
 
                 PlayerRoleIdentity intruder = players
                     .First(identity => identity.Role != owner);
+
+                // Emptied first, like the owner's slot above. Otherwise this
+                // asks "is the intruder holding anything" and gets an answer
+                // about a pickup earlier in the loop rather than about this
+                // one — which is what it started reporting the moment the
+                // shelf grew past two items.
+                ToolCarrier intruderCarrier =
+                    intruder.GetComponent<ToolCarrier>();
+                while (intruderCarrier.HasTool)
+                {
+                    Assert.That(intruderCarrier.TryConsume(out _), Is.True);
+                }
+
                 Assert.That(
                     pickup.TryInteract(
                         new PlayerInteractionContext(intruder)),
@@ -126,8 +139,10 @@ namespace PawsAndLoot.Tests.PlayMode
                     + $"{intruder.Role} could take it. That collapses the "
                     + "two kits into one.");
                 Assert.That(
-                    intruder.GetComponent<ToolCarrier>().HasTool,
-                    Is.False);
+                    intruderCarrier.HasTool,
+                    Is.False,
+                    $"{intruder.Role} came away from {pickup.name} holding "
+                    + "something.");
             }
         }
 
