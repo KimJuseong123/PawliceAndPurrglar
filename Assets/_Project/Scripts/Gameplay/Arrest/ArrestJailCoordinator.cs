@@ -110,7 +110,6 @@ namespace PawsAndLoot.Gameplay.Arrest
                 cellPoint.position,
                 release);
 
-            SetThiefRoom(jailInteriorId);
         }
 
         /// <summary>
@@ -121,34 +120,23 @@ namespace PawsAndLoot.Gameplay.Arrest
         /// can be arrested again, which reads as the officer scoring twice for
         /// standing still.
         /// </summary>
-        /// <summary>
-        /// Marks the thief as inside the cell, or back in the street.
-        ///
-        /// Only where this machine is the one that decides. A client copy of a
-        /// character is moved by having its position written, so acting on the
-        /// state there would fight the host over where the thief is — the same
-        /// rule the doorway follows.
-        /// </summary>
-        private void SetThiefRoom(int interiorId)
-        {
-            if (jail == null)
-            {
-                return;
-            }
+        // The thief is not marked as "indoors" while serving.
+        //
+        // They were, so the interior camera would take over and show the cell
+        // from inside it. But the mark is host-only — a client's character is
+        // moved by having its position written, so the state never crossed —
+        // and the two machines ended up running different cameras. Movement is
+        // relative to the camera, so the client's keys came out turned round:
+        // pressing back walked the thief forward.
+        //
+        // The cell sits far outside the map where the town camera can see it
+        // perfectly well, and the same camera on both machines means the same
+        // controls on both. The interior camera is for rooms a player walks
+        // into by choice.
 
-            var room = jail
-                .GetComponent<
-                    PawsAndLoot.Gameplay.Interiors.PlayerInteriorState>();
-            if (room != null && room.HasAuthority)
-            {
-                room.SetInterior(interiorId);
-            }
-        }
 
         private void HandleReleased()
         {
-            SetThiefRoom(
-                PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside);
 
             arrestCompletion?.ClearForNextArrest();
             GameLogger.Info(
