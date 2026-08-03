@@ -4159,13 +4159,14 @@ namespace PawsAndLoot.Editor
             UnityEngine.Object.DestroyImmediate(
                 placeholder.GetComponent<Collider>());
 
-            PlaceholderModelLibrary.TryInstantiateProp(
-                "object_secret_market_stall",
-                target.transform,
-                new Vector3(0f, -0.5f, 1.4f),
-                new Vector3(0f, 180f, 0f),
-                1f,
-                LoadOrCreateMaterial("RaccoonMarket", MarketGold));
+            // No stall. The shop is the bin the raccoon lives in, and a gold
+            // market stall standing beside it is a second thing claiming to be
+            // the shop — the merchant ended up perched on a podium in front of
+            // the object that actually matters.
+            //
+            // The flat disc above stays: it is where the trigger is, drawn on
+            // the ground, and a sale point you cannot see the edge of is one
+            // players learn by failing to sell.
 
             LootSaleZone saleZone =
                 target.AddComponent<LootSaleZone>();
