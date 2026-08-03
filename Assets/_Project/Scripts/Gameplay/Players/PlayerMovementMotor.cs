@@ -59,8 +59,7 @@ namespace PawsAndLoot.Gameplay.Players
         /// </summary>
         public bool CanMove =>
             _matchState?.IsGameplayActive == true
-            && !IsStunned
-            && !IsJailed;
+            && !IsStunned;
 
         /// <summary>
         /// False when there is no stun component at all, so a player without one
@@ -86,6 +85,14 @@ namespace PawsAndLoot.Gameplay.Players
         ///
         /// Only the thief carries the component, so the police never resolve one
         /// and never stop moving.
+        ///
+        /// **This no longer stops them moving.** The sentence used to be served
+        /// standing perfectly still, which is indistinguishable from the game
+        /// having hung — and it was the reason for building a cell in the first
+        /// place. The cell is sealed on all four sides with no door, so walking
+        /// about inside it for ten seconds costs nothing and reads as waiting
+        /// rather than as a freeze. Anything that still wants to know they are
+        /// serving time asks this.
         /// </summary>
         public bool IsJailed
         {

@@ -73,6 +73,17 @@ namespace PawsAndLoot.Editor
         internal const string JailStem = "interior_jail";
 
         /// <summary>
+        /// How wide the cell is across the floor, and how high its walls stand.
+        ///
+        /// Twelve by three. Wide enough to walk the ten seconds off rather than
+        /// stand in one spot, and low enough that the camera clears the top and
+        /// the player can see they are somewhere rather than down a shaft.
+        /// </summary>
+        private const float JailFloor = 12f;
+
+        private const float JailWall = 3f;
+
+        /// <summary>
         /// Which wall a room's front door is in, when the probe gets it wrong.
         ///
         /// The probe reads the widest gap in each wall, and a gap is not always
@@ -146,11 +157,32 @@ namespace PawsAndLoot.Editor
                 return null;
             }
 
-            float lift = WallHeight / native.y;
+            // Scaled unevenly, unlike every other room.
+            //
+            // The cell model is a tall narrow box — half again as high as it is
+            // wide, where the other interiors are a sixth. Fitting it to the
+            // common wall height gave a floor six metres across under a wall
+            // four and a half high, which is a well rather than a room: no
+            // space to walk and nothing visible over the top.
+            //
+            // The floor and the walls are therefore given separately. A plain
+            // rectangular cell takes that without looking stretched.
+            var lift = new Vector3(
+                JailFloor / Mathf.Max(0.01f, native.x),
+                JailWall / Mathf.Max(0.01f, native.y),
+                JailFloor / Mathf.Max(0.01f, native.z));
             foreach (Transform part in room)
             {
-                part.localScale *= lift;
-                part.position = centre + (part.position - centre) * lift;
+                Vector3 scale = part.localScale;
+                part.localScale = new Vector3(
+                    scale.x * lift.x,
+                    scale.y * lift.y,
+                    scale.z * lift.z);
+                Vector3 offset = part.position - centre;
+                part.position = centre + new Vector3(
+                    offset.x * lift.x,
+                    offset.y * lift.y,
+                    offset.z * lift.z);
             }
 
             Renderer[] parts = room.GetComponentsInChildren<Renderer>(true);
