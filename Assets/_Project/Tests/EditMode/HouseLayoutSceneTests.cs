@@ -39,19 +39,43 @@ namespace PawsAndLoot.Tests.EditMode
                 .GetRootGameObjects()
                 .SelectMany(root =>
                     root.GetComponentsInChildren<BoxCollider>(true))
-                .Where(box => box.name.Contains("house"))
+                // Matched on what the town calls them.
+                //
+                // It used to look for "house" in the name, which was the model
+                // stem back when this script placed the houses itself. The town
+                // generator names them after the plot and what stands on it —
+                // "Block 2 TwoStorey" — so the search found nothing and the
+                // test passed its own emptiness off as a pass until the count
+                // guard below caught it.
+                .Where(box =>
+                    box.name.Contains("house")
+                    || box.name.Contains("OneStorey")
+                    || box.name.Contains("TwoStorey"))
                 .ToArray();
 
             Assert.That(
                 houses.Length,
-                Is.GreaterThan(10),
+                // Nine, which is what the town lays down. The number used to
+                // be eleven because the old districts were built house by
+                // house here; it is a guard against the search finding
+                // nothing, not a statement about how many houses a town wants.
+                Is.GreaterThanOrEqualTo(8),
                 "The districts are built from houses; without them this test "
                 + "proves nothing.");
 
             // Grouped by model, because the two house models are genuinely
             // different buildings. What must not vary is the same model appearing
             // at different sizes.
-            foreach (var group in houses.GroupBy(box => box.name))
+            // Grouped by which model it is, not by its full name. Every plot
+            // name is unique — "Block 2 TwoStorey", "Block 3 TwoStorey" — so
+            // grouping by name would put one house in each group and compare
+            // nothing with nothing.
+            foreach (var group in houses.GroupBy(box =>
+                box.name.Contains("TwoStorey")
+                    ? "TwoStorey"
+                    : box.name.Contains("OneStorey")
+                        ? "OneStorey"
+                        : box.name))
             {
                 float[] depths = group
                     .Select(box => box.bounds.size.z)

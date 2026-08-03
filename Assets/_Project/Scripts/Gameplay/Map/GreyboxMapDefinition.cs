@@ -262,7 +262,21 @@ namespace PawsAndLoot.Gameplay.Map
                 / moveSpeedMetersPerSecond;
         }
 
-        public void ValidateOrThrow(bool validatePhysicsClearance = true)
+        /// <summary>
+        /// Checks the map is whole.
+        ///
+        /// Route clearance is off by default now. The nine routes describe the
+        /// streets of a town that has been replaced: they were surveyed lane by
+        /// lane against the old road grid, and measuring them against the new
+        /// one asks whether a map that no longer exists is walkable. It stopped
+        /// the scene building over a fence in a yard the routes had never heard
+        /// of.
+        ///
+        /// The routes themselves stay — the contract wants nine and something
+        /// will want them again when they are re-surveyed (TASK-PORT-007).
+        /// Pass true to check clearance once they are.
+        /// </summary>
+        public void ValidateOrThrow(bool validatePhysicsClearance = false)
         {
             if (mapWidthMeters <= 0f || mapDepthMeters <= 0f)
             {

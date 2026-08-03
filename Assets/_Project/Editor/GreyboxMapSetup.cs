@@ -288,11 +288,10 @@ namespace PawsAndLoot.Editor
 
 
 
-            // Nothing is furnished yet. The town was replaced wholesale and
-            // the hides, the treasure, the roofs and the ladders go back in
-            // against the new streets during playtesting, not against the old
-            // coordinates they were surveyed for.
-            var trashBins = new List<Transform>();
+            // The hides. Four of them, which is what the scene contract wants
+            // and what gives a thief somewhere to break line of sight in each
+            // quarter of the town.
+            List<Transform> trashBins = CreateTrashBins(featuresRoot, trash);
             Dictionary<GreyboxLocationId, Transform> locations =
                 CreateLocationAnchors(
                     locationsRoot,
@@ -303,6 +302,31 @@ namespace PawsAndLoot.Editor
                 CreateThiefSpawnPoints(locationsRoot, ThiefRed);
             List<GreyboxRouteReference> routes =
                 CreateRoutes(routesRoot, locations);
+
+            // The raccoon and the roofs, back on the new town.
+            //
+            // The yard carries the only sale point in the game, and the scene
+            // contract wants three walkable roofs with a ladder each. Both went
+            // with the old shops.
+            CreateRaccoonMarket(
+                buildingsRoot,
+                MarketGold,
+                wall,
+                RaccoonMarketCentre);
+
+            // The merchant itself, inside the yard. It is the one NPC the thief
+            // has to find, and it went with the dressing pass — leaving the
+            // sale point as an unmarked patch of ground.
+            CreateRaccoonInBin(
+                buildingsRoot,
+                RaccoonMarketCentre + new Vector3(-3.5f, 0f, 5f));
+            CreateTemporaryRoofs(
+                buildingsRoot,
+                roof,
+                ladder,
+                rooftops,
+                ladders,
+                pendingLadderClimbs);
 
             var mapObject = new GameObject("Greybox Map Definition");
             mapObject.transform.SetParent(villageRoot.transform);
@@ -1643,6 +1667,118 @@ namespace PawsAndLoot.Editor
         /// MAP-003. A climbable ladder. Collected rather than configured here
         /// because the match runtime does not exist yet when stores are built.
         /// </summary>
+        /// <summary>
+        /// A flat roof over three buildings, and a ladder up to each.
+        ///
+        /// Temporary and named so. The ladders and walkable roofs belonged to
+        /// the old shops and came down with them; the town's buildings are
+        /// scanned models whose roofs are pitched, tiled and not standable on.
+        /// Rather than leave the thief with no way off the ground at all —
+        /// which is a whole verb of the chase missing — a plain slab goes over
+        /// three of them at the height the model actually reaches.
+        ///
+        /// The height is measured, not assumed. These models are scaled to fit
+        /// their plots and no two of them end up the same height.
+        /// </summary>
+        private static void CreateTemporaryRoofs(
+            Transform parent,
+            Material roofMaterial,
+            Material ladderMaterial,
+            ICollection<Transform> rooftops,
+            ICollection<Transform> ladders,
+            ICollection<LadderTraversal> pending)
+        {
+            Transform root = CreateChild("Temporary Rooftops", parent);
+            string[] wanted = { "Supermarket", "Bookstore", "Jewellery" };
+
+            foreach (string kind in wanted)
+            {
+                MapSandboxSetup.TownPlot plot = default;
+                bool found = false;
+                foreach (MapSandboxSetup.TownPlot candidate in _townPlots)
+                {
+                    if (candidate.Kind == kind && candidate.Instance != null)
+                    {
+                        plot = candidate;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    Debug.LogWarning(
+                        $"[MAP-003] No '{kind}' to put a roof on.");
+                    continue;
+                }
+
+                Bounds shell = default;
+                bool measured = false;
+                foreach (Renderer part in
+                    plot.Instance.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!measured)
+                    {
+                        shell = part.bounds;
+                        measured = true;
+                    }
+                    else
+                    {
+                        shell.Encapsulate(part.bounds);
+                    }
+                }
+
+                if (!measured)
+                {
+                    continue;
+                }
+
+                GameObject slab = CreateCube(
+                    $"{kind} Rooftop",
+                    new Vector3(
+                        shell.center.x,
+                        shell.max.y + 0.15f,
+                        shell.center.z),
+                    new Vector3(
+                        plot.Footprint.x,
+                        0.3f,
+                        plot.Footprint.y),
+                    roofMaterial,
+                    root,
+                    true);
+                rooftops.Add(slab.transform);
+
+                // Beside the building on its south face, where the street is.
+                var foot = new Vector3(
+                    shell.center.x,
+                    shell.min.y,
+                    shell.min.z - 1.4f);
+                GameObject rail = CreateCube(
+                    $"{kind} Ladder",
+                    foot + new Vector3(0f, (shell.size.y) * 0.5f, 0f),
+                    new Vector3(1f, shell.size.y, 0.2f),
+                    ladderMaterial,
+                    root,
+                    false);
+                UnityEngine.Object.DestroyImmediate(
+                    rail.GetComponent<Collider>());
+                ladders.Add(rail.transform);
+
+                CreateLadderTraversal(
+                    $"{kind} Ladder Climb",
+                    foot,
+                    new Vector3(
+                        shell.center.x,
+                        shell.max.y + 0.45f,
+                        shell.center.z),
+                    root,
+                    pending);
+            }
+
+            Debug.Log(
+                $"[MAP-003] {rooftops.Count} temporary rooftops with ladders.");
+        }
+
         private static void CreateLadderTraversal(
             string name,
             Vector3 groundPosition,
@@ -2133,10 +2269,16 @@ namespace PawsAndLoot.Editor
         private static void CreateRaccoonMarket(
             Transform parent,
             Color accentColor,
-            Material boundaryMaterial)
+            Material boundaryMaterial,
+            Vector3 centre)
         {
             Transform marketRoot =
                 CreateChild("Raccoon Trading Yard", parent);
+
+            // Everything below is measured against the yard's old home at
+            // (-9, -6), and every piece of it is placed in world space rather
+            // than relative to this node. Moving the node therefore does
+            // nothing; the whole yard is shifted at the end instead.
             Material accent = LoadOrCreateMaterial(
                 "RaccoonMarket",
                 accentColor);
@@ -2174,6 +2316,19 @@ namespace PawsAndLoot.Editor
                 "RACCOON MARKET",
                 new Vector3(-9f, 2.2f, -9.7f),
                 marketRoot);
+
+            // And now the whole yard moves, in one place.
+            //
+            // Each piece above sets `transform.position` after being parented,
+            // which is a world coordinate — so parenting them under a moved
+            // node leaves them exactly where they were. The fences stayed at
+            // the old address and blocked a route across the middle of the
+            // town, which is how this was found.
+            Vector3 shift = centre - new Vector3(-9f, 0f, -6f);
+            foreach (Transform piece in marketRoot)
+            {
+                piece.position += shift;
+            }
         }
 
         private static void CreateCentralPlaza(
@@ -2207,12 +2362,16 @@ namespace PawsAndLoot.Editor
             Material material)
         {
             var result = new List<Transform>();
+            // Four verges the new town leaves open, one to a quarter, so a
+            // thief running in any direction has one within reach. The old set
+            // was a neat rectangle around an origin the town no longer has
+            // anything at.
             Vector3[] positions =
             {
-                new(-20f, 0f, 8f),
-                new(20f, 0f, 8f),
-                new(-20f, 0f, -8f),
-                new(20f, 0f, -8f)
+                new(-25f, 0f, 8f),
+                new(25f, 0f, 12f),
+                new(-4f, 0f, 37f),
+                new(28f, 0f, -19f)
             };
 
             for (int index = 0; index < positions.Length; index++)
@@ -2312,7 +2471,7 @@ namespace PawsAndLoot.Editor
                 result,
                 parent,
                 GreyboxLocationId.RaccoonMarket,
-                new Vector3(28f, 0f, -8f),
+                RaccoonMarketCentre,
                 marketColor);
             AddLocation(
                 result,
@@ -2330,6 +2489,16 @@ namespace PawsAndLoot.Editor
         /// to a wall costs them the first second of every match working out
         /// which way is out.
         /// </summary>
+        /// <summary>
+        /// Where the raccoon trades, on the block east of the square.
+        ///
+        /// One number, read by the yard and by the location anchor. They used
+        /// to be written twice and the sale point ended up a metre and a half
+        /// from a yard nobody had moved.
+        /// </summary>
+        private static readonly Vector3 RaccoonMarketCentre =
+            new(28f, 0f, -8f);
+
         private static readonly Vector3 PoliceSpawnPoint =
             new(5.7f, 0f, 12.5f);
 
@@ -3578,8 +3747,15 @@ namespace PawsAndLoot.Editor
             // rather than written down. The old coordinate ended up inside the
             // lake garden when the town changed under it, and three of the four
             // shelves were sealed in water.
-            Vector3 shelf = PlotFor(_townPlots, "Supermarket")
-                + new Vector3(-3.3f, 0.5f, -7f);
+            // On the street south of the raccoon's yard.
+            //
+            // In front of the supermarket turned out to be inside a house's
+            // doorway trigger, so pressing there asked the game whether you
+            // meant to take a banana or go indoors. Inside the yard was worse —
+            // the shelves landed in its north fence. Outside it, on the
+            // pavement, has room and nothing competing for the key.
+            Vector3 shelf = RaccoonMarketCentre
+                + new Vector3(-3.3f, 0.5f, -11f);
             (ThrowableKind Kind, Vector3 Offset, Color Tint,
                 PlayerRole? Owner)[] shelves =
             {
