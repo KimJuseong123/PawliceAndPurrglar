@@ -121,10 +121,15 @@ namespace PawsAndLoot.Tests.EditMode
                 byType[PlayerInteractionType.Sale],
                 Is.EqualTo(1),
                 "One place to sell.");
+            // At least three, not exactly three. It was one per store when the
+            // stores were the only buildings with a roof worth reaching; the
+            // town now puts one up the east face of every shop and every
+            // single-storey house, and how many that is belongs to the town
+            // rather than to this list.
             Assert.That(
                 byType[PlayerInteractionType.Traversal],
-                Is.EqualTo(3),
-                "The MAP-003 climbable ladders, one per store.");
+                Is.GreaterThanOrEqualTo(3),
+                "The MAP-003 climbable ladders.");
 
             // Everything either role may touch: the plaza marker, the rock
             // pickups, the shop counters and both sides of every house door.
@@ -236,7 +241,10 @@ namespace PawsAndLoot.Tests.EditMode
                 .SelectMany(root =>
                     root.GetComponentsInChildren<LadderTraversal>(true))
                 .ToArray();
-            Assert.That(ladders, Has.Length.EqualTo(3));
+            // Three or more. How many the town puts up is the town's decision;
+            // what this cares about is that climbing exists at all and that
+            // every one of them is wired.
+            Assert.That(ladders, Has.Length.GreaterThanOrEqualTo(3));
             foreach (LadderTraversal ladder in ladders)
             {
                 Assert.DoesNotThrow(ladder.ValidateOrThrow);

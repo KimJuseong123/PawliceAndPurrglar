@@ -303,28 +303,18 @@ namespace PawsAndLoot.Editor
             List<GreyboxRouteReference> routes =
                 CreateRoutes(routesRoot, locations);
 
-            // The raccoon and the roofs, back on the new town.
+            // A bin with a raccoon in it, and nothing else.
             //
-            // The yard carries the only sale point in the game, and the scene
-            // contract wants three walkable roofs with a ladder each. Both went
-            // with the old shops.
-            CreateRaccoonMarket(
-                buildingsRoot,
-                MarketGold,
-                wall,
-                RaccoonMarketCentre);
+            // The trading yard is gone: fences, floor and counter around a
+            // merchant who lives in a dustbin. The bin is the shop — the
+            // raccoon rises out of it when somebody comes near, which is the
+            // whole signpost — and a yard drawn round that only made the thing
+            // it marks harder to spot.
+            CreateRaccoonInBin(buildingsRoot, RaccoonMarketCentre);
 
-            // The merchant itself, inside the yard. It is the one NPC the thief
-            // has to find, and it went with the dressing pass — leaving the
-            // sale point as an unmarked patch of ground.
-            CreateRaccoonInBin(
+            CreateLadders(
                 buildingsRoot,
-                RaccoonMarketCentre + new Vector3(-3.5f, 0f, 5f));
-            CreateTemporaryRoofs(
-                buildingsRoot,
-                roof,
                 ladder,
-                rooftops,
                 ladders,
                 pendingLadderClimbs);
 
@@ -1668,47 +1658,40 @@ namespace PawsAndLoot.Editor
         /// because the match runtime does not exist yet when stores are built.
         /// </summary>
         /// <summary>
-        /// A flat roof over three buildings, and a ladder up to each.
+        /// A ladder up the east side of the buildings that get one.
         ///
-        /// Temporary and named so. The ladders and walkable roofs belonged to
-        /// the old shops and came down with them; the town's buildings are
-        /// scanned models whose roofs are pitched, tiled and not standable on.
-        /// Rather than leave the thief with no way off the ground at all —
-        /// which is a whole verb of the chase missing — a plain slab goes over
-        /// three of them at the height the model actually reaches.
+        /// No slab on top. The town's buildings are scanned models with pitched,
+        /// tiled roofs; a flat plate laid over one reads as a lid rather than a
+        /// roof, and what the thief needs is a way up, not somewhere tidy to
+        /// stand. The climb puts them on the model's own ridge and playing it
+        /// decides whether that is worth keeping.
         ///
-        /// The height is measured, not assumed. These models are scaled to fit
-        /// their plots and no two of them end up the same height.
+        /// East, not south. The town camera is fixed at one angle and a ladder
+        /// on the near face is a ladder behind the building from every seat.
+        ///
+        /// The shops and the single-storey houses. The jeweller is where the
+        /// crown jewel is and giving it a roof route as well would make one
+        /// building carry two answers.
         /// </summary>
-        private static void CreateTemporaryRoofs(
+        private static void CreateLadders(
             Transform parent,
-            Material roofMaterial,
             Material ladderMaterial,
-            ICollection<Transform> rooftops,
             ICollection<Transform> ladders,
             ICollection<LadderTraversal> pending)
         {
-            Transform root = CreateChild("Temporary Rooftops", parent);
-            string[] wanted = { "Supermarket", "Bookstore", "Jewellery" };
-
-            foreach (string kind in wanted)
+            Transform root = CreateChild("Ladders", parent);
+            var wanted = new HashSet<string>
             {
-                MapSandboxSetup.TownPlot plot = default;
-                bool found = false;
-                foreach (MapSandboxSetup.TownPlot candidate in _townPlots)
-                {
-                    if (candidate.Kind == kind && candidate.Instance != null)
-                    {
-                        plot = candidate;
-                        found = true;
-                        break;
-                    }
-                }
+                "Supermarket",
+                "Bookstore",
+                "OneStorey"
+            };
 
-                if (!found)
+            int built = 0;
+            foreach (MapSandboxSetup.TownPlot plot in _townPlots)
+            {
+                if (!wanted.Contains(plot.Kind) || plot.Instance == null)
                 {
-                    Debug.LogWarning(
-                        $"[MAP-003] No '{kind}' to put a roof on.");
                     continue;
                 }
 
@@ -1733,30 +1716,20 @@ namespace PawsAndLoot.Editor
                     continue;
                 }
 
-                GameObject slab = CreateCube(
-                    $"{kind} Rooftop",
-                    new Vector3(
-                        shell.center.x,
-                        shell.max.y + 0.15f,
-                        shell.center.z),
-                    new Vector3(
-                        plot.Footprint.x,
-                        0.3f,
-                        plot.Footprint.y),
-                    roofMaterial,
-                    root,
-                    true);
-                rooftops.Add(slab.transform);
-
-                // Beside the building on its south face, where the street is.
+                built++;
                 var foot = new Vector3(
-                    shell.center.x,
+                    shell.max.x + 0.7f,
                     shell.min.y,
-                    shell.min.z - 1.4f);
+                    shell.center.z);
+
+                // Named without the building's kind in it. "OneStorey Ladder"
+                // contains "OneStorey", and the test that checks every copy of
+                // a house model is the same size counts by name — it read the
+                // rails as houses 1.6 m deep next to houses 8 m deep.
                 GameObject rail = CreateCube(
-                    $"{kind} Ladder",
-                    foot + new Vector3(0f, (shell.size.y) * 0.5f, 0f),
-                    new Vector3(1f, shell.size.y, 0.2f),
+                    $"Ladder {built} Rail",
+                    foot + Vector3.up * (shell.size.y * 0.5f),
+                    new Vector3(0.2f, shell.size.y, 1f),
                     ladderMaterial,
                     root,
                     false);
@@ -1765,7 +1738,7 @@ namespace PawsAndLoot.Editor
                 ladders.Add(rail.transform);
 
                 CreateLadderTraversal(
-                    $"{kind} Ladder Climb",
+                    $"Ladder {built} Climb",
                     foot,
                     new Vector3(
                         shell.center.x,
@@ -1775,8 +1748,7 @@ namespace PawsAndLoot.Editor
                     pending);
             }
 
-            Debug.Log(
-                $"[MAP-003] {rooftops.Count} temporary rooftops with ladders.");
+            Debug.Log($"[MAP-003] {built} ladders on the east faces.");
         }
 
         private static void CreateLadderTraversal(
@@ -3611,10 +3583,12 @@ namespace PawsAndLoot.Editor
 
             CreateRockPickups(root, matchRuntime);
             CreateShopShelfPickups(root);
+            // At the bin, which is the shop. The offset was measured against a
+            // fence in a yard that no longer exists.
             CreateSaleZone(
                 "Prototype Sale Point",
                 locations[GreyboxLocationId.RaccoonMarket].position
-                    + new Vector3(-1.8f, 0.5f, 0f),
+                    + new Vector3(0f, 0.5f, -1.8f),
                 MarketGold,
                 root,
                 matchRuntime);
