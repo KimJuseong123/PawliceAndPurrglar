@@ -176,7 +176,14 @@ namespace PawsAndLoot.Integration.Network
                 && (keyboard.leftShiftKey.wasPressedThisFrame
                     || keyboard.rightShiftKey.wasPressedThisFrame);
 
-            link.SubmitInputRpc(move, dash);
+            // Sent with the yaw of the camera this player is looking through,
+            // because that is the frame their keys mean something in. The host
+            // has its own camera and it is not this one.
+            UnityEngine.Camera view = UnityEngine.Camera.main;
+            link.SubmitInputRpc(
+                move,
+                dash,
+                view != null ? view.transform.eulerAngles.y : float.NaN);
 
             // Sent only on the frame it is pressed, and as its own message. A jump
             // is an event; folding it into the movement stream would drop presses

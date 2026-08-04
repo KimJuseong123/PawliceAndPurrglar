@@ -55,6 +55,10 @@ namespace PawsAndLoot.Gameplay.Players
         private IMatchStateReader _matchState;
         private PlayerRoleIdentity _target;
         private Renderer[] _targetRenderers;
+        private Transform _companion;
+        private Renderer[] _companionRenderers =
+            System.Array.Empty<Renderer>();
+        private bool _companionVisible = true;
         private float _revealUntil;
 
         public bool IsTargetVisible { get; private set; } = true;
@@ -133,7 +137,12 @@ namespace PawsAndLoot.Gameplay.Players
                 }
 
                 _target = candidate;
-                _targetRenderers = CollectRenderers(candidate);
+                _targetRenderers =
+                    candidate.GetComponentsInChildren<Renderer>(true);
+                _companion = FindCompanionOf(candidate);
+                _companionRenderers = _companion != null
+                    ? _companion.GetComponentsInChildren<Renderer>(true)
+                    : System.Array.Empty<Renderer>();
                 return true;
             }
 
@@ -141,39 +150,35 @@ namespace PawsAndLoot.Gameplay.Players
         }
 
         /// <summary>
-        /// Everything drawn for the opposing side: the player, and the animal
-        /// that follows them.
+        /// The animal that follows a player, if it has one.
         ///
-        /// The animal is not a child of the player. It is parented to the
-        /// town's own Companions node so it can be left behind, sent ahead and
-        /// lured away, none of which works from inside somebody's hierarchy.
-        /// Asking the player for its children therefore returned the player and
-        /// nothing else — and the cat stayed lit in the dark, twelve metres
-        /// outside the torch, pointing at exactly where the thief was.
+        /// It used to be lumped in with the player's own renderers and hidden
+        /// or shown with them. That is wrong in both directions: a cat standing
+        /// in the officer's beam vanished because the thief it belongs to was
+        /// somewhere dark, and a cat in the dark appeared because the thief had
+        /// been caught in the light.
         ///
-        /// Matched by owner rather than by name or by tag. An animal knows
-        /// whose it is; a name is a thing somebody renames.
+        /// They are separate things to see. The thief sends the cat off on its
+        /// own errands, and an officer who spots the cat has earned a hint
+        /// about where its owner might be — which is the point of having it.
+        ///
+        /// Matched by owner rather than by name or tag. An animal knows whose
+        /// it is; a name is a thing somebody renames.
         /// </summary>
-        private static Renderer[] CollectRenderers(PlayerRoleIdentity target)
+        private static Transform FindCompanionOf(PlayerRoleIdentity target)
         {
-            var found = new System.Collections.Generic.List<Renderer>(
-                target.GetComponentsInChildren<Renderer>(true));
-
             foreach (PawsAndLoot.Companions.CompanionAgent animal in
                 FindObjectsByType<PawsAndLoot.Companions.CompanionAgent>(
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None))
             {
-                if (!BelongsTo(animal, target))
+                if (BelongsTo(animal, target))
                 {
-                    continue;
+                    return animal.transform;
                 }
-
-                found.AddRange(
-                    animal.GetComponentsInChildren<Renderer>(true));
             }
 
-            return found.ToArray();
+            return null;
         }
 
         /// <summary>
@@ -287,6 +292,7 @@ namespace PawsAndLoot.Gameplay.Players
             if (!ViewerIsLocal())
             {
                 SetVisible(true);
+                SetCompanionVisible(true);
                 return;
             }
 
@@ -295,6 +301,7 @@ namespace PawsAndLoot.Gameplay.Players
             if (ResolveMatchState()?.IsGameplayActive != true)
             {
                 SetVisible(true);
+                SetCompanionVisible(true);
                 return;
             }
 
@@ -308,30 +315,58 @@ namespace PawsAndLoot.Gameplay.Players
             if (IsRevealed)
             {
                 SetVisible(true);
+                SetCompanionVisible(true);
                 return;
             }
 
-            Vector3 delta = _target.transform.position
-                - viewer.transform.position;
+            SetVisible(IsLit(_target.transform.position));
+            SetCompanionVisible(
+                _companion == null || IsLit(_companion.position));
+        }
+
+        /// <summary>
+        /// Whether a point on the ground is somewhere the viewer can see.
+        ///
+        /// One test, asked once per thing that can be seen. Two copies of this
+        /// arithmetic would be two chances to change the cone and forget the
+        /// other one.
+        /// </summary>
+        private bool IsLit(Vector3 point)
+        {
+            Vector3 delta = point - viewer.transform.position;
             delta.y = 0f;
             float distance = delta.magnitude;
 
             if (distance <= alwaysSeenRadius)
             {
-                SetVisible(true);
-                return;
+                return true;
             }
 
             if (distance > rangeMeters)
             {
-                SetVisible(false);
-                return;
+                return false;
             }
 
             Vector3 facing = viewer.transform.forward;
             facing.y = 0f;
-            float angle = Vector3.Angle(facing, delta);
-            SetVisible(angle <= halfAngleDegrees);
+            return Vector3.Angle(facing, delta) <= halfAngleDegrees;
+        }
+
+        private void SetCompanionVisible(bool visible)
+        {
+            if (_companionVisible == visible)
+            {
+                return;
+            }
+
+            _companionVisible = visible;
+            foreach (Renderer renderer in _companionRenderers)
+            {
+                if (renderer != null && renderer is not LineRenderer)
+                {
+                    renderer.enabled = visible;
+                }
+            }
         }
 
         private IMatchStateReader ResolveMatchState()

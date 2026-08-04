@@ -370,6 +370,7 @@ namespace PawsAndLoot.Integration.Network
         private Vector3 _followVelocity;
 
         private Vector2 _submittedMove;
+        private float? _submittedYaw;
         private bool _submittedDash;
         private bool _submittedJump;
         private bool _remoteDriven;
@@ -756,9 +757,22 @@ namespace PawsAndLoot.Integration.Network
         /// bridge, which knows which role is local.
         /// </summary>
         [Rpc(SendTo.Server)]
-        public void SubmitInputRpc(Vector2 move, bool dashPressed)
+        public void SubmitInputRpc(
+            Vector2 move,
+            bool dashPressed,
+            float orientationYaw = float.NaN)
         {
             _submittedMove = Vector2.ClampMagnitude(move, 1f);
+
+            // Which way the sender was looking when they pressed it.
+            //
+            // Without this the host measures a client's WASD against the host's
+            // own camera. Outdoors that is the same fixed angle for both and
+            // nothing shows; indoors the client orbits their view and their
+            // keys arrive rotated by however far apart the two cameras are.
+            _submittedYaw = float.IsNaN(orientationYaw)
+                ? (float?)null
+                : orientationYaw;
             if (dashPressed)
             {
                 _submittedDash = true;
@@ -803,6 +817,7 @@ namespace PawsAndLoot.Integration.Network
                 motor.TryJump();
             }
 
+            motor.SetOrientationYaw(_submittedYaw);
             motor.Move(_submittedMove, deltaTime);
         }
 

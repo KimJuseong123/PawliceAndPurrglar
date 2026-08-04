@@ -21,6 +21,8 @@ namespace PawsAndLoot.Gameplay.Players
         [SerializeField]
         private Transform orientationReference;
 
+        private float? _orientationYaw;
+
         private IMatchStateReader _matchState;
         private StunState _stun;
         private bool _lookedForStun;
@@ -57,6 +59,18 @@ namespace PawsAndLoot.Gameplay.Players
         /// Resolved lazily because the stun component is optional; a player
         /// without one simply never gets stunned.
         /// </summary>
+        /// <summary>
+        /// The heading the next move should be measured against, in degrees.
+        ///
+        /// Set by the network link from the yaw the sender reported. Cleared to
+        /// fall back to this machine's own camera, which is right for local
+        /// play and for tests.
+        /// </summary>
+        public void SetOrientationYaw(float? yawDegrees)
+        {
+            _orientationYaw = yawDegrees;
+        }
+
         public bool CanMove =>
             _matchState?.IsGameplayActive == true
             && !IsStunned;
@@ -451,12 +465,31 @@ namespace PawsAndLoot.Gameplay.Players
         private Vector3 GetWorldDirection(Vector2 input)
         {
             Vector2 clampedInput = Vector2.ClampMagnitude(input, 1f);
-            Vector3 forward = orientationReference
-                ? orientationReference.forward
-                : Vector3.forward;
-            Vector3 right = orientationReference
-                ? orientationReference.right
-                : Vector3.right;
+
+            // Which way "forward" is, from whoever is actually looking.
+            //
+            // This used to be this machine's own camera, always. In a session
+            // that is the wrong camera for half the players: a client sends raw
+            // WASD, the host turns it into a direction using the host's view,
+            // and the client's keys come out relative to a camera they are not
+            // looking through. Outdoors both cameras share one fixed angle so
+            // nobody noticed; indoors the client orbits theirs and the keys go
+            // sideways.
+            //
+            // The sender says which way they were facing, and that wins.
+            Quaternion basis = _orientationYaw.HasValue
+                ? Quaternion.Euler(0f, _orientationYaw.Value, 0f)
+                : Quaternion.identity;
+            Vector3 forward = _orientationYaw.HasValue
+                ? basis * Vector3.forward
+                : orientationReference
+                    ? orientationReference.forward
+                    : Vector3.forward;
+            Vector3 right = _orientationYaw.HasValue
+                ? basis * Vector3.right
+                : orientationReference
+                    ? orientationReference.right
+                    : Vector3.right;
             forward.y = 0f;
             right.y = 0f;
             forward.Normalize();

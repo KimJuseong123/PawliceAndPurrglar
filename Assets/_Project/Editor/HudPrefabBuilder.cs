@@ -489,6 +489,7 @@ namespace PawsAndLoot.Editor
                 rootRect.localScale = Vector3.one;
             }
 
+            ProjectFontSweep.Apply(root);
             PrefabUtility.SaveAsPrefabAsset(root, path);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             GameObject savedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);

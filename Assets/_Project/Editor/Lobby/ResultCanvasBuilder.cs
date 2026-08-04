@@ -92,6 +92,7 @@ namespace PawsAndLoot.Editor
                     MockupCutter.EnsureFolder(folder);
                 }
 
+                ProjectFontSweep.Apply(root);
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             }
             finally

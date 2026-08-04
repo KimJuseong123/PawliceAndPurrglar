@@ -119,6 +119,7 @@ namespace PawsAndLoot.Editor
 
             CreateResultInterface();
             NormalizeSceneCanvasScales();
+            ProjectFontSweep.Apply(scene);
             if (!EditorSceneManager.SaveScene(scene))
             {
                 throw new InvalidOperationException(
@@ -167,6 +168,7 @@ namespace PawsAndLoot.Editor
             EditorUtility.SetDirty(logBootstrap);
             EditorUtility.SetDirty(configBootstrap);
 
+            ProjectFontSweep.Apply(scene);
             if (!EditorSceneManager.SaveScene(scene))
             {
                 throw new InvalidOperationException($"Failed to save scene: {path}");
@@ -200,6 +202,7 @@ namespace PawsAndLoot.Editor
             NormalizeSceneCanvasScales();
 
             string path = GameSceneCatalog.GetPath(sceneId);
+            ProjectFontSweep.Apply(scene);
             if (!EditorSceneManager.SaveScene(scene, path))
             {
                 throw new InvalidOperationException($"Failed to save scene: {path}");
