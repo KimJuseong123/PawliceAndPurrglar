@@ -88,6 +88,7 @@
   `Report Road Pieces` / `Report Road Colours` / `Report Sandbox Cost`.
 
 ### Fixed
+- `RockPickupScenePlayModeTests`가 통과한다. 스폰 뽑기가 테스트가 놓은 도둑을 32.7m 옮기고 있었다 (ISSUE-068).
 - 보물과 돌을 새 도시의 빈 땅에 재배치했다. 보물 2개가 주얼리샵 외곽 안에 있어 닿을 수 없었고, 2개는 벽에 붙어 있었다 (ISSUE-067, TASK-PORT-002).
 - 클라이언트 결과 화면에도 경과 시간·체포 수·골드가 뜬다. 승자만 씬을 넘고 요약은 넘지 않았다 (ISSUE-066).
 - 클라이언트에서 동물이 덜덜거리지 않는다. 복제 위치 추종이 목표에 일찍 도착하고 다음 패킷까지 멈춰 있었다. 플레이어와 동물이 같은 `ReplicatedFollow`를 쓴다 (ISSUE-063).
