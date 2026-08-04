@@ -19,7 +19,7 @@ namespace PawsAndLoot.Gameplay.Items
     /// throw, so a client cannot stun anybody by holding a rock.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ToolCarrier : MonoBehaviour
+    public sealed class ToolCarrier : MonoBehaviour, ISlotContainer
     {
         [SerializeField]
         private PlayerRoleIdentity identity;
@@ -40,6 +40,13 @@ namespace PawsAndLoot.Gameplay.Items
 
         public event Action<bool> HeldToolChanged;
         public event Action InventoryChanged;
+
+        // Satisfying ISlotContainer costs two members: the other five were already
+        // here with these exact signatures, because the cat's bag exchange was
+        // written against this class. Declaring it lets one transfer routine move
+        // items in either direction instead of two that can drift apart.
+        public int SlotCount => QuickSlotController.SlotCount;
+        public string DisplayName => "도둑 가방";
 
         public bool HasTool => _slots.HasSelectedItem;
         public bool HasAnyTool => _slots.HasAnyItem;

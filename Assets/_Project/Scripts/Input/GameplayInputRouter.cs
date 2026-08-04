@@ -29,6 +29,13 @@ namespace PawsAndLoot.Input
         public static event Action InventoryTogglePressed;
         public static event Action VoicePressed;
         public static event Action EscapePressed;
+
+        /// <summary>
+        /// Empty the open container into the bag. Raised whether or not a panel is
+        /// open — the HUD is the one that knows, and an input router that had to be
+        /// told which screens exist would have to be told again for the next one.
+        /// </summary>
+        public static event Action TakeAllPressed;
         public static event Action BindingDisplayChanged;
 
         public static void SetGameplayInputSuppressed(bool suppressed)
@@ -109,6 +116,18 @@ namespace PawsAndLoot.Input
             {
                 CancelVoiceCapture();
                 EscapePressed?.Invoke();
+            }
+
+            // Above the suppression gate on purpose, and the same key as throwing.
+            //
+            // F is the throw key, but throwing already stops the moment a panel
+            // opens (`ToolUseInput` checks the same flag), so while a container is
+            // on screen the key is free. Sharing it is better than finding a
+            // seventh letter: the hand is already on F to throw, and "empty the
+            // cupboard" is the throw of the searching half of the game.
+            if (keyboard.fKey.wasPressedThisFrame)
+            {
+                TakeAllPressed?.Invoke();
             }
 
             if (GameplayInputSuppressed)

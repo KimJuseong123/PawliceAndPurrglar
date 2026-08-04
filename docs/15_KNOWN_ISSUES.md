@@ -4,14 +4,26 @@
 
 완료된 항목을 삭제하지 않고 해결 상태와 관련 작업을 기록한다.
 
-## ISSUE-054 — `origin/main`에 Play Mode 실패 13건이 있다 (OPEN, main 몫)
+## ISSUE-054 — Play Mode 실패 7건 (OPEN). 처음 센 13건 중 6건은 오염이었다
 
-**측정**: 깨끗한 `origin/main`(`6941897`)을 별도 worktree에 꺼내 실측했다 —
-**182개 중 13개 실패**. main 커밋 `6933723`도 메시지에 "Play Mode 실패 17개에서
-12개로"라고 적고 있어, main이 초록색이 아니라는 것은 기록에도 남아 있다.
+**처음 측정**: 깨끗한 `origin/main`(`6941897`)을 별도 worktree에 꺼내 실측해
+**182개 중 13개 실패**였다. main 커밋 `6933723`도 "Play Mode 실패 17개에서
+12개로"라고 적어, main이 초록색이 아니라는 것은 기록에도 있었다.
 `13_CURRENT_STATE.md`의 "Play Mode 183개 통과"는 그보다 이전(`e4ef557`) 수치다.
 
-**목록** (실내 5, 너구리 5, 동료 표정 1, 경찰 HUD 1, 픽업 1):
+**그런데 13건 중 6건은 진짜 결함이 아니었다.** `LocalPlayerRoleSelector`의 로컬
+역할은 **정적 값**이고 씬 로드를 넘어 살아남는다. 어떤 테스트가 그것을 도둑으로
+설정한 뒤 정리하지 않으면, 뒤에 도는 테스트가 경찰을 기대하면서 도둑 상태로 돌아
+실패한다. 결과 화면 관점 테스트를 고치면서 `[TearDown]`에
+`LocalPlayerRoleSelector.ClearOverriddenRole()`을 넣었더니 **너구리 5건과 경찰
+HUD 1건이 함께 통과했다.**
+
+```text
++ PoliceHudPlayModeTests.HudShowsPoliceMatchLootArrestAndAlerts
++ RaccoonGreetingPlayModeTests × 5          ← 전부 오염이었다
+```
+
+**남은 7건** (실내 4, 동료 표정 1, 픽업 1, 감옥 1):
 
 ```text
 CompanionExpressionPlayModeTests.ShowingAFacePutsExactlyOneIconOnScreen
@@ -19,11 +31,14 @@ HouseBackDoorPlayModeTests.TheInteriorCameraStaysBelowTheWalls
 HouseInteriorPlayModeTests.PocketingAValuablePaysTheThiefExactlyOnce
 HouseInteriorPlayModeTests.TheRoomIsTheModelsFurnishedInterior
 JumpAndCutawayPlayModeTests.AWallBetweenTheCameraAndThePlayerGetsOutOfTheWay
-PoliceHudPlayModeTests.HudShowsPoliceMatchLootArrestAndAlerts
-RaccoonGreetingPlayModeTests × 5
 RockPickupScenePlayModeTests.EveryPickupInTheSceneCanBeTakenByItsOwner
 ThiefJailPlayModeTests.JailHoldsTheThiefThenPutsThemBackOnTheGround
 ```
+
+**여기서 배울 것**: 여러 테스트가 한꺼번에 실패하면 **먼저 오염을 의심한다.**
+실패 목록이 "너구리 5건 전부"처럼 한 클래스에 몰려 있으면 그 클래스의 결함보다
+공유 상태가 원인일 확률이 높다. 그리고 기준선을 실측했다고 해서 그 숫자가 전부
+결함이라는 뜻은 아니다 — 저 13건도 실측한 값이었고, 절반이 오염이었다.
 
 **실내 5건의 원인**: `HouseInteriorSetup`은 메시 파트 이름이 `IN_House1F_Wall*`인
 것을 찾아 반높이 칸막이를 세운다. 그런데 main이 넣은 실내 모델

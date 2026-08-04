@@ -1,6 +1,7 @@
 using System.Collections;
 using NUnit.Framework;
 using PawsAndLoot.Core;
+using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Match;
 using PawsAndLoot.UI;
 using UnityEngine;
@@ -11,10 +12,21 @@ namespace PawsAndLoot.Tests.PlayMode
 {
     public sealed class MatchResultFlowPlayModeTests
     {
+        [TearDown]
+        public void TearDown()
+        {
+            LocalPlayerRoleSelector.ClearOverriddenRole();
+        }
+
         [UnityTest]
         public IEnumerator CompletedMatchOpensPopulatedResultScene()
         {
             MatchResultSession.Clear();
+
+            // Whose screen the result will be. Set before the match so the
+            // result screen reads it the same way a lobby-committed role would,
+            // and stated here because this test asserts a viewpoint.
+            LocalPlayerRoleSelector.OverrideRole(PlayerRole.Police);
             SceneManager.LoadScene(
                 GameSceneCatalog.GetName(GameSceneId.Game),
                 LoadSceneMode.Single);
@@ -57,8 +69,10 @@ namespace PawsAndLoot.Tests.PlayMode
             Assert.That(presenter.PoliceBadgeText, Is.EqualTo("승리"));
             Assert.That(presenter.ThiefBadgeText, Is.EqualTo("패배"));
             Assert.That(
-                presenter.ReasonText,
-                Does.StartWith("도둑을 "));
+                presenter.IsShowingWinTitle,
+                Is.True,
+                "The police won and the local role is the police, so the title "
+                + "has to be the winning one.");
             // No summary was reported, so the screen shows the gold the verdict
             // carries and declines to invent the rest.
             Assert.That(presenter.GoldValueText, Is.EqualTo("350"));
