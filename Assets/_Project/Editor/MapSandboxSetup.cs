@@ -1025,13 +1025,29 @@ namespace PawsAndLoot.Editor
         /// placed — being drawn somewhere is not the same as fitting there.
         /// </summary>
         private static readonly
-            (string Stem, string Label, Vector2 Centre, Vector2 Footprint)[]
+            (string Stem, string Label, Vector2 Centre, Vector2 Footprint,
+                bool WalkThrough)[]
             Landmarks =
         {
+            // The forest is walked into, not walked around.
+            //
+            // It arrived as a building: raised until its lowest point sat on the
+            // road and wrapped in a box eleven metres square and five tall. So it
+            // was a solid cube with trees printed on it, and its own ground sat
+            // more than a metre above the grass — a step you could see from
+            // across the town.
+            //
+            // Trees are the one piece of cover in this game that hides without
+            // blocking. Standing among them breaks the officer's line of sight
+            // from directly overhead, which is the only angle he has, and that is
+            // worth more to the thief than anything a wall does.
             ("env_forest", "Forest", new Vector2(-21.5f, 26f),
-                new Vector2(11f, 11f)),
+                new Vector2(11f, 11f), true),
+            // The lake stays solid and stays where it is. Sinking it would put
+            // the water under the grass, and opening it would let both players
+            // walk across it.
             ("env_lake_garden", "Lake Garden", new Vector2(-20f, -14f),
-                new Vector2(12f, 10f))
+                new Vector2(12f, 10f), false)
         };
 
         /// <summary>
@@ -1441,13 +1457,15 @@ namespace PawsAndLoot.Editor
         /// could disagree.
         /// </summary>
         private static List<(string Stem, string Label, Vector3 Centre,
-            Vector2 Footprint)> LayOutLandmarks(List<Rect> taken)
+            Vector2 Footprint, bool WalkThrough)> LayOutLandmarks(
+                List<Rect> taken)
         {
-            var placed = new List<(string, string, Vector3, Vector2)>();
+            var placed =
+                new List<(string, string, Vector3, Vector2, bool)>();
             Rect[] roads = RoadCellAreas();
 
-            foreach ((string stem, string label, Vector2 at, Vector2 footprint)
-                in Landmarks)
+            foreach ((string stem, string label, Vector2 at,
+                Vector2 footprint, bool walkThrough) in Landmarks)
             {
                 var centre = new Vector3(at.x, 0f, at.y);
                 if (!TryFit(footprint, roads, taken, ref centre))
@@ -1464,7 +1482,7 @@ namespace PawsAndLoot.Editor
                     centre.z - footprint.y * 0.5f,
                     footprint.x,
                     footprint.y));
-                placed.Add((stem, label, centre, footprint));
+                placed.Add((stem, label, centre, footprint, walkThrough));
             }
 
             return placed;
@@ -1474,7 +1492,9 @@ namespace PawsAndLoot.Editor
         /// Puts the forest and the lake garden down.
         ///
         /// Fitted to a footprint like a building, because that is what they are
-        /// to everything around them: ground somebody else cannot stand on.
+        /// to everything around them. Whether they are also solid is per
+        /// landmark: the lake is ground nobody stands on, and the forest is
+        /// ground you run into.
         /// </summary>
         private static int BuildLandmarks(
             Transform parent,
@@ -1483,7 +1503,8 @@ namespace PawsAndLoot.Editor
         {
             int built = 0;
             foreach ((string stem, string label, Vector3 centre,
-                Vector2 footprint) in LayOutLandmarks(taken))
+                Vector2 footprint, bool walkThrough)
+                in LayOutLandmarks(taken))
             {
                 if (PlaceBuilding(
                         parent,
@@ -1492,7 +1513,8 @@ namespace PawsAndLoot.Editor
                         180f,
                         footprint,
                         label,
-                        sizes))
+                        sizes,
+                        walkThrough))
                 {
                     built++;
                 }
@@ -1566,7 +1588,8 @@ namespace PawsAndLoot.Editor
             float yaw,
             Vector2 footprint,
             string name,
-            Measurements sizes)
+            Measurements sizes,
+            bool walkThrough = false)
         {
             Vector3 size = sizes.Of(stem);
             float scale = Mathf.Min(
@@ -1591,10 +1614,35 @@ namespace PawsAndLoot.Editor
             }
 
             Bounds bounds = WorldBounds(instance);
+
+            // Sunk by the height of its own ground, when it has one.
+            //
+            // A building's lowest point *is* its floor, so putting that on zero
+            // is right. A patch of landscape carries a slab of earth under it,
+            // and putting the bottom of the earth on zero leaves the surface you
+            // stand on hovering above the street. The forest's was 1.3 m up.
+            //
+            // Measured off the mesh rather than typed, because the number belongs
+            // to the model and the models get replaced. A typed 1.3 would survive
+            // the next import and be wrong.
+            float sink = walkThrough ? GroundHeightOf(instance, bounds) : 0f;
             instance.transform.position += new Vector3(
                 centre.x - bounds.center.x,
-                -bounds.min.y,
+                -bounds.min.y - sink,
                 centre.z - bounds.center.z);
+
+            if (walkThrough)
+            {
+                // No collider at all, on purpose.
+                //
+                // The trees are welded into one mesh with the ground, so there is
+                // nothing to wrap that is only the trunks — a box round the lot
+                // is a solid cube, and a mesh collider would make every trunk a
+                // wall to be caught on. Left open, the thief runs in and the
+                // canopy does the work.
+                MakeInstanced(instance);
+                return true;
+            }
 
             // Local space, because the transform is scaled and Unity scales
             // the collider with it. Handing it the world size meant the box was
@@ -1612,6 +1660,84 @@ namespace PawsAndLoot.Editor
             // nobody would have measured.
             MakeInstanced(instance);
             return true;
+        }
+
+        /// <summary>
+        /// How far above its lowest point a landscape model's own ground sits,
+        /// in world metres.
+        ///
+        /// Found from the vertices, not from the bounds. The bounds bottom is the
+        /// underside of the slab of earth the model is built on; what matters is
+        /// the surface on top of it, and for the forest those are 1.3 m apart.
+        ///
+        /// The surface shows up as a crowd. A patch of landscape has a few
+        /// vertices around its base and rim and then thousands in one thin band
+        /// where the terrain is — the forest has 130 at the bottom and 4,796 in
+        /// the band a quarter of the way up. So: the lowest band holding a real
+        /// share of the mesh.
+        ///
+        /// Returns zero when nothing qualifies, which puts the model back where
+        /// it used to be rather than somewhere invented.
+        /// </summary>
+        private static float GroundHeightOf(GameObject instance, Bounds bounds)
+        {
+            const int Bands = 40;
+            const float Share = 0.05f;
+
+            var counts = new int[Bands + 1];
+            int total = 0;
+            foreach (MeshFilter filter in
+                instance.GetComponentsInChildren<MeshFilter>(true))
+            {
+                Mesh mesh = filter.sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                foreach (Vector3 vertex in mesh.vertices)
+                {
+                    float world = filter.transform
+                        .TransformPoint(vertex).y;
+                    float fraction = Mathf.InverseLerp(
+                        bounds.min.y,
+                        bounds.max.y,
+                        world);
+                    counts[Mathf.Clamp(
+                        Mathf.RoundToInt(fraction * Bands),
+                        0,
+                        Bands)]++;
+                    total++;
+                }
+            }
+
+            if (total == 0)
+            {
+                return 0f;
+            }
+
+            int needed = Mathf.CeilToInt(total * Share);
+            for (int band = 0; band <= Bands; band++)
+            {
+                if (counts[band] < needed)
+                {
+                    continue;
+                }
+
+                float height = bounds.size.y * band / Bands;
+                Debug.Log(
+                    $"[SANDBOX] {instance.name}: ground found {height:0.00} m "
+                    + $"above its base ({counts[band]} of {total} vertices in "
+                    + $"band {band}/{Bands}). Sunk by that much so it meets the "
+                    + "grass.");
+                return height;
+            }
+
+            Debug.LogWarning(
+                $"[SANDBOX] {instance.name} has no band holding a twentieth of "
+                + "its vertices, so no ground surface could be found and it is "
+                + "left sitting on its base.");
+            return 0f;
         }
 
         /// <summary>
