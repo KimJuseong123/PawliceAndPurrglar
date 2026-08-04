@@ -359,39 +359,18 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.True,
                 "The character was hidden along with the walls.");
 
-            // And it is the side the camera is on, which is the side in the way.
-            // Compared against the other three rather than against a threshold: the
-            // claim is that the best one was chosen, not that it scored well.
-            UnityEngine.Camera view = UnityEngine.Camera.main;
-            int removed = cutaway.RemovedFace;
-            Assert.That(removed, Is.GreaterThanOrEqualTo(0));
-            Assert.That(
-                screen.IsHidden(removed),
-                Is.True,
-                "The face it reports removing is still drawn.");
-
-            Vector3 towardCamera =
-                view.transform.position - interior.transform.position;
-            towardCamera.y = 0f;
-            towardCamera.Normalize();
-
-            float Facing(int face)
-            {
-                Vector3 outward =
-                    screen.CentreOf(face) - interior.transform.position;
-                outward.y = 0f;
-                return Vector3.Dot(outward.normalized, towardCamera);
-            }
-
-            float chosen = Facing(removed);
-            for (int face = 0; face < screen.FaceCount; face++)
-            {
-                Assert.That(
-                    chosen,
-                    Is.GreaterThanOrEqualTo(Facing(face) - 0.15f),
-                    $"Face {face} faces the camera more than the one that was "
-                    + $"actually removed ({removed}).");
-            }
+            // Nothing follows about *which* face was taken out, because none
+            // was.
+            //
+            // This used to check that the removed face was the one nearest the
+            // camera, scored against the other three. It sat directly under the
+            // assertion above saying that a welded room has no face to remove —
+            // the earlier claim was updated when the authored interiors landed
+            // and this one was not, so it asked the cutaway to name a side it
+            // had already been established could not exist. It reported -1,
+            // which is what "I removed nothing" looks like.
+            //
+            // Restore this block along with per-face rooms, not before.
 
             // Back on the way out.
             LocalPlayerRoleSelector.ClearOverriddenRole();
