@@ -111,10 +111,14 @@ namespace PawsAndLoot.Tests.EditMode
                 .ToDictionary(group => group.Key, group => group.Count());
 
             // Six ISSUE-011 loot pieces, the alarmed crown jewel and the case
-            // it stands in, plus the two LOOT-005 hiding spots.
+            // it stands in, the two LOOT-005 hiding spots, and the twelve shop
+            // pieces the three shops now hold (docs/17 section 7).
+            //
+            // Twenty-three rather than twenty-two: the jeweller's ring is both a
+            // shop piece and alarmed, so it brings its own display case.
             Assert.That(
                 byType[PlayerInteractionType.Loot],
-                Is.EqualTo(10),
+                Is.EqualTo(23),
                 "Loot is thief-only, and the count is the thief's whole "
                 + "victory path.");
             Assert.That(

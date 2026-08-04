@@ -23,21 +23,50 @@ namespace PawsAndLoot.Tests.EditMode
             LootDefinition[] definitions = LoadDefinitions();
 
             Assert.That(config, Is.Not.Null);
-            Assert.That(definitions, Has.Length.EqualTo(3));
+            // Three originals the greybox map was built on, plus the twelve
+            // shop pieces from docs/17. Counted so a definition that fails to
+            // write is visible: the map would simply place one fewer thing to
+            // steal and say nothing.
+            Assert.That(definitions, Has.Length.EqualTo(15));
             Assert.That(
                 definitions.Select(definition => definition.StableId),
                 Is.Unique);
-            Assert.That(
-                definitions.ToDictionary(
-                    definition => definition.Rarity,
-                    definition => definition.GetPrice(config)),
-                Is.EquivalentTo(new System.Collections.Generic.Dictionary<
-                    LootRarity,
-                    int>
+            // Grouped rather than keyed by rarity. One definition per tier was
+            // true while there were three of them, and keying by rarity threw
+            // the moment two pieces shared one — which is now every tier, since
+            // the shops hold four pieces each.
+            //
+            // What is being pinned is that price comes from the tier and only
+            // from the tier: two Rare pieces are worth the same whatever they
+            // are, whatever they are called, and however hard they are to carry.
+            foreach (System.Linq.IGrouping<LootRarity, LootDefinition> tier in
+                definitions.GroupBy(definition => definition.Rarity))
+            {
+                int expected = tier.Key switch
                 {
-                    [LootRarity.Common] = 200,
-                    [LootRarity.Uncommon] = 350,
-                    [LootRarity.Rare] = 500
+                    LootRarity.Common => 200,
+                    LootRarity.Uncommon => 350,
+                    _ => 500
+                };
+
+                Assert.That(
+                    tier.Select(definition => definition.GetPrice(config)),
+                    Is.All.EqualTo(expected),
+                    $"{tier.Key} pieces must all be worth {expected}: "
+                    + string.Join(
+                        ", ",
+                        tier.Select(d => $"{d.StableId}={d.GetPrice(config)}")));
+            }
+
+            // And every tier is actually represented, so a run where the shop
+            // data failed to write cannot pass by having nothing to check.
+            Assert.That(
+                definitions.Select(definition => definition.Rarity).Distinct(),
+                Is.EquivalentTo(new[]
+                {
+                    LootRarity.Common,
+                    LootRarity.Uncommon,
+                    LootRarity.Rare
                 }));
         }
 

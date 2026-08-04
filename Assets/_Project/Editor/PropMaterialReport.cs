@@ -17,7 +17,7 @@ namespace PawsAndLoot.Editor
         public static void Report()
         {
             foreach (string path in AssetDatabase
-                .FindAssets("t:Prefab", new[] { "Assets/_Project/Resources/Props" })
+                .FindAssets("t:Prefab t:Model", new[] { "Assets/_Project/Resources/Props", "Assets/_Project/Art/Props" })
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .OrderBy(p => p))
             {

@@ -134,98 +134,24 @@ namespace PawsAndLoot.Editor
             var root = new GameObject(stem);
             try
             {
-                var model =
-                    (GameObject)PrefabUtility.InstantiatePrefab(source);
-                model.transform.SetParent(root.transform, false);
-                model.transform.localPosition = Vector3.zero;
-                model.transform.localRotation = Quaternion.identity;
-                model.transform.localScale = Vector3.one;
-
-                if (!TryMeasureSize(model, out float size, out Bounds bounds))
+                if (AuthoredModelPlacer.TryPlace(
+                        stem,
+                        ThrowableCatalog.GetModelSize(kind),
+                        root.transform,
+                        out string fitted) == null)
                 {
                     return false;
                 }
 
-                float target = ThrowableCatalog.GetModelSize(kind);
-                float scale = target / size;
-                model.transform.localScale = Vector3.one * scale;
-
-                // Sat on the ground rather than centred on it. Half of a
-                // centred prop is under the road, which on a banana lying flat
-                // is most of the banana.
-                model.transform.localPosition =
-                    new Vector3(
-                        -bounds.center.x * scale,
-                        -bounds.min.y * scale,
-                        -bounds.center.z * scale);
-
-                foreach (Collider collider in
-                    root.GetComponentsInChildren<Collider>(true))
-                {
-                    // The prop's own trigger decides everything. A solid prop in
-                    // the road would stop the runner it is meant to catch, and
-                    // stop thrown rocks besides.
-                    UnityEngine.Object.DestroyImmediate(collider);
-                }
-
-                foreach (Renderer renderer in
-                    root.GetComponentsInChildren<Renderer>(true))
-                {
-                    renderer.shadowCastingMode =
-                        UnityEngine.Rendering.ShadowCastingMode.Off;
-                }
-
                 string path = $"{OutputFolder}/{stem}.prefab";
                 PrefabUtility.SaveAsPrefabAsset(root, path);
-                report =
-                    $"{kind}: {stem} measured {size:0.000} m, scaled "
-                    + $"x{scale:0.000} to {target:0.00} m";
+                report = $"{kind}: {fitted}";
                 return true;
             }
             finally
             {
                 UnityEngine.Object.DestroyImmediate(root);
             }
-        }
-
-        /// <summary>
-        /// The longest of the model's three extents, in its own metres.
-        ///
-        /// Not the footprint. Scaling by footprint leaves a tall prop as tall as
-        /// it likes: the rubber chicken stands upright, and pinning its width
-        /// made it over a metre high.
-        /// </summary>
-        private static bool TryMeasureSize(
-            GameObject instance,
-            out float size,
-            out Bounds bounds)
-        {
-            size = 0f;
-            bounds = new Bounds();
-            bool any = false;
-            foreach (Renderer part in
-                instance.GetComponentsInChildren<Renderer>(true))
-            {
-                if (!any)
-                {
-                    bounds = part.bounds;
-                    any = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(part.bounds);
-                }
-            }
-
-            if (!any)
-            {
-                return false;
-            }
-
-            size = Mathf.Max(
-                bounds.size.x,
-                Mathf.Max(bounds.size.y, bounds.size.z));
-            return size > 0.0001f;
         }
 
         private static void EnsureFolder(string path)
