@@ -171,3 +171,20 @@ UV는 `use_collapse_triangulate`로 지킨다. 이 메시들은 구워진 아틀
 ```bash
 blender --background --python Tools/decimate_fbx.py --   "ArtSource/Blender/building_inside/house01 interior 3d model/house+interior+3d+model.fbx"   "ArtSource/Decimated/interior_house01.fbx" 100000
 ```
+
+## 상호작용 소품 (2026-08-04)
+
+원본은 모두 46,000~50,000 삼각형으로 들어왔고 소품 예산 5,000으로 감면했다.
+감면 후 삼각형 수는 Blender로 실측해 5,000임을 확인했다.
+
+| 대상 | 원본 | 감면 전 | 감면 후 |
+|---|---|---:|---:|
+| 참치캔 | `cat interact 3d/fish can 3d model` | 48,664 | 5,000 |
+| 바나나 | `interactive item 3d/banana 3d model` | 48,446 | 5,000 |
+| 고무닭 | `dog interact 3d/yellow chicken 3d model` | 47,408 | 5,000 |
+| 냉동 문어 | `interactive item 3d/ice octopus 3d model` | 49,512 | 5,000 |
+| 폭죽 | `market items 3d/fireworks set 3d model` | 46,444 | 5,000 |
+
+문서의 폴더 이름과 내용물이 어긋나는 사례가 있다. `interactive item 3d/can 3d model`
+안에 들어 있는 것은 **기름통**이고, 참치캔은 `cat interact 3d/fish can 3d model`에
+있다 (`17_게임_아이템_사용처_정리.md` 8.6절의 이름 충돌 항목과 같은 종류다).

@@ -3808,18 +3808,24 @@ namespace PawsAndLoot.Editor
                     pickup.transform);
                 presentation.localPosition = Vector3.zero;
 
-                Material tinted = LoadOrCreateMaterial(
-                    $"Greybox_Shelf_{kind}",
-                    tint);
-                GameObject marker = CreateCube(
-                    $"{kind} Marker",
-                    spot + Vector3.up * 0.15f,
-                    new Vector3(0.4f, 0.3f, 0.4f),
-                    tinted,
-                    presentation,
-                    false);
-                UnityEngine.Object.DestroyImmediate(
-                    marker.GetComponent<Collider>());
+                // The prop itself where there is one. A tinted cube told the
+                // player a prop was there and nothing about which prop, and
+                // there are five of them on these shelves.
+                if (ThrowablePropResources.TryPlace(kind, presentation) == null)
+                {
+                    Material tinted = LoadOrCreateMaterial(
+                        $"Greybox_Shelf_{kind}",
+                        tint);
+                    GameObject marker = CreateCube(
+                        $"{kind} Marker",
+                        spot + Vector3.up * 0.15f,
+                        new Vector3(0.4f, 0.3f, 0.4f),
+                        tinted,
+                        presentation,
+                        false);
+                    UnityEngine.Object.DestroyImmediate(
+                        marker.GetComponent<Collider>());
+                }
 
                 pickup.AddComponent<ThrowablePickup>().Configure(
                     kind,
@@ -3887,14 +3893,9 @@ namespace PawsAndLoot.Editor
                     "PresentationRoot",
                     pickup.transform);
                 presentation.localPosition = Vector3.zero;
-                if (PlaceholderModelLibrary.TryInstantiateProp(
-                        ThrowableCatalog.GetModelStem(
-                            ThrowableKind.Rock),
-                        presentation,
-                        Vector3.zero,
-                        Vector3.zero,
-                        0.5f,
-                        rockMaterial) == null)
+                if (ThrowablePropResources.TryPlace(
+                        ThrowableKind.Rock,
+                        presentation) == null)
                 {
                     GameObject fallback = CreateCube(
                         "Rock Fallback",
