@@ -181,7 +181,18 @@ namespace PawsAndLoot.Integration.Network
         [SerializeField]
         private PawsAndLoot.Companions.CompanionAgent companionAgent;
 
+        /// <summary>
+        /// How far the client's animal may be from where the host says it is
+        /// before it is put there instead of walked there.
+        ///
+        /// Wide enough that ordinary packet lag still eases, which is what
+        /// keeps the animal from stuttering, and narrow enough that going
+        /// through a door does not become a long walk.
+        /// </summary>
+        private const float SnapDistance = 4f;
+
         private Vector3 _companionLastPosition;
+        private float _companionReportAt;
 
         private int _lastCompanionFaceSequence;
         private int _companionFaceSequence;
@@ -859,6 +870,32 @@ namespace PawsAndLoot.Integration.Network
         /// stutter. The legs are driven from the sent speed rather than from
         /// this movement, which is mostly zero between packets.
         /// </summary>
+        /// <summary>
+        /// Complains, on the client, when this player has no animal wired.
+        ///
+        /// The cat was on the host's screen and not on the client's, and the
+        /// three things that cause that — no animal, an animal nobody moves,
+        /// and an animal moved somewhere else — look identical from outside the
+        /// window. It was the third, and finding that out took printing all
+        /// three. What is left is the one that cannot be seen any other way: a
+        /// link with no animal replicates nothing and says nothing, and the
+        /// animal on each machine quietly goes its own way.
+        /// </summary>
+        private void ReportCompanion()
+        {
+            if (companionAgent != null || Time.time < _companionReportAt)
+            {
+                return;
+            }
+
+            _companionReportAt = Time.time + 5f;
+            PawsAndLoot.Logging.GameLogger.Warning(
+                PawsAndLoot.Logging.GameLogCategory.Companion,
+                $"{Role} link has no companion wired, so nothing about this "
+                + "animal reaches the client.",
+                this);
+        }
+
         private void ApplyCompanionTransform(float deltaTime)
         {
             if (companionAgent == null)
@@ -884,10 +921,29 @@ namespace PawsAndLoot.Integration.Network
             }
 
             Transform animal = companionAgent.transform;
-            animal.position = Vector3.MoveTowards(
-                animal.position,
-                _companionPosition.Value,
-                Mathf.Max(0.5f, _companionSpeed.Value * 2f) * deltaTime);
+            Vector3 told = _companionPosition.Value;
+
+            // Walked toward when it is a step away, put there when it is not.
+            //
+            // Easing alone assumes the animal only ever drifts, and the one
+            // thing in this game that moves an animal a long way in one frame
+            // is the thing that matters: the owner goes through a door and the
+            // host's cat is suddenly in a room 370 m off the edge of the town.
+            // The client's cat then set off south at one metre a second, which
+            // it can keep up for the rest of the match without arriving. The
+            // cat was not hidden and not missing — it was walking to the room,
+            // and it had already left the screen.
+            if (Vector3.Distance(animal.position, told) > SnapDistance)
+            {
+                animal.position = told;
+            }
+            else
+            {
+                animal.position = Vector3.MoveTowards(
+                    animal.position,
+                    told,
+                    Mathf.Max(0.5f, _companionSpeed.Value * 2f) * deltaTime);
+            }
             animal.rotation = Quaternion.Slerp(
                 animal.rotation,
                 Quaternion.Euler(0f, _companionYaw.Value, 0f),
@@ -978,6 +1034,7 @@ namespace PawsAndLoot.Integration.Network
             }
 
             ApplyCompanionFace();
+            ReportCompanion();
             ApplyCompanionTransform(Time.deltaTime);
             ApplyReplicatedTransform(Time.deltaTime);
             ApplyReplicatedGameplayState();
