@@ -88,6 +88,7 @@
   `Report Road Pieces` / `Report Road Colours` / `Report Sandbox Cost`.
 
 ### Fixed
+- 라쿤 인사 테스트 5건이 통과한다. 앞 테스트가 로드한 도시가 살아 있어서 라쿤이 그쪽 플레이어에게 인사하고 있었다 (ISSUE-069). Play Mode 실패 8 → 3.
 - 실내 카메라 테스트를 현재 설계에 맞췄다. 카메라를 벽 아래로 묶는 안은 플레이에서 반려됐고, 대신 시야를 가리는 벽을 치우는 방식(`InteriorCutawayView`)을 쓴다. 실패 9 → 8.
 - 설계가 바뀐 것을 모르던 Play Mode 테스트 3건을 갱신했다 — 감옥에서 도둑은 움직일 수 있고, 임포트한 실내는 가구가 메시에 용접돼 있어 칸막이가 없다. 실내 물건 배치를 기다리는 1건은 사유를 적어 보류했다. 실패 12 → 9.
 - `RockPickupScenePlayModeTests`가 통과한다. 스폰 뽑기가 테스트가 놓은 도둑을 32.7m 옮기고 있었다 (ISSUE-068).

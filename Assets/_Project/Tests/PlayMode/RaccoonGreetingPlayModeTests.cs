@@ -3,6 +3,8 @@ using NUnit.Framework;
 using PawsAndLoot.Animation;
 using PawsAndLoot.Gameplay.Players;
 using UnityEngine;
+using PawsAndLoot.Core;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace PawsAndLoot.Tests.PlayMode
@@ -14,6 +16,38 @@ namespace PawsAndLoot.Tests.PlayMode
     /// </summary>
     public sealed class RaccoonGreetingPlayModeTests
     {
+        /// <summary>
+        /// Starts each test in a scene with nobody in it.
+        ///
+        /// These tests say things like "no player in the scene at all" and then
+        /// build their own. That was true when they were written and stopped
+        /// being true when other play mode tests began loading the town: a scene
+        /// stays loaded between tests, the greeter looks for players with
+        /// FindObjectsByType — which searches every loaded scene — and found the
+        /// real thief standing wherever the previous test had left them. The
+        /// merchant was greeting a player these tests had never heard of, so it
+        /// never went back in the bin.
+        ///
+        /// Bootstrap rather than an empty scene made by hand, because it is a
+        /// real scene that exists, has no players in it, and unloads the town by
+        /// being loaded on its own.
+        /// </summary>
+        [UnitySetUp]
+        public IEnumerator SetUp()
+        {
+            yield return SceneManager.LoadSceneAsync(
+                GameSceneCatalog.GetPath(GameSceneId.Bootstrap),
+                LoadSceneMode.Single);
+            yield return null;
+
+            Assert.That(
+                Object.FindObjectsByType<PlayerRoleIdentity>(
+                    FindObjectsSortMode.None),
+                Is.Empty,
+                "Something in this scene is already a player, so 'nobody is "
+                + "near the bin' cannot be tested here.");
+        }
+
         [UnityTest]
         public IEnumerator RaccoonStaysHiddenUntilAPlayerIsNear()
         {
