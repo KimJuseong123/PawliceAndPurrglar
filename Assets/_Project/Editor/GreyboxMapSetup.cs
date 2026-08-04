@@ -3578,17 +3578,28 @@ namespace PawsAndLoot.Editor
             //
             // Spread across the map on purpose: the thief has to keep crossing
             // ground the police can cover, rather than farming one corner.
+            // Six loose pieces, spread over the new town.
+            //
+            // Written as coordinates rather than as offsets from the shops,
+            // because offsets from a shop are where they were and three of them
+            // ended up against a wall: one sat five centimetres from the
+            // bookshop and two were inside the jeweller's shell, which has only
+            // wall colliders, so nothing overlapped and nothing complained. They
+            // were unreachable and the map built, validated and logged "6 loot
+            // pieces placed".
+            //
+            // Spread on purpose. The twelve shop pieces are worth more and are
+            // all in three places; these are the reason to be anywhere else, so
+            // they sit in the open ground between the blocks where the officer
+            // has to cover distance to guard them.
             Vector3[] lootSpots =
             {
-                locations[GreyboxLocationId.JewelryStore].position
-                    + new Vector3(1.8f, 0.5f, 0f),
-                locations[GreyboxLocationId.Bookstore].position
-                    + new Vector3(0f, 0.5f, 4.5f),
-                locations[GreyboxLocationId.Supermarket].position
-                    + new Vector3(0f, 0.5f, -4.5f),
-                new Vector3(-24f, 0.5f, 40f),
-                new Vector3(30f, 0.5f, 34f),
-                new Vector3(8f, 0.5f, -19f)
+                new(-24f, 0.5f, 20f),
+                new(0f, 0.5f, 36f),
+                new(34f, 0.5f, 36f),
+                new(40f, 0.5f, 4f),
+                new(-10f, 0.5f, -10f),
+                new(24f, 0.5f, -20f)
             };
 
             for (int index = 0; index < lootSpots.Length; index++)
@@ -3611,7 +3622,7 @@ namespace PawsAndLoot.Editor
             CreateLootTarget(
                 "Crown Jewel",
                 locations[GreyboxLocationId.JewelryStore].position
-                    + new Vector3(-1.8f, 0.5f, 0f),
+                    + new Vector3(-6f, 0.5f, 5.4f),
                 new Color(0.98f, 0.83f, 0.35f),
                 root,
                 RareLootDefinitionPath,
@@ -3874,13 +3885,20 @@ namespace PawsAndLoot.Editor
             // down at x = -19 / -11 / -3 / 5 / 14 / 20 / 31. A crossing is a
             // road tile and therefore open ground by construction, and
             // CheckSpotIsClear below re-measures rather than trusting that.
+            // Five rocks, one for each quarter of the town and one in the
+            // middle, on the open ground between the blocks.
+            //
+            // A rock is only worth anything during a chase, so what matters is
+            // that wherever a chase goes there is one within a few seconds'
+            // run. Clustered rocks make three quarters of the map a place where
+            // the thief has nothing to throw.
             Vector3[] spots =
             {
-                new(-19f, 0.35f, 34f),
-                new(5f, 0.35f, 34f),
-                new(14f, 0.35f, 6f),
-                new(20f, 0.35f, -9f),
-                new(31f, 0.35f, 6f)
+                new(-14f, 0.35f, 36f),
+                new(-14f, 0.35f, 8f),
+                new(2f, 0.35f, 8f),
+                new(30f, 0.35f, 8f),
+                new(8f, 0.35f, -8f)
             };
 
             Material rockMaterial = LoadOrCreateMaterial(
@@ -4028,8 +4046,68 @@ namespace PawsAndLoot.Editor
         /// the ground and the road tiles are not obstacles but a wall, a shop body
         /// or another interactable is.
         /// </summary>
+        /// <summary>
+        /// Complains when a spot is inside a building's footprint.
+        ///
+        /// <see cref="CheckSpotIsClear"/> asks the physics scene whether
+        /// anything overlaps, and a building answers no: its colliders are the
+        /// walls, so the whole of its inside is empty space as far as a sphere
+        /// is concerned. The exteriors are shells nobody can walk into — the
+        /// rooms are elsewhere — so a pickup in there is unreachable, and two
+        /// pieces of loot sat inside the jeweller's for weeks while the map
+        /// built, validated and reported them placed.
+        ///
+        /// Measured against the drawn silhouette rather than the colliders, for
+        /// the same reason: what encloses the spot is the building, and the
+        /// building is the thing you can see.
+        /// </summary>
+        private static void CheckSpotIsOutdoors(string name, Vector3 spot)
+        {
+            foreach (Transform block in
+                UnityEngine.Object.FindObjectsByType<Transform>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None))
+            {
+                if (!block.name.StartsWith("Block "))
+                {
+                    continue;
+                }
+
+                Renderer[] parts =
+                    block.GetComponentsInChildren<Renderer>(true);
+                if (parts.Length == 0)
+                {
+                    continue;
+                }
+
+                Bounds bounds = parts[0].bounds;
+                for (int index = 1; index < parts.Length; index++)
+                {
+                    bounds.Encapsulate(parts[index].bounds);
+                }
+
+                // Horizontal only. A pickup half a metre off the ground is
+                // still inside the building it is standing in.
+                if (spot.x > bounds.min.x
+                    && spot.x < bounds.max.x
+                    && spot.z > bounds.min.z
+                    && spot.z < bounds.max.z)
+                {
+                    Debug.LogError(
+                        $"[MAP-002] '{name}' at ({spot.x:0.0}, {spot.z:0.0}) is "
+                        + $"inside '{block.name}', whose walls run "
+                        + $"x {bounds.min.x:0.0}..{bounds.max.x:0.0}, "
+                        + $"z {bounds.min.z:0.0}..{bounds.max.z:0.0}. The "
+                        + "exteriors are shells nobody can walk into, so nobody "
+                        + "can reach it.");
+                    return;
+                }
+            }
+        }
+
         private static void CheckSpotIsClear(Transform placed, Vector3 spot)
         {
+            CheckSpotIsOutdoors(placed.name, spot);
             Physics.SyncTransforms();
             Collider[] blockers = Physics.OverlapSphere(
                 spot + Vector3.up * 0.05f,
@@ -4247,7 +4325,10 @@ namespace PawsAndLoot.Editor
             {
                 GreyboxLocationId.Supermarket => -6.5f,
                 GreyboxLocationId.Bookstore => 6.5f,
-                _ => 4.2f
+                // The jeweller's is the shallowest of the three and 4.2 m put
+                // its row twenty centimetres from the wall, which is close
+                // enough that reaching a piece means standing in the building.
+                _ => 5.4f
             };
         }
 
@@ -4278,6 +4359,11 @@ namespace PawsAndLoot.Editor
             target.name = name;
             target.transform.SetParent(parent);
             target.transform.position = position;
+
+            // Loot was the one kind of pickup nobody checked, which is why two
+            // pieces sat inside the jeweller's shell and the map said it had
+            // placed them.
+            CheckSpotIsOutdoors(name, position);
             BoxCollider worldCollider =
                 target.AddComponent<BoxCollider>();
             worldCollider.size = Vector3.one * 0.75f;
