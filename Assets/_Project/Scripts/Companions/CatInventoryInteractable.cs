@@ -11,7 +11,8 @@ namespace PawsAndLoot.Companions
     public sealed class CatInventoryInteractable :
         MonoBehaviour,
         IPlayerInteractable,
-        IInteractionPriority
+        IInteractionPriority,
+        ISlotContainer
     {
         [SerializeField] private CompanionAgent agent;
         [SerializeField] private MonoBehaviour matchStateSource;
@@ -28,6 +29,11 @@ namespace PawsAndLoot.Companions
         public Transform InteractionTransform => transform;
         public PlayerInteractionType InteractionType => PlayerInteractionType.Generic;
         public string Prompt => "고양이 가방 열기";
+
+        // Named for the panel heading rather than reusing the prompt: "고양이 가방
+        // 열기" is an instruction and belongs over a key, not over a grid.
+        public string DisplayName => "고양이 가방";
+        public int SlotCount => QuickSlotController.SlotCount;
         /// <summary>
         /// Below everything else, because the cat is the one interactable the
         /// player never walks up to.

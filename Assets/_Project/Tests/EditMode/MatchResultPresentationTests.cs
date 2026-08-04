@@ -93,9 +93,12 @@ namespace PawsAndLoot.Tests.EditMode
                     29f));
             Fixture fixture = CreatePresenter();
 
+            // The local role defaults to police, and the police won, so this
+            // screen belongs to a winner.
             Assert.That(
-                fixture.Presenter.ReasonText,
-                Is.EqualTo("도둑을 3번 체포했습니다"));
+                fixture.Presenter.IsShowingWinTitle,
+                Is.True,
+                "The police player won and is being shown the losing title.");
             Assert.That(fixture.Presenter.ElapsedText, Is.EqualTo("03:31"));
             Assert.That(
                 fixture.Presenter.MiddleCaptionText,
@@ -126,9 +129,12 @@ namespace PawsAndLoot.Tests.EditMode
                     0f));
             Fixture fixture = CreatePresenter();
 
+            // The thief won and the local role is the police, so this screen
+            // belongs to a loser even though the illustration celebrates.
             Assert.That(
-                fixture.Presenter.ReasonText,
-                Is.EqualTo("목표 골드를 모아 탈출에 성공했습니다"));
+                fixture.Presenter.IsShowingWinTitle,
+                Is.False,
+                "The police player lost and is being shown the winning title.");
             Assert.That(fixture.Presenter.ElapsedText, Is.EqualTo("07:32"));
             Assert.That(
                 fixture.Presenter.MiddleCaptionText,
@@ -152,9 +158,13 @@ namespace PawsAndLoot.Tests.EditMode
         {
             Fixture fixture = CreatePresenter();
 
+            // Nothing was played, so nothing is claimed.
             Assert.That(
-                fixture.Presenter.ReasonText,
-                Is.EqualTo("경기를 한 번 진행하면 결과가 표시됩니다."));
+                fixture.Presenter.TitleSprite,
+                Is.Null,
+                "A screen with no result is showing a verdict.");
+            Assert.That(fixture.Presenter.PoliceBadgeText, Is.Empty);
+            Assert.That(fixture.Presenter.ThiefBadgeText, Is.Empty);
             Assert.That(fixture.Presenter.ElapsedText, Is.EqualTo("--:--"));
             Assert.That(fixture.Presenter.MiddleValueText, Is.EqualTo("-"));
             Assert.That(fixture.Presenter.GoldValueText, Is.EqualTo("-"));
@@ -233,7 +243,6 @@ namespace PawsAndLoot.Tests.EditMode
                 CreateText("Police Badge", root.transform),
                 CreateText("Thief Badge", root.transform));
             presenter.ConfigureStats(
-                CreateText("Reason", root.transform),
                 CreateText("Elapsed", root.transform),
                 CreateImage("Middle Icon", root.transform),
                 CreateSprite("Arrest Icon"),

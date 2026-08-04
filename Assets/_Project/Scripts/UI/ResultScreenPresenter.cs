@@ -1,4 +1,5 @@
 using System;
+using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Match;
 using TMPro;
 using UnityEngine;
@@ -23,11 +24,19 @@ namespace PawsAndLoot.UI
         [SerializeField]
         private Image titleImage;
 
+        /// <summary>
+        /// 승리 and 패배, chosen by whether the local player won.
+        ///
+        /// Not by who won. The old pair read "경찰 승리!" and "도둑 승리!", which
+        /// is the winner stated twice and leaves the loser reading a title about
+        /// somebody else's match. The illustration below still shows whoever
+        /// actually won, so the two are chosen from different questions.
+        /// </summary>
         [SerializeField]
-        private Sprite policeTitleSprite;
+        private Sprite wonTitleSprite;
 
         [SerializeField]
-        private Sprite thiefTitleSprite;
+        private Sprite lostTitleSprite;
 
         [SerializeField]
         private Image versusImage;
@@ -43,9 +52,6 @@ namespace PawsAndLoot.UI
 
         [SerializeField]
         private TMP_Text thiefBadgeLabel;
-
-        [SerializeField]
-        private TMP_Text reasonLabel;
 
         [SerializeField]
         private TMP_Text elapsedValueLabel;
@@ -71,7 +77,6 @@ namespace PawsAndLoot.UI
         [SerializeField]
         private TMP_Text goldValueLabel;
 
-        public string ReasonText => Read(reasonLabel);
         public string ElapsedText => Read(elapsedValueLabel);
         public string MiddleCaptionText => Read(middleCaptionLabel);
         public string MiddleValueText => Read(middleValueLabel);
@@ -84,23 +89,41 @@ namespace PawsAndLoot.UI
         /// Which title art is showing. The winner is announced by artwork
         /// rather than a string, so this is what a test has to look at.
         /// </summary>
+        /// <summary>
+        /// Whether the title currently showing is the winning one, for tests.
+        ///
+        /// Exposed as a question rather than leaving them to compare sprites,
+        /// because the thing worth asserting is "does this say I won", and a test
+        /// that compares against <c>wonTitleSprite</c> passes just as happily when
+        /// both fields hold the same sprite.
+        /// </summary>
+        public bool IsShowingWinTitle =>
+            titleImage != null
+            && wonTitleSprite != null
+            && titleImage.sprite == wonTitleSprite;
+
         public Sprite TitleSprite =>
             titleImage != null ? titleImage.sprite : null;
 
         public Sprite VersusSprite =>
             versusImage != null ? versusImage.sprite : null;
 
+        /// <summary>
+        /// The titles are named for the viewer and the illustrations for the
+        /// winner, because that is how they are chosen. Naming both pairs after the
+        /// teams is what let the old screen show a loser a title about the winner.
+        /// </summary>
         public void ConfigureArt(
             Image configuredTitleImage,
-            Sprite configuredPoliceTitle,
-            Sprite configuredThiefTitle,
+            Sprite configuredWonTitle,
+            Sprite configuredLostTitle,
             Image configuredVersusImage,
             Sprite configuredPoliceVersus,
             Sprite configuredThiefVersus)
         {
             titleImage = configuredTitleImage;
-            policeTitleSprite = configuredPoliceTitle;
-            thiefTitleSprite = configuredThiefTitle;
+            wonTitleSprite = configuredWonTitle;
+            lostTitleSprite = configuredLostTitle;
             versusImage = configuredVersusImage;
             policeVersusSprite = configuredPoliceVersus;
             thiefVersusSprite = configuredThiefVersus;
@@ -115,7 +138,6 @@ namespace PawsAndLoot.UI
         }
 
         public void ConfigureStats(
-            TMP_Text configuredReason,
             TMP_Text configuredElapsedValue,
             Image configuredMiddleIcon,
             Sprite configuredArrestIcon,
@@ -125,7 +147,6 @@ namespace PawsAndLoot.UI
             TMP_Text configuredGoldCaption,
             TMP_Text configuredGoldValue)
         {
-            reasonLabel = configuredReason;
             elapsedValueLabel = configuredElapsedValue;
             middleIconImage = configuredMiddleIcon;
             arrestIconSprite = configuredArrestIcon;
@@ -149,16 +170,22 @@ namespace PawsAndLoot.UI
             MatchResultSession.TryGetSummary(out MatchSummary summary);
             bool policeWon = result.Winner == MatchWinner.Police;
 
+            // Whose screen this is. Resolved from the role the lobby committed
+            // before the scene changed, which survives the load as a static; the
+            // selector component itself belongs to the match scene and is gone by
+            // the time this runs.
+            bool localIsPolice = ResolveLocalRole() == PlayerRole.Police;
+            bool localWon = localIsPolice == policeWon;
+
             SetSprite(
                 titleImage,
-                policeWon ? policeTitleSprite : thiefTitleSprite);
+                localWon ? wonTitleSprite : lostTitleSprite);
             SetSprite(
                 versusImage,
                 policeWon ? policeVersusSprite : thiefVersusSprite);
 
             SetText(policeBadgeLabel, policeWon ? "승리" : "패배");
             SetText(thiefBadgeLabel, policeWon ? "패배" : "승리");
-            SetText(reasonLabel, DescribeReason(result.Reason, summary));
 
             // The middle card reports whichever side's effort decided the
             // match, so it changes with the winner rather than showing a zero.
@@ -198,11 +225,14 @@ namespace PawsAndLoot.UI
         /// </summary>
         private void ShowNoResult()
         {
-            SetSprite(titleImage, policeTitleSprite);
+            // Nothing is claimed. No title, no badge, no verdict: a screen
+            // opened without a match has nothing true to say, and the one thing it
+            // must not do is show 승리 over a match that never happened. That is
+            // what this screen used to do with painted numbers (ISSUE-050).
+            SetSprite(titleImage, null);
             SetSprite(versusImage, policeVersusSprite);
-            SetText(policeBadgeLabel, "대기");
-            SetText(thiefBadgeLabel, "대기");
-            SetText(reasonLabel, "경기를 한 번 진행하면 결과가 표시됩니다.");
+            SetText(policeBadgeLabel, string.Empty);
+            SetText(thiefBadgeLabel, string.Empty);
             SetText(elapsedValueLabel, "--:--");
             SetSprite(middleIconImage, arrestIconSprite);
             SetText(middleCaptionLabel, "경찰 체포");
@@ -211,11 +241,28 @@ namespace PawsAndLoot.UI
             SetText(goldValueLabel, "-");
         }
 
+        /// <summary>
+        /// Which side the local player was on.
+        ///
+        /// Asked of the static rather than of a component: the role is committed in
+        /// the lobby and carried across the scene load as a static value, because a
+        /// scene-placed <c>NetworkObject</c> does not survive one (ISSUE-016). By
+        /// the time this screen exists the match scene and everything in it is gone.
+        ///
+        /// Falls back to police when nothing was committed, which is the same
+        /// default the match scene uses. A wrong guess here swaps 승리 and 패배, so
+        /// it is worth saying plainly that this is a guess only when no match was
+        /// played through the lobby.
+        /// </summary>
+        private static PlayerRole ResolveLocalRole()
+        {
+            return LocalPlayerRoleSelector.OverriddenRole ?? PlayerRole.Police;
+        }
+
         public void ValidateOrThrow()
         {
             if (titleImage == null
                 || versusImage == null
-                || reasonLabel == null
                 || elapsedValueLabel == null
                 || middleCaptionLabel == null
                 || middleValueLabel == null
@@ -237,29 +284,6 @@ namespace PawsAndLoot.UI
             return $"{totalSeconds / 60:00}:{totalSeconds % 60:00}";
         }
 
-        /// <summary>
-        /// The sentence under the title. It quotes the count that actually
-        /// ended the match, which is the one number a player wants first.
-        /// </summary>
-        private static string DescribeReason(
-            MatchEndReason reason,
-            MatchSummary summary)
-        {
-            return reason switch
-            {
-                MatchEndReason.ThiefArrested =>
-                    $"도둑을 {summary.CatchCount}번 체포했습니다",
-                MatchEndReason.SaleTargetReached =>
-                    "목표 골드를 모아 탈출에 성공했습니다",
-                MatchEndReason.TimeExpiredBelowTarget =>
-                    "제한 시간 안에 목표 골드를 모으지 못했습니다",
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(reason),
-                    reason,
-                    "Unknown match end reason.")
-            };
-        }
-
         private static string Read(TMP_Text label)
         {
             return label != null ? label.text : string.Empty;
@@ -273,12 +297,27 @@ namespace PawsAndLoot.UI
             }
         }
 
+        /// <summary>
+        /// Sets a sprite, and switches the graphic off when there is none.
+        ///
+        /// A null sprite is not "no picture": an <c>Image</c> with no sprite draws a
+        /// white quad. Ignoring null — which this used to do — is what put a blank
+        /// white rectangle where the title belongs on a screen with no result. The
+        /// component has to go off, not merely be given nothing.
+        /// </summary>
         private static void SetSprite(Image image, Sprite sprite)
         {
-            if (image != null && sprite != null && image.sprite != sprite)
+            if (image == null)
+            {
+                return;
+            }
+
+            if (image.sprite != sprite)
             {
                 image.sprite = sprite;
             }
+
+            image.enabled = sprite != null;
         }
 
         private void OnEnable()

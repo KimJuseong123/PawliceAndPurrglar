@@ -251,6 +251,22 @@ namespace PawsAndLoot.Tests.EditMode
                     continue;
                 }
 
+                if (image.name == "TitleArt")
+                {
+                    // The one image that is meant to be empty in the prefab. It
+                    // holds 승리 or 패배, chosen from whether the local player won,
+                    // and a prefab that baked either would be claiming a result
+                    // before a match had been played. What matters instead is that
+                    // it is switched off while it is empty — an Image with no
+                    // sprite draws a white quad, which is what it did.
+                    Assert.That(
+                        image.enabled,
+                        Is.False,
+                        "The title has no sprite and is still enabled, so it draws "
+                        + "a white rectangle where the verdict belongs.");
+                    continue;
+                }
+
                 Assert.That(
                     image.sprite,
                     Is.Not.Null,

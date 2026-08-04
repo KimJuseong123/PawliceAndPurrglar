@@ -40,8 +40,6 @@ namespace PawsAndLoot.Editor
         private const float HeaderHeight = 44f;
         private const float TitleTop = 62f;
         private const float TitleHeight = 178f;
-        private const float ReasonTop = 246f;
-        private const float ReasonSize = 34f;
 
         /// <summary>
         /// Width is derived from the illustration's own aspect at build time,
@@ -54,8 +52,11 @@ namespace PawsAndLoot.Editor
         /// The illustration crop's own pixel size, used to place the badges on
         /// the corners the mockup painted them on whatever size it is drawn.
         /// </summary>
-        private const float SourceBandWidth = 1350f;
-        private const float SourceBandHeight = 448f;
+        // The new mockups are 1672x941 against the old 1448x1086, and the
+        // illustration inside them measures 1285x428 rather than 1350x448. Every
+        // fraction below is taken against these, so they have to change together.
+        private const float SourceBandWidth = 1285f;
+        private const float SourceBandHeight = 428f;
 
         private const float CardHeight = 124f;
         private const float CardWidth = 452f;
@@ -136,7 +137,6 @@ namespace PawsAndLoot.Editor
 
             BuildHeader(safeArea);
             Image title = BuildTitle(safeArea);
-            TMP_Text reason = BuildReason(safeArea);
             (Image versus, TMP_Text policeBadge, TMP_Text thiefBadge) =
                 BuildVersus(safeArea);
             (TMP_Text elapsed,
@@ -150,14 +150,13 @@ namespace PawsAndLoot.Editor
             var presenter = canvasObject.AddComponent<ResultScreenPresenter>();
             presenter.ConfigureArt(
                 title,
-                Art("result_title_police"),
-                Art("result_title_thief"),
+                Art("result_title_win"),
+                Art("result_title_lose"),
                 versus,
                 Art("result_versus_police"),
                 Art("result_versus_thief"));
             presenter.ConfigureBadges(policeBadge, thiefBadge);
             presenter.ConfigureStats(
-                reason,
                 elapsed,
                 middleIcon,
                 Art("icon_cuffs"),
@@ -195,33 +194,14 @@ namespace PawsAndLoot.Editor
                 new Vector2(0.5f, 1f),
                 new Vector2(0f, -TitleTop),
                 new Vector2(860f, TitleHeight));
-            title.sprite = Art("result_title_police");
+            // Off, not merely empty. An Image with no sprite draws a white
+            // quad, and the prefab is what the capture tool and the scene show
+            // before a match has been played.
+            title.sprite = null;
+            title.enabled = false;
             title.preserveAspect = true;
             title.raycastTarget = false;
             return title;
-        }
-
-        /// <summary>
-        /// The sentence under the title. Narrow enough to clear the two badges
-        /// that overhang the illustration's top corners.
-        /// </summary>
-        private static TMP_Text BuildReason(RectTransform parent)
-        {
-            TMP_Text reason = UiBuildKit.Text(
-                "ReasonText",
-                parent,
-                ReasonSize,
-                TextAlignmentOptions.Center);
-            UiBuildKit.Anchor(
-                (RectTransform)reason.transform,
-                new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -ReasonTop),
-                new Vector2(880f, UiBuildKit.LineBox(ReasonSize)));
-            reason.color = UiBuildKit.Ink;
-            reason.text = "경기를 한 번 진행하면 결과가 표시됩니다.";
-            return reason;
         }
 
         private static (Image, TMP_Text, TMP_Text) BuildVersus(
@@ -251,11 +231,16 @@ namespace PawsAndLoot.Editor
             // of the panel, where neither a rectangle nor a colour key
             // separates it from the artwork underneath. Covering them is what
             // lets the words change with the outcome.
-            // 188x86 in the crop's own pixels: the painted badge measures
-            // 180x84 there, counting the pennant tail below the plate.
+            // Deliberately larger than the painted badge rather than matched to
+            // it. In the new crop the plate runs off the top edge, so its full
+            // height cannot be measured from the crop at all — and the two errors
+            // are not symmetric. Covering a few pixels too much hides some sky;
+            // covering a few too few leaves a sliver of the opposite word showing
+            // under the badge, which on this screen tells the player they won when
+            // they lost.
             var badge = new Vector2(
-                width * (188f / SourceBandWidth),
-                VersusHeight * (86f / SourceBandHeight));
+                width * (200f / SourceBandWidth),
+                VersusHeight * (70f / SourceBandHeight));
             float inset = width * (3f / SourceBandWidth);
 
             TMP_Text police = BuildBadge(
@@ -272,7 +257,37 @@ namespace PawsAndLoot.Editor
                 false,
                 inset,
                 badge);
+
+            // Built and then switched off, because the drawn ones are already
+            // right.
+            //
+            // Covering the painted badges made sense when there was one
+            // illustration per winner and a title that named the winner. There are
+            // now two illustrations chosen by who won, and each carries the badges
+            // for that outcome — 승리 over the police when the police won, 패배 when
+            // they did not. Drawing our own on top produced two plates a few pixels
+            // apart, which is what the doubled edge in the screenshot was.
+            //
+            // Kept rather than deleted so the presenter and its tests still have
+            // labels to write the verdict into; text on a disabled object is still
+            // readable, and this becomes the way back if the art ever ships without
+            // badges baked in.
+            SetBadgeVisible(police, false);
+            SetBadgeVisible(thief, false);
             return (versus, police, thief);
+        }
+
+        /// <summary>
+        /// Shows or hides a badge by its plate, given the label inside it. The
+        /// label's own object is the text; the plate is what is seen.
+        /// </summary>
+        private static void SetBadgeVisible(TMP_Text label, bool visible)
+        {
+            Transform plate = label != null ? label.transform.parent : null;
+            if (plate != null)
+            {
+                plate.gameObject.SetActive(visible);
+            }
         }
 
         private static TMP_Text BuildBadge(
@@ -311,7 +326,11 @@ namespace PawsAndLoot.Editor
                 32f,
                 TextAlignmentOptions.Center);
             UiBuildKit.Stretch((RectTransform)label.transform);
-            label.text = "대기";
+            // Blank in the prefab. The presenter fills these with 승리 and 패배 on
+            // enable, and anything baked here is a claim about a match that has not
+            // been played — which is what "대기" was doing on a screen whose whole
+            // job is to report a verdict.
+            label.text = string.Empty;
             label.color = Color.white;
             return label;
         }
