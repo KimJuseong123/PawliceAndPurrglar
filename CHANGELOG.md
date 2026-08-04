@@ -88,6 +88,32 @@
 - `Repair Model Textures` / `Validate Model Textures` / `Capture Model Sheet` /
   `Report Road Pieces` / `Report Road Colours` / `Report Sandbox Cost`.
 
+- 수색 시스템 1단계. `LootTable` ScriptableObject(가중치·개수 범위·중복 상한),
+  시드 기반 추첨 `LootRoller`, 수색 대상 `SearchableContainer`
+  (`IPlayerInteractable` + `IHoldInteractable` 0.6초 + `IInteractionPriority`),
+  `Paws & Loot/Loot/Create Default Loot Tables`와 `Validate Loot Setup`
+- 컨테이너 이동 로직을 `ContainerTransfer` 한 곳으로 모았다. 클릭 두 방향과
+  F키(전부 가져오기)가 같은 "꺼내고 → 넣고 → 실패하면 되돌리기"를 쓴다 — 대량
+  이동을 따로 구현하면 같은 아이템이 두 곳에 생긴다
+- 고양이 가방 전용이던 좌우 교환 UI를 임의 컨테이너로 일반화(`ISlotContainer`).
+  화면 제목과 그리드 제목이 열린 컨테이너 이름을 따른다
+- 추첨·이동 계약 테스트 14개
+
+### Changed
+
+- **결과 화면의 큰 제목이 승자 기준에서 보는 사람 기준으로 바뀌었다.** 이전에는
+  `경찰 승리!`/`도둑 승리!`여서 진 사람도 이긴 팀 제목을 봤다. 이제 내가 이겼으면
+  `승리`, 졌으면 `패배`다. VS 밴드 그림은 여전히 누가 이겼는지로 정해지므로, 진
+  사람은 상대가 환호하는 그림 위에 `패배`를 본다
+- 결과 화면 목업을 4:3 두 장에서 16:9 네 장(승자 × 보는 사람)으로 교체했다
+- 승패 사유 문장(`도둑을 3번 체포했습니다` 등)을 제거했다. 새 목업에 그 자리가 없다
+- 결과가 없을 때 제목과 배지를 비운다. 이전에는 `대기` 배지와 안내 문구가 떴는데,
+  결과 없이 무언가를 주장하는 것이 `ISSUE-050`의 정체였다
+- 인벤토리·교환 UI 아이콘을 고정 여백(`size - 24px`)에서 비율(`size × 0.8`)로
+  바꾸고 `preserveAspect`를 켰다. 고정 여백은 같은 아이콘을 70px 슬롯에서 66%,
+  82px 슬롯에서 71%로 만들어 패널마다 크기가 달랐고, 비율 유지는 아예 꺼져 있어
+  세로로 긴 아이콘이 찌그러졌다
+
 ### Fixed
 - 숲을 잔디 높이로 내리고 통과할 수 있게 했다. 건물 경로를 타서 1.28m 떠 있고 11m 박스로 막혀 있었다 — 이제 나무 사이에 숨을 수 있다 (ISSUE-072).
 - Play Mode 실패가 1건으로 줄었다. 투과 테스트는 갱신된 단정 밑에 옛 단정이 남아 있었고(ISSUE-070), 경찰 HUD 테스트는 꺼진 셀렉터에 역할을 지시하고 있었다(ISSUE-071).

@@ -16,10 +16,23 @@ namespace PawsAndLoot.Tests.PlayMode
     {
         private const float PositionTolerance = 0.01f;
 
+        [TearDown]
+        public void TearDown()
+        {
+            // The local role is a static that survives a scene load, so leaving it
+            // set lets this test decide the next one's result.
+            LocalPlayerRoleSelector.ClearOverriddenRole();
+        }
+
         [UnityTest]
         public IEnumerator RematchResetsMatchStateAndSecondMatchEnds()
         {
             MatchResultSession.Clear();
+
+            // Whose screen the result will be, stated because this test asserts a
+            // viewpoint: the thief wins here, so the police player has to be shown
+            // the losing title over an illustration of the thief celebrating.
+            LocalPlayerRoleSelector.OverrideRole(PlayerRole.Police);
             yield return LoadGameScene();
 
             MatchSceneRefs first = MatchSceneRefs.Collect();
@@ -179,8 +192,11 @@ namespace PawsAndLoot.Tests.PlayMode
             Assert.That(presenter.PoliceBadgeText, Is.EqualTo("패배"));
             Assert.That(presenter.ThiefBadgeText, Is.EqualTo("승리"));
             Assert.That(
-                presenter.ReasonText,
-                Is.EqualTo("목표 골드를 모아 탈출에 성공했습니다"));
+                presenter.IsShowingWinTitle,
+                Is.False,
+                "The thief won and the local role is the police, so the title "
+                + "has to be the losing one even though the illustration shows "
+                + "the thief celebrating.");
             Assert.That(presenter.GoldValueText, Is.EqualTo("1,000"));
 
             MatchResultSession.Clear();
