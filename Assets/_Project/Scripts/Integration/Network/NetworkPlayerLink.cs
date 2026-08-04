@@ -952,6 +952,18 @@ namespace PawsAndLoot.Integration.Network
             companionAgent
                 .GetComponent<PawsAndLoot.Animation.CompanionLegAnimator>()
                 ?.SetExternalSpeed(_companionSpeed.Value);
+
+            // The body settle is told the same speed the legs are.
+            //
+            // Only the legs were told, so on this machine the two read the
+            // animal differently: the legs walked at the host's speed while the
+            // body chased a speed measured from packets, which is a spike
+            // followed by nothing. The hop's height changed every frame and the
+            // cat shook.
+            companionAgent
+                .GetComponent<
+                    PawsAndLoot.Animation.CompanionProceduralAnimator>()
+                ?.SetExternalSpeed(_companionSpeed.Value);
         }
 
         private void PublishCompanionFace()
@@ -1224,8 +1236,17 @@ namespace PawsAndLoot.Integration.Network
 
             if (legAnimator != null && motor != null)
             {
-                legAnimator.SetExternalSpeed(
-                    _normalizedSpeed.Value * motor.EffectiveMoveSpeed);
+                float told =
+                    _normalizedSpeed.Value * motor.EffectiveMoveSpeed;
+                legAnimator.SetExternalSpeed(told);
+
+                // The same for the body. The animal is what somebody noticed,
+                // because the thief's cat stays close enough to fill the
+                // screen, but the replicated player is moved exactly the same
+                // way and had exactly the same two opinions about its speed.
+                GetComponent<
+                    PawsAndLoot.Animation.CompanionProceduralAnimator>()
+                    ?.SetExternalSpeed(told);
             }
         }
     }
