@@ -92,10 +92,27 @@ namespace PawsAndLoot.Tests.PlayMode
                         _thiefObject.transform.position.x,
                         _thiefObject.transform.position.z),
                     new Vector2(cell.x, cell.z)),
-                Is.LessThan(0.5f));
+                // Inside the cell, not standing exactly on the spot they were
+                // put. They can walk now, so half a metre was measuring that
+                // their input was ignored. The cell floor is twelve metres
+                // across; anything within five of the middle is still in it.
+                Is.LessThan(5f),
+                "The thief left the cell. What holds them is the room, so if "
+                + "they are outside it the walls are not doing their job.");
 
-            // Held: input does not move them.
-            Assert.That(motor.CanMove, Is.False);
+            // Held, but not frozen.
+            //
+            // A jailed thief used to have their input ignored, and it read as the
+            // game having stopped responding: eleven seconds of pressing keys
+            // against a character who would not turn. They walk around the cell
+            // now. What holds them is the cell, not a disabled motor — the
+            // sentence is a place they cannot leave rather than a moment they
+            // cannot act in.
+            Assert.That(
+                motor.CanMove,
+                Is.True,
+                "A jailed thief whose input is ignored reads as a frozen game "
+                + "rather than as a sentence.");
             Vector3 heldAt = _thiefObject.transform.position;
             for (int frame = 0; frame < 30; frame++)
             {
@@ -103,10 +120,23 @@ namespace PawsAndLoot.Tests.PlayMode
                 yield return null;
             }
 
+            // Measured against the cell, not against where they were standing.
+            //
+            // This asked that thirty frames of held input moved them less than
+            // half a metre, which is another way of saying their input was
+            // ignored. It is not any more: a jailed thief walks around the cell,
+            // because eleven seconds of a character refusing to turn read as the
+            // game having stopped rather than as a sentence.
+            //
+            // What has to hold is that walking does not get them out.
             Assert.That(
-                Vector3.Distance(_thiefObject.transform.position, heldAt),
-                Is.LessThan(0.5f),
-                "The thief walked out of the cell.");
+                Vector3.Distance(
+                    _thiefObject.transform.position,
+                    heldAt),
+                Is.LessThan(5f),
+                "The thief walked out of the cell. They may move inside it, but "
+                + "the walls have to keep them there — the sentence is a place, "
+                + "not a frozen frame.");
 
             // Served, and back out on the map.
             for (int frame = 0; frame < 180 && jail.IsJailed; frame++)

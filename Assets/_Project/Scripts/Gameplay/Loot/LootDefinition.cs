@@ -40,11 +40,29 @@ namespace PawsAndLoot.Gameplay.Loot
         [SerializeField]
         private bool raisesAlarm;
 
+        /// <summary>
+        /// Model stem under <c>Assets/_Project/Art/Props</c>, or empty to fall
+        /// back to the shared placeholder.
+        ///
+        /// On the piece rather than on the spot it stands in, for the same
+        /// reason the alarm is: it follows the piece. A gold bar dropped in an
+        /// alley is still a gold bar, and the loot the thief is carrying is
+        /// drawn from this too.
+        ///
+        /// Every piece used to draw the same jewellery box, so the supermarket,
+        /// the bookshop and the jeweller's all sold the same object at three
+        /// prices and the thief had no way to tell a five-hundred-gold ring from
+        /// a two-hundred-gold loaf until they had picked it up.
+        /// </summary>
+        [SerializeField]
+        private string modelStem = string.Empty;
+
         public string StableId => stableId;
         public string DisplayName => displayName;
         public LootRarity Rarity => rarity;
         public LootCarryType CarryType => carryType;
         public bool RaisesAlarm => raisesAlarm;
+        public string ModelStem => modelStem;
 
         /// <summary>
         /// Seconds the thief must stand still to take it.
@@ -69,13 +87,39 @@ namespace PawsAndLoot.Gameplay.Loot
             string configuredDisplayName,
             LootRarity configuredRarity,
             LootCarryType configuredCarryType,
-            bool configuredRaisesAlarm = false)
+            bool configuredRaisesAlarm = false,
+            string configuredModelStem = null)
         {
             stableId = configuredStableId;
             displayName = configuredDisplayName;
             rarity = configuredRarity;
             carryType = configuredCarryType;
             raisesAlarm = configuredRaisesAlarm;
+            modelStem = configuredModelStem ?? string.Empty;
+        }
+
+        /// <summary>
+        /// How big this piece should be drawn, in metres along its longest side.
+        ///
+        /// Taken from how it is carried rather than written per piece, because
+        /// the two are the same fact said twice: a pocket piece is small enough
+        /// to pocket. One rule means a new piece cannot be authored at the wrong
+        /// size, and it makes the carrying cost visible before it is picked up —
+        /// the thief can see that the thing across the room is a two-hander.
+        ///
+        /// Needed at all because these models are generated and arrive at sizes
+        /// with no relation to each other or to the town; the importer scales
+        /// each one until it measures this.
+        /// </summary>
+        public static float GetModelSize(LootCarryType carryType)
+        {
+            return carryType switch
+            {
+                LootCarryType.Pocket => 0.22f,
+                LootCarryType.OneHand => 0.38f,
+                LootCarryType.TwoHand => 0.62f,
+                _ => 0.85f
+            };
         }
 
         public int GetPrice(LootConfig config)

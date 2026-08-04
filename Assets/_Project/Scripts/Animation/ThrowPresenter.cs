@@ -86,6 +86,7 @@ namespace PawsAndLoot.Animation
         private float _liftSign = 1f;
 
         private Transform _prop;
+        private ThrowableKind? _propKind;
         private Vector3 _propFrom;
         private Vector3 _propTo;
         private float _propElapsed;
@@ -244,7 +245,7 @@ namespace PawsAndLoot.Animation
                 return;
             }
 
-            EnsureProp();
+            EnsureProp(kind);
             _propFrom = origin;
             _propTo = landing;
             _propElapsed = 0f;
@@ -259,10 +260,33 @@ namespace PawsAndLoot.Animation
             }
         }
 
-        private void EnsureProp()
+        private void EnsureProp(ThrowableKind kind)
         {
+            // Rebuilt when the kind changes, because one reused sphere served
+            // every prop and a rock, a frozen octopus and a firework are not the
+            // same throw. The last kind is remembered rather than the object
+            // inspected — asking the instance what it is would mean naming
+            // things and reading names back.
+            if (_prop != null && _propKind == kind)
+            {
+                return;
+            }
+
             if (_prop != null)
             {
+                Destroy(_prop.gameObject);
+                _prop = null;
+            }
+
+            _propKind = kind;
+
+            GameObject authored =
+                ThrowableModelLibrary.TryInstantiate(kind, null);
+            if (authored != null)
+            {
+                authored.name = "Thrown Prop";
+                authored.SetActive(false);
+                _prop = authored.transform;
                 return;
             }
 

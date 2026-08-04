@@ -144,6 +144,16 @@ namespace PawsAndLoot.Animation
             }
 
             _built = true;
+
+            // The authored prop, when it exists. Only the officer's glue trap
+            // and sensor light have no model, and the sensor light needs its
+            // lamp either way, so both keep going through the shapes below.
+            if (kind != ThrowableKind.SensorLight
+                && ThrowableModelLibrary.TryInstantiate(kind, transform) != null)
+            {
+                return;
+            }
+
             switch (kind)
             {
                 case ThrowableKind.SensorLight:

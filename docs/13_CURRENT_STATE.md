@@ -1296,3 +1296,47 @@ testing remain required before submission.
   4/4 passed, QuickSlot EditMode tests 11/11 passed, the Windows playtest build
   succeeded at `Builds/Playtest/Windows/PawsAndLoot.exe`, and the LocalAI
   bundled Windows build succeeded at `Build/Windows/PawsAndLoot.exe`.
+
+## 로컬 AI 음성 스택 설치 (2026-08-04)
+
+`Tools/setup-local-ai.ps1`을 돌려 **설치와 게이트웨이 동작까지 확인했다.**
+클라우드 호출과 API 키는 없다 — 전부 로컬이다.
+
+| 항목 | 값 |
+|---|---|
+| 게이트웨이 | `LocalAI/runtime/gateway/paws-local-ai.exe`, `127.0.0.1:8765` |
+| 받아쓰기 | `Systran/faster-whisper-small` (464MB), 장치 **cuda** |
+| 분류 | Ollama `qwen3:4b-instruct` (2.4GB), 포터블 런타임 1.9GB |
+| Python | 3.12.12, `LocalAI/.venv` |
+
+`/health`가 `status=ready`, `stt.ready=true`, `llm.ready=true`를 돌려준다.
+설치물 3GB는 `.gitignore`가 전부 걸러내므로 저장소에 들어가지 않는다
+(`LocalAI/models/`, `runtime/`, `.venv/`).
+
+### 실측한 것과 못 한 것
+
+분류기를 게임이 부르는 그 함수(`interpret`)로 직접 호출해 확인했다.
+
+| 말한 것 | 결과 |
+|---|---|
+| 추적해 / 냄새 맡고 따라가 | `TRACK` |
+| 수색해 | `SEARCH` |
+| 거기 지켜 | `GUARD` |
+| 짖어 | `BARK` |
+| 정찰 좀 해줘 | `SCOUT` |
+| 교란해 | `DISTRACT` |
+| 숨어 있어 | `HIDE` |
+| 뜻 없는 문장 | `NONE` (거부) |
+
+키워드로 잡히면 0ms, 모델까지 가면 약 900ms다. **첫 호출은 20초** 걸렸다 —
+모델 적재 시간이므로 경기 전에 한 번 예열해야 한다.
+
+**못 한 것: 받아쓰기(STT)와 게임 내 동작.** 엔드포인트가 오디오 파일을
+요구하므로 마이크 없이는 겪을 수 없고, 게임이 이 게이트웨이를 띄워 명령을
+전달하는 경로는 실제로 플레이해 봐야 안다. **"음성 명령이 게임에서 된다"고
+말할 수 있는 상태가 아니다.**
+
+`훔쳐와`가 `NONE`인 것은 결함이 아니다. 게이트웨이의 고양이 기본 명령 목록이
+`SCOUT / DISTRACT / ROOF / HIDE / STAY / STOP`이고, 개의 `물어`처럼 일부러
+거부하는 항목이다. 게임은 `availableCommands`를 문맥으로 넘기므로 실제 목록은
+게임이 정한다.

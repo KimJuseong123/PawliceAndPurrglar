@@ -171,3 +171,46 @@ UV는 `use_collapse_triangulate`로 지킨다. 이 메시들은 구워진 아틀
 ```bash
 blender --background --python Tools/decimate_fbx.py --   "ArtSource/Blender/building_inside/house01 interior 3d model/house+interior+3d+model.fbx"   "ArtSource/Decimated/interior_house01.fbx" 100000
 ```
+
+## 상호작용 소품 (2026-08-04)
+
+원본은 모두 46,000~50,000 삼각형으로 들어왔고 소품 예산 5,000으로 감면했다.
+감면 후 삼각형 수는 Blender로 실측해 5,000임을 확인했다.
+
+| 대상 | 원본 | 감면 전 | 감면 후 |
+|---|---|---:|---:|
+| 참치캔 | `cat interact 3d/fish can 3d model` | 48,664 | 5,000 |
+| 바나나 | `interactive item 3d/banana 3d model` | 48,446 | 5,000 |
+| 고무닭 | `dog interact 3d/yellow chicken 3d model` | 47,408 | 5,000 |
+| 냉동 문어 | `interactive item 3d/ice octopus 3d model` | 49,512 | 5,000 |
+| 폭죽 | `market items 3d/fireworks set 3d model` | 46,444 | 5,000 |
+
+문서의 폴더 이름과 내용물이 어긋나는 사례가 있다. `interactive item 3d/can 3d model`
+안에 들어 있는 것은 **기름통**이고, 참치캔은 `cat interact 3d/fish can 3d model`에
+있다 (`17_게임_아이템_사용처_정리.md` 8.6절의 이름 충돌 항목과 같은 종류다).
+
+## 상점 전리품 12종 (2026-08-04)
+
+전부 5,000 삼각형으로 감면했고 Blender로 실측해 확인했다.
+
+| 매장 | 물건 | 원본 폴더 | 스템 |
+|---|---|---|---|
+| 슈퍼마켓 | 빵 | `market items 3d/bread 3d model` | `loot_bread` |
+| 슈퍼마켓 | 고급 양주병 | `market items 3d/vodka 3d model` | `loot_liquor_bottle` |
+| 슈퍼마켓 | 계산대 돈통 | `market items 3d/cash drawer 3d model` | `loot_cash_drawer` |
+| 슈퍼마켓 | 한우 선물세트 | `market items 3d/box of steaks 3d model` | `loot_beef_gift_set` |
+| 서점 | 일반 책 | `bookstore item 3d/book 3d model` | `loot_book` |
+| 서점 | 캐릭터 피규어 | `bookstore item 3d/cartoon knight 3d model` | `loot_figure_knight` |
+| 서점 | 만년필 | `bookstore item 3d/fountain pen 3d model` | `loot_fountain_pen` |
+| 서점 | 노트북 | `bookstore item 3d/laptop 3d model` | `loot_laptop` |
+| 주얼리샵 | 루비 | `jewely items 3d/red gemstone 3d model` | `loot_ruby` |
+| 주얼리샵 | 황금 손목시계 | `jewely items 3d/golden watch 3d model` | `loot_gold_watch` |
+| 주얼리샵 | 금괴 | `jewely items 3d/gold bar 3d model` | `loot_gold_bar` |
+| 주얼리샵 | 다이아몬드 반지 | `jewely items 3d/diamond ring 3d model` | `loot_diamond_ring` |
+
+**사과는 없다.** 문서 1차 목록이 요구하지만 모델이 없어서, 같은 표의 **빵**이
+저가·주머니 자리를 대신한다.
+
+`vodka 3d model` 폴더 안의 파일명은 `potion+bottle+3d+model.fbx`다. 원화를
+확인했고 실제로 양주 디캔터이며, `dog interact 3d`의 물약병과 md5가 다르다 —
+Tripo가 붙인 파일명일 뿐이므로 폴더를 기준으로 삼는다.

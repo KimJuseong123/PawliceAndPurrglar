@@ -228,8 +228,15 @@ namespace PawsAndLoot.Tests.PlayMode
                 },
                 null,
                 PlayerRole.Police);
-            selector.SelectRole(PlayerRole.Police);
+            // Activated first, then told which role.
+            //
+            // SelectRole was called while the object was still switched off, so
+            // whatever Awake sets up had not run and the choice did not take.
+            // The selector then reported the enum's default — the thief — and the
+            // police panel switched itself off, which is exactly what a correctly
+            // working presenter does when it is not the officer's screen.
             selectorObject.SetActive(true);
+            selector.SelectRole(PlayerRole.Police);
             return selector;
         }
 

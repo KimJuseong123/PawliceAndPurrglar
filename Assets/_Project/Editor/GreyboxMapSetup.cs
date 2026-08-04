@@ -3123,6 +3123,12 @@ namespace PawsAndLoot.Editor
                 ThiefLootWallet wallet =
                     player.AddComponent<ThiefLootWallet>();
                 wallet.Configure(identity, LoadMatchConfig());
+
+                // The jeweller's key. On the thief only: an officer holding it
+                // would be denying the theft rather than pursuing it, and this
+                // game's answer to a hidden thief is to go and look.
+                player.AddComponent<DisplayCaseKeyHolder>()
+                    .Configure(identity);
             }
 
             player.AddComponent<NetworkObject>();
@@ -3572,17 +3578,28 @@ namespace PawsAndLoot.Editor
             //
             // Spread across the map on purpose: the thief has to keep crossing
             // ground the police can cover, rather than farming one corner.
+            // Six loose pieces, spread over the new town.
+            //
+            // Written as coordinates rather than as offsets from the shops,
+            // because offsets from a shop are where they were and three of them
+            // ended up against a wall: one sat five centimetres from the
+            // bookshop and two were inside the jeweller's shell, which has only
+            // wall colliders, so nothing overlapped and nothing complained. They
+            // were unreachable and the map built, validated and logged "6 loot
+            // pieces placed".
+            //
+            // Spread on purpose. The twelve shop pieces are worth more and are
+            // all in three places; these are the reason to be anywhere else, so
+            // they sit in the open ground between the blocks where the officer
+            // has to cover distance to guard them.
             Vector3[] lootSpots =
             {
-                locations[GreyboxLocationId.JewelryStore].position
-                    + new Vector3(1.8f, 0.5f, 0f),
-                locations[GreyboxLocationId.Bookstore].position
-                    + new Vector3(0f, 0.5f, 4.5f),
-                locations[GreyboxLocationId.Supermarket].position
-                    + new Vector3(0f, 0.5f, -4.5f),
-                new Vector3(-24f, 0.5f, 40f),
-                new Vector3(30f, 0.5f, 34f),
-                new Vector3(8f, 0.5f, -19f)
+                new(-24f, 0.5f, 20f),
+                new(0f, 0.5f, 36f),
+                new(34f, 0.5f, 36f),
+                new(40f, 0.5f, 4f),
+                new(-10f, 0.5f, -10f),
+                new(24f, 0.5f, -20f)
             };
 
             for (int index = 0; index < lootSpots.Length; index++)
@@ -3605,18 +3622,22 @@ namespace PawsAndLoot.Editor
             CreateLootTarget(
                 "Crown Jewel",
                 locations[GreyboxLocationId.JewelryStore].position
-                    + new Vector3(-1.8f, 0.5f, 0f),
+                    + new Vector3(-6f, 0.5f, 5.4f),
                 new Color(0.98f, 0.83f, 0.35f),
                 root,
                 RareLootDefinitionPath,
                 matchRuntime);
+
+            int shopPieces = CreateShopLoot(root, locations, matchRuntime);
+            CreateDisplayCaseKey(root, locations, matchRuntime);
 
             var alarmObject = new GameObject("Loot Alarm");
             alarmObject.transform.SetParent(root);
             alarmObject.AddComponent<LootAlarm>();
 
             Debug.Log(
-                $"[ISSUE-011] {lootSpots.Length} loot pieces placed.");
+                $"[ISSUE-011] {lootSpots.Length} loot pieces placed, plus "
+                + $"{shopPieces} shop pieces.");
 
             CreateRockPickups(root, matchRuntime);
             CreateShopShelfPickups(root);
@@ -3808,18 +3829,24 @@ namespace PawsAndLoot.Editor
                     pickup.transform);
                 presentation.localPosition = Vector3.zero;
 
-                Material tinted = LoadOrCreateMaterial(
-                    $"Greybox_Shelf_{kind}",
-                    tint);
-                GameObject marker = CreateCube(
-                    $"{kind} Marker",
-                    spot + Vector3.up * 0.15f,
-                    new Vector3(0.4f, 0.3f, 0.4f),
-                    tinted,
-                    presentation,
-                    false);
-                UnityEngine.Object.DestroyImmediate(
-                    marker.GetComponent<Collider>());
+                // The prop itself where there is one. A tinted cube told the
+                // player a prop was there and nothing about which prop, and
+                // there are five of them on these shelves.
+                if (ThrowablePropResources.TryPlace(kind, presentation) == null)
+                {
+                    Material tinted = LoadOrCreateMaterial(
+                        $"Greybox_Shelf_{kind}",
+                        tint);
+                    GameObject marker = CreateCube(
+                        $"{kind} Marker",
+                        spot + Vector3.up * 0.15f,
+                        new Vector3(0.4f, 0.3f, 0.4f),
+                        tinted,
+                        presentation,
+                        false);
+                    UnityEngine.Object.DestroyImmediate(
+                        marker.GetComponent<Collider>());
+                }
 
                 pickup.AddComponent<ThrowablePickup>().Configure(
                     kind,
@@ -3858,13 +3885,20 @@ namespace PawsAndLoot.Editor
             // down at x = -19 / -11 / -3 / 5 / 14 / 20 / 31. A crossing is a
             // road tile and therefore open ground by construction, and
             // CheckSpotIsClear below re-measures rather than trusting that.
+            // Five rocks, one for each quarter of the town and one in the
+            // middle, on the open ground between the blocks.
+            //
+            // A rock is only worth anything during a chase, so what matters is
+            // that wherever a chase goes there is one within a few seconds'
+            // run. Clustered rocks make three quarters of the map a place where
+            // the thief has nothing to throw.
             Vector3[] spots =
             {
-                new(-19f, 0.35f, 34f),
-                new(5f, 0.35f, 34f),
-                new(14f, 0.35f, 6f),
-                new(20f, 0.35f, -9f),
-                new(31f, 0.35f, 6f)
+                new(-14f, 0.35f, 36f),
+                new(-14f, 0.35f, 8f),
+                new(2f, 0.35f, 8f),
+                new(30f, 0.35f, 8f),
+                new(8f, 0.35f, -8f)
             };
 
             Material rockMaterial = LoadOrCreateMaterial(
@@ -3887,14 +3921,9 @@ namespace PawsAndLoot.Editor
                     "PresentationRoot",
                     pickup.transform);
                 presentation.localPosition = Vector3.zero;
-                if (PlaceholderModelLibrary.TryInstantiateProp(
-                        ThrowableCatalog.GetModelStem(
-                            ThrowableKind.Rock),
-                        presentation,
-                        Vector3.zero,
-                        Vector3.zero,
-                        0.5f,
-                        rockMaterial) == null)
+                if (ThrowablePropResources.TryPlace(
+                        ThrowableKind.Rock,
+                        presentation) == null)
                 {
                     GameObject fallback = CreateCube(
                         "Rock Fallback",
@@ -4017,8 +4046,68 @@ namespace PawsAndLoot.Editor
         /// the ground and the road tiles are not obstacles but a wall, a shop body
         /// or another interactable is.
         /// </summary>
+        /// <summary>
+        /// Complains when a spot is inside a building's footprint.
+        ///
+        /// <see cref="CheckSpotIsClear"/> asks the physics scene whether
+        /// anything overlaps, and a building answers no: its colliders are the
+        /// walls, so the whole of its inside is empty space as far as a sphere
+        /// is concerned. The exteriors are shells nobody can walk into — the
+        /// rooms are elsewhere — so a pickup in there is unreachable, and two
+        /// pieces of loot sat inside the jeweller's for weeks while the map
+        /// built, validated and reported them placed.
+        ///
+        /// Measured against the drawn silhouette rather than the colliders, for
+        /// the same reason: what encloses the spot is the building, and the
+        /// building is the thing you can see.
+        /// </summary>
+        private static void CheckSpotIsOutdoors(string name, Vector3 spot)
+        {
+            foreach (Transform block in
+                UnityEngine.Object.FindObjectsByType<Transform>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None))
+            {
+                if (!block.name.StartsWith("Block "))
+                {
+                    continue;
+                }
+
+                Renderer[] parts =
+                    block.GetComponentsInChildren<Renderer>(true);
+                if (parts.Length == 0)
+                {
+                    continue;
+                }
+
+                Bounds bounds = parts[0].bounds;
+                for (int index = 1; index < parts.Length; index++)
+                {
+                    bounds.Encapsulate(parts[index].bounds);
+                }
+
+                // Horizontal only. A pickup half a metre off the ground is
+                // still inside the building it is standing in.
+                if (spot.x > bounds.min.x
+                    && spot.x < bounds.max.x
+                    && spot.z > bounds.min.z
+                    && spot.z < bounds.max.z)
+                {
+                    Debug.LogError(
+                        $"[MAP-002] '{name}' at ({spot.x:0.0}, {spot.z:0.0}) is "
+                        + $"inside '{block.name}', whose walls run "
+                        + $"x {bounds.min.x:0.0}..{bounds.max.x:0.0}, "
+                        + $"z {bounds.min.z:0.0}..{bounds.max.z:0.0}. The "
+                        + "exteriors are shells nobody can walk into, so nobody "
+                        + "can reach it.");
+                    return;
+                }
+            }
+        }
+
         private static void CheckSpotIsClear(Transform placed, Vector3 spot)
         {
+            CheckSpotIsOutdoors(placed.name, spot);
             Physics.SyncTransforms();
             Collider[] blockers = Physics.OverlapSphere(
                 spot + Vector3.up * 0.05f,
@@ -4041,6 +4130,206 @@ namespace PawsAndLoot.Editor
                     + "sealed in geometry still builds and still validates.");
                 return;
             }
+        }
+
+        /// <summary>
+        /// The key that opens the jeweller's cases quietly, put where the thief
+        /// has to go and fetch it.
+        ///
+        /// At the bookshop, across the town from the cases it opens. Its whole
+        /// value is the walk: unlocking a case makes no sound, and the smash it
+        /// replaces carries thirty metres and is the one noise in this game the
+        /// officer cannot have made himself. A key beside the case it opens
+        /// would make the quiet option free and the loud one pointless.
+        ///
+        /// One key, one match. Holding it is the decision about which of the
+        /// jeweller's two cases is worth the silence.
+        /// </summary>
+        private static void CreateDisplayCaseKey(
+            Transform parent,
+            IReadOnlyDictionary<GreyboxLocationId, Transform> locations,
+            MatchRuntimeState matchRuntime)
+        {
+            if (!locations.TryGetValue(
+                    GreyboxLocationId.Bookstore,
+                    out Transform bookshop))
+            {
+                return;
+            }
+
+            // Behind the shop rather than in the loot row in front of it, so
+            // fetching it is a detour and not something picked up in passing.
+            Vector3 spot = bookshop.position + new Vector3(3.4f, 0.5f, -5.2f);
+
+            var pickup = new GameObject("Display Case Key");
+            pickup.transform.SetParent(parent);
+            pickup.transform.position = spot;
+
+            var trigger = pickup.AddComponent<SphereCollider>();
+            trigger.radius = 0.6f;
+            trigger.isTrigger = true;
+
+            Transform presentation = CreateChild(
+                "PresentationRoot",
+                pickup.transform);
+            presentation.localPosition = Vector3.zero;
+
+            if (AuthoredModelPlacer.TryPlace(
+                    "item_case_key",
+                    0.3f,
+                    presentation,
+                    out string _) == null)
+            {
+                GameObject fallback = CreateCube(
+                    "Key Fallback",
+                    spot + Vector3.up * 0.12f,
+                    new Vector3(0.3f, 0.08f, 0.1f),
+                    LoadOrCreateMaterial(
+                        "Greybox_CaseKey",
+                        new Color(0.85f, 0.76f, 0.35f)),
+                    presentation,
+                    false);
+                UnityEngine.Object.DestroyImmediate(
+                    fallback.GetComponent<Collider>());
+            }
+
+            pickup.AddComponent<DisplayCaseKeyPickup>()
+                .Configure(presentation, matchRuntime);
+
+            Debug.Log($"[LOOT-KEY] Display case key placed at {spot}.");
+        }
+
+        /// <summary>
+        /// The twelve shop pieces from
+        /// <c>docs/17_게임_아이템_사용처_정리.md</c> section 7's first pass.
+        ///
+        /// Laid out in a row in front of each shop rather than inside it. The
+        /// interiors are being redesigned against the new town
+        /// (<c>TASK-PORT-006</c>) and a piece authored into a room that is about
+        /// to be replaced is a piece that has to be placed twice. The row is a
+        /// shop front, it is reachable, and moving it inside later is one
+        /// coordinate each.
+        ///
+        /// Spaced by the widest piece rather than by the average, because two
+        /// two-handers side by side at 62 cm overlap at anything tighter and
+        /// overlapping triggers make one of them impossible to pick.
+        /// </summary>
+        private static int CreateShopLoot(
+            Transform parent,
+            IReadOnlyDictionary<GreyboxLocationId, Transform> locations,
+            MatchRuntimeState matchRuntime)
+        {
+            (GreyboxLocationId shop, string[] ids)[] shelves =
+            {
+                (GreyboxLocationId.Supermarket, new[]
+                {
+                    "market-bread",
+                    "market-liquor",
+                    "market-cash-drawer",
+                    "market-beef-set"
+                }),
+                (GreyboxLocationId.Bookstore, new[]
+                {
+                    "book-plain",
+                    "book-figure",
+                    "book-pen",
+                    "book-laptop"
+                }),
+                (GreyboxLocationId.JewelryStore, new[]
+                {
+                    "jewel-ruby",
+                    "jewel-watch",
+                    "jewel-gold-bar",
+                    "jewel-ring"
+                })
+            };
+
+            // Wider than the display case reaches.
+            //
+            // The alarmed ring brings a case whose trigger is 1.6 m across, so a
+            // neighbour 1.3 m away stood half a metre *inside* it: pressing E at
+            // the gold bar broke the glass over the ring instead. The case is the
+            // widest thing that can appear in one of these slots, so the row is
+            // spaced against it rather than against the pieces.
+            const float Spacing = 2f;
+
+            // How much further out the alarmed piece stands than the row, in
+            // metres. Wider than the case reach plus the scanner reach, so
+            // standing at any row piece cannot reach the glass.
+            const float AlarmedStandoff = 3.4f;
+            int placed = 0;
+            foreach ((GreyboxLocationId shop, string[] ids) in shelves)
+            {
+                if (!locations.TryGetValue(shop, out Transform location))
+                {
+                    continue;
+                }
+
+                for (int index = 0; index < ids.Length; index++)
+                {
+                    string path = $"{LootDataSetup.LootDataRoot}/{ids[index]}.asset";
+                    if (AssetDatabase.LoadAssetAtPath<LootDefinition>(path)
+                        == null)
+                    {
+                        // Loud rather than silent. A missing definition places
+                        // one fewer thing to steal, and nothing else says so.
+                        Debug.LogError(
+                            $"[ISSUE-011] {shop} wants loot '{ids[index]}' and "
+                            + $"there is no definition at {path}. Run 'Create "
+                            + "Default Loot Data'.");
+                        continue;
+                    }
+
+                    // The alarmed piece stands on its own, in front of the row.
+                    //
+                    // Not decoration: it is the only piece that brings a display
+                    // case, the case reaches 0.8 m in every direction, and the
+                    // scanner gives a sealed case priority over loose loot. A
+                    // neighbour within reach of the glass could not be picked up
+                    // at all — pressing E next to the gold bar broke the ring
+                    // case instead. The document asks for it alone in its own
+                    // cabinet for its own reasons and they agree.
+                    bool alone = ids[index] == "jewel-ring";
+                    Vector3 spot = location.position
+                        + new Vector3(
+                            alone
+                                ? 0f
+                                : (index - (ids.Length - 1) * 0.5f) * Spacing,
+                            0.5f,
+                            ShopLootStandoff(shop)
+                                + (alone ? AlarmedStandoff : 0f));
+                    CreateLootTarget(
+                        $"{shop} {ids[index]}",
+                        spot,
+                        new Color(0.75f, 0.3f, 0.95f),
+                        parent,
+                        path,
+                        matchRuntime);
+                    placed++;
+                }
+            }
+
+            return placed;
+        }
+
+        /// <summary>
+        /// How far in front of a shop its row of loot stands, in metres.
+        ///
+        /// Per shop rather than one number, because the three buildings are
+        /// different depths and a single standoff put one row inside a wall. The
+        /// sign is which way the shop faces.
+        /// </summary>
+        private static float ShopLootStandoff(GreyboxLocationId shop)
+        {
+            return shop switch
+            {
+                GreyboxLocationId.Supermarket => -6.5f,
+                GreyboxLocationId.Bookstore => 6.5f,
+                // The jeweller's is the shallowest of the three and 4.2 m put
+                // its row twenty centimetres from the wall, which is close
+                // enough that reaching a piece means standing in the building.
+                _ => 5.4f
+            };
         }
 
         private static void CreateLootTarget(
@@ -4070,6 +4359,11 @@ namespace PawsAndLoot.Editor
             target.name = name;
             target.transform.SetParent(parent);
             target.transform.position = position;
+
+            // Loot was the one kind of pickup nobody checked, which is why two
+            // pieces sat inside the jeweller's shell and the map said it had
+            // placed them.
+            CheckSpotIsOutdoors(name, position);
             BoxCollider worldCollider =
                 target.AddComponent<BoxCollider>();
             worldCollider.size = Vector3.one * 0.75f;
@@ -4081,9 +4375,24 @@ namespace PawsAndLoot.Editor
             // origin that CreateChild would otherwise preserve.
             presentationRoot.localPosition = Vector3.zero;
             presentationRoot.localRotation = Quaternion.identity;
-            // The jewel box model is 0.23m wide, so it is scaled up to stay
-            // readable at the top-down camera distance.
-            if (PlaceholderModelLibrary.TryInstantiateProp(
+            LootDefinition drawn =
+                AssetDatabase.LoadAssetAtPath<LootDefinition>(definitionPath);
+
+            // The piece's own model, sized from how it is carried. Every piece
+            // used to be the same jewellery box tinted purple, so the shops all
+            // sold one object at three prices.
+            //
+            // No tint over an authored model: the override material replaces the
+            // texture, and a purple gold bar is a worse answer than a grey one.
+            bool authored = drawn != null
+                && AuthoredModelPlacer.TryPlace(
+                    drawn.ModelStem,
+                    LootDefinition.GetModelSize(drawn.CarryType),
+                    presentationRoot,
+                    out string _) != null;
+
+            if (!authored
+                && PlaceholderModelLibrary.TryInstantiateProp(
                     "item_jewel_box",
                     presentationRoot,
                     new Vector3(0f, -0.35f, 0f),
@@ -4102,9 +4411,7 @@ namespace PawsAndLoot.Editor
                     placeholder.GetComponent<Collider>());
             }
 
-            LootDefinition definition =
-                AssetDatabase.LoadAssetAtPath<LootDefinition>(
-                    definitionPath);
+            LootDefinition definition = drawn;
             if (definition == null)
             {
                 throw new GameConfigurationException(

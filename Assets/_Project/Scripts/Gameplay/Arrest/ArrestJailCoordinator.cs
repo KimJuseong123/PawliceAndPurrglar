@@ -110,7 +110,22 @@ namespace PawsAndLoot.Gameplay.Arrest
                 cellPoint.position,
                 release);
 
+            // Faced one known way, and told they are in a room.
+            //
+            // The cell uses the interior camera like any other room, and that
+            // camera takes its starting yaw from whichever way the character is
+            // pointing when it wakes up. An arrest leaves them pointing
+            // wherever the chase did — and on the client that rotation is still
+            // interpolating when the room arrives, so the camera locked its yaw
+            // to a half-turned pose and W walked the thief backwards.
+            //
+            // Facing +Z is arbitrary and that is the point: it is the same
+            // arbitrary on both machines.
+            jail.transform.rotation = Quaternion.LookRotation(
+                Vector3.forward,
+                Vector3.up);
             SetThiefRoom(jailInteriorId);
+
         }
 
         /// <summary>
@@ -124,10 +139,10 @@ namespace PawsAndLoot.Gameplay.Arrest
         /// <summary>
         /// Marks the thief as inside the cell, or back in the street.
         ///
-        /// Only where this machine is the one that decides. A client copy of a
-        /// character is moved by having its position written, so acting on the
-        /// state there would fight the host over where the thief is — the same
-        /// rule the doorway follows.
+        /// Only where this machine decides. A client copy is moved by having
+        /// its position written, so acting on the state there would fight the
+        /// host; the id itself reaches the client through NetworkPlayerLink
+        /// like the sentence timer does.
         /// </summary>
         private void SetThiefRoom(int interiorId)
         {
@@ -145,10 +160,26 @@ namespace PawsAndLoot.Gameplay.Arrest
             }
         }
 
+        // Historical note, kept because it was nearly the wrong fix.
+        //
+        // They were, so the interior camera would take over and show the cell
+        // from inside it. But the mark is host-only — a client's character is
+        // moved by having its position written, so the state never crossed —
+        // and the two machines ended up running different cameras. Movement is
+        // relative to the camera, so the client's keys came out turned round:
+        // pressing back walked the thief forward.
+        //
+        // The cell sits far outside the map where the town camera can see it
+        // perfectly well, and the same camera on both machines means the same
+        // controls on both. The interior camera is for rooms a player walks
+        // into by choice.
+
+
         private void HandleReleased()
         {
             SetThiefRoom(
                 PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside);
+
 
             arrestCompletion?.ClearForNextArrest();
             GameLogger.Info(

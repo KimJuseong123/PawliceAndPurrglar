@@ -480,15 +480,66 @@ namespace PawsAndLoot.Gameplay.Items
         }
 
         /// <summary>
-        /// Model stem under <c>Assets/_Project/Art/Props</c>. The placed props
-        /// have no authored models yet and borrow the can until they arrive;
-        /// <c>PlacedTrapView</c> draws a greybox stand-in either way.
+        /// Model stem under <c>Assets/_Project/Art/Props</c>, or null for a prop
+        /// whose art has not been made.
+        ///
+        /// Every kind used to answer either "rock" or "can", so eight of the
+        /// nine props wore a tuna can and the placed ones were greybox on top of
+        /// that. A banana, a rubber chicken and a firework are three different
+        /// promises to the player and they all looked like lunch.
+        ///
+        /// Null rather than a stand-in for the two that have no art. Borrowing
+        /// somebody else's model is worse than a grey shape: a grey shape reads
+        /// as unfinished and a wrong model reads as a lie.
         /// </summary>
         public static string GetModelStem(ThrowableKind kind)
         {
-            return kind == ThrowableKind.Rock
-                ? "throwable_rock"
-                : "throwable_can";
+            return kind switch
+            {
+                ThrowableKind.Rock => "throwable_rock",
+                ThrowableKind.Banana => "throwable_banana",
+                ThrowableKind.TunaCan => "throwable_tuna_can",
+                ThrowableKind.DogTreat => "throwable_bone",
+                ThrowableKind.RubberChicken => "throwable_rubber_chicken",
+                ThrowableKind.Firework => "throwable_firework",
+                ThrowableKind.FrozenOctopus => "throwable_octopus",
+                // The officer's two placed props. No authored art, so
+                // PlacedTrapView keeps drawing the shapes it drew before.
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// How big the prop should be in the world, in metres, along
+        /// whichever of its three dimensions is longest.
+        ///
+        /// Needed because the models do not arrive at a usable size and there is
+        /// no reason they should — they are generated, and one came in at 23 cm
+        /// while the next filled a room. The importer scales each one until it
+        /// measures this wide, so the number here is the size the player sees
+        /// rather than a multiplier against whatever the file happened to hold.
+        ///
+        /// The longest dimension rather than the footprint. Normalising the
+        /// footprint sounds right for props read from overhead and is wrong for
+        /// anything tall: the rubber chicken is a standing bird, so fixing its
+        /// width at 38 cm made it well over a metre high — a toy the size of a
+        /// child, standing in the road.
+        ///
+        /// Read at the camera distance this game is played from: a prop on the
+        /// ground has to be told apart from directly overhead, and everything
+        /// under about a quarter of a metre becomes a speck.
+        /// </summary>
+        public static float GetModelSize(ThrowableKind kind)
+        {
+            return kind switch
+            {
+                ThrowableKind.FrozenOctopus => 0.50f,
+                ThrowableKind.Firework => 0.42f,
+                ThrowableKind.RubberChicken => 0.38f,
+                ThrowableKind.Banana => 0.36f,
+                ThrowableKind.DogTreat => 0.32f,
+                _ => 0.30f
+            };
         }
     }
 }

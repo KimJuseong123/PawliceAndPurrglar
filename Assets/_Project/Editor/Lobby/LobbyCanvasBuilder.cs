@@ -162,6 +162,7 @@ namespace PawsAndLoot.Editor
                     LobbyArtExtractor.EnsureFolder(folder);
                 }
 
+                ProjectFontSweep.Apply(root);
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             }
             finally

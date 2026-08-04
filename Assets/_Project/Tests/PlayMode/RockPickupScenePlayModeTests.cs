@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using PawsAndLoot.Core;
@@ -52,6 +53,32 @@ namespace PawsAndLoot.Tests.PlayMode
                 .FindObjectsByType<PlayerRoleIdentity>(
                     FindObjectsSortMode.None);
 
+            // Wait for the thief to be dropped at its starting corner before
+            // standing anybody anywhere.
+            //
+            // The thief's start is drawn once, on the frame the match becomes
+            // playable, and it teleports them to one of five outskirt corners.
+            // A scene test loads with the match already playing, so the draw
+            // landed *after* this test had placed the thief on a pickup and
+            // moved them thirty-two metres away — where the only thing in reach
+            // was the ground, or on an unlucky run their own cat. The test then
+            // reported that a shop shelf could not be picked up, which was true
+            // and had nothing to do with the shelf.
+            foreach (ThiefStartSpawn start in Object
+                .FindObjectsByType<ThiefStartSpawn>(FindObjectsSortMode.None))
+            {
+                for (int frame = 0; frame < 240 && !start.HasPlaced; frame++)
+                {
+                    yield return null;
+                }
+
+                Assert.That(
+                    start.HasPlaced,
+                    Is.True,
+                    "The thief never reached a starting corner, so anywhere "
+                    + "this test puts them is liable to be overwritten.");
+            }
+
             foreach (ThrowablePickup pickup in pickups)
             {
                 // Whoever the prop belongs to. A shared rock is tried with the
@@ -104,11 +131,30 @@ namespace PawsAndLoot.Tests.PlayMode
                     Is.True,
                     $"{pickup.name} was interacted with but nothing ended up "
                     + "in hand.");
-                Assert.That(carrier.HeldKind, Is.EqualTo(pickup.Kind));
+                // Whichever slot it landed in, not whichever slot is selected.
+                //
+                // The quick slots stay where the player put them, on purpose: an
+                // item that moves the selection back to slot one gets used again
+                // by the next press. So a prop is stored in the first free slot
+                // and the selection may still be pointing at another one — and
+                // five rocks stacking in slot one meant the shop banana went to
+                // slot two while HeldKind still read Rock.
+                Assert.That(
+                    Held(carrier),
+                    Does.Contain(pickup.Kind),
+                    $"{pickup.name} was taken but no slot holds a "
+                    + $"{pickup.Kind}. Slots: "
+                    + string.Join(", ", Held(carrier)));
 
-                // Empty the slot so the next prop is not refused for the only
-                // legitimate reason a pickup can fail.
-                Assert.That(carrier.TryConsume(out _), Is.True);
+                // Emptied completely, so the next prop is not refused for the
+                // only legitimate reason a pickup can fail. Every slot, because
+                // props of the same kind stack and the loop takes five rocks.
+                Drain(carrier);
+                Assert.That(
+                    carrier.HasAnyTool,
+                    Is.False,
+                    "The carrier would not empty, so every pickup after this "
+                    + "one is tested against a full bag.");
 
                 // And the other side must not be able to take it.
                 if (!pickup.IsRoleRestricted)
@@ -152,6 +198,39 @@ namespace PawsAndLoot.Tests.PlayMode
                 GameSceneCatalog.GetPath(GameSceneId.Game),
                 LoadSceneMode.Single);
             yield return null;
+        }
+
+        /// <summary>
+        /// Every kind the carrier is holding, across all four slots.
+        /// </summary>
+        private static List<ThrowableKind> Held(ToolCarrier carrier)
+        {
+            var kinds = new List<ThrowableKind>();
+            int wasSelected = carrier.SelectedSlot;
+            for (int slot = 0; slot < 4; slot++)
+            {
+                if (carrier.SelectSlot(slot) && carrier.HasTool)
+                {
+                    kinds.Add(carrier.HeldKind);
+                }
+            }
+
+            carrier.SelectSlot(wasSelected);
+            return kinds;
+        }
+
+        private static void Drain(ToolCarrier carrier)
+        {
+            for (int slot = 0; slot < 4; slot++)
+            {
+                carrier.SelectSlot(slot);
+                // Bounded, so a slot that refuses to empty ends the loop rather
+                // than the test run.
+                for (int guard = 0; guard < 32 && carrier.HasTool; guard++)
+                {
+                    carrier.TryConsume(out _);
+                }
+            }
         }
     }
 }

@@ -182,6 +182,8 @@ namespace PawsAndLoot.Integration.Network
         private PawsAndLoot.Companions.CompanionAgent companionAgent;
 
         private Vector3 _companionLastPosition;
+        private Vector3 _companionFollowVelocity;
+        private float _companionReportAt;
 
         private int _lastCompanionFaceSequence;
         private int _companionFaceSequence;
@@ -370,6 +372,7 @@ namespace PawsAndLoot.Integration.Network
         private Vector3 _followVelocity;
 
         private Vector2 _submittedMove;
+        private float? _submittedYaw;
         private bool _submittedDash;
         private bool _submittedJump;
         private bool _remoteDriven;
@@ -756,9 +759,22 @@ namespace PawsAndLoot.Integration.Network
         /// bridge, which knows which role is local.
         /// </summary>
         [Rpc(SendTo.Server)]
-        public void SubmitInputRpc(Vector2 move, bool dashPressed)
+        public void SubmitInputRpc(
+            Vector2 move,
+            bool dashPressed,
+            float orientationYaw = float.NaN)
         {
             _submittedMove = Vector2.ClampMagnitude(move, 1f);
+
+            // Which way the sender was looking when they pressed it.
+            //
+            // Without this the host measures a client's WASD against the host's
+            // own camera. Outdoors that is the same fixed angle for both and
+            // nothing shows; indoors the client orbits their view and their
+            // keys arrive rotated by however far apart the two cameras are.
+            _submittedYaw = float.IsNaN(orientationYaw)
+                ? (float?)null
+                : orientationYaw;
             if (dashPressed)
             {
                 _submittedDash = true;
@@ -803,6 +819,7 @@ namespace PawsAndLoot.Integration.Network
                 motor.TryJump();
             }
 
+            motor.SetOrientationYaw(_submittedYaw);
             motor.Move(_submittedMove, deltaTime);
         }
 
@@ -844,6 +861,32 @@ namespace PawsAndLoot.Integration.Network
         /// stutter. The legs are driven from the sent speed rather than from
         /// this movement, which is mostly zero between packets.
         /// </summary>
+        /// <summary>
+        /// Complains, on the client, when this player has no animal wired.
+        ///
+        /// The cat was on the host's screen and not on the client's, and the
+        /// three things that cause that — no animal, an animal nobody moves,
+        /// and an animal moved somewhere else — look identical from outside the
+        /// window. It was the third, and finding that out took printing all
+        /// three. What is left is the one that cannot be seen any other way: a
+        /// link with no animal replicates nothing and says nothing, and the
+        /// animal on each machine quietly goes its own way.
+        /// </summary>
+        private void ReportCompanion()
+        {
+            if (companionAgent != null || Time.time < _companionReportAt)
+            {
+                return;
+            }
+
+            _companionReportAt = Time.time + 5f;
+            PawsAndLoot.Logging.GameLogger.Warning(
+                PawsAndLoot.Logging.GameLogCategory.Companion,
+                $"{Role} link has no companion wired, so nothing about this "
+                + "animal reaches the client.",
+                this);
+        }
+
         private void ApplyCompanionTransform(float deltaTime)
         {
             if (companionAgent == null)
@@ -869,10 +912,32 @@ namespace PawsAndLoot.Integration.Network
             }
 
             Transform animal = companionAgent.transform;
-            animal.position = Vector3.MoveTowards(
+            Vector3 told = _companionPosition.Value;
+
+            // Put there when it is far, eased toward when it is near — the same
+            // two rules the players follow, and now the same arithmetic.
+            //
+            // The far case is a door: the owner walks through one and the
+            // host's animal is suddenly in a room 370 m off the edge of town.
+            // Easing that would have the client's cat set off south at walking
+            // pace for the rest of the match, which is what it did.
+            //
+            // The near case is every other frame, and MoveTowards was the wrong
+            // tool for it. Given an allowance above the real speed it covers the
+            // gap to a target that only updates a few times a second and then
+            // waits — walked, stopped, walked, stopped. The players were moved
+            // off it for exactly this and the animals were left behind, so on a
+            // client the officer's dog and the thief's cat juddered while their
+            // owners glided. An exponential approach never arrives and never
+            // stalls.
+            animal.position = ReplicatedFollow.Step(
                 animal.position,
-                _companionPosition.Value,
-                Mathf.Max(0.5f, _companionSpeed.Value * 2f) * deltaTime);
+                told,
+                ref _companionFollowVelocity,
+                snapDistance,
+                followSmoothSeconds,
+                catchUpSpeed,
+                deltaTime);
             animal.rotation = Quaternion.Slerp(
                 animal.rotation,
                 Quaternion.Euler(0f, _companionYaw.Value, 0f),
@@ -880,6 +945,18 @@ namespace PawsAndLoot.Integration.Network
 
             companionAgent
                 .GetComponent<PawsAndLoot.Animation.CompanionLegAnimator>()
+                ?.SetExternalSpeed(_companionSpeed.Value);
+
+            // The body settle is told the same speed the legs are.
+            //
+            // Only the legs were told, so on this machine the two read the
+            // animal differently: the legs walked at the host's speed while the
+            // body chased a speed measured from packets, which is a spike
+            // followed by nothing. The hop's height changed every frame and the
+            // cat shook.
+            companionAgent
+                .GetComponent<
+                    PawsAndLoot.Animation.CompanionProceduralAnimator>()
                 ?.SetExternalSpeed(_companionSpeed.Value);
         }
 
@@ -963,6 +1040,7 @@ namespace PawsAndLoot.Integration.Network
             }
 
             ApplyCompanionFace();
+            ReportCompanion();
             ApplyCompanionTransform(Time.deltaTime);
             ApplyReplicatedTransform(Time.deltaTime);
             ApplyReplicatedGameplayState();
@@ -1104,38 +1182,14 @@ namespace PawsAndLoot.Integration.Network
 
         private void ApplyReplicatedTransform(float deltaTime)
         {
-            Vector3 target = _position.Value;
-            float distance = Vector3.Distance(transform.position, target);
-            if (distance > snapDistance)
-            {
-                // A long stall would otherwise show the character sliding
-                // across the map.
-                transform.position = target;
-                _followVelocity = Vector3.zero;
-            }
-            else
-            {
-                // Smoothed rather than raced.
-                //
-                // MoveTowards at 14 m/s covers the gap to a target that only
-                // updates a few times a second, so the character sprinted, sat
-                // still, sprinted, sat still — which is the juddering reported on
-                // whichever machine was the guest. Both characters are
-                // remote-driven on a client, so both shook; the one the camera
-                // follows was simply the one anybody noticed.
-                //
-                // An exponential approach never arrives and never stalls, so the
-                // motion is continuous and averages out to the true speed with a
-                // fraction of a second of lag. Cheaper than a full interpolation
-                // buffer and enough for two players on a LAN.
-                transform.position = Vector3.SmoothDamp(
-                    transform.position,
-                    target,
-                    ref _followVelocity,
-                    followSmoothSeconds,
-                    catchUpSpeed,
-                    deltaTime);
-            }
+            transform.position = ReplicatedFollow.Step(
+                transform.position,
+                _position.Value,
+                ref _followVelocity,
+                snapDistance,
+                followSmoothSeconds,
+                catchUpSpeed,
+                deltaTime);
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 Quaternion.Euler(0f, _yaw.Value, 0f),
@@ -1152,8 +1206,17 @@ namespace PawsAndLoot.Integration.Network
 
             if (legAnimator != null && motor != null)
             {
-                legAnimator.SetExternalSpeed(
-                    _normalizedSpeed.Value * motor.EffectiveMoveSpeed);
+                float told =
+                    _normalizedSpeed.Value * motor.EffectiveMoveSpeed;
+                legAnimator.SetExternalSpeed(told);
+
+                // The same for the body. The animal is what somebody noticed,
+                // because the thief's cat stays close enough to fill the
+                // screen, but the replicated player is moved exactly the same
+                // way and had exactly the same two opinions about its speed.
+                GetComponent<
+                    PawsAndLoot.Animation.CompanionProceduralAnimator>()
+                    ?.SetExternalSpeed(told);
             }
         }
     }

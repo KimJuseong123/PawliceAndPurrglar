@@ -51,6 +51,12 @@ namespace PawsAndLoot.Integration.Network
             Subscribe();
         }
 
+        /// <summary>
+        /// Room for the verdict and the counters, with slack for the next field
+        /// somebody adds.
+        /// </summary>
+        private const int MessageCapacityBytes = 128;
+
         private void Send(MatchResult result)
         {
             NetworkManager manager = ResolveManager();
@@ -64,13 +70,42 @@ namespace PawsAndLoot.Integration.Network
             }
 
             _sent = true;
+
+            // The counters travel with the verdict, in the same message.
+            //
+            // Only the host builds them: the evaluator holds the wallet, the
+            // arrest counter and the clock at the instant the match ended, and it
+            // returns early on a client on purpose — a client that works the
+            // result out for itself eventually disagrees. So the client had the
+            // winner and nothing else, and its result screen said the officer had
+            // won by arresting the thief zero times in --:--.
+            //
+            // Sent rather than replicated, for the same reason the verdict is:
+            // deciding a winner unloads the match scene, and everything that
+            // would have carried these numbers goes with it.
+            MatchResultSession.TryGetSummary(out MatchSummary summary);
+
+            // Sized with room to spare rather than counted field by field.
+            //
+            // Counting is how this broke: the buffer was sized for seven ints
+            // and ten values were written, so the write overflowed and **the
+            // message was never sent at all**. The client lost the verdict it
+            // used to receive, and the only sign was a result screen with no
+            // winner. Only the bytes actually written are transmitted, so a
+            // generous capacity costs nothing and cannot be off by one.
             using var writer = new FastBufferWriter(
-                sizeof(int) * 3 + sizeof(float),
+                MessageCapacityBytes,
                 Allocator.Temp);
             writer.WriteValueSafe((int)result.Winner);
             writer.WriteValueSafe((int)result.Reason);
             writer.WriteValueSafe(result.SoldAmount);
             writer.WriteValueSafe(result.RemainingSeconds);
+            writer.WriteValueSafe(summary.ElapsedSeconds);
+            writer.WriteValueSafe(summary.CatchCount);
+            writer.WriteValueSafe(summary.RequiredCatchCount);
+            writer.WriteValueSafe(summary.SoldCount);
+            writer.WriteValueSafe(summary.SoldAmount);
+            writer.WriteValueSafe(summary.TargetAmount);
 
             foreach (ulong clientId in manager.ConnectedClientsIds)
             {
@@ -100,6 +135,12 @@ namespace PawsAndLoot.Integration.Network
             reader.ReadValueSafe(out int reason);
             reader.ReadValueSafe(out int soldAmount);
             reader.ReadValueSafe(out float remainingSeconds);
+            reader.ReadValueSafe(out float elapsedSeconds);
+            reader.ReadValueSafe(out int catchCount);
+            reader.ReadValueSafe(out int requiredCatchCount);
+            reader.ReadValueSafe(out int soldCount);
+            reader.ReadValueSafe(out int summarySoldAmount);
+            reader.ReadValueSafe(out int targetAmount);
 
             ReceivedResultCount++;
             var result = new MatchResult(
@@ -107,6 +148,24 @@ namespace PawsAndLoot.Integration.Network
                 (MatchEndReason)reason,
                 soldAmount,
                 remainingSeconds);
+
+            // Reported before the verdict is adopted, because adopting it is
+            // what starts the scene change that shows them.
+            //
+            // A target of zero means the host had no summary either — an
+            // out-of-band verdict, or a test that only had a result to hand. The
+            // screen already knows how to say nothing rather than zero for that,
+            // so it is passed through rather than invented here.
+            if (targetAmount > 0)
+            {
+                MatchResultSession.ReportSummary(new MatchSummary(
+                    elapsedSeconds,
+                    catchCount,
+                    requiredCatchCount,
+                    soldCount,
+                    summarySoldAmount,
+                    targetAmount));
+            }
 
             GameLogger.Info(
                 GameLogCategory.Network,

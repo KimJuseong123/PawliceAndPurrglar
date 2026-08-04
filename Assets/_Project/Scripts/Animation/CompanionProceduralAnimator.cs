@@ -65,8 +65,34 @@ namespace PawsAndLoot.Animation
         private Vector3 _lastPosition;
         private float _phase;
         private float _movingBlend;
+        private float _externalSpeed;
+        private int _externalSpeedFrame = int.MinValue;
 
         public float MovingBlend => _movingBlend;
+
+        /// <summary>
+        /// The speed to bob at, sent by whoever is moving this body.
+        ///
+        /// The legs were given this and the body was not, so on a client the
+        /// two disagreed about whether the animal was walking. A replicated
+        /// position arrives in a lump and then sits still until the next
+        /// packet, so measuring it frame to frame reads "running, stopped,
+        /// stopped, running" — and this blend chases that, so the hop's height
+        /// changes every frame. Not a bob and not a hop: a vibration, and from
+        /// the thief's own screen the cat is close enough to fill it.
+        ///
+        /// The measurement is still right for anything moved by its own motor,
+        /// which is the host and every offline test, so it stays as the answer
+        /// when nobody has said otherwise.
+        /// </summary>
+        public void SetExternalSpeed(float metresPerSecond)
+        {
+            _externalSpeed = Mathf.Max(0f, metresPerSecond);
+            _externalSpeedFrame = Time.frameCount;
+        }
+
+        private bool HasFreshExternalSpeed =>
+            _externalSpeedFrame >= Time.frameCount - 1;
 
         /// <summary>
         /// <paramref name="configuredAgent"/> may be null. It is only consulted
@@ -125,7 +151,9 @@ namespace PawsAndLoot.Animation
             delta.y = 0f;
             _lastPosition = current;
 
-            float speed = delta.magnitude / deltaTime;
+            float speed = HasFreshExternalSpeed
+                ? _externalSpeed
+                : delta.magnitude / deltaTime;
             bool disabled = agent != null && !agent.IsActive;
             float target = disabled || speed < 0.15f ? 0f : 1f;
             _movingBlend = Mathf.MoveTowards(

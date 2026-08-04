@@ -1,8 +1,8 @@
 ﻿{
-    "generatedUtc":  "2026-08-01T10:42:16.6347896Z",
+    "generatedUtc":  "2026-08-04T08:03:15.9901843Z",
     "gateway":  "paws-local-ai",
     "sttModel":  "Systran/faster-whisper-small",
     "ollamaModel":  "qwen3:4b-instruct",
-    "pythonVersion":  "Python 3.12+",
+    "pythonVersion":  "Python 3.12.12",
     "selfContained":  true
 }

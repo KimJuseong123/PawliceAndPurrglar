@@ -101,6 +101,68 @@ namespace PawsAndLoot.Tests.PlayMode
             Object.Destroy(fixture.Root);
         }
 
+        /// <summary>
+        /// A body moved by having its position written must bob as steadily as
+        /// one that walks there.
+        ///
+        /// This is how a client moves anything: the host's answer arrives every
+        /// few frames, is applied in one step, and then nothing happens until
+        /// the next packet. A body that works out its own speed from that reads
+        /// "running, stopped, stopped, running" and its hop changes height every
+        /// frame — not a bob, a vibration, and from the thief's own screen the
+        /// cat is close enough to fill it.
+        ///
+        /// Fed in the same lumps here, deliberately. Ticking with smooth motion
+        /// passes whether or not the told speed is used, which is why this went
+        /// unnoticed while the legs were fixed and the body was not.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator BodyBobsSteadilyWhenItsPositionIsWrittenInLumps()
+        {
+            Fixture fixture = Create();
+            const float Told = 5f;
+
+            float low = float.MaxValue;
+            float high = float.MinValue;
+            for (int step = 0; step < 150; step++)
+            {
+                // One packet every third frame, and stillness in between.
+                if (step % 3 == 0)
+                {
+                    fixture.Root.transform.position +=
+                        Vector3.forward * Told * 0.06f;
+                }
+
+                fixture.Legs.SetExternalSpeed(Told);
+                fixture.Body.SetExternalSpeed(Told);
+                fixture.Legs.Tick(0.02f);
+                fixture.Body.Tick(0.02f);
+
+                // Only once the blend has had time to reach full.
+                if (step >= 60)
+                {
+                    low = Mathf.Min(low, fixture.Body.MovingBlend);
+                    high = Mathf.Max(high, fixture.Body.MovingBlend);
+                }
+
+                yield return null;
+            }
+
+            Assert.That(
+                low,
+                Is.GreaterThan(0.99f),
+                $"The walk blend fell to {low:0.000} between packets, so the "
+                + "hop height changes with every frame that carries no packet. "
+                + "That is the vibration.");
+            Assert.That(
+                high - low,
+                Is.LessThan(0.01f),
+                $"The walk blend swung {high - low:0.000} while the animal "
+                + "walked at a constant speed.");
+
+            Object.Destroy(fixture.Root);
+        }
+
         private sealed class Fixture
         {
             public GameObject Root;

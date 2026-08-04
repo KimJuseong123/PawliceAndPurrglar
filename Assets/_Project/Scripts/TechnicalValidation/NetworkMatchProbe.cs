@@ -1570,6 +1570,23 @@ namespace PawsAndLoot.TechnicalValidation
             Append(json, "decidedWinner", _decidedWinner);
             Append(json, "decidedReason", _decidedReason);
 
+            // The counters the result screen shows, from both machines.
+            //
+            // The verdict agreed and the counters did not: the client had the
+            // winner and no summary, so its screen read "arrested the thief 0
+            // times" over a clock of --:--. Comparing only the winner passed
+            // that, twice, because the winner was never the broken part.
+            MatchResultSession.TryGetSummary(out MatchSummary summary);
+            AppendBool(json, "summaryReported", summary.IsReported);
+            AppendNumber(json, "summaryElapsedSeconds", summary.ElapsedSeconds);
+            AppendNumber(json, "summaryCatchCount", summary.CatchCount);
+            AppendNumber(
+                json,
+                "summaryRequiredCatchCount",
+                summary.RequiredCatchCount);
+            AppendNumber(json, "summarySoldAmount", summary.SoldAmount);
+            AppendNumber(json, "summaryTargetAmount", summary.TargetAmount);
+
             // THROW-007. Both files have to agree, or the two players are in
             // different chases.
             AppendNumber(json, "peakTrapCount", _peakTrapCount);
