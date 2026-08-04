@@ -181,17 +181,8 @@ namespace PawsAndLoot.Integration.Network
         [SerializeField]
         private PawsAndLoot.Companions.CompanionAgent companionAgent;
 
-        /// <summary>
-        /// How far the client's animal may be from where the host says it is
-        /// before it is put there instead of walked there.
-        ///
-        /// Wide enough that ordinary packet lag still eases, which is what
-        /// keeps the animal from stuttering, and narrow enough that going
-        /// through a door does not become a long walk.
-        /// </summary>
-        private const float SnapDistance = 4f;
-
         private Vector3 _companionLastPosition;
+        private Vector3 _companionFollowVelocity;
         private float _companionReportAt;
 
         private int _lastCompanionFaceSequence;
@@ -923,27 +914,30 @@ namespace PawsAndLoot.Integration.Network
             Transform animal = companionAgent.transform;
             Vector3 told = _companionPosition.Value;
 
-            // Walked toward when it is a step away, put there when it is not.
+            // Put there when it is far, eased toward when it is near — the same
+            // two rules the players follow, and now the same arithmetic.
             //
-            // Easing alone assumes the animal only ever drifts, and the one
-            // thing in this game that moves an animal a long way in one frame
-            // is the thing that matters: the owner goes through a door and the
-            // host's cat is suddenly in a room 370 m off the edge of the town.
-            // The client's cat then set off south at one metre a second, which
-            // it can keep up for the rest of the match without arriving. The
-            // cat was not hidden and not missing — it was walking to the room,
-            // and it had already left the screen.
-            if (Vector3.Distance(animal.position, told) > SnapDistance)
-            {
-                animal.position = told;
-            }
-            else
-            {
-                animal.position = Vector3.MoveTowards(
-                    animal.position,
-                    told,
-                    Mathf.Max(0.5f, _companionSpeed.Value * 2f) * deltaTime);
-            }
+            // The far case is a door: the owner walks through one and the
+            // host's animal is suddenly in a room 370 m off the edge of town.
+            // Easing that would have the client's cat set off south at walking
+            // pace for the rest of the match, which is what it did.
+            //
+            // The near case is every other frame, and MoveTowards was the wrong
+            // tool for it. Given an allowance above the real speed it covers the
+            // gap to a target that only updates a few times a second and then
+            // waits — walked, stopped, walked, stopped. The players were moved
+            // off it for exactly this and the animals were left behind, so on a
+            // client the officer's dog and the thief's cat juddered while their
+            // owners glided. An exponential approach never arrives and never
+            // stalls.
+            animal.position = ReplicatedFollow.Step(
+                animal.position,
+                told,
+                ref _companionFollowVelocity,
+                snapDistance,
+                followSmoothSeconds,
+                catchUpSpeed,
+                deltaTime);
             animal.rotation = Quaternion.Slerp(
                 animal.rotation,
                 Quaternion.Euler(0f, _companionYaw.Value, 0f),
@@ -1188,38 +1182,14 @@ namespace PawsAndLoot.Integration.Network
 
         private void ApplyReplicatedTransform(float deltaTime)
         {
-            Vector3 target = _position.Value;
-            float distance = Vector3.Distance(transform.position, target);
-            if (distance > snapDistance)
-            {
-                // A long stall would otherwise show the character sliding
-                // across the map.
-                transform.position = target;
-                _followVelocity = Vector3.zero;
-            }
-            else
-            {
-                // Smoothed rather than raced.
-                //
-                // MoveTowards at 14 m/s covers the gap to a target that only
-                // updates a few times a second, so the character sprinted, sat
-                // still, sprinted, sat still — which is the juddering reported on
-                // whichever machine was the guest. Both characters are
-                // remote-driven on a client, so both shook; the one the camera
-                // follows was simply the one anybody noticed.
-                //
-                // An exponential approach never arrives and never stalls, so the
-                // motion is continuous and averages out to the true speed with a
-                // fraction of a second of lag. Cheaper than a full interpolation
-                // buffer and enough for two players on a LAN.
-                transform.position = Vector3.SmoothDamp(
-                    transform.position,
-                    target,
-                    ref _followVelocity,
-                    followSmoothSeconds,
-                    catchUpSpeed,
-                    deltaTime);
-            }
+            transform.position = ReplicatedFollow.Step(
+                transform.position,
+                _position.Value,
+                ref _followVelocity,
+                snapDistance,
+                followSmoothSeconds,
+                catchUpSpeed,
+                deltaTime);
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 Quaternion.Euler(0f, _yaw.Value, 0f),
