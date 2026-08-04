@@ -39,6 +39,13 @@ namespace PawsAndLoot.Gameplay.Loot
         public const float BreakSeconds = 1.1f;
 
         /// <summary>
+        /// Whether the last opening was silent. Read by tests and by anything
+        /// reporting what happened, so "quiet" is a fact about the case rather
+        /// than something inferred from the absence of a noise event.
+        /// </summary>
+        public bool OpenedQuietly { get; private set; }
+
+        /// <summary>
         /// How far the smash carries.
         ///
         /// Further than the noise props, because this is the one sound in the
@@ -47,6 +54,16 @@ namespace PawsAndLoot.Gameplay.Loot
         /// the jeweller's.
         /// </summary>
         public const float SmashRadiusMeters = 30f;
+
+        /// <summary>
+        /// How long the thief has to stand at the glass with the key.
+        ///
+        /// Longer than the smash, and that is the trade in one number: the loud
+        /// way is quick and tells the officer where you are, the quiet way is
+        /// slow and tells him nothing. Quiet and fast would make the glass
+        /// pointless, and quiet and slower still would make the key pointless.
+        /// </summary>
+        public const float UnlockSeconds = 2.8f;
 
         [SerializeField]
         private LootItem contents;
@@ -66,6 +83,8 @@ namespace PawsAndLoot.Gameplay.Loot
 
         public event Action<LootDisplayCase> Broken;
 
+        private bool _openedWithKey;
+
         public bool IsSealed { get; private set; } = true;
 
         /// <summary>
@@ -82,7 +101,7 @@ namespace PawsAndLoot.Gameplay.Loot
             PlayerInteractionType.Loot;
 
         public string Prompt => IsSealed
-            ? "Break the glass"
+            ? (_openedWithKey ? "Unlock the case" : "Break the glass")
             : "Empty case";
 
         /// <summary>
@@ -117,13 +136,27 @@ namespace PawsAndLoot.Gameplay.Loot
             }
 
             var identity = context.Player.GetComponent<PlayerRoleIdentity>();
-            return Request(identity == null ? (PlayerRole?)null : identity.Role);
+            return Request(
+                identity == null ? (PlayerRole?)null : identity.Role,
+                context.Player.GetComponent<DisplayCaseKeyHolder>());
         }
 
         /// <summary>
         /// Asks to break it, and reports the one frame it gives.
         /// </summary>
         public bool Request(PlayerRole? asker)
+        {
+            return Request(asker, null);
+        }
+
+        /// <summary>
+        /// Asks to open it, with or without a key.
+        ///
+        /// The key is read here rather than checked by the caller, because
+        /// whether this case is about to be quiet decides how long it takes and
+        /// the prompt has to say so before the thief commits.
+        /// </summary>
+        public bool Request(PlayerRole? asker, DisplayCaseKeyHolder key)
         {
             if (!IsSealed
                 || asker != PlayerRole.Thief
@@ -133,12 +166,16 @@ namespace PawsAndLoot.Gameplay.Loot
             }
 
             _sinceRequest = 0f;
-            if (_elapsed < BreakSeconds)
+            _openedWithKey = key != null && key.HasKey;
+            if (_elapsed < (_openedWithKey ? UnlockSeconds : BreakSeconds))
             {
                 return false;
             }
 
-            Break(asker.Value);
+            // Spent at the moment it works, not when the thief walks up. A key
+            // consumed by an abandoned attempt would be lost to a passing dog.
+            bool quiet = _openedWithKey && key.TrySpend();
+            Open(asker.Value, quiet);
             return true;
         }
 
@@ -156,6 +193,7 @@ namespace PawsAndLoot.Gameplay.Loot
             if (_sinceRequest > 0.35f)
             {
                 _elapsed = 0f;
+                _openedWithKey = false;
                 return;
             }
 
@@ -168,6 +206,20 @@ namespace PawsAndLoot.Gameplay.Loot
         /// </summary>
         public void Break(PlayerRole by)
         {
+            Open(by, false);
+        }
+
+        /// <summary>
+        /// Opens it. Loudly, unless it was unlocked.
+        ///
+        /// The same event either way: the glass goes and the treasure becomes
+        /// reachable, because what the case guards is the piece and not the
+        /// noise. Only the report to the noise board is conditional — a key
+        /// turning is not a sound the officer can hear across the town, and if
+        /// it were there would be no reason to fetch one.
+        /// </summary>
+        public void Open(PlayerRole by, bool quiet)
+        {
             if (!IsSealed)
             {
                 return;
@@ -175,16 +227,22 @@ namespace PawsAndLoot.Gameplay.Loot
 
             IsSealed = false;
             _elapsed = 0f;
+            OpenedQuietly = quiet;
             ApplySeal();
 
-            ResolveNoiseBoard()?.Report(
-                transform.position,
-                SmashRadiusMeters,
-                by);
+            if (!quiet)
+            {
+                ResolveNoiseBoard()?.Report(
+                    transform.position,
+                    SmashRadiusMeters,
+                    by);
+            }
 
             GameLogger.Info(
                 GameLogCategory.Loot,
-                $"{by} broke a display case at {transform.position}.",
+                quiet
+                    ? $"{by} unlocked a display case at {transform.position}."
+                    : $"{by} broke a display case at {transform.position}.",
                 this);
             Broken?.Invoke(this);
         }
@@ -197,6 +255,8 @@ namespace PawsAndLoot.Gameplay.Loot
             IsSealed = true;
             _elapsed = 0f;
             _sinceRequest = 0f;
+            _openedWithKey = false;
+            OpenedQuietly = false;
             ApplySeal();
         }
 

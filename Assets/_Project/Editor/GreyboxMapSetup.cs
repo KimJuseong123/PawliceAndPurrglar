@@ -3123,6 +3123,12 @@ namespace PawsAndLoot.Editor
                 ThiefLootWallet wallet =
                     player.AddComponent<ThiefLootWallet>();
                 wallet.Configure(identity, LoadMatchConfig());
+
+                // The jeweller's key. On the thief only: an officer holding it
+                // would be denying the theft rather than pursuing it, and this
+                // game's answer to a hidden thief is to go and look.
+                player.AddComponent<DisplayCaseKeyHolder>()
+                    .Configure(identity);
             }
 
             player.AddComponent<NetworkObject>();
@@ -3612,6 +3618,7 @@ namespace PawsAndLoot.Editor
                 matchRuntime);
 
             int shopPieces = CreateShopLoot(root, locations, matchRuntime);
+            CreateDisplayCaseKey(root, locations, matchRuntime);
 
             var alarmObject = new GameObject("Loot Alarm");
             alarmObject.transform.SetParent(root);
@@ -4045,6 +4052,73 @@ namespace PawsAndLoot.Editor
                     + "sealed in geometry still builds and still validates.");
                 return;
             }
+        }
+
+        /// <summary>
+        /// The key that opens the jeweller's cases quietly, put where the thief
+        /// has to go and fetch it.
+        ///
+        /// At the bookshop, across the town from the cases it opens. Its whole
+        /// value is the walk: unlocking a case makes no sound, and the smash it
+        /// replaces carries thirty metres and is the one noise in this game the
+        /// officer cannot have made himself. A key beside the case it opens
+        /// would make the quiet option free and the loud one pointless.
+        ///
+        /// One key, one match. Holding it is the decision about which of the
+        /// jeweller's two cases is worth the silence.
+        /// </summary>
+        private static void CreateDisplayCaseKey(
+            Transform parent,
+            IReadOnlyDictionary<GreyboxLocationId, Transform> locations,
+            MatchRuntimeState matchRuntime)
+        {
+            if (!locations.TryGetValue(
+                    GreyboxLocationId.Bookstore,
+                    out Transform bookshop))
+            {
+                return;
+            }
+
+            // Behind the shop rather than in the loot row in front of it, so
+            // fetching it is a detour and not something picked up in passing.
+            Vector3 spot = bookshop.position + new Vector3(3.4f, 0.5f, -5.2f);
+
+            var pickup = new GameObject("Display Case Key");
+            pickup.transform.SetParent(parent);
+            pickup.transform.position = spot;
+
+            var trigger = pickup.AddComponent<SphereCollider>();
+            trigger.radius = 0.6f;
+            trigger.isTrigger = true;
+
+            Transform presentation = CreateChild(
+                "PresentationRoot",
+                pickup.transform);
+            presentation.localPosition = Vector3.zero;
+
+            if (AuthoredModelPlacer.TryPlace(
+                    "item_case_key",
+                    0.3f,
+                    presentation,
+                    out string _) == null)
+            {
+                GameObject fallback = CreateCube(
+                    "Key Fallback",
+                    spot + Vector3.up * 0.12f,
+                    new Vector3(0.3f, 0.08f, 0.1f),
+                    LoadOrCreateMaterial(
+                        "Greybox_CaseKey",
+                        new Color(0.85f, 0.76f, 0.35f)),
+                    presentation,
+                    false);
+                UnityEngine.Object.DestroyImmediate(
+                    fallback.GetComponent<Collider>());
+            }
+
+            pickup.AddComponent<DisplayCaseKeyPickup>()
+                .Configure(presentation, matchRuntime);
+
+            Debug.Log($"[LOOT-KEY] Display case key placed at {spot}.");
         }
 
         /// <summary>
