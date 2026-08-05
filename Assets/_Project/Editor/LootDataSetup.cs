@@ -52,10 +52,11 @@ namespace PawsAndLoot.Editor
             string[] guids = AssetDatabase.FindAssets(
                 "t:LootDefinition",
                 new[] { LootDataRoot });
-            // Three originals plus the twelve shop pieces. Counted rather than
+            // Three originals, the twelve shop pieces and the sapphire that
+            // makes the jeweller's draw four kinds. Counted rather than
             // left open, because a definition that fails to write is invisible
             // otherwise — the map simply places one fewer thing to steal.
-            const int Expected = 15;
+            const int Expected = 16;
             if (guids.Length != Expected)
             {
                 throw new System.InvalidOperationException(
@@ -185,6 +186,22 @@ namespace PawsAndLoot.Editor
                 LootCarryType.TwoHand,
                 false,
                 "loot_gold_bar");
+            // The fourth kind, so the jeweller's random draw has four to draw.
+            //
+            // The shop holds four sellables in docs/17's first pass and one of
+            // them — the ring — is now fixed inside the case in the middle of
+            // the room. That left three for the shelves and a spec asking for
+            // four, so the sapphire comes forward from the same table: 고가,
+            // POCKET, and art already in ArtSource. Same handling as the ruby,
+            // which keeps it from being a new mechanic wearing a new colour.
+            CreateOrUpdate(
+                "jewel-sapphire",
+                "사파이어",
+                LootRarity.Rare,
+                LootCarryType.Pocket,
+                false,
+                "loot_sapphire");
+
             // The only alarmed piece in the shop, and the document's whole
             // 대왕 반지 event hangs off it.
             CreateOrUpdate(

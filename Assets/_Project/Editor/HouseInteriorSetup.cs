@@ -262,6 +262,46 @@ namespace PawsAndLoot.Editor
         };
 
         /// <summary>
+        /// Where treasure can appear in the jeweller's, marked on the plan.
+        ///
+        /// Seven places and four pieces: the room is never laid out the same way
+        /// twice, so neither player can learn it. The officer cannot stand on the
+        /// gold bar's spot because there is no gold bar's spot, and the thief
+        /// cannot run a memorised route.
+        ///
+        /// Read straight off the picture, in the same fractions
+        /// <see cref="FromPlan"/> takes — each one sits on a cabinet or a shelf
+        /// against a wall, which is where a jeweller would put them and where
+        /// they are visible from the door.
+        ///
+        /// Seven rather than four so the draw has something to choose between,
+        /// and not many more: every extra one dilutes the room until the pieces
+        /// are scattered too thinly to be worth searching.
+        /// </summary>
+        private static readonly Vector2[] JewelryLootSpotsInPlan =
+        {
+            new(0.215f, 0.141f),
+            new(0.797f, 0.146f),
+            new(0.166f, 0.348f),
+            new(0.172f, 0.635f),
+            new(0.141f, 0.811f),
+            new(0.797f, 0.713f),
+            new(0.566f, 0.902f)
+        };
+
+        /// <summary>
+        /// The middle of the room, where the big glass case stands with the
+        /// diamond ring in it.
+        ///
+        /// Fixed, and the only fixed piece in the shop. Everything else moves
+        /// every match, so the one thing both players can count on is the one
+        /// thing that screams when it is taken — which is what makes the
+        /// decision to take it a decision at all.
+        /// </summary>
+        private static readonly Vector2 JewelryCaseInPlan =
+            new(0.512f, 0.459f);
+
+        /// <summary>
         /// The margin the plan view is framed with, repeated here so a mark on
         /// the picture lands where it was drawn.
         /// </summary>
