@@ -310,7 +310,7 @@ namespace PawsAndLoot.Editor
             // raccoon rises out of it when somebody comes near, which is the
             // whole signpost — and a yard drawn round that only made the thing
             // it marks harder to spot.
-            CreateRaccoonInBin(buildingsRoot, RaccoonMarketCentre);
+            CreateBlackMarkets(buildingsRoot);
 
             CreateLadders(
                 buildingsRoot,
@@ -2053,6 +2053,60 @@ namespace PawsAndLoot.Editor
             model.transform.position += Vector3.up
                 * (groundY - bounds.min.y);
             return model;
+        }
+
+        /// <summary>
+        /// The five bins the raccoon might be behind, marked on the town plan.
+        ///
+        /// Two of them open each match and the officer cannot know which. The
+        /// thief's selling point is the one place they must return to, so a fixed
+        /// one is a place the officer can simply stand — and standing on the
+        /// selling point is the strongest thing an officer can do in this game
+        /// and the least interesting.
+        ///
+        /// Five places, two open: ten combinations. Too many to learn, few enough
+        /// that each place keeps a character. And the pair means the thief always
+        /// has a choice of route rather than a single correct one.
+        ///
+        /// Spread on purpose, and not evenly — the distances to the three shops
+        /// have to differ or every pair plays the same. One is inside the forest,
+        /// where the canopy hides the seconds a sale takes; one is in the open
+        /// north where it does not.
+        /// </summary>
+        private static readonly (string Label, Vector3 At)[] BlackMarkets =
+        {
+            ("Forest", new Vector3(-21.6f, 0f, 27.8f)),
+            ("North", new Vector3(2.3f, 0f, 32.5f)),
+            ("Jeweller", new Vector3(23f, 0f, 29.9f)),
+            ("West", new Vector3(-5.7f, 0f, -0.1f)),
+            ("Plaza", new Vector3(28.3f, 0f, -6.3f))
+        };
+
+        /// <summary>
+        /// Builds all five markets. Which two are open is decided when a match
+        /// starts, not here — see <c>BlackMarketDraw</c>.
+        /// </summary>
+        private static void CreateBlackMarkets(Transform parent)
+        {
+            foreach ((string label, Vector3 at) in BlackMarkets)
+            {
+                Transform holder = CreateChild(
+                    $"Black Market {label}",
+                    parent);
+                holder.position = at;
+                CreateRaccoonInBin(holder, at);
+                CheckSpotIsOutdoors($"Black Market {label}", at);
+            }
+
+            var listed = new System.Collections.Generic.List<string>();
+            foreach ((string label, Vector3 at) in BlackMarkets)
+            {
+                listed.Add($"{label} ({at.x:0.0}, {at.z:0.0})");
+            }
+
+            Debug.Log(
+                $"[MARKET] {BlackMarkets.Length} black market places built at "
+                + string.Join(", ", listed));
         }
 
         private static void CreateRaccoonInBin(
