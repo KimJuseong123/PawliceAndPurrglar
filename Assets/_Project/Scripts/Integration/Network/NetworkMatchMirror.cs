@@ -27,6 +27,45 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
 
+        /// <summary>
+        /// Which of the black market places are open this match, one bit each.
+        ///
+        /// Replicated because **being switched off is not a thing that
+        /// replicates.** Where something is does — the loot pieces are moved by
+        /// the host and their positions arrive on the client by themselves — but
+        /// whether an object is active is a local fact. Two machines each drawing
+        /// two bins from five would show the thief a market the host had never
+        /// opened.
+        ///
+        /// Carried here rather than in a message of its own because this is
+        /// already the one thing in the match scene that the server writes and
+        /// everybody reads. A second channel would be a second thing to keep in
+        /// step.
+        ///
+        /// A mask rather than two indices, so "none chosen yet" is zero and needs
+        /// no sentinel.
+        /// </summary>
+        private readonly NetworkVariable<int> _openMarkets =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        public int OpenMarkets => _openMarkets.Value;
+
+        /// <summary>
+        /// Told by the host's draw. Ignored anywhere else — a client that wrote
+        /// here would be refused by the write permission, loudly and every
+        /// frame.
+        /// </summary>
+        public void SetOpenMarkets(int mask)
+        {
+            if (IsServer)
+            {
+                _openMarkets.Value = mask;
+            }
+        }
+
         private readonly NetworkVariable<float> _countdownSeconds =
             new(
                 0f,

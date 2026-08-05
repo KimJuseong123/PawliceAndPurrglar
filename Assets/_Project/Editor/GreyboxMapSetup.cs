@@ -2086,6 +2086,79 @@ namespace PawsAndLoot.Editor
         /// Builds all five markets. Which two are open is decided when a match
         /// starts, not here — see <c>BlackMarketDraw</c>.
         /// </summary>
+        /// <summary>
+        /// A selling point at every black market place, and the draw that opens
+        /// two of them.
+        ///
+        /// All five are built. Which two a match uses is decided when it starts,
+        /// by the host, and replicated — see <c>BlackMarketDraw</c>. Building
+        /// only two here would fix them in the scene, which is the thing this
+        /// exists to avoid.
+        ///
+        /// Named after their place so the order is stable. The match probe picks
+        /// the first selling point by name among the **active** ones, which is
+        /// exactly right once three of them are switched off.
+        /// </summary>
+        private static void CreateBlackMarketSaleZones(
+            Transform root,
+            MatchRuntimeState matchRuntime)
+        {
+            var holders = new System.Collections.Generic.List<GameObject>();
+            foreach ((string label, Vector3 at) in BlackMarkets)
+            {
+                Transform holder = FindDescendant(
+                    root.parent ?? root,
+                    $"Black Market {label}");
+                if (holder == null)
+                {
+                    Debug.LogError(
+                        $"[MARKET] No holder for '{label}', so it gets no "
+                        + "selling point and the thief cannot sell there.");
+                    continue;
+                }
+
+                // Beside the bin rather than inside it. The offset that used to
+                // be here was measured against a fence in a yard that no longer
+                // exists.
+                CreateSaleZone(
+                    $"Black Market Sale {label}",
+                    at + new Vector3(0f, 0.5f, -1.8f),
+                    MarketGold,
+                    holder,
+                    matchRuntime);
+                holders.Add(holder.gameObject);
+            }
+
+            var drawObject = new GameObject("Black Market Draw");
+            drawObject.transform.SetParent(root);
+            drawObject.AddComponent<PawsAndLoot.Gameplay.Loot.BlackMarketDraw>()
+                .Configure(matchRuntime, holders);
+
+            Debug.Log(
+                $"[MARKET] {holders.Count} selling points built; two open per "
+                + "match.");
+        }
+
+        /// <summary>
+        /// A descendant by exact name, or null. Searched rather than remembered
+        /// because the markets are built in an earlier pass than their selling
+        /// points and passing the list across would mean two places holding the
+        /// same truth.
+        /// </summary>
+        private static Transform FindDescendant(Transform root, string name)
+        {
+            foreach (Transform candidate in
+                root.GetComponentsInChildren<Transform>(true))
+            {
+                if (candidate.name == name)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
         private static void CreateBlackMarkets(Transform parent)
         {
             foreach ((string label, Vector3 at) in BlackMarkets)
@@ -3695,15 +3768,7 @@ namespace PawsAndLoot.Editor
 
             CreateRockPickups(root, matchRuntime);
             CreateShopShelfPickups(root);
-            // At the bin, which is the shop. The offset was measured against a
-            // fence in a yard that no longer exists.
-            CreateSaleZone(
-                "Prototype Sale Point",
-                locations[GreyboxLocationId.RaccoonMarket].position
-                    + new Vector3(0f, 0.5f, -1.8f),
-                MarketGold,
-                root,
-                matchRuntime);
+            CreateBlackMarketSaleZones(root, matchRuntime);
             // The old ladder marker was a PrototypeInteractable that only
             // counted presses, which read as a broken ladder. Real climbing now
             // lives on LadderTraversal beside each store ladder.

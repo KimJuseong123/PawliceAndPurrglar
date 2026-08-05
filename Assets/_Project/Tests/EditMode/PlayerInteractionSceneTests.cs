@@ -126,8 +126,16 @@ namespace PawsAndLoot.Tests.EditMode
                 + "victory path.");
             Assert.That(
                 byType[PlayerInteractionType.Sale],
-                Is.EqualTo(1),
-                "One place to sell.");
+                Is.EqualTo(5),
+                "Five places to sell, of which a match opens two. One was a "
+                + "place the officer could stand on, and standing on the "
+                + "selling point is the strongest thing an officer can do here "
+                + "and the least interesting — the thief has to come back to "
+                + "sell, so the only defence a single point had was that nobody "
+                + "had thought to camp it. All five are built; BlackMarketDraw "
+                + "switches three off when a match starts, and the host's "
+                + "choice is replicated because being switched off is not a "
+                + "fact that travels on its own.");
             // At least three, not exactly three. It was one per store when the
             // stores were the only buildings with a roof worth reaching; the
             // town now puts one up the east face of every shop and every
@@ -291,13 +299,15 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(resultFlows, Has.Length.EqualTo(1));
             Assert.DoesNotThrow(
                 resultFlows[0].ValidateOrThrow);
+            // Five selling points authored, two open per match. See the count
+            // by interaction type above for why one was not enough.
             Assert.That(
                 scene.GetRootGameObjects()
                     .SelectMany(root =>
                         root.GetComponentsInChildren<
                             LootSaleZone>(true))
                     .ToArray(),
-                Has.Length.EqualTo(1));
+                Has.Length.EqualTo(5));
             Assert.That(
                 scene.GetRootGameObjects()
                     .SelectMany(root =>
