@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -137,6 +138,97 @@ namespace PawsAndLoot.Integration.Network
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Strips what a player pastes down to the host itself.
+        ///
+        /// The address arrives from wherever the host read it out: a tunnel
+        /// prints <c>tcp://0.tcp.ngrok.io:12345</c>, a browser bar shows
+        /// <c>wss://play.example.com/</c>, and somebody typing from memory adds
+        /// a trailing slash. All of those name the same machine, and the
+        /// transport wants the machine.
+        ///
+        /// The port inside the string is deliberately dropped rather than
+        /// obeyed. There is a port field next to this one, and a string that
+        /// silently overrides it is a field that lies about what it does.
+        /// </summary>
+        public static string NormaliseHost(string address)
+        {
+            string value = address?.Trim() ?? string.Empty;
+            foreach (string scheme in
+                new[] { "wss://", "ws://", "tcp://", "https://", "http://" })
+            {
+                if (value.StartsWith(
+                        scheme,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    value = value[scheme.Length..];
+                    break;
+                }
+            }
+
+            int slash = value.IndexOf('/');
+            if (slash >= 0)
+            {
+                value = value[..slash];
+            }
+
+            int colon = value.LastIndexOf(':');
+            if (colon > 0 && !value.Contains(']'))
+            {
+                value = value[..colon];
+            }
+
+            return value.Trim();
+        }
+
+        /// <summary>
+        /// Whether this is something the transport can be pointed at: an IPv4
+        /// address, or a host name.
+        ///
+        /// Deliberately loose about names. Whether a name resolves is a question
+        /// only DNS can answer, and answering it here would mean a lookup on the
+        /// UI thread to tell the player something the connection attempt is
+        /// about to tell them anyway. What is checked is that it could be a name
+        /// at all — anything else is a typo worth catching before the wait.
+        /// </summary>
+        public static bool IsValidHost(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                return false;
+            }
+
+            if (IsValidIPv4(address))
+            {
+                return true;
+            }
+
+            if (address.Length > 253 || address.StartsWith('.')
+                || address.EndsWith('.'))
+            {
+                return false;
+            }
+
+            foreach (char character in address)
+            {
+                if (!char.IsLetterOrDigit(character)
+                    && character != '.'
+                    && character != '-')
+                {
+                    return false;
+                }
+            }
+
+            // A bare word is a machine on the local network, which is legal but
+            // is far more often a half-typed address. A dot is the cheapest
+            // signal that somebody meant a real host.
+            //
+            // Except for this one. Two clients on one desk is how this game is
+            // tested every day, and "localhost" is what people type to do it.
+            return address.Contains('.')
+                || address.Equals("localhost", StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool IsValidPort(string port, out ushort parsed)

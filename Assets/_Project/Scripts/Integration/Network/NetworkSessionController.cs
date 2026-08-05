@@ -174,10 +174,20 @@ namespace PawsAndLoot.Integration.Network
                 return false;
             }
 
-            string trimmed = address?.Trim() ?? string.Empty;
-            if (!LocalAddressProvider.IsValidIPv4(trimmed))
+            // A name is as good as a number here.
+            //
+            // This took an IPv4 address and nothing else, which is right for a
+            // room on the same wifi and wrong for everywhere this is going: a
+            // tunnel hands out a hostname, and so will the server. Rejecting
+            // them meant the only way to reach a remote host was to look up its
+            // address by hand and hope it had not moved.
+            string trimmed =
+                LocalAddressProvider.NormaliseHost(address);
+            if (!LocalAddressProvider.IsValidHost(trimmed))
             {
-                SetStatus("IP 형식이 올바르지 않습니다. 예: 192.168.0.10");
+                SetStatus(
+                    "주소 형식이 올바르지 않습니다. "
+                    + "예: 192.168.0.10 또는 0.tcp.ngrok.io");
                 return false;
             }
 
@@ -333,6 +343,21 @@ namespace PawsAndLoot.Integration.Network
                 SetStatus("UnityTransport 컴포넌트를 찾을 수 없습니다.");
                 return false;
             }
+
+            // WebSocket rather than UDP, on both sides.
+            //
+            // A browser cannot open a UDP socket, so the moment this game is
+            // meant to be played in one — which is where it is going — UDP stops
+            // being an option. Switching now means the transport under the
+            // desktop build and the transport under the WebGL build are the same
+            // one, and a bug found in either is a bug found in both.
+            //
+            // It also makes the session tunnellable. UDP needs a port forwarded
+            // and a public address, which half of Korean home connections cannot
+            // give you; a TCP-shaped protocol goes through any of the free
+            // tunnels, which is how two people on different networks can play
+            // before there is a server to play on.
+            transport.UseWebSockets = true;
 
             transport.SetConnectionData(address, port);
             return true;
