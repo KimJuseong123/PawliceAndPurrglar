@@ -290,6 +290,25 @@ namespace PawsAndLoot.Editor
         };
 
         /// <summary>
+        /// Treasure places per room, keyed by model.
+        ///
+        /// Keyed rather than one array, because every room will get its own set
+        /// and a single list would quietly apply the jeweller's shelves to the
+        /// bookshop.
+        ///
+        /// Declared after the arrays it holds, and that is not cosmetic: static
+        /// initialisers run in declaration order, so a dictionary written above
+        /// them is built out of nulls. The map then threw on the first room it
+        /// tried to mark, with a null reference and no hint that the cause was
+        /// the order of two lines.
+        /// </summary>
+        private static readonly System.Collections.Generic.Dictionary<
+            string, Vector2[]> LootSpotsInPlan = new()
+        {
+            { "interior_jewelry", JewelryLootSpotsInPlan }
+        };
+
+        /// <summary>
         /// The middle of the room, where the big glass case stands with the
         /// diamond ring in it.
         ///
@@ -858,6 +877,28 @@ namespace PawsAndLoot.Editor
             // Arriving nose to a wall costs the player the first second of
             // every visit working out which way is in.
             frontEntry.rotation = Quaternion.LookRotation(-doorway, Vector3.up);
+
+            // The shelves and cabinets a room's treasure can appear on.
+            //
+            // Markers only: empty transforms that name a place. What stands on
+            // them is decided when a match starts, by the host, so the room is
+            // laid out differently every time and neither player can learn it.
+            // Authoring the pieces here instead would fix the layout in the
+            // scene, which is the thing this is for avoiding.
+            if (LootSpotsInPlan.TryGetValue(stem, out Vector2[] lootMarks))
+            {
+                for (int place = 0; place < lootMarks.Length; place++)
+                {
+                    child(
+                            $"Interior {number} Loot Spot {place + 1}",
+                            room)
+                        .position = FromPlan(inner, floorTop, lootMarks[place]);
+                }
+
+                Debug.Log(
+                    $"[LOOT-SPOT] Interior {number} ({stem}): "
+                    + $"{lootMarks.Length} treasure places marked.");
+            }
             Transform backEntry = child($"Interior {number} Entry Back", room);
             backEntry.position = frontEntry.position;
 
