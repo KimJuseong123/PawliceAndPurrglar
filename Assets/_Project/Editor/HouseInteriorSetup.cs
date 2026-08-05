@@ -1456,10 +1456,11 @@ namespace PawsAndLoot.Editor
         /// list would have to be edited every time, and the edit that gets
         /// forgotten is the one that leaves a new piece standing in the street.
         ///
-        /// The houses are not here. They have places marked and nothing to put
-        /// in them yet — the loose 200-gold pieces are still outdoors and which
-        /// of several identical houses should hold them is a decision nobody has
-        /// made.
+        /// Each house stocks the first instance of its model and no others.
+        /// There are several of each and they are the same room; four pieces
+        /// spread over every copy would make a town where the thief walks house
+        /// to house collecting one thing, which is the least interesting route
+        /// this map can offer.
         /// </summary>
         /// <summary>
         /// Which shop kinds have already been stocked this rebuild. Cleared at
@@ -1474,7 +1475,9 @@ namespace PawsAndLoot.Editor
         {
             { "interior_jewelry", "jewel-" },
             { "interior_supermarket", "market-" },
-            { "interior_bookstore", "book-" }
+            { "interior_bookstore", "book-" },
+            { "interior_house01", "house1-" },
+            { "interior_house02", "house2-" }
         };
 
         /// <summary>

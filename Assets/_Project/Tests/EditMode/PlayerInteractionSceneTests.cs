@@ -119,9 +119,15 @@ namespace PawsAndLoot.Tests.EditMode
             // display case key, which is a thief-only pickup and so counts here
             // even though it is not worth any gold. Twenty-five since the
             // sapphire joined the jeweller's random draw.
+            //
+            // Thirty-eight since every room was filled to three fewer pieces
+            // than it has marked places: three more in the supermarket, two in
+            // the bookshop, and four in each of the two houses. The three empty
+            // places are the point — a room the thief can learn is a room they
+            // stop searching.
             Assert.That(
                 byType[PlayerInteractionType.Loot],
-                Is.EqualTo(25),
+                Is.EqualTo(38),
                 "Loot is thief-only, and the count is the thief's whole "
                 + "victory path.");
             Assert.That(

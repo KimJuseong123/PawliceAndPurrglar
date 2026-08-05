@@ -4345,14 +4345,19 @@ namespace PawsAndLoot.Editor
                     "market-bread",
                     "market-liquor",
                     "market-cash-drawer",
-                    "market-beef-set"
+                    "market-beef-set",
+                    "market-cheese",
+                    "market-watermelon",
+                    "market-ginseng"
                 }),
                 (GreyboxLocationId.Bookstore, new[]
                 {
                     "book-plain",
                     "book-figure",
                     "book-pen",
-                    "book-laptop"
+                    "book-laptop",
+                    "book-wallet",
+                    "book-magic"
                 }),
                 (GreyboxLocationId.JewelryStore, new[]
                 {
@@ -4361,6 +4366,29 @@ namespace PawsAndLoot.Editor
                     "jewel-gold-bar",
                     "jewel-sapphire",
                     "jewel-ring"
+                }),
+                // The houses' eight pieces, staged in the plaza.
+                //
+                // There is no house among the map's named locations — there are
+                // several houses and the map does not pick one — so they are
+                // built somewhere reachable and moved indoors by
+                // HouseInteriorSetup a moment later.
+                //
+                // The plaza on purpose. If the move indoors ever stops working,
+                // eight household objects appear in the middle of the town
+                // square, which is the loudest way this can fail. Staging them
+                // out of sight would let the same fault look instead like two
+                // empty houses, and an empty house looks like a decision.
+                (GreyboxLocationId.CentralPlaza, new[]
+                {
+                    "house1-sausage",
+                    "house1-cheese",
+                    "house1-headphones",
+                    "house1-laptop",
+                    "house2-popcorn",
+                    "house2-notes",
+                    "house2-wallet",
+                    "house2-liquor"
                 })
             };
 

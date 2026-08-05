@@ -1,6 +1,7 @@
 using System.Linq;
 using NUnit.Framework;
 using PawsAndLoot.Core;
+using PawsAndLoot.Gameplay.Loot;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -51,6 +52,19 @@ namespace PawsAndLoot.Tests.EditMode
                     box.name.Contains("house")
                     || box.name.Contains("OneStorey")
                     || box.name.Contains("TwoStorey"))
+                // A house is a building, and this search matches a substring,
+                // so anything can join it by being named after one. The houses'
+                // loot is — "house1-sausage", "house2-liquor" — and a sausage
+                // staged for the one-storey house duly failed this test as a
+                // house crossing the west wall.
+                //
+                // Excluded by what it is rather than by patching the name
+                // pattern, because the next thing named after a house will not
+                // be spelled the way a pattern guessed. This test has already
+                // been fooled once in the other direction: it looked for the
+                // old model stem, found nothing, and passed its own emptiness
+                // off as a pass.
+                .Where(box => box.GetComponentInParent<LootItem>() == null)
                 .ToArray();
 
             Assert.That(

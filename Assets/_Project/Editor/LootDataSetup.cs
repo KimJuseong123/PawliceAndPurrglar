@@ -56,7 +56,10 @@ namespace PawsAndLoot.Editor
             // makes the jeweller's draw four kinds. Counted rather than
             // left open, because a definition that fails to write is invisible
             // otherwise — the map simply places one fewer thing to steal.
-            const int Expected = 16;
+            // 3 originals + supermarket 7 + bookshop 6 + jeweller's 5 +
+            // 4 in each of the two houses. Every room deals three fewer pieces
+            // than it has marked places, so three stand empty each match.
+            const int Expected = 29;
             if (guids.Length != Expected)
             {
                 throw new System.InvalidOperationException(
@@ -132,6 +135,33 @@ namespace PawsAndLoot.Editor
                 false,
                 "loot_beef_gift_set");
 
+            // Three more from the same table, so the room deals seven over ten
+            // places. The spread is the point: a Common pocket piece, a Bulky
+            // one that costs real speed to carry, and a Rare one-hander. Seven
+            // of ten means three places stand empty every match, so walking in
+            // and seeing a bare shelf tells the thief nothing.
+            CreateOrUpdate(
+                "market-cheese",
+                "치즈",
+                LootRarity.Common,
+                LootCarryType.Pocket,
+                false,
+                "loot_cheese");
+            CreateOrUpdate(
+                "market-watermelon",
+                "대왕 수박",
+                LootRarity.Uncommon,
+                LootCarryType.Bulky,
+                false,
+                "loot_watermelon");
+            CreateOrUpdate(
+                "market-ginseng",
+                "홍삼 팩",
+                LootRarity.Rare,
+                LootCarryType.OneHand,
+                false,
+                "loot_ginseng");
+
             // Bookshop. Few pieces, and the gap between the cheapest and the
             // dearest is the whole reason to search the shelves.
             CreateOrUpdate(
@@ -162,6 +192,22 @@ namespace PawsAndLoot.Editor
                 LootCarryType.TwoHand,
                 false,
                 "loot_laptop");
+
+            // Two more, for six pieces over nine places.
+            CreateOrUpdate(
+                "book-wallet",
+                "지갑",
+                LootRarity.Uncommon,
+                LootCarryType.Pocket,
+                false,
+                "loot_wallet");
+            CreateOrUpdate(
+                "book-magic",
+                "마법책",
+                LootRarity.Rare,
+                LootCarryType.OneHand,
+                false,
+                "loot_magic_book");
 
             // Jeweller's. Everything here is dear, so the choice is not what it
             // is worth but what it costs to carry and whether it screams.
@@ -211,6 +257,92 @@ namespace PawsAndLoot.Editor
                 LootCarryType.OneHand,
                 true,
                 "loot_diamond_ring");
+
+            CreateHouseLoot();
+        }
+
+        /// <summary>
+        /// What the two houses hold: four pieces each, over seven marked places.
+        ///
+        /// docs/17 has no house table — it covers the three shops. So these are
+        /// drawn from the same tables, picked for being things that live in a
+        /// house rather than on a shelf. That is a reading of the document, not
+        /// a quotation from it, and it is written here so the next person does
+        /// not go looking for the section it came from.
+        ///
+        /// Each house gets exactly one Rare. A house is meant to be the safer,
+        /// poorer choice — no alarmed piece, no shopfront glass, a way in nobody
+        /// is watching — and if everything in it were cheap there would be no
+        /// reason to ever open the door. One good thing among three modest ones
+        /// makes entering a gamble instead of a chore.
+        ///
+        /// Models are shared with the shops where the item is the same item. A
+        /// house having cheese in it does not call for a second cheese to be
+        /// modelled, and the two are told apart by price and place, which is
+        /// what the player actually reads.
+        /// </summary>
+        private static void CreateHouseLoot()
+        {
+            // One-storey house: a kitchen and a desk.
+            CreateOrUpdate(
+                "house1-sausage",
+                "소시지",
+                LootRarity.Common,
+                LootCarryType.Pocket,
+                false,
+                "loot_sausage");
+            CreateOrUpdate(
+                "house1-cheese",
+                "치즈",
+                LootRarity.Common,
+                LootCarryType.Pocket,
+                false,
+                "loot_cheese");
+            CreateOrUpdate(
+                "house1-headphones",
+                "헤드셋",
+                LootRarity.Uncommon,
+                LootCarryType.OneHand,
+                false,
+                "loot_headphones");
+            CreateOrUpdate(
+                "house1-laptop",
+                "노트북",
+                LootRarity.Rare,
+                LootCarryType.TwoHand,
+                false,
+                "loot_laptop");
+
+            // Two-storey house: the same idea, different things, so the two
+            // houses are not one house built twice.
+            CreateOrUpdate(
+                "house2-popcorn",
+                "팝콘",
+                LootRarity.Common,
+                LootCarryType.Pocket,
+                false,
+                "loot_popcorn");
+            CreateOrUpdate(
+                "house2-notes",
+                "메모지",
+                LootRarity.Common,
+                LootCarryType.Pocket,
+                false,
+                "loot_sticky");
+            CreateOrUpdate(
+                "house2-wallet",
+                "지갑",
+                LootRarity.Uncommon,
+                LootCarryType.Pocket,
+                false,
+                "loot_wallet");
+            CreateOrUpdate(
+                "house2-liquor",
+                "고급 양주병",
+                LootRarity.Rare,
+                LootCarryType.OneHand,
+                false,
+                "loot_liquor_bottle");
         }
 
         private static void CreateOrUpdate(

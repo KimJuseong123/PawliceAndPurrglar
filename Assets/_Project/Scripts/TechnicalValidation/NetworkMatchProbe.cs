@@ -514,13 +514,9 @@ namespace PawsAndLoot.TechnicalValidation
         /// </summary>
         private void PlaceThiefBesideUnsoldLoot()
         {
-            LootItem loot = FindObjectsByType<LootItem>(
-                    FindObjectsSortMode.None)
-                .Where(item => item.isActiveAndEnabled
-                    && item.CurrentState != LootState.Sold
-                    && item.CurrentState != LootState.Carried)
-                .OrderBy(item => item.name, StringComparer.Ordinal)
-                .FirstOrDefault();
+            LootItem loot = NearestSellableLoot(item =>
+                item.CurrentState != LootState.Sold
+                && item.CurrentState != LootState.Carried);
             if (loot == null)
             {
                 return;
@@ -1072,21 +1068,15 @@ namespace PawsAndLoot.TechnicalValidation
         /// <summary>
         /// Stands the thief beside a piece they can actually take.
         ///
-        /// Sorted by name so the choice is a property of the map rather than of
-        /// whatever order the objects were created in (`ISSUE-041`) — and
-        /// filtered to pieces that are reachable, which is the same lesson
-        /// arriving a second time. A treasure was added that sorts first and
-        /// stands inside a glass case, so the run walked the thief up to the
-        /// jeweller's window and asked for it every frame for a minute. The
-        /// purse read zero and the failure said only "no winner".
+        /// Nearest to somewhere it can be sold — see
+        /// <see cref="NearestSellableLoot"/> for why that and not name order.
+        /// This is the third time the same lesson has arrived: a piece that
+        /// sorts first is not a piece the thief can use, and each time the run
+        /// failed saying only "no winner".
         /// </summary>
         private void PlaceThiefBesideLoot()
         {
-            LootItem loot = FindObjectsByType<LootItem>(
-                    FindObjectsSortMode.None)
-                .Where(item => item.isActiveAndEnabled)
-                .OrderBy(item => item.name, StringComparer.Ordinal)
-                .FirstOrDefault();
+            LootItem loot = NearestSellableLoot(_ => true);
             if (loot == null)
             {
                 return;
@@ -1095,6 +1085,49 @@ namespace PawsAndLoot.TechnicalValidation
             PlaceRole(
                 PlayerRole.Thief,
                 loot.transform.position + new Vector3(1f, 0f, 0f));
+        }
+
+        /// <summary>
+        /// The piece the thief can actually carry to a sale, nearest first.
+        ///
+        /// Chosen by distance to an open sale point rather than by name, and
+        /// that is the whole fix. Name order is deterministic — which is what
+        /// `ISSUE-041` asked for — but it says nothing about whether the piece
+        /// can be sold, and the map keeps growing underneath it. Filling the
+        /// five interiors moved thirteen pieces indoors, one of them sorted
+        /// first, and the run stood the thief in a shop 300 m off the map for a
+        /// minute. Every arrest worked, both sides agreed on the winner, and
+        /// the purse read zero: the failure said "no winner" and pointed at
+        /// nothing.
+        ///
+        /// Distance to a sale point is what the scenario is actually about, so
+        /// it stays true as rooms are furnished and markets move. Ties broken
+        /// by name, so two pieces the same distance out still choose the same
+        /// way on both machines.
+        ///
+        /// Returns null when there is nowhere to sell. The caller leaves the
+        /// thief where they are rather than teleporting them somewhere
+        /// arbitrary — a run that cannot sell should fail saying so, not fail
+        /// somewhere else.
+        /// </summary>
+        private LootItem NearestSellableLoot(Func<LootItem, bool> alsoWanted)
+        {
+            Vector3[] sellingAt = FindObjectsByType<LootSaleZone>(
+                    FindObjectsSortMode.None)
+                .Where(zone => zone.isActiveAndEnabled)
+                .Select(zone => zone.transform.position)
+                .ToArray();
+            if (sellingAt.Length == 0)
+            {
+                return null;
+            }
+
+            return FindObjectsByType<LootItem>(FindObjectsSortMode.None)
+                .Where(item => item.isActiveAndEnabled && alsoWanted(item))
+                .OrderBy(item => sellingAt.Min(at =>
+                    Vector3.Distance(at, item.transform.position)))
+                .ThenBy(item => item.name, StringComparer.Ordinal)
+                .FirstOrDefault();
         }
 
         private void PlaceThiefBesideSaleZone()
