@@ -635,8 +635,8 @@ persistent analytics, and multi-instance server deployment remain later work.
 | ID | 상태 | 내용 |
 |---|---|---|
 | `TASK-DEPLOY-001` | DONE | 전송을 WebSocket으로 바꾸고 호스트명 접속을 허용한다 (2026-08-05) |
-| `TASK-DEPLOY-002` | TODO | `StartServer()` 전용 서버 모드와 그것을 켜는 실행 인자 |
-| `TASK-DEPLOY-003` | TODO | 리눅스 헤드리스 빌드 타깃 |
+| `TASK-DEPLOY-002` | DONE | `StartServer()` 전용 서버 모드와 `-dedicatedServer` 인자 (2026-08-05) |
+| `TASK-DEPLOY-003` | PARTIAL | 빌드 메뉴는 있다. **이 PC에 Linux Build Support 모듈이 없어 산출물 미확인** |
 | `TASK-DEPLOY-004` | TODO | EC2 앞단 TLS 종료(nginx/Caddy)와 도메인·인증서 |
 | `TASK-DEPLOY-005` | TODO | WebGL 빌드가 자기 도메인으로 자동 접속 |
 | `TASK-DEPLOY-006` | TODO | 보안 그룹을 게임 포트만 열도록 |

@@ -108,6 +108,59 @@ namespace PawsAndLoot.Integration.Network
             }
         }
 
+        /// <summary>
+        /// Starts a session this machine does not play in.
+        /// </summary>
+        /// <remarks>
+        /// The difference from a host is one call and one absence: no local
+        /// player. Both characters belong to clients, both are driven by input
+        /// arriving over the wire, and the authority that decides everything
+        /// sits on a machine with no screen — which is what a deployed server
+        /// is and what a host can never be.
+        ///
+        /// Everything else is deliberately identical, approval included. The
+        /// cap counts connected clients, and on a host one of those is the host
+        /// itself; with nobody local the same arithmetic admits two players
+        /// instead of one, which is the answer both cases want.
+        /// </remarks>
+        public bool TryStartServer(string port)
+        {
+            if (_mode != SessionMode.Offline)
+            {
+                SetStatus("이미 세션이 실행 중입니다.");
+                return false;
+            }
+
+            if (!LocalAddressProvider.IsValidPort(port, out ushort parsed))
+            {
+                SetStatus("포트는 1024 이상의 숫자여야 합니다.");
+                return false;
+            }
+
+            Port = parsed;
+            if (!TryApplyTransport("0.0.0.0", parsed))
+            {
+                return false;
+            }
+
+            networkManager.ConnectionApprovalCallback = ApproveConnection;
+            networkManager.OnClientConnectedCallback += HandleClientConnected;
+            networkManager.OnClientDisconnectCallback +=
+                HandleClientDisconnected;
+
+            if (!networkManager.StartServer())
+            {
+                Cleanup();
+                SetStatus("서버 시작에 실패했습니다.");
+                return false;
+            }
+
+            _mode = SessionMode.Host;
+            SetStatus($"서버가 포트 {parsed}에서 대기 중입니다.");
+            SpawnRoleBoard();
+            return true;
+        }
+
         public bool TryStartHost(string port)
         {
             if (_mode != SessionMode.Offline)

@@ -93,6 +93,64 @@ namespace PawsAndLoot.Editor
                 + $"'{absolute}'.");
         }
 
+        /// <summary>
+        /// The headless Linux build that goes on the server.
+        /// </summary>
+        /// <remarks>
+        /// A server subtarget rather than a normal player with the window
+        /// hidden. The subtarget strips the renderer, the audio and the input
+        /// stack out of the build, which is most of its size and all of the
+        /// parts that would be looking for a display that is not there.
+        ///
+        /// Needs the Linux module installed in this editor. Without it the build
+        /// fails with a message about the target being unsupported, which is
+        /// worth saying here rather than leaving somebody to read it out of a
+        /// build report: Unity Hub &gt; Installs &gt; Add modules &gt; Linux
+        /// Build Support (IL2CPP).
+        /// </remarks>
+        [MenuItem("Paws & Loot/Build/Build Linux Dedicated Server")]
+        public static void BuildLinuxServer()
+        {
+            const string ServerBuildPath =
+                "Builds/Server/Linux/PawsAndLoot.x86_64";
+
+            if (!BuildPipeline.IsBuildTargetSupported(
+                    BuildTargetGroup.Standalone,
+                    BuildTarget.StandaloneLinux64))
+            {
+                throw new InvalidOperationException(
+                    "Linux Build Support is not installed in this editor. "
+                    + "Unity Hub > Installs > the 6000.5.4f1 gear > Add "
+                    + "modules > Linux Build Support (IL2CPP).");
+            }
+
+            string[] scenePaths = ResolveScenePaths();
+            string absoluteBuildPath = Path.GetFullPath(ServerBuildPath);
+            Directory.CreateDirectory(
+                Path.GetDirectoryName(absoluteBuildPath));
+
+            BuildReport report = BuildPipeline.BuildPlayer(
+                new BuildPlayerOptions
+                {
+                    scenes = scenePaths,
+                    locationPathName = absoluteBuildPath,
+                    target = BuildTarget.StandaloneLinux64,
+                    subtarget = (int)StandaloneBuildSubtarget.Server,
+                    options = BuildOptions.None
+                });
+
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"Linux server build failed with "
+                    + $"{report.summary.totalErrors} errors.");
+            }
+
+            Debug.Log(
+                $"Linux dedicated server built at '{absoluteBuildPath}'. Run "
+                + "it with: ./PawsAndLoot.x86_64 -dedicatedServer -netPort 7979");
+        }
+
         [MenuItem("Paws & Loot/Build/Build Windows Playtest")]
         public static void BuildWindows()
         {

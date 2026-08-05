@@ -38,6 +38,15 @@ namespace PawsAndLoot.Integration.Network
 
         public event Action RoleAssignmentChanged;
 
+        /// <summary>
+        /// Stands for "the police role has not been given to anybody yet".
+        ///
+        /// A real client id, and one nothing will ever be assigned: Netcode
+        /// counts up from zero and the server is zero, so the top of the range
+        /// is free. Zero itself could not be the sentinel — it is the host.
+        /// </summary>
+        private const ulong NoOne = ulong.MaxValue;
+
         public bool IsAssigned => _assigned.Value;
         public ulong PoliceClientId => _policeClientId.Value;
 
@@ -63,7 +72,15 @@ namespace PawsAndLoot.Integration.Network
 
             // The host takes police by default so a session is always playable
             // without anyone touching the swap button.
-            _policeClientId.Value = NetworkManager.LocalClientId;
+            //
+            // Unless nobody is playing here. A dedicated server has a local
+            // client id too — it just does not belong to a person, so handing it
+            // the police role gives the role to an empty chair and the officer
+            // never moves. On a server the first client through the door takes
+            // it instead (see HandleClientConnected).
+            _policeClientId.Value = NetworkManager.IsHost
+                ? NetworkManager.LocalClientId
+                : NoOne;
             NetworkManager.OnClientConnectedCallback +=
                 HandleClientConnected;
             NetworkManager.OnClientDisconnectCallback +=
@@ -218,6 +235,15 @@ namespace PawsAndLoot.Integration.Network
 
         private void HandleClientConnected(ulong clientId)
         {
+            // First one in is the officer, on a server where nobody local can
+            // be. Only ever set once: a second client arriving must not take the
+            // role off the first, and a reconnect must not shuffle the roles of
+            // a match already under way.
+            if (_policeClientId.Value == NoOne)
+            {
+                _policeClientId.Value = clientId;
+            }
+
             RefreshAssignment();
         }
 

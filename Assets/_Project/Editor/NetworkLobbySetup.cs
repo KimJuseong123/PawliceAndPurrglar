@@ -53,6 +53,11 @@ namespace PawsAndLoot.Editor
                     .AddComponent<NetworkSessionController>();
             session.Configure(manager, boardPrefab);
 
+            // Sits there doing nothing unless the build was launched with
+            // -dedicatedServer. On the same object as the session it drives, so
+            // it cannot end up in a scene without one.
+            manager.gameObject.AddComponent<DedicatedServerLauncher>();
+
             // Routes match scene loads through NGO while a session runs, so
             // both machines resolve the same in-scene NetworkObjects.
             NetworkSceneCoordinator coordinator =

@@ -24,7 +24,7 @@
 | 전송 | WebSocket (포트 기본 7979) |
 | 호스트 리슨 | `0.0.0.0` — 밖에서 들어오는 연결을 받는다 |
 | 클라이언트 주소 | **호스트명 허용.** `wss://`·`tcp://`·뒤의 `/경로`·`:포트`를 벗겨낸다 |
-| 전용 서버 | **없음.** `StartHost`/`StartClient`뿐이다 |
+| 전용 서버 | **있음.** `-dedicatedServer`로 켠다 |
 | WebGL 빌드 | 타깃은 있다 (`Build WebGL Playtest`). 접속 주소 주입은 아직 없다 |
 
 실측: 2프로세스 `full` 시나리오가 WebSocket에서 양쪽 `passed=True`,
@@ -66,11 +66,11 @@ ngrok tcp 7979
 
 남은 것:
 
-1. **전용 서버 모드.** 지금은 호스트가 곧 플레이어다. 서버에는 플레이어가 없어야
-   하므로 `NetworkManager.StartServer()` 경로와 그것을 켜는 실행 인자가 필요하다.
-   `NetworkSessionController`에 `TryStartServer`를 더하는 일이다.
-2. **리눅스 헤드리스 빌드.** `PlaytestBuild`에 `StandaloneLinux64` +
-   `EnableHeadlessMode` 타깃을 더한다.
+1. ~~전용 서버 모드~~ **완료 (2026-08-05)**. 아래 6절 참고.
+2. **리눅스 헤드리스 빌드.** 메뉴는 만들었다 (`Build Linux Dedicated Server`).
+   **이 PC에 Linux Build Support가 없어 아직 산출물이 없다** — Unity Hub의
+   6000.5.4f1 톱니 > Add modules > Linux Build Support (IL2CPP)를 깔면 그대로
+   돈다. 지금 깔린 모듈은 `WebGLSupport`와 `windowsstandalonesupport`뿐이다.
 3. **WSS.** 브라우저는 `https://`로 받은 페이지에서 `ws://`로 접속할 수 없다.
    EC2 앞에 nginx나 Caddy를 두고 TLS를 끝내고 뒤로는 평문 WS로 넘긴다.
    도메인과 인증서가 필요하다 (Let's Encrypt).
@@ -85,3 +85,48 @@ ngrok tcp 7979
 
 UDP로 돌아가려면 `TryApplyTransport`의 `UseWebSockets = true` 한 줄을 지우면
 된다. 다만 그러면 브라우저 접속은 불가능해진다.
+
+## 6. 전용 서버 (2026-08-05 추가)
+
+```bash
+PawsAndLoot.exe -dedicatedServer -netPort 7979
+```
+
+호스트와 다른 점은 하나다: **여기서는 아무도 플레이하지 않는다.** 두 캐릭터가
+모두 클라이언트 소유이고, 판정하는 권한은 화면 없는 기계에 있다. 배포된 서버가
+그래야 하는 모양이고 호스트는 될 수 없는 모양이다.
+
+인자가 없으면 아무 일도 하지 않는다. 스스로 판단하는 빌드였다면 더블클릭이
+전부 헤드리스 서버가 되고 플레이어에게는 열리지 않는 창만 남는다.
+
+### 역할 배정이 바뀐 곳
+
+`NetworkRoleBoard`는 스폰될 때 **자기 자신을 경찰로** 잡고 있었다. 호스트에서는
+맞지만 서버에서는 그 자리에 사람이 없어서, 경찰 역할이 빈 의자에 배정되고
+경찰관이 영원히 움직이지 않는다. 서버일 때는 **첫 번째로 들어온 클라이언트**가
+가져간다. 한 번만 정해지므로 두 번째 클라이언트가 뺏지 않고, 재접속이 진행 중인
+경기의 역할을 뒤섞지 않는다.
+
+접속 인원 제한은 손댈 필요가 없었다. 접속한 클라이언트를 세는데 호스트에서는 그중
+하나가 호스트 자신이므로, 로컬 플레이어가 없으면 같은 산수가 두 명을 받는다.
+
+### 실측
+
+서버 1 + 클라이언트 2로 돌렸다. 클라이언트 결과:
+
+```text
+sessionMode = Client
+rolesAssigned = True
+localRole = Police
+policeClientId = 1
+passed = True
+```
+
+`policeClientId = 1`이 요점이다. 서버는 0이고 플레이어가 아니며, 경찰은 첫 번째
+사람에게 갔다. 호스트 모드 2프로세스 회귀도 그대로 양쪽 `passed=True`다.
+
+### 리눅스에서 돌릴 때
+
+```bash
+./PawsAndLoot.x86_64 -dedicatedServer -netPort 7979
+```
