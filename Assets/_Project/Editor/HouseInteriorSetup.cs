@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PawsAndLoot.Animation;
 using PawsAndLoot.Gameplay.Interiors;
+using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Match;
 using UnityEngine;
 
@@ -290,6 +291,75 @@ namespace PawsAndLoot.Editor
         };
 
         /// <summary>
+        /// The bookshop's shelves. Nine places: the room is deep and the tall
+        /// shelving blocks sight down it, so treasure spread along the aisles
+        /// makes searching it a walk rather than a glance.
+        /// </summary>
+        private static readonly Vector2[] BookstoreLootSpotsInPlan =
+        {
+            new(0.162f, 0.264f),
+            new(0.452f, 0.347f),
+            new(0.686f, 0.328f),
+            new(0.170f, 0.419f),
+            new(0.179f, 0.554f),
+            new(0.467f, 0.531f),
+            new(0.696f, 0.531f),
+            new(0.782f, 0.686f),
+            new(0.664f, 0.806f)
+        };
+
+        /// <summary>
+        /// The one-storey house: bedside tables, the kitchen counter and the
+        /// dining table. A house holds less than a shop and is safer to be in,
+        /// which is the trade it exists to offer.
+        /// </summary>
+        private static readonly Vector2[] House01LootSpotsInPlan =
+        {
+            new(0.762f, 0.323f),
+            new(0.260f, 0.437f),
+            new(0.116f, 0.622f),
+            new(0.232f, 0.701f),
+            new(0.692f, 0.655f),
+            new(0.661f, 0.876f),
+            new(0.804f, 0.882f)
+        };
+
+        /// <summary>
+        /// The two-storey house, whose plan is an L. Places in both arms, so
+        /// walking in does not show you everything there is.
+        /// </summary>
+        private static readonly Vector2[] House02LootSpotsInPlan =
+        {
+            new(0.201f, 0.172f),
+            new(0.151f, 0.483f),
+            new(0.673f, 0.494f),
+            new(0.782f, 0.511f),
+            new(0.221f, 0.747f),
+            new(0.684f, 0.858f),
+            new(0.843f, 0.871f)
+        };
+
+        /// <summary>
+        /// The supermarket's aisles and produce stands. Ten places, the most of
+        /// any room: docs/17 wants the widest spread of prices here, and the
+        /// narrow gaps between the shelves are where the chases are meant to
+        /// happen.
+        /// </summary>
+        private static readonly Vector2[] SupermarketLootSpotsInPlan =
+        {
+            new(0.843f, 0.360f),
+            new(0.304f, 0.456f),
+            new(0.434f, 0.461f),
+            new(0.565f, 0.467f),
+            new(0.133f, 0.566f),
+            new(0.799f, 0.578f),
+            new(0.314f, 0.638f),
+            new(0.437f, 0.631f),
+            new(0.561f, 0.625f),
+            new(0.234f, 0.919f)
+        };
+
+        /// <summary>
         /// Treasure places per room, keyed by model.
         ///
         /// Keyed rather than one array, because every room will get its own set
@@ -305,7 +375,24 @@ namespace PawsAndLoot.Editor
         private static readonly System.Collections.Generic.Dictionary<
             string, Vector2[]> LootSpotsInPlan = new()
         {
-            { "interior_jewelry", JewelryLootSpotsInPlan }
+            { "interior_jewelry", JewelryLootSpotsInPlan },
+            { "interior_bookstore", BookstoreLootSpotsInPlan },
+            { "interior_house01", House01LootSpotsInPlan },
+            { "interior_house02", House02LootSpotsInPlan },
+            { "interior_supermarket", SupermarketLootSpotsInPlan }
+        };
+
+        /// <summary>
+        /// Where a room's fixed, alarmed piece stands, keyed by model.
+        ///
+        /// One room has one so far. Keyed anyway, for the same reason the
+        /// treasure places are: a bare field would apply the jeweller's cabinet
+        /// to the bookshop the moment a second room wanted one.
+        /// </summary>
+        private static readonly System.Collections.Generic.Dictionary<
+            string, Vector2> CaseInPlan = new()
+        {
+            { "interior_jewelry", new Vector2(0.512f, 0.459f) }
         };
 
         /// <summary>
@@ -899,6 +986,26 @@ namespace PawsAndLoot.Editor
                     $"[LOOT-SPOT] Interior {number} ({stem}): "
                     + $"{lootMarks.Length} treasure places marked.");
             }
+
+            // The alarmed piece onto the case the model already draws.
+            //
+            // The jeweller's interior has a glass cabinet painted into the
+            // middle of its floor, and the working display case was standing out
+            // in the street in front of the shop — a case nobody could reach
+            // guarding a ring nobody could take, with a picture of a case
+            // indoors doing nothing. This puts the working one on the drawn one.
+            //
+            // The case is moved with the ring rather than found again from the
+            // scene: it is a separate object that happens to sit where the ring
+            // sits, so leaving it behind would put the glass in the street and
+            // the ring in the room.
+            if (CaseInPlan.TryGetValue(stem, out Vector2 caseMark))
+            {
+                MoveAlarmedPieceInto(
+                    FromPlan(inner, floorTop, caseMark),
+                    stem,
+                    number);
+            }
             Transform backEntry = child($"Interior {number} Entry Back", room);
             backEntry.position = frontEntry.position;
 
@@ -1276,6 +1383,64 @@ namespace PawsAndLoot.Editor
         /// and it is written once here so the picture and the town cannot drift
         /// apart.
         /// </summary>
+        /// <summary>
+        /// Puts the room's alarmed piece, and the glass around it, where the
+        /// model draws its cabinet.
+        ///
+        /// Found by the definition rather than by name, because the object's
+        /// name is decided by whichever generator made it and has been renamed
+        /// twice already. The definition's stable id is the one handle that is
+        /// meant to survive.
+        ///
+        /// Says so when it finds nothing. A ring left in the street is a ring
+        /// the thief cannot take and a room with a picture of a cabinet in it —
+        /// neither of which looks like an error from inside the game.
+        /// </summary>
+        private static void MoveAlarmedPieceInto(
+            Vector3 target,
+            string stem,
+            int number)
+        {
+            foreach (LootItem piece in
+                UnityEngine.Object.FindObjectsByType<LootItem>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None))
+            {
+                if (piece.Definition == null
+                    || !piece.Definition.RaisesAlarm
+                    || !piece.Definition.StableId.StartsWith("jewel-"))
+                {
+                    continue;
+                }
+
+                // The glass first, while it is still standing on the ring: it is
+                // a sibling that shares the position, not a child, so it has to
+                // be carried across deliberately.
+                foreach (LootDisplayCase glass in
+                    UnityEngine.Object.FindObjectsByType<LootDisplayCase>(
+                        FindObjectsInactive.Include,
+                        FindObjectsSortMode.None))
+                {
+                    if (glass.Contents == piece)
+                    {
+                        glass.transform.position = target;
+                    }
+                }
+
+                piece.transform.position = target;
+                Debug.Log(
+                    $"[LOOT-CASE] Interior {number} ({stem}): "
+                    + $"'{piece.Definition.StableId}' and its glass moved to "
+                    + $"{target}.");
+                return;
+            }
+
+            Debug.LogError(
+                $"[LOOT-CASE] Interior {number} ({stem}) has a cabinet marked "
+                + "and there is no alarmed jewellery piece in the scene to put "
+                + "in it. The ring is still wherever it was authored.");
+        }
+
         private static Vector3 FromPlan(
             Bounds inner,
             float floorTop,
