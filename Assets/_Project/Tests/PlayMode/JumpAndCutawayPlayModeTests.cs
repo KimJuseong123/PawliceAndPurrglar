@@ -264,8 +264,29 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.Not.Null,
                 "No cutaway view in the scene.");
 
-            HouseInterior interior =
-                Object.FindFirstObjectByType<HouseInterior>();
+            // Picked by name, and only from rooms that have a screen.
+            //
+            // FindFirstObjectByType returns whatever instance id happens to be
+            // lowest, and instance id order is not a property of the map — it
+            // shifts whenever anything is added to the scene. Adding treasure
+            // places to the rooms moved it onto the jail, which is built by its
+            // own function, has no removable faces and never needed any: nobody
+            // stands outside a cell looking in.
+            //
+            // The same trap as ISSUE-041, where a probe put the thief next to
+            // "the first treasure" and nineteen new rooms changed which one that
+            // was.
+            HouseInterior interior = Object
+                .FindObjectsByType<HouseInterior>(FindObjectsSortMode.None)
+                .Where(candidate =>
+                    candidate.GetComponent<InteriorShellScreen>() != null)
+                .OrderBy(candidate => candidate.name)
+                .FirstOrDefault();
+            Assert.That(
+                interior,
+                Is.Not.Null,
+                "No room in the scene has removable faces at all.");
+
             var screen = interior.GetComponent<InteriorShellScreen>();
             Assert.That(
                 screen,
