@@ -685,6 +685,11 @@ namespace PawsAndLoot.Editor
                 return;
             }
 
+            // Cleared per rebuild. Left standing, a second rebuild in the same
+            // editor session would find every shop kind already claimed and
+            // stock none of them — and the only symptom would be empty shops.
+            _stockedStems.Clear();
+
             // The ground and the buildings were made moments ago in this same
             // pass, and a collider created this frame is not in the physics
             // scene yet. Every doorstep below is found by raycasting down for
@@ -985,6 +990,8 @@ namespace PawsAndLoot.Editor
                 Debug.Log(
                     $"[LOOT-SPOT] Interior {number} ({stem}): "
                     + $"{lootMarks.Length} treasure places marked.");
+
+                StockRoom(room, stem, number, matchRuntime);
             }
 
             // The alarmed piece onto the case the model already draws.
@@ -1439,6 +1446,125 @@ namespace PawsAndLoot.Editor
                 $"[LOOT-CASE] Interior {number} ({stem}) has a cabinet marked "
                 + "and there is no alarmed jewellery piece in the scene to put "
                 + "in it. The ring is still wherever it was authored.");
+        }
+
+        /// <summary>
+        /// Which of a shop's pieces its own room deals out, by stable id prefix.
+        ///
+        /// Prefixes rather than a list of ids, so the pieces docs/17 still has
+        /// waiting join their own shop's draw the moment they are authored. A
+        /// list would have to be edited every time, and the edit that gets
+        /// forgotten is the one that leaves a new piece standing in the street.
+        ///
+        /// The houses are not here. They have places marked and nothing to put
+        /// in them yet — the loose 200-gold pieces are still outdoors and which
+        /// of several identical houses should hold them is a decision nobody has
+        /// made.
+        /// </summary>
+        /// <summary>
+        /// Which shop kinds have already been stocked this rebuild. Cleared at
+        /// the start of every Build, or a second rebuild in one editor session
+        /// would find every shop already claimed and stock none of them.
+        /// </summary>
+        private static readonly System.Collections.Generic.HashSet<string>
+            _stockedStems = new();
+
+        private static readonly System.Collections.Generic.Dictionary<
+            string, string> RoomStockPrefix = new()
+        {
+            { "interior_jewelry", "jewel-" },
+            { "interior_supermarket", "market-" },
+            { "interior_bookstore", "book-" }
+        };
+
+        /// <summary>
+        /// Moves a shop's treasure into its own room and hands the room the job
+        /// of laying it out.
+        ///
+        /// Two things happen and they are not the same thing. The pieces are
+        /// moved indoors now, at build time, so the saved scene is honest about
+        /// where the shop's stock is — leaving them in the street until the first
+        /// match starts would mean a scene that looks wrong to anybody opening
+        /// it and a lobby that shows treasure on the pavement. Then
+        /// <c>LootSpotDraw</c> reshuffles them across the marked places when a
+        /// match begins, which is what stops either player learning the room.
+        ///
+        /// The alarmed piece is left alone. It is fixed in its cabinet by
+        /// design, and it has already been put there.
+        /// </summary>
+        private static void StockRoom(
+            Transform room,
+            string stem,
+            int number,
+            MatchRuntimeState matchRuntime)
+        {
+            if (!RoomStockPrefix.TryGetValue(stem, out string prefix))
+            {
+                return;
+            }
+
+            // One shop's stock, one room.
+            //
+            // The town has two supermarkets, and both were handed the same four
+            // pieces: the second room moved them out of the first and then both
+            // rooms had a draw shuffling the same objects. Two writers, one set
+            // of positions — the failure this project keeps meeting.
+            //
+            // The first room of a kind wins, and the rest are said out loud.
+            // Filling them properly means more pieces, which is a decision about
+            // the shop's economy and not something to invent here.
+            if (!_stockedStems.Add(stem))
+            {
+                Debug.LogWarning(
+                    $"[LOOT-STOCK] Interior {number} is a second {stem} and is "
+                    + "left empty. The shop's pieces are in the first one; "
+                    + "filling this needs its own pieces.");
+                return;
+            }
+
+            Transform[] places = room
+                .GetComponentsInChildren<Transform>(true)
+                .Where(t => t.name.Contains("Loot Spot"))
+                .OrderBy(t => t.name)
+                .ToArray();
+
+            LootItem[] stock = UnityEngine.Object
+                .FindObjectsByType<LootItem>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None)
+                .Where(item => item.Definition != null
+                    && item.Definition.StableId.StartsWith(prefix)
+                    && !item.Definition.RaisesAlarm)
+                .OrderBy(item => item.Definition.StableId)
+                .ToArray();
+
+            if (stock.Length == 0 || places.Length == 0)
+            {
+                Debug.LogError(
+                    $"[LOOT-STOCK] Interior {number} ({stem}) has "
+                    + $"{stock.Length} pieces for {places.Length} places, so "
+                    + "the shop has nothing to steal.");
+                return;
+            }
+
+            // Parked on the first places in order. The draw scatters them
+            // properly at match start; this is only so the scene is not saved
+            // with a shop's stock lying in the road.
+            for (int index = 0; index < stock.Length; index++)
+            {
+                stock[index].transform.position =
+                    places[index % places.Length].position;
+            }
+
+            room.gameObject.AddComponent<LootSpotDraw>()
+                .Configure(matchRuntime, places, stock);
+
+            Debug.Log(
+                $"[LOOT-STOCK] Interior {number} ({stem}): {stock.Length} "
+                + $"pieces over {places.Length} places — "
+                + string.Join(
+                    ", ",
+                    stock.Select(item => item.Definition.StableId)));
         }
 
         private static Vector3 FromPlan(

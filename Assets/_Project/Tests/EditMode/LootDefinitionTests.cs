@@ -23,11 +23,12 @@ namespace PawsAndLoot.Tests.EditMode
             LootDefinition[] definitions = LoadDefinitions();
 
             Assert.That(config, Is.Not.Null);
-            // Three originals the greybox map was built on, plus the twelve
-            // shop pieces from docs/17. Counted so a definition that fails to
+            // Three originals the greybox map was built on, the twelve shop
+            // pieces from docs/17, and the sapphire that gives the jeweller's
+            // random draw a fourth kind. Counted so a definition that fails to
             // write is visible: the map would simply place one fewer thing to
             // steal and say nothing.
-            Assert.That(definitions, Has.Length.EqualTo(15));
+            Assert.That(definitions, Has.Length.EqualTo(16));
             Assert.That(
                 definitions.Select(definition => definition.StableId),
                 Is.Unique);

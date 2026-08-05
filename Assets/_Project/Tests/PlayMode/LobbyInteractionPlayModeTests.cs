@@ -33,7 +33,7 @@ namespace PawsAndLoot.Tests.PlayMode
         private const string RejectedPort = "80";
         private const string PortRejection = "포트는 1024 이상의 숫자여야 합니다.";
         private const string AddressRejection =
-            "IP 형식이 올바르지 않습니다. 예: 192.168.0.10";
+            "주소 형식이 올바르지 않습니다. 예: 192.168.0.10 또는 0.tcp.ngrok.io";
 
         private Scene _scene;
         private GameObject _lobby;

@@ -117,10 +117,11 @@ namespace PawsAndLoot.Tests.EditMode
             // Twenty-three rather than twenty-two: the jeweller's ring is both a
             // shop piece and alarmed, so it brings its own display case. Plus the
             // display case key, which is a thief-only pickup and so counts here
-            // even though it is not worth any gold.
+            // even though it is not worth any gold. Twenty-five since the
+            // sapphire joined the jeweller's random draw.
             Assert.That(
                 byType[PlayerInteractionType.Loot],
-                Is.EqualTo(24),
+                Is.EqualTo(25),
                 "Loot is thief-only, and the count is the thief's whole "
                 + "victory path.");
             Assert.That(

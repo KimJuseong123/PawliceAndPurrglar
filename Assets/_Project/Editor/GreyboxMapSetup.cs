@@ -4240,6 +4240,7 @@ namespace PawsAndLoot.Editor
                     "jewel-ruby",
                     "jewel-watch",
                     "jewel-gold-bar",
+                    "jewel-sapphire",
                     "jewel-ring"
                 })
             };
