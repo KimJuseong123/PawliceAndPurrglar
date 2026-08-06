@@ -3781,29 +3781,18 @@ namespace PawsAndLoot.Editor
             // all in three places; these are the reason to be anywhere else, so
             // they sit in the open ground between the blocks where the officer
             // has to cover distance to guard them.
-            Vector3[] lootSpots =
-            {
-                new(-24f, 0.5f, 20f),
-                new(0f, 0.5f, 36f),
-                new(34f, 0.5f, 36f),
-                new(40f, 0.5f, 4f),
-                new(-10f, 0.5f, -10f),
-                new(24f, 0.5f, -20f)
-            };
-
-            for (int index = 0; index < lootSpots.Length; index++)
-            {
-                CreateLootTarget(
-                    index == 0
-                        ? "Prototype Loot"
-                        : $"Loot {index + 1}",
-                    lootSpots[index],
-                    new Color(0.75f, 0.3f, 0.95f),
-                    root,
-                    CommonLootDefinitionPath,
-                    matchRuntime);
-            }
-
+            // The six loose street pieces are gone.
+            //
+            // They were scaffolding from before the buildings had insides: with
+            // one piece of treasure in the world a sale victory was arithmetically
+            // impossible, so six were scattered across the pavement to make the
+            // thief's half of the game finishable. Thirteen interiors now hold
+            // more than nine thousand gold against a target of one thousand, and
+            // what the scaffolding does today is put jewellery boxes in the
+            // corners of the map with no shop, no room and no reason.
+            //
+            // The alarmed flagship below stays. It is not scaffolding — it is the
+            // one piece the whole town hears being taken.
             // The flagship piece, at the jeweller's, behind glass. One of them
             // rather than several: an alarm on everything is an alarm on
             // nothing, and the decision it creates only exists while the quiet
@@ -3826,8 +3815,9 @@ namespace PawsAndLoot.Editor
             alarmObject.AddComponent<LootAlarm>();
 
             Debug.Log(
-                $"[ISSUE-011] {lootSpots.Length} loot pieces placed, plus "
-                + $"{shopPieces} shop pieces.");
+                $"[ISSUE-011] {shopPieces} shop pieces placed. The six loose "
+                + "street pieces are gone; the interiors carry the thief's "
+                + "victory path now.");
 
             CreateRockPickups(root, matchRuntime);
             CreateShopShelfPickups(root);

@@ -140,9 +140,16 @@ namespace PawsAndLoot.Tests.EditMode
             // an officer has to be able to press E at cannot be one — the role
             // rules that matter are written out in LootHidingSpot.TryInteract,
             // which can say which role it wants and for what.
+            // Sixty-five: the six loose street pieces are gone. They were
+            // scaffolding from before the buildings had insides — with one piece
+            // in the world a sale victory was arithmetically impossible, so six
+            // were scattered on the pavement. Thirteen interiors now hold more
+            // than nine thousand gold against a target of one thousand, and what
+            // the scaffolding did today was put jewellery boxes in the corners of
+            // the map with no shop, no room and no reason.
             Assert.That(
                 byType[PlayerInteractionType.Loot],
-                Is.EqualTo(71),
+                Is.EqualTo(65),
                 "Loot is thief-only, and the count is the thief's whole "
                 + "victory path.");
             Assert.That(

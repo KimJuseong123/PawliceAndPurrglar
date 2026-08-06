@@ -295,6 +295,37 @@ namespace PawsAndLoot.Gameplay.Camera
         /// </summary>
         private void UpdateCursorLock(Mouse mouse)
         {
+            // A panel on screen owns the pointer.
+            //
+            // Indoors the view turns with the mouse, so the cursor is locked to
+            // the middle of the screen and hidden. That made **every** screen
+            // unclickable in a house: the bag, the cat's bag, anything with a
+            // cell in it. Escape was the only way to free the pointer and the HUD
+            // reads Escape as "close the panel", and the first click took the
+            // pointer straight back — so the three ways out of it were shut in a
+            // circle. It reads as "the item will not move".
+            if (PawsAndLoot.Input.GameplayInputRouter.GameplayInputSuppressed
+                || PawsAndLoot.Input.GameplayInputRouter.ToolUseSuppressed)
+            {
+                if (Cursor.lockState != CursorLockMode.None)
+                {
+                    SetCursorLocked(false);
+                    _swallowDelta = true;
+                }
+
+                return;
+            }
+
+            // And taken back when the panel closes, unless the player asked for
+            // it free with Escape. Without this the pointer stays loose after the
+            // bag shuts and the room stops turning.
+            if (!_released && Cursor.lockState == CursorLockMode.None)
+            {
+                SetCursorLocked(true);
+                _swallowDelta = true;
+                return;
+            }
+
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null
                 && keyboard.escapeKey.wasPressedThisFrame

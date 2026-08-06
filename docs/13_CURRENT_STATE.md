@@ -1008,6 +1008,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-06 | Edit Mode·Play Mode (실내 커서 해제·거리 보물 제거 이후) | Edit Mode **291/291**, Play Mode 206개 중 **204 통과** + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 `CatBagExchangePlayModeTests`가 칸의 `onClick`을 직접 눌러 양방향 이동을 단정한다 |
+| 2026-08-06 | `-netScenario full` 2프로세스 | **양쪽 `passed=true`.** 판매 350, 체포 3회, 기절, 승자 합의. 거리 보물을 없앤 뒤에도 프로브가 실내 보물을 팔아 통과한다 |
 | 2026-08-06 | Edit Mode·Play Mode (한 번 눌러 줍기·지목 상호작용·고양이 가방 게이트 이후) | Edit Mode **291/291**, Play Mode 205개 중 **203 통과** + 1 스킵 (실패 1건은 기준선과 동일) |
 | 2026-08-06 | `-netScenario full` 2프로세스 (2회) | 1회차 `passed=false` — **투척 다리가 아예 실행되지 않았다**(`requestedThrow=false`), 판매·획득·체포·승자는 전부 통과. 2회차 **양쪽 `passed=true`**. `GAP-006`이 기록한 시간표 경합이다 |
 | 2026-08-06 | Edit Mode·Play Mode (실내 배율 보정·상자 숨기 이후) | Edit Mode **291/291**, Play Mode 205개 중 **203 통과** + 1 스킵 (실패 1건은 기준선과 동일). 진단 테스트가 실내 물건 **머리 위에 아무것도 없음**을 실측으로 단정한다 (`InteriorPickupDiagnosticsPlayModeTests`) |
