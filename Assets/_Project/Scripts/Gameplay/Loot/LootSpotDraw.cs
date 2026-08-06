@@ -51,6 +51,38 @@ namespace PawsAndLoot.Gameplay.Loot
         public int SpotCount => spots.Count;
         public int PieceCount => pieces.Count;
 
+        /// <summary>
+        /// How many of this room's pieces are still lying in it.
+        ///
+        /// Read by the officer's screen, which is the only way they can tell an
+        /// empty room from a room the thief has already been through — the two
+        /// look identical from the doorway, and a room whose shelves are bare
+        /// because nothing was ever dealt there says nothing about where the
+        /// thief has been.
+        ///
+        /// Counted rather than tracked, because a piece leaves a room by four
+        /// different routes — picked up, hidden, sold, confiscated — and a counter
+        /// decremented at each of them is four places to forget one.
+        /// </summary>
+        public int RemainingCount
+        {
+            get
+            {
+                int remaining = 0;
+                foreach (LootItem piece in pieces)
+                {
+                    if (piece != null
+                        && piece.CurrentCarrier == null
+                        && piece.CurrentState == LootState.Available)
+                    {
+                        remaining++;
+                    }
+                }
+
+                return remaining;
+            }
+        }
+
         public void Configure(
             IMatchStateReader configuredMatchState,
             IEnumerable<Transform> configuredSpots,

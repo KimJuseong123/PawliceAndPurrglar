@@ -54,6 +54,8 @@ namespace PawsAndLoot.Integration.Network
             Input.GameplayInputRouter.QuickSlotSwapRequested += QueueSlotSwap;
             Input.GameplayInputRouter.LootSaleRequested += QueueSale;
             Input.GameplayInputRouter.PropPurchaseRequested += QueuePurchase;
+            Input.GameplayInputRouter.CatBagTransferRequested +=
+                QueueCatBagTransfer;
             _swapSubscribed = true;
         }
 
@@ -67,11 +69,49 @@ namespace PawsAndLoot.Integration.Network
             Input.GameplayInputRouter.QuickSlotSwapRequested -= QueueSlotSwap;
             Input.GameplayInputRouter.LootSaleRequested -= QueueSale;
             Input.GameplayInputRouter.PropPurchaseRequested -= QueuePurchase;
+            Input.GameplayInputRouter.CatBagTransferRequested -=
+                QueueCatBagTransfer;
             _swapSubscribed = false;
             _pendingSwapLeft = -1;
             _pendingSwapRight = -1;
             _pendingSales.Clear();
             _pendingPurchases.Clear();
+            _pendingCatBagMoves.Clear();
+        }
+
+        /// <summary>
+        /// Cat-bag moves waiting for a frame.
+        ///
+        /// A list, like the purchases: the exchange screen answers a click
+        /// immediately and the player can empty four slots faster than a frame,
+        /// and a dropped move is an item that vanishes from the bag without
+        /// arriving in the slot.
+        /// </summary>
+        private static readonly List<(bool ToCat, int Slot, int Kind)>
+            _pendingCatBagMoves = new();
+
+        private static void QueueCatBagTransfer(
+            bool toCat,
+            int slotIndex,
+            int throwableKindValue)
+        {
+            _pendingCatBagMoves.Add((toCat, slotIndex, throwableKindValue));
+        }
+
+        private static void ForwardPendingCatBagMoves(NetworkPlayerLink link)
+        {
+            if (_pendingCatBagMoves.Count == 0)
+            {
+                return;
+            }
+
+            var moves =
+                new List<(bool ToCat, int Slot, int Kind)>(_pendingCatBagMoves);
+            _pendingCatBagMoves.Clear();
+            foreach ((bool toCat, int slot, int kind) in moves)
+            {
+                link.SubmitCatBagTransferRpc(toCat, slot, kind);
+            }
         }
 
         /// <summary>
@@ -395,6 +435,7 @@ namespace PawsAndLoot.Integration.Network
             ForwardPendingSlotSwap(link);
             ForwardPendingSales(link);
             ForwardPendingPurchases(link);
+            ForwardPendingCatBagMoves(link);
 
             int quickSlot = ReadQuickSlotKey(keyboard);
             if (quickSlot >= 0)

@@ -147,6 +147,7 @@ namespace PawsAndLoot.UI
             _basket.Clear();
             _basketKinds.Clear();
             _window.SetActive(true);
+            SetToolUseSuppressed(true);
             Refresh();
         }
 
@@ -177,6 +178,7 @@ namespace PawsAndLoot.UI
 
             ResolveStock();
             _window.SetActive(true);
+            SetToolUseSuppressed(true);
             Refresh();
         }
 
@@ -233,6 +235,33 @@ namespace PawsAndLoot.UI
 
             _basket.Clear();
             _basketKinds.Clear();
+            SetToolUseSuppressed(false);
+        }
+
+        /// <summary>
+        /// Lets the thrower know a shop is in the way of the mouse.
+        ///
+        /// Latched per presenter so closing this window cannot clear a flag some
+        /// other screen set, and released in <c>OnDisable</c> as well: a scene
+        /// change while the ledger is open would otherwise leave the left button
+        /// dead for the rest of the session.
+        /// </summary>
+        private bool _suppressedToolUse;
+
+        private void SetToolUseSuppressed(bool suppressed)
+        {
+            if (_suppressedToolUse == suppressed)
+            {
+                return;
+            }
+
+            _suppressedToolUse = suppressed;
+            GameplayInputRouter.SetToolUseSuppressed(suppressed);
+        }
+
+        private void OnDisable()
+        {
+            SetToolUseSuppressed(false);
         }
 
         private void Update()
@@ -1266,16 +1295,26 @@ namespace PawsAndLoot.UI
                 new Vector2(66f, 6f),
                 new Vector2(260f, 24f));
 
-            // Laid out from the right edge inwards, past whatever button this row
-            // ends with. The price used to sit at a fixed offset that the officer's
-            // 86px BUY button covered completely — the figure was drawn, behind the
-            // button, so the shop showed goods with no prices at all.
+            // Laid out from the right edge inwards, measured off the button this
+            // row ends with rather than off a hand-tuned constant. Two rounds of
+            // eyeballing put the figure underneath the officer's 86px BUY button,
+            // where it was drawn and invisible — the shop listed goods with a coin
+            // and no price at all, which reads as the goods being free.
             //
-            // Left-aligned rather than right: the coin then the number reads as one
-            // token, and three rows line up on the coin instead of on the last
-            // digit.
-            float buttonSpan = _mode == Mode.Buy ? 98f : 58f;
-            float coinRight = -(buttonSpan + 96f);
+            // Coin first, then the number, both left of the button and neither
+            // touching it. Left-aligned rather than right so the rows line up on
+            // the coin instead of on the last digit.
+            bool buying = _mode == Mode.Buy;
+            float actionWidth = buying ? 86f : 46f;
+            const float PriceWidth = 92f;
+            const float CoinSize = 26f;
+
+            // The button's own inset from the right edge, so this stays correct if
+            // the button moves.
+            float actionSpan = actionWidth + 12f;
+            float priceLeft = -(actionSpan + 14f + PriceWidth);
+            float coinRight = priceLeft - 8f;
+
             Image coin = HudRuntimeInstaller.CreateImage(row.transform, "Coin", Color.white);
             coin.sprite = CoinSprite;
             coin.preserveAspect = true;
@@ -1287,7 +1326,7 @@ namespace PawsAndLoot.UI
                 new Vector2(1f, 0.5f),
                 new Vector2(1f, 0.5f),
                 new Vector2(coinRight, 0f),
-                new Vector2(24f, 24f));
+                new Vector2(CoinSize, CoinSize));
 
             TMP_Text price = HudRuntimeInstaller.CreateText(
                 row.transform,
@@ -1296,16 +1335,21 @@ namespace PawsAndLoot.UI
                 20f,
                 TextAlignmentOptions.Left);
             price.color = HudSpriteLibrary.Gold;
+
+            // Stated rather than left at the default, and 36px for a 20pt line.
+            // TMP draws *nothing at all* when the rect is shorter than one line
+            // and the mode is Ellipsis (ISSUE-047), and a price that silently
+            // disappears is indistinguishable from a price nobody set.
+            price.overflowMode = TextOverflowModes.Overflow;
+            price.enableWordWrapping = false;
             price.rectTransform.pivot = new Vector2(0f, 0.5f);
             HudRuntimeInstaller.Anchor(
                 price.rectTransform,
                 new Vector2(1f, 0.5f),
                 new Vector2(1f, 0.5f),
-                new Vector2(coinRight + 6f, 0f),
-                new Vector2(84f, 30f));
+                new Vector2(priceLeft, 0f),
+                new Vector2(PriceWidth, 36f));
 
-            bool buying = _mode == Mode.Buy;
-            float actionWidth = buying ? 86f : 46f;
             GameObject actionObject = HudRuntimeInstaller.CreatePanel(
                 row.transform,
                 buying ? "Buy" : "Remove",

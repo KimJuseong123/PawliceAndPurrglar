@@ -465,6 +465,12 @@ namespace PawsAndLoot.Editor
                 CreateCube,
                 CreateChild);
 
+            // Again, for the copies the rooms just made. Each interior stocks
+            // itself now rather than one room per shop kind claiming the town's
+            // whole supply, so most of the loot in the scene did not exist when
+            // the network wiring ran above.
+            CreateLootNetworkLinks();
+
             // ART-012 runs last so it sees every generated object.
             SceneOptimizationPass.Run(villageRoot);
             NormalizeSceneCanvasScales();
@@ -1465,8 +1471,13 @@ namespace PawsAndLoot.Editor
         ///
         /// Found by type rather than passed in, so loot added to the map later is
         /// picked up without touching this method.
+        ///
+        /// Called twice: once with the rest of the network wiring, and again after
+        /// the interiors are built. The rooms copy their own stock, and a piece
+        /// created after the wiring pass would exist on the host and replicate to
+        /// nobody — which is how six pieces once read as zero loot links.
         /// </summary>
-        private static void CreateLootNetworkLinks()
+        internal static void CreateLootNetworkLinks()
         {
             int wired = 0;
             foreach (LootItem loot in

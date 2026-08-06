@@ -267,7 +267,22 @@ namespace PawsAndLoot.Tests.EditMode
                     }
                 }
 
-                Assert.That(spots.Count, Is.EqualTo(ShopIds.Length));
+                // Every kind is somewhere, rather than exactly one of each.
+                //
+                // Each interior stocks itself now, so a town with two
+                // supermarkets has two of every supermarket piece — and that is
+                // the point of the change: one room per shop kind left eight of
+                // the thirteen marked interiors with nothing in them. What still
+                // has to hold is that the kinds all exist and that no two pieces
+                // share a spot, which the loop below checks across every copy in
+                // the town and not merely within a room.
+                foreach (string id in ShopIds)
+                {
+                    Assert.That(
+                        spots.Any(spot => spot.Id == id),
+                        Is.True,
+                        $"No '{id}' anywhere in the town.");
+                }
 
                 for (int a = 0; a < spots.Count; a++)
                 {

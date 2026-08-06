@@ -80,6 +80,50 @@ namespace PawsAndLoot.Input
         {
             PropPurchaseRequested?.Invoke(throwableKindValue);
         }
+
+        /// <summary>
+        /// The cat's bag screen asking the host to move one prop in or out.
+        ///
+        /// The bag itself is the thief's own machine's business — nothing else in
+        /// the game reads it and the officer never sees it — but the quick slots
+        /// on the other side of the exchange belong to the host. Applying only
+        /// locally would put the banana in the cat's bag *and* leave it in the
+        /// slot on the host's next update, which is the item-in-two-places bug
+        /// <c>ContainerTransfer</c> exists to prevent.
+        ///
+        /// <paramref name="toCat"/> says which way: true takes the prop out of the
+        /// quick slot, false hands one back.
+        /// </summary>
+        public static event Action<bool, int, int> CatBagTransferRequested;
+
+        public static void RequestCatBagTransfer(
+            bool toCat,
+            int slotIndex,
+            int throwableKindValue)
+        {
+            CatBagTransferRequested?.Invoke(
+                toCat,
+                slotIndex,
+                throwableKindValue);
+        }
+
+        /// <summary>
+        /// Whether a shop screen is open in front of the player.
+        ///
+        /// Separate from <see cref="GameplayInputSuppressed"/> on purpose. The
+        /// raccoon's ledger deliberately leaves movement alone — its pitch is the
+        /// one spot on the map the officer most wants to stand on, so a modal
+        /// window would pin the thief there — but the same left button that
+        /// presses BUY also throws whatever is in the quick slot, so a player
+        /// shopping threw a rock at the raccoon with every click.
+        /// </summary>
+        public static bool ToolUseSuppressed { get; private set; }
+
+        public static void SetToolUseSuppressed(bool suppressed)
+        {
+            ToolUseSuppressed = suppressed;
+        }
+
         public static event Action BindingDisplayChanged;
 
         public static void SetGameplayInputSuppressed(bool suppressed)

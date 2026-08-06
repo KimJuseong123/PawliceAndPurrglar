@@ -79,6 +79,35 @@ namespace PawsAndLoot.Animation
             public Vector3 LowerAxis;
             public float UpperSign;
             public float LowerSign;
+
+            /// <summary>
+            /// Whether this limb is an arm on a biped, which is the only thing
+            /// that flops up and down as well as swinging fore and aft.
+            /// </summary>
+            public bool IsArm;
+
+            /// <summary>
+            /// Local axis that raises and lowers this limb, and the sign that
+            /// makes a positive angle lift it.
+            ///
+            /// A second measured axis rather than a guess for the same reason the
+            /// stride axis is measured: the two player rigs and the animals do not
+            /// agree about which local axis is which, and a hardcoded one turns
+            /// the flop into a twist that barely shows.
+            /// </summary>
+            public Vector3 LiftAxis;
+            public float LiftSign;
+
+            /// <summary>
+            /// How much of the profile's knee bend this limb's lower joint uses.
+            ///
+            /// Split out from <see cref="Amplitude"/>, which used to be squared to
+            /// get this. Squaring tied the elbow to the shoulder, so raising the
+            /// shoulder to make the arms visible raised the elbow much faster —
+            /// and a forearm folding as far as a knee is the single most
+            /// flail-like part of the whole thing.
+            /// </summary>
+            public float ElbowShare = 1f;
         }
 
         // Upper joint (hip or shoulder) and the joint below it (knee or elbow).
@@ -150,6 +179,47 @@ namespace PawsAndLoot.Animation
         [SerializeField, Range(0.05f, 1f)]
         private float armAmplitude = 0.62f;
 
+        /// <summary>
+        /// How far a biped's arms rise and fall across a stride, in degrees.
+        ///
+        /// The fore-and-aft swing above was the only thing these arms did, and on
+        /// a model that holds them spread out from the body it read as **arms
+        /// pinned in a pose** rather than as arms moving: the swing happens in the
+        /// plane you are looking along, so almost none of it reaches the screen.
+        /// Lifting them is the motion a top-down camera can actually see, and it
+        /// is what makes the walk look authored rather than switched on.
+        ///
+        /// Deliberately not folded into <see cref="armAmplitude"/>. That number
+        /// controls the stride and was lowered once already to escape a flail;
+        /// raising it to get visible arms would bring the flail back.
+        /// </summary>
+        [SerializeField, Min(0f)]
+        private float armLiftDegrees = 14f;
+
+        /// <summary>
+        /// A second, faster ripple on top of the lift, as a share of it.
+        ///
+        /// One sine is a metronome. The half-amplitude second harmonic is what
+        /// turns "up, down, up, down" into the loose flop that was asked for,
+        /// because the limb no longer spends the same time going each way.
+        /// </summary>
+        [SerializeField, Range(0f, 1f)]
+        private float armFlopRipple = 0.45f;
+
+        /// <summary>
+        /// How far the arms wave while off the ground, in degrees.
+        ///
+        /// The jump was a fixed star pose held for its whole half second — every
+        /// limb thrown out and then nothing until landing. Waving the arms through
+        /// it costs nothing and is the difference between a pose and a jump.
+        /// </summary>
+        [SerializeField, Min(0f)]
+        private float armJumpFlapDegrees = 26f;
+
+        /// <summary>Waves per second while airborne.</summary>
+        [SerializeField, Min(0.1f)]
+        private float armJumpFlapsPerSecond = 3.2f;
+
         private readonly List<Leg> _legs = new();
         private Transform _head;
         private Quaternion _headRest;
@@ -163,6 +233,7 @@ namespace PawsAndLoot.Animation
         private float _airborneBlend;
         private float _airborneTarget;
         private int _airborneFrame = -10;
+        private float _flapPhase;
 
         public int LegCount => _legs.Count;
         public float MovingBlend => _movingBlend;
@@ -282,6 +353,20 @@ namespace PawsAndLoot.Animation
                     MeasureSwingAxis(lower, out lowerAxis, out lowerSign);
                 }
 
+                // On a biped the front limbs are arms. On a quadruped they
+                // are front legs and carry weight like the back ones.
+                bool isArm = gait == GaitMode.Biped && isFront;
+                Vector3 liftAxis = upperAxis;
+                float liftSign = 1f;
+                if (isArm)
+                {
+                    MeasureLiftAxis(
+                        bone,
+                        upperAxis,
+                        out liftAxis,
+                        out liftSign);
+                }
+
                 _legs.Add(new Leg
                 {
                     Upper = bone,
@@ -294,12 +379,12 @@ namespace PawsAndLoot.Animation
                     LowerAxis = lowerAxis,
                     UpperSign = upperSign,
                     LowerSign = lowerSign,
+                    LiftAxis = liftAxis,
+                    LiftSign = liftSign,
+                    IsArm = isArm,
                     PhaseOffset = ResolveGaitPhase(side, isFront),
-                    // On a biped the front limbs are arms. On a quadruped they
-                    // are front legs and carry weight like the back ones.
-                    Amplitude = gait == GaitMode.Biped && isFront
-                        ? armAmplitude
-                        : 1f
+                    Amplitude = isArm ? armAmplitude : 1f,
+                    ElbowShare = isArm ? 0.45f : 1f
                 });
             }
         }
@@ -458,6 +543,61 @@ namespace PawsAndLoot.Animation
             // A negative reading means this axis swings the limb backwards, so
             // the whole gait is mirrored for that bone rather than left to run
             // out of step with the others.
+            sign = best < 0f ? -1f : 1f;
+        }
+
+        /// <summary>
+        /// Finds the local axis that raises and lowers a limb, and the sign that
+        /// makes a positive angle raise it.
+        ///
+        /// Measured the same way the stride axis is — turn the bone, watch where
+        /// its tip goes — but against world up instead of the character's facing,
+        /// and with the stride axis excluded. Excluding it matters: on these rigs
+        /// one axis carries a little of both, and letting the flop reuse it would
+        /// make the arms swing harder rather than lift, which is the motion the
+        /// camera already cannot see.
+        /// </summary>
+        private static void MeasureLiftAxis(
+            Transform bone,
+            Vector3 swingAxis,
+            out Vector3 axis,
+            out float sign)
+        {
+            axis = Vector3.up;
+            sign = 1f;
+
+            Transform tip = FindTip(bone);
+            if (tip == null)
+            {
+                return;
+            }
+
+            Quaternion rest = bone.localRotation;
+            Vector3 restTip = tip.position;
+            float best = 0f;
+
+            foreach (Vector3 candidate in
+                new[] { Vector3.right, Vector3.up, Vector3.forward })
+            {
+                if (candidate == swingAxis)
+                {
+                    continue;
+                }
+
+                bone.localRotation =
+                    rest * Quaternion.AngleAxis(25f, candidate);
+                float rise = tip.position.y - restTip.y;
+                bone.localRotation = rest;
+
+                if (Mathf.Abs(rise) <= Mathf.Abs(best))
+                {
+                    continue;
+                }
+
+                best = rise;
+                axis = candidate;
+            }
+
             sign = best < 0f ? -1f : 1f;
         }
 
@@ -711,6 +851,13 @@ namespace PawsAndLoot.Animation
                 _phase += deltaTime * stridesPerSecond * Mathf.PI * 2f;
             }
 
+            // Its own clock, because the jump wave has nothing to do with the
+            // stride: a jump taken from a standstill has no stride to ride on and
+            // would hold the star pose perfectly still.
+            _flapPhase = Mathf.Repeat(
+                _flapPhase + deltaTime * armJumpFlapsPerSecond,
+                1f);
+
             foreach (Leg leg in _legs)
             {
                 if (leg.Upper == null)
@@ -734,7 +881,15 @@ namespace PawsAndLoot.Animation
                 float hipAngle = hipDegrees * _movingBlend * leg.UpperSign
                     * leg.Amplitude;
                 float kneeAngle = kneeDegrees * _movingBlend * leg.LowerSign
-                    * leg.Amplitude * leg.Amplitude;
+                    * leg.Amplitude * leg.ElbowShare;
+
+                // The arms' own motion, and the only part of it the camera can
+                // see. Everything else here happens in the plane the player is
+                // looking along.
+                float liftAngle = leg.IsArm
+                    ? EvaluateArmLift(cycle) * _movingBlend * leg.LiftSign
+                    : 0f;
+
                 if (_airborneBlend > 0.001f)
                 {
                     hipAngle = Mathf.Lerp(
@@ -745,10 +900,28 @@ namespace PawsAndLoot.Animation
                         kneeAngle,
                         JumpLowerDegrees * leg.LowerSign * leg.Amplitude,
                         _airborneBlend);
+                    if (leg.IsArm)
+                    {
+                        // Waved rather than held. The star pose was a still frame
+                        // for the whole half second the jump lasts, and a still
+                        // frame is what "대충 만든 느낌" describes.
+                        liftAngle = Mathf.Lerp(
+                            liftAngle,
+                            Mathf.Sin(_flapPhase * Mathf.PI * 2f)
+                                * armJumpFlapDegrees
+                                * leg.LiftSign,
+                            _airborneBlend);
+                    }
                 }
 
-                leg.Upper.localRotation = leg.UpperRest
+                Quaternion upper = leg.UpperRest
                     * Quaternion.AngleAxis(hipAngle, leg.UpperAxis);
+                if (leg.IsArm && Mathf.Abs(liftAngle) > 0.001f)
+                {
+                    upper *= Quaternion.AngleAxis(liftAngle, leg.LiftAxis);
+                }
+
+                leg.Upper.localRotation = upper;
                 if (leg.Lower != null)
                 {
                     // The elbow gets even less than the shoulder. A forearm
@@ -783,6 +956,26 @@ namespace PawsAndLoot.Animation
                 * _headYawSign;
             _head.localRotation = _headRest
                 * Quaternion.AngleAxis(sway, _headYawAxis);
+        }
+
+        /// <summary>
+        /// How high an arm is held at this point in its own cycle, in degrees.
+        ///
+        /// Two sines rather than one. A single sine is a metronome — the arm
+        /// spends exactly as long going up as coming down, which reads as a
+        /// mechanism. The half-rate ripple breaks that symmetry and is the whole
+        /// difference between a swing and a flop.
+        ///
+        /// Peaks a quarter cycle after the limb plants, so the arm is highest as
+        /// it passes the body rather than at the ends of its swing.
+        /// </summary>
+        private float EvaluateArmLift(float cycle)
+        {
+            float radians = cycle * Mathf.PI * 2f;
+            return (Mathf.Sin(radians)
+                    + (armFlopRipple * Mathf.Sin(radians * 2f)))
+                * armLiftDegrees
+                / (1f + armFlopRipple);
         }
 
         /// <summary>

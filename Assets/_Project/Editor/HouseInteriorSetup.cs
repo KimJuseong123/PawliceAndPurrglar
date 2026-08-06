@@ -686,9 +686,10 @@ namespace PawsAndLoot.Editor
             }
 
             // Cleared per rebuild. Left standing, a second rebuild in the same
-            // editor session would find every shop kind already claimed and
-            // stock none of them — and the only symptom would be empty shops.
-            _stockedStems.Clear();
+            // editor session would copy the previous rebuild's copies.
+            _stemTemplates.Clear();
+            _claimedStems.Clear();
+            _casedStems.Clear();
 
             // The ground and the buildings were made moments ago in this same
             // pass, and a collider created this frame is not in the physics
@@ -1006,7 +1007,13 @@ namespace PawsAndLoot.Editor
             // scene: it is a separate object that happens to sit where the ring
             // sits, so leaving it behind would put the glass in the street and
             // the ring in the room.
-            if (CaseInPlan.TryGetValue(stem, out Vector2 caseMark))
+            // The first jeweller's only. There is one alarmed ring in the town and
+            // one glass case holding it, so a second shop calling this would take
+            // both out of the first — the last jeweller built would end up with
+            // the ring and every earlier one with an empty plinth, and the error
+            // would look like the case failing rather than like it moving.
+            if (CaseInPlan.TryGetValue(stem, out Vector2 caseMark)
+                && _casedStems.Add(stem))
             {
                 MoveAlarmedPieceInto(
                     FromPlan(inner, floorTop, caseMark),
@@ -1463,12 +1470,26 @@ namespace PawsAndLoot.Editor
         /// this map can offer.
         /// </summary>
         /// <summary>
-        /// Which shop kinds have already been stocked this rebuild. Cleared at
-        /// the start of every Build, or a second rebuild in one editor session
-        /// would find every shop already claimed and stock none of them.
+        /// The first room of each kind, which owns the pieces the map staged in
+        /// the street. Every later room of that kind copies them.
+        ///
+        /// Cleared at the start of every Build, or a second rebuild in one editor
+        /// session would find every kind already claimed and copy the copies.
         /// </summary>
-        private static readonly System.Collections.Generic.HashSet<string>
-            _stockedStems = new();
+        private static readonly System.Collections.Generic.Dictionary<
+            string, LootItem[]> _stemTemplates = new();
+
+        /// <summary>
+        /// How many fewer pieces a room holds than it has places to put them.
+        ///
+        /// Three. Fewer pieces than places is what makes a room fall differently
+        /// every match, and it is also what guarantees two pieces never land on
+        /// the same shelf — the draw removes each place it uses, so it can only
+        /// run short when the counts are equal. Fill a room to capacity and the
+        /// draw still succeeds and still logs a cheerful number while quietly
+        /// becoming a fixed layout.
+        /// </summary>
+        private const int PlacesLeftEmpty = 3;
 
         private static readonly System.Collections.Generic.Dictionary<
             string, string> RoomStockPrefix = new()
@@ -1481,19 +1502,28 @@ namespace PawsAndLoot.Editor
         };
 
         /// <summary>
-        /// Moves a shop's treasure into its own room and hands the room the job
-        /// of laying it out.
+        /// Gives a room its own treasure and hands it the job of laying it out.
         ///
-        /// Two things happen and they are not the same thing. The pieces are
-        /// moved indoors now, at build time, so the saved scene is honest about
-        /// where the shop's stock is — leaving them in the street until the first
-        /// match starts would mean a scene that looks wrong to anybody opening
-        /// it and a lobby that shows treasure on the pavement. Then
-        /// <c>LootSpotDraw</c> reshuffles them across the marked places when a
-        /// match begins, which is what stops either player learning the room.
+        /// Two things happen and they are not the same thing. The pieces are put
+        /// indoors now, at build time, so the saved scene is honest about where a
+        /// shop's stock is — leaving them in the street until the first match
+        /// started would mean a scene that looks wrong to anybody opening it and a
+        /// lobby that shows treasure on the pavement. Then <c>LootSpotDraw</c>
+        /// reshuffles them across the marked places when a match begins, which is
+        /// what stops either player learning the room.
         ///
-        /// The alarmed piece is left alone. It is fixed in its cabinet by
-        /// design, and it has already been put there.
+        /// **Every** interior is stocked, not one per kind. The first room of a
+        /// kind takes the pieces the map staged in the plaza; the rest get copies
+        /// of them. It used to be one room per kind, and the town had thirteen
+        /// marked interiors and five with anything in them — a player who walked
+        /// into a house found seven empty shelves and no way to tell that from a
+        /// house the thief had already emptied. The reason it was written that way
+        /// was sound (two rooms shuffling one set of objects is two writers on one
+        /// set of positions) and copying is the fix that keeps it sound: each room
+        /// owns its own objects and no draw can reach another room's.
+        ///
+        /// The alarmed piece is left alone. It is fixed in its cabinet by design,
+        /// and it has already been put there.
         /// </summary>
         private static void StockRoom(
             Transform room,
@@ -1506,53 +1536,49 @@ namespace PawsAndLoot.Editor
                 return;
             }
 
-            // One shop's stock, one room.
-            //
-            // The town has two supermarkets, and both were handed the same four
-            // pieces: the second room moved them out of the first and then both
-            // rooms had a draw shuffling the same objects. Two writers, one set
-            // of positions — the failure this project keeps meeting.
-            //
-            // The first room of a kind wins, and the rest are said out loud.
-            // Filling them properly means more pieces, which is a decision about
-            // the shop's economy and not something to invent here.
-            if (!_stockedStems.Add(stem))
-            {
-                Debug.LogWarning(
-                    $"[LOOT-STOCK] Interior {number} is a second {stem} and is "
-                    + "left empty. The shop's pieces are in the first one; "
-                    + "filling this needs its own pieces.");
-                return;
-            }
-
             Transform[] places = room
                 .GetComponentsInChildren<Transform>(true)
                 .Where(t => t.name.Contains("Loot Spot"))
                 .OrderBy(t => t.name)
                 .ToArray();
 
-            LootItem[] stock = UnityEngine.Object
-                .FindObjectsByType<LootItem>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None)
-                .Where(item => item.Definition != null
-                    && item.Definition.StableId.StartsWith(prefix)
-                    && !item.Definition.RaisesAlarm)
-                .OrderBy(item => item.Definition.StableId)
-                .ToArray();
-
-            if (stock.Length == 0 || places.Length == 0)
+            LootItem[] pool = ResolveStemTemplates(stem, prefix);
+            if (pool.Length == 0 || places.Length == 0)
             {
                 Debug.LogError(
                     $"[LOOT-STOCK] Interior {number} ({stem}) has "
-                    + $"{stock.Length} pieces for {places.Length} places, so "
-                    + "the shop has nothing to steal.");
+                    + $"{pool.Length} kinds for {places.Length} places, so "
+                    + "the room has nothing to steal.");
                 return;
             }
 
+            // Three fewer than there are places, and never the same three kinds
+            // twice when the shop has more kinds than that. Shuffled per room, so
+            // two supermarkets are not the same supermarket.
+            int wanted = Mathf.Max(1, places.Length - PlacesLeftEmpty);
+            LootItem[] chosen = ChooseKinds(pool, wanted);
+            if (chosen.Length < wanted)
+            {
+                Debug.LogWarning(
+                    $"[LOOT-STOCK] Interior {number} ({stem}) wants {wanted} "
+                    + $"kinds for {places.Length} places and the shop only "
+                    + $"defines {pool.Length}. The room falls the same way every "
+                    + "match to the extent it is short.");
+            }
+
+            // The first room of a kind adopts the pieces the map staged in the
+            // plaza; every later one gets copies. Adopting rather than copying
+            // for all of them matters: the staged originals are deliberately put
+            // somewhere loud, so anything left standing in the square is the
+            // shop's stock that no room claimed, and that is a fault worth
+            // seeing rather than hiding.
+            LootItem[] stock = _claimedStems.Add(stem)
+                ? chosen
+                : chosen.Select(item => CopyPiece(item, number)).ToArray();
+
             // Parked on the first places in order. The draw scatters them
             // properly at match start; this is only so the scene is not saved
-            // with a shop's stock lying in the road.
+            // with a room's stock lying in the road.
             for (int index = 0; index < stock.Length; index++)
             {
                 stock[index].transform.position =
@@ -1568,6 +1594,103 @@ namespace PawsAndLoot.Editor
                 + string.Join(
                     ", ",
                     stock.Select(item => item.Definition.StableId)));
+        }
+
+        /// <summary>
+        /// Which kinds a shop can produce, found once and remembered.
+        ///
+        /// Found once because the second room of a kind must not find the first
+        /// room's copies and copy those: the search is by definition prefix and a
+        /// copy has the same definition, so re-running it would return every piece
+        /// already placed and the town's stock would double per interior.
+        /// </summary>
+        private static LootItem[] ResolveStemTemplates(
+            string stem,
+            string prefix)
+        {
+            if (_stemTemplates.TryGetValue(stem, out LootItem[] cached))
+            {
+                return cached;
+            }
+
+            LootItem[] found = UnityEngine.Object
+                .FindObjectsByType<LootItem>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None)
+                .Where(item => item.Definition != null
+                    && item.Definition.StableId.StartsWith(prefix)
+                    && !item.Definition.RaisesAlarm)
+                .OrderBy(item => item.Definition.StableId)
+                .ToArray();
+            _stemTemplates[stem] = found;
+            return found;
+        }
+
+        /// <summary>
+        /// Which rooms have already taken the staged originals rather than copies.
+        /// </summary>
+        private static readonly System.Collections.Generic.HashSet<string>
+            _claimedStems = new();
+
+        /// <summary>
+        /// Which kinds have already been given the town's one alarmed piece.
+        /// </summary>
+        private static readonly System.Collections.Generic.HashSet<string>
+            _casedStems = new();
+
+        /// <summary>
+        /// Picks distinct kinds at random, up to <paramref name="wanted"/>.
+        ///
+        /// Distinct rather than a weighted roll with replacement: two of the same
+        /// thing on two shelves is a room with one thing in it as far as the
+        /// player's decision goes, and the whole point of the draw is that walking
+        /// in does not tell you what is here.
+        /// </summary>
+        private static LootItem[] ChooseKinds(LootItem[] pool, int wanted)
+        {
+            var remaining = new List<LootItem>(pool);
+            var chosen = new List<LootItem>();
+            while (chosen.Count < wanted && remaining.Count > 0)
+            {
+                int index = Random.Range(0, remaining.Count);
+                chosen.Add(remaining[index]);
+                remaining.RemoveAt(index);
+            }
+
+            return chosen.ToArray();
+        }
+
+        /// <summary>
+        /// A room's own copy of a piece.
+        ///
+        /// The session components are stripped and re-added by the map builder
+        /// after every interior is done. An in-scene <c>NetworkObject</c> is
+        /// identified by a hash Unity derives from the object's own scene
+        /// identity, and a duplicated one carries the original's — two objects
+        /// claiming to be the same object, which NGO resolves by dropping one of
+        /// them at random.
+        /// </summary>
+        private static LootItem CopyPiece(LootItem original, int number)
+        {
+            var copy = UnityEngine.Object.Instantiate(
+                original.gameObject,
+                original.transform.parent);
+            copy.name = $"Interior {number} {original.Definition.StableId}";
+
+            var link = copy.GetComponent<
+                PawsAndLoot.Integration.Network.NetworkLootLink>();
+            if (link != null)
+            {
+                UnityEngine.Object.DestroyImmediate(link);
+            }
+
+            var netObject = copy.GetComponent<Unity.Netcode.NetworkObject>();
+            if (netObject != null)
+            {
+                UnityEngine.Object.DestroyImmediate(netObject);
+            }
+
+            return copy.GetComponent<LootItem>();
         }
 
         private static Vector3 FromPlan(

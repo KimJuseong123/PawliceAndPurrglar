@@ -1,4 +1,3 @@
-using System;
 using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Match;
@@ -23,9 +22,6 @@ namespace PawsAndLoot.Companions
 
         private readonly QuickSlotController slots = new();
         private IMatchStateReader matchState;
-
-        public static event Action<CatInventoryInteractable, ToolCarrier>
-            ExchangeRequested;
 
         public Transform InteractionTransform => transform;
         public PlayerInteractionType InteractionType => PlayerInteractionType.Generic;
@@ -105,24 +101,30 @@ namespace PawsAndLoot.Companions
             return slots.TryTakeOne(index, out kind);
         }
 
+        /// <summary>
+        /// Deliberately does nothing but say "handled".
+        ///
+        /// It used to raise a static event that the HUD listened for, and that is
+        /// the whole of <c>ISSUE-055</c>: the interact key is forwarded to the host
+        /// and run there, so a thief on a client pressing E at their own cat opened
+        /// the two bags **on the officer's monitor** — with the thief's real quick
+        /// slots in them. The scanner's screen-answered guard is meant to stop the
+        /// key being forwarded at all, but it only has to lose one frame's race to
+        /// let a press through, and a guard that fails silently on the other
+        /// player's screen is not a guard.
+        ///
+        /// The screen is opened by <c>RoleAwareHudController.HandleInteractPressed</c>
+        /// on the machine whose player pressed the key, which is the only machine
+        /// that can be right. Returning true keeps a forwarded press from falling
+        /// through to whatever else is standing in the cat's radius.
+        /// </summary>
         public bool TryInteract(PlayerInteractionContext context)
         {
-            if (context.Player == null
-                || context.Role != PlayerRole.Thief
-                || !IsAvailable)
-            {
-                return false;
-            }
-
-            ToolCarrier carrier = context.Player.GetComponent<ToolCarrier>();
-            if (carrier == null)
-            {
-                return false;
-            }
-
-            ExchangeRequested?.Invoke(this, carrier);
-            return true;
+            return context.Player != null
+                && context.Role == PlayerRole.Thief
+                && IsAvailable;
         }
+
 
         private IMatchStateReader ResolveMatchState()
         {

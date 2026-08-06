@@ -125,9 +125,18 @@ namespace PawsAndLoot.Tests.EditMode
             // the bookshop, and four in each of the two houses. The three empty
             // places are the point — a room the thief can learn is a room they
             // stop searching.
+            //
+            // Seventy-three since every *interior* stocks itself rather than one
+            // room per shop kind claiming the town's whole supply. Thirteen rooms
+            // are marked and five of them had anything in them, so eight houses
+            // were seven bare shelves — indistinguishable from a house the thief
+            // had already emptied, which is the one thing the officer walks in
+            // there to find out. The extra thirty-five are copies: three more
+            // house01 rooms and four more house02 at four pieces each, plus a
+            // second supermarket at seven.
             Assert.That(
                 byType[PlayerInteractionType.Loot],
-                Is.EqualTo(38),
+                Is.EqualTo(73),
                 "Loot is thief-only, and the count is the thief's whole "
                 + "victory path.");
             Assert.That(

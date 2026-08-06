@@ -158,7 +158,15 @@ namespace PawsAndLoot.Gameplay.Items
                 || (Keyboard.current != null
                     && Keyboard.current.fKey.wasReleasedThisFrame);
 
-            if (GameplayInputRouter.GameplayInputSuppressed)
+            // A shop screen blocks the prop but not the feet.
+            //
+            // The raccoon's ledger does not suppress gameplay input — walking away
+            // has to stay possible while it is open — so the left button that
+            // presses BUY was still reaching the thrower underneath, and every
+            // click in the shop spent one of the consumables the player was there
+            // to buy.
+            if (GameplayInputRouter.GameplayInputSuppressed
+                || GameplayInputRouter.ToolUseSuppressed)
             {
                 CancelCharge();
                 return;

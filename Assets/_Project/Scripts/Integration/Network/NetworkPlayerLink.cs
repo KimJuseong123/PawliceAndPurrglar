@@ -652,6 +652,42 @@ namespace PawsAndLoot.Integration.Network
         }
 
         /// <summary>
+        /// Asks the host to move one prop between the quick slots and the cat's
+        /// bag.
+        ///
+        /// Only the quick-slot half crosses the network. The cat's bag is a stash
+        /// nothing else in the game reads and the officer has no screen for, so the
+        /// thief's own machine keeps it; the slots are the host's, so a transfer
+        /// applied only on the client would be undone by the next update and leave
+        /// the same banana in the bag *and* in the slot.
+        ///
+        /// The client checks there is room before it asks, against the slots the
+        /// host itself replicated, so a refusal here means the two disagreed inside
+        /// one round trip.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitCatBagTransferRpc(
+            bool toCat,
+            int slotIndex,
+            int throwableKindValue)
+        {
+            if (toolCarrier == null)
+            {
+                return;
+            }
+
+            if (toCat)
+            {
+                toolCarrier.TryTakeOne(slotIndex, out _);
+                return;
+            }
+
+            toolCarrier.TryStore(
+                (PawsAndLoot.Gameplay.Items.ThrowableKind)throwableKindValue,
+                1);
+        }
+
+        /// <summary>
         /// MERCHANT-002. Asks the host to sell some of one kind out of the bag.
         ///
         /// By kind and count rather than by object: the merchant screen on the

@@ -163,7 +163,12 @@ namespace PawsAndLoot.UI
             GameplayInputRouter.AnimalCommandPressed += HandleAnimalCommandPressed;
             GameplayInputRouter.VoicePressed += HandleVoicePressed;
             GameplayInputRouter.ContextInteractionPressed += HandleInteractPressed;
-            CatInventoryInteractable.ExchangeRequested += OpenContainerExchange;
+            // The cat's bag is deliberately absent from this list. It used to be
+            // opened by a static event raised inside the interactable, which runs
+            // on the **host** because the interact key is forwarded there — so a
+            // thief on a client opened their own two bags on the officer's screen
+            // (`ISSUE-055`). It is opened in HandleInteractPressed instead, on the
+            // machine that pressed the key.
             SearchableContainer.SearchCompleted += OpenContainerExchange;
             GameplayInputRouter.TakeAllPressed += TakeEverythingFromContainer;
             ApplyEssentialLayoutDefaults();
@@ -182,6 +187,15 @@ namespace PawsAndLoot.UI
             {
                 catExchangePanel.SetActive(false);
             }
+
+            // Added here rather than baked into the HUD prefab, for the same
+            // reason the merchant window is: it builds its own label at runtime,
+            // and a label an editor script writes into a prefab is one more thing
+            // that can come back from disk switched off or unreadable.
+            if (GetComponent<InteriorLootTallyPresenter>() == null)
+            {
+                gameObject.AddComponent<InteriorLootTallyPresenter>();
+            }
         }
 
         private void OnDisable()
@@ -192,7 +206,6 @@ namespace PawsAndLoot.UI
             GameplayInputRouter.AnimalCommandPressed -= HandleAnimalCommandPressed;
             GameplayInputRouter.VoicePressed -= HandleVoicePressed;
             GameplayInputRouter.ContextInteractionPressed -= HandleInteractPressed;
-            CatInventoryInteractable.ExchangeRequested -= OpenContainerExchange;
             SearchableContainer.SearchCompleted -= OpenContainerExchange;
             GameplayInputRouter.TakeAllPressed -= TakeEverythingFromContainer;
             UnsubscribeDispatcher();
@@ -391,6 +404,15 @@ namespace PawsAndLoot.UI
             ToolCarrier playerCarrier)
         {
             if (container == null || playerCarrier == null)
+            {
+                return;
+            }
+
+            // The thief's screen and nobody else's. Searching is the thief's half
+            // of the game, and this is the second lock on the same door as
+            // `ISSUE-055`: whatever reaches this method, an officer never ends up
+            // looking at somebody else's bag.
+            if (ResolveRole() != PlayerRole.Thief)
             {
                 return;
             }
@@ -1075,9 +1097,11 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            TransferResult result = ContainerTransfer.MoveEverything(
-                activeContainer,
-                exchangeCarrier);
+            TransferResult result = exchangeCarrier.IsRemoteControlled
+                ? MoveEverythingThroughHost()
+                : ContainerTransfer.MoveEverything(
+                    activeContainer,
+                    exchangeCarrier);
 
             if (!result.MovedAnything)
             {
@@ -1096,6 +1120,57 @@ namespace PawsAndLoot.UI
                 2f);
         }
 
+        /// <summary>
+        /// Empties the container into the quick slots on a machine that does not
+        /// own them.
+        ///
+        /// Bounded by the number of *empty* quick slots rather than by asking
+        /// whether each item fits. The local carrier does not change as the
+        /// requests go out — the host applies them and replicates back a frame or
+        /// two later — so <c>CanStore</c> would keep answering "yes" for the same
+        /// free slot and the surplus would leave the bag with nowhere to arrive.
+        /// One item per empty slot is provably safe whatever the host does with
+        /// them: identical kinds stack and free even more room.
+        /// </summary>
+        private TransferResult MoveEverythingThroughHost()
+        {
+            int room = 0;
+            for (int slot = 0; slot < QuickSlotCount; slot++)
+            {
+                if (!exchangeCarrier.TryGetSlot(slot, out _))
+                {
+                    room++;
+                }
+            }
+
+            int moved = 0;
+            bool blocked = false;
+            for (int index = 0; index < activeContainer.SlotCount; index++)
+            {
+                while (activeContainer.TryGetSlot(index, out ThrowableKind kind))
+                {
+                    if (moved >= room)
+                    {
+                        blocked = true;
+                        break;
+                    }
+
+                    if (!activeContainer.TryTakeOne(index, out kind))
+                    {
+                        break;
+                    }
+
+                    GameplayInputRouter.RequestCatBagTransfer(
+                        false,
+                        index,
+                        (int)kind);
+                    moved++;
+                }
+            }
+
+            return new TransferResult(moved, blocked);
+        }
+
         private void HandleExchangePlayerSlotClicked(int index)
         {
             if (!catExchangeOpen
@@ -1110,11 +1185,7 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            TransferResult result = ContainerTransfer.MoveOne(
-                exchangeCarrier,
-                activeContainer,
-                index);
-            if (!result.MovedAnything)
+            if (!MoveBetweenQuickSlotsAndContainer(true, index, kind))
             {
                 voiceFeed?.ShowMessage(
                     activeContainer.DisplayName,
@@ -1143,11 +1214,7 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            TransferResult result = ContainerTransfer.MoveOne(
-                activeContainer,
-                exchangeCarrier,
-                index);
-            if (!result.MovedAnything)
+            if (!MoveBetweenQuickSlotsAndContainer(false, index, kind))
             {
                 voiceFeed?.ShowMessage("도둑 가방", "퀵슬롯이 가득 찼어요", 2f);
                 return;
@@ -1157,6 +1224,65 @@ namespace PawsAndLoot.UI
                 "가방으로 받음",
                 ThrowableCatalog.GetDisplayName(kind),
                 1.5f);
+        }
+
+        /// <summary>
+        /// Moves one prop across the exchange, on whichever machine owns each half.
+        ///
+        /// The container — the cat's bag, a cupboard — is this machine's own: no
+        /// other screen reads it and the officer never sees it. The quick slots are
+        /// the host's, replicated back every frame. So a click applied wholly
+        /// locally on a client puts the banana in the bag and then watches the
+        /// host's next update put it back in the slot as well: one click, two
+        /// bananas. The container half is moved here and the slot half is asked of
+        /// the host, and the room is checked before anything leaves the container
+        /// so a refusal on the far side cannot swallow the item.
+        ///
+        /// Offline and on a host both take the direct path, which is what keeps the
+        /// editor tests and the single-machine playtest honest.
+        /// </summary>
+        private bool MoveBetweenQuickSlotsAndContainer(
+            bool intoContainer,
+            int index,
+            ThrowableKind kind)
+        {
+            if (!exchangeCarrier.IsRemoteControlled)
+            {
+                TransferResult result = intoContainer
+                    ? ContainerTransfer.MoveOne(
+                        exchangeCarrier,
+                        activeContainer,
+                        index)
+                    : ContainerTransfer.MoveOne(
+                        activeContainer,
+                        exchangeCarrier,
+                        index);
+                return result.MovedAnything;
+            }
+
+            if (intoContainer)
+            {
+                if (!activeContainer.CanStore(kind, 1)
+                    || !activeContainer.TryStore(kind, 1))
+                {
+                    return false;
+                }
+
+                GameplayInputRouter.RequestCatBagTransfer(
+                    true,
+                    index,
+                    (int)kind);
+                return true;
+            }
+
+            if (!exchangeCarrier.CanStore(kind, 1)
+                || !activeContainer.TryTakeOne(index, out kind))
+            {
+                return false;
+            }
+
+            GameplayInputRouter.RequestCatBagTransfer(false, index, (int)kind);
+            return true;
         }
 
         private void BindBindingLabels()

@@ -141,12 +141,17 @@ namespace PawsAndLoot.Tests.PlayMode
                     $"{role}'s '{thigh.name}' is not part of any skinned "
                     + "mesh's skeleton.");
 
-                // Arms swing, but far less than legs.
+                // Arms move visibly, and still less than legs.
                 //
-                // At parity the upper body dominated, and on the thief — whose
-                // legs barely deform — it was the only motion on screen. It read
-                // as flailing rather than walking: "눈이 아프다" was the report.
-                // A walking person's arms travel roughly a third of their legs.
+                // Both halves have cost a report. At parity the upper body
+                // dominated and read as flailing ("눈이 아프다"); with only the
+                // fore-and-aft swing left, the arms read as **pinned in a spread
+                // pose** — the swing happens in the plane a top-down camera looks
+                // along, so almost none of it reached the screen. The arms now
+                // rise and fall as well, which is the part the camera can see.
+                //
+                // A floor of ten degrees rather than two: two degrees was passing
+                // for arms nobody could tell were moving.
                 Transform upperArm = player
                     .GetComponentsInChildren<Transform>(true)
                     .First(bone =>
@@ -177,12 +182,14 @@ namespace PawsAndLoot.Tests.PlayMode
 
                 Assert.That(
                     armPeak,
-                    Is.GreaterThan(2f),
-                    $"{role}'s arms have to move at all.");
+                    Is.GreaterThan(10f),
+                    $"{role}'s arms travelled {armPeak:0.0}° over 40 frames of "
+                    + "walking. Anything this small is a spread pose held still, "
+                    + "which is what the walk looked like before the lift.");
                 Assert.That(
                     armPeak,
-                    Is.LessThan(peak * 0.6f),
-                    $"{role} swings its arms {armPeak:0.0}° against "
+                    Is.LessThan(peak),
+                    $"{role} moves its arms {armPeak:0.0}° against "
                     + $"{peak:0.0}° at the leg. Arms matching legs is what "
                     + "read as vibration.");
 
