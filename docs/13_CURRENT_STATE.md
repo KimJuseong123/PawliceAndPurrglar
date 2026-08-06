@@ -1008,6 +1008,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-06 | Edit Mode·Play Mode (실내 배율 보정·상자 숨기 이후) | Edit Mode **291/291**, Play Mode 205개 중 **203 통과** + 1 스킵 (실패 1건은 기준선과 동일). 진단 테스트가 실내 물건 **머리 위에 아무것도 없음**을 실측으로 단정한다 (`InteriorPickupDiagnosticsPlayModeTests`) |
+| 2026-08-06 | `-netScenario full` 2프로세스 | **양쪽 `passed=true`.** 판매 200, 체포 3회, 보물 링크 양쪽 68 일치 |
 | 2026-08-06 | Edit Mode·Play Mode (실내 물건 표면 배치·전리품 아이콘·고양이 가방 2×2 이후) | Edit Mode **291개 전부 통과**, Play Mode 205개 중 **203 통과** + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 아이콘 26종 구움(모델 없는 3종은 손그림이 이미 있다), `HudCanvas.prefab` 재생성 |
 | 2026-08-06 | `-netScenario full` 2프로세스 | **양쪽 `passed=true`.** 판매 200, 체포 3회, 기절, 보물 링크 양쪽 68 일치 |
 | 2026-08-06 | Edit Mode·Play Mode (보물 홀드 획득·쓰레기통 숨기·상점 줄 배치 이후) | Edit Mode **291개 전부 통과**. Play Mode 205개 중 **203 통과** + 1 스킵, 실패 1건은 기준선과 동일한 `CompanionExpression`. 신규 4건(`ThiefTakeAndHide` 3 + `InteriorLootTally` 1) 이름을 XML에서 확인 |

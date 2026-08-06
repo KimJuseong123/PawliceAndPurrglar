@@ -59,6 +59,37 @@ namespace PawsAndLoot.Tests.PlayMode
                 $"Interior {room.InteriorId} deals {draw.PieceCount} pieces and "
                 + "none of them are anywhere near the room.");
 
+            // Nothing standing over any of them. A piece under a table top is
+            // drawn inside the mesh: invisible, while the prompt still appears
+            // because the collider is reachable. That is exactly what a room with
+            // seven marked places and nothing on show looked like.
+            foreach (LootItem candidate in Object
+                .FindObjectsByType<LootItem>(FindObjectsSortMode.None)
+                .Where(item => item.Definition != null
+                    && Vector3.Distance(
+                        item.transform.position,
+                        room.EntryPosition) < 40f))
+            {
+                Vector3 from = candidate.transform.position
+                    + (Vector3.up * 0.05f);
+                bool covered = Physics.Raycast(
+                    from,
+                    Vector3.up,
+                    out RaycastHit lid,
+                    1.6f,
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore);
+                Debug.Log(
+                    $"[PICKUP-DIAG] '{candidate.name}' y {candidate.transform.position.y:0.00} "
+                    + $"scale {candidate.transform.localScale.x:0.00} "
+                    + $"covered {(covered ? lid.collider.name : "no")}");
+                Assert.That(
+                    covered,
+                    Is.False,
+                    $"'{candidate.name}' has '{(covered ? lid.collider.name : string.Empty)}' "
+                    + "directly over it, so its model is inside the furniture.");
+            }
+
             Debug.Log(
                 $"[PICKUP-DIAG] room {room.InteriorId} entry "
                 + $"{room.EntryPosition} floor {room.FloorHeight} "

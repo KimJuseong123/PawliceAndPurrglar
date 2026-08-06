@@ -4014,6 +4014,15 @@ namespace PawsAndLoot.Editor
             storedRoot.localPosition = Vector3.zero;
             storedRoot.localRotation = Quaternion.identity;
 
+            // Somewhere to get into as well as somewhere to stash. Same object,
+            // and LootHidingSpot decides which of the two a press means — two
+            // components each claiming E on one crate would be a press whose
+            // outcome the player cannot predict.
+            Transform berth = CreateChild("Occupant", target.transform);
+            berth.localPosition = new Vector3(0f, -0.55f, 0f);
+            target.AddComponent<PawsAndLoot.Gameplay.Players.PlayerHidingSpot>()
+                .Configure(matchRuntime, berth);
+
             LootHidingSpot spot = target.AddComponent<LootHidingSpot>();
             spot.Configure(trigger, storedRoot, matchRuntime);
         }

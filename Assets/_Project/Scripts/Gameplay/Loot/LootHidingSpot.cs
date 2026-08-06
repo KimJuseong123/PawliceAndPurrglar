@@ -32,11 +32,23 @@ namespace PawsAndLoot.Gameplay.Loot
         public bool HasStoredLoot => StoredLoot != null;
 
         public Transform InteractionTransform => transform;
+        /// <summary>
+        /// Generic, not Loot, since the officer gained a move here.
+        ///
+        /// The permission table answers per type and <c>Loot</c> means thief-only,
+        /// so an officer's scanner never offered the crate as a target and the
+        /// key had nothing to act on — the same shape as the market being shut to
+        /// them for a whole release. The role rules that matter are written out in
+        /// <see cref="TryInteract"/>, which can say which role it wants and for
+        /// what; a type cannot.
+        /// </summary>
         public PlayerInteractionType InteractionType =>
-            PlayerInteractionType.Loot;
+            PlayerInteractionType.Generic;
         public string Prompt => HasStoredLoot
-            ? "Recover hidden loot"
-            : "Hide carried loot";
+            ? "숨긴 보물 꺼내기"
+            : IsSheltering
+                ? "끌어내기"
+                : "숨기거나 보물 넣기";
         public bool IsAvailable =>
             isActiveAndEnabled
             && ResolveMatchState()?.IsGameplayActive == true;
@@ -81,17 +93,32 @@ namespace PawsAndLoot.Gameplay.Loot
         }
 
         /// <summary>
-        /// Hides the carried loot, or recovers what is already stored. One
-        /// interact key serves both directions so the spot reads as a stash.
+        /// Hides the carried loot, recovers what is already stored, or hides the
+        /// thief themselves. One key, and which of the three it does depends on
+        /// what there is to do.
+        ///
+        /// The box is a crate in the street and the player reads it as somewhere
+        /// to get into. Two components each claiming E would be a press whose
+        /// outcome nobody can predict — the scanner ranks one target and the
+        /// player cannot see which — so the order is written out here instead:
+        /// something stored comes back, something carried goes in, and an empty
+        /// box with an empty-handed thief is a place to hide.
         /// </summary>
         public bool TryInteract(PlayerInteractionContext context)
         {
             if (!IsAvailable
                 || context.Player == null
-                || context.Player.Role != PlayerRole.Thief
                 || !Contains(context.Player.transform.position))
             {
                 return false;
+            }
+
+            // The officer's one move here: turf out whoever is inside. Without it
+            // a thief who reached a crate would sit in it for the rest of the
+            // match, which ends the officer's half of the game.
+            if (context.Player.Role != PlayerRole.Thief)
+            {
+                return IsSheltering && TryClimbIn(context);
             }
 
             LootCarrier carrier =
@@ -101,9 +128,42 @@ namespace PawsAndLoot.Gameplay.Loot
                 return false;
             }
 
-            return HasStoredLoot
-                ? TryRecover(carrier)
-                : TryHide(carrier);
+            if (HasStoredLoot)
+            {
+                return TryRecover(carrier);
+            }
+
+            return carrier.HasLoot
+                ? TryHide(carrier)
+                : TryClimbIn(context);
+        }
+
+        /// <summary>
+        /// Puts the thief in the box, when there is nothing to stash.
+        ///
+        /// Delegated to the same <see cref="PawsAndLoot.Gameplay.Players.PlayerHidingSpot"/>
+        /// the bins use, sitting on this object. Reimplementing it would be a
+        /// second place for "hidden" to mean something slightly different, and
+        /// the officer's counter-press has to reach both.
+        /// </summary>
+        private bool TryClimbIn(PlayerInteractionContext context)
+        {
+            var berth =
+                GetComponent<PawsAndLoot.Gameplay.Players.PlayerHidingSpot>();
+            return berth != null && berth.TryInteract(context);
+        }
+
+        /// <summary>
+        /// Whether somebody is inside, so the prompt can say so.
+        /// </summary>
+        private bool IsSheltering
+        {
+            get
+            {
+                var berth =
+                    GetComponent<PawsAndLoot.Gameplay.Players.PlayerHidingSpot>();
+                return berth != null && berth.IsOccupied;
+            }
         }
 
         public bool TryHide(LootCarrier carrier)

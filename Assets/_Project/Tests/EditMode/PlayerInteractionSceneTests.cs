@@ -134,9 +134,15 @@ namespace PawsAndLoot.Tests.EditMode
             // there to find out. The extra thirty-five are copies: three more
             // house01 rooms and four more house02 at four pieces each, plus a
             // second supermarket at seven.
+            // Seventy-one, not seventy-three: the two cardboard crates moved to
+            // Generic when the officer gained a move at them. The permission
+            // table answers per type and Loot means thief-only, so a crate that
+            // an officer has to be able to press E at cannot be one — the role
+            // rules that matter are written out in LootHidingSpot.TryInteract,
+            // which can say which role it wants and for what.
             Assert.That(
                 byType[PlayerInteractionType.Loot],
-                Is.EqualTo(73),
+                Is.EqualTo(71),
                 "Loot is thief-only, and the count is the thief's whole "
                 + "victory path.");
             Assert.That(

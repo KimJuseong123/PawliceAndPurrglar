@@ -1599,10 +1599,20 @@ namespace PawsAndLoot.Editor
             // Parked on the first places in order. The draw scatters them
             // properly at match start; this is only so the scene is not saved
             // with a room's stock lying in the road.
+            //
+            // Grown with the room. The pieces are authored at the size a person
+            // holds them and the room around them is the house model at 2.2x, so
+            // a wheel of cheese on a 2.2x table is less than half the size the
+            // player expects and reads as part of the furniture. The scale is on
+            // the piece rather than on its model, so carrying it puts it under the
+            // hand — a transform of scale one — and it comes back to a person's
+            // size the moment it is picked up.
             for (int index = 0; index < stock.Length; index++)
             {
                 stock[index].transform.position =
                     places[index % places.Length].position;
+                stock[index].transform.localScale =
+                    Vector3.one * InteriorScale;
             }
 
             room.gameObject.AddComponent<LootSpotDraw>()
@@ -1731,8 +1741,14 @@ namespace PawsAndLoot.Editor
             Vector3 at,
             float floorTop)
         {
-            const float Radius = 0.36f;
-            const float MaxLift = 1.25f;
+            // Both scaled with the room. These rooms are the house model
+            // enlarged 2.2x, so a table top a model-scale metre up is 2.2 m up in
+            // world space — a flat 1.25 m cap found nothing on any table and
+            // answered "the floor", which put the piece **under** the table it
+            // was meant to be standing on. Invisible, and the prompt still
+            // appeared because the collider was reachable.
+            float radius = 0.36f * InteriorScale;
+            float maxLift = 1.25f * InteriorScale;
 
             if (collision == null)
             {
@@ -1753,14 +1769,14 @@ namespace PawsAndLoot.Editor
                 foreach (Vector3 local in mesh.vertices)
                 {
                     Vector3 world = space.TransformPoint(local);
-                    if (world.y <= best || world.y > floorTop + MaxLift)
+                    if (world.y <= best || world.y > floorTop + maxLift)
                     {
                         continue;
                     }
 
                     float dx = world.x - at.x;
                     float dz = world.z - at.z;
-                    if ((dx * dx) + (dz * dz) > Radius * Radius)
+                    if ((dx * dx) + (dz * dz) > radius * radius)
                     {
                         continue;
                     }
