@@ -4681,6 +4681,22 @@ namespace PawsAndLoot.Editor
                 target.AddComponent<BoxCollider>();
             worldCollider.size = Vector3.one * 0.75f;
 
+            // A trigger, like every other pickup on this map.
+            //
+            // It was solid, and at 0.75 m in the street that was a kerb nobody
+            // noticed. Indoors the piece is scaled with the room — 2.2x — so the
+            // box became a 1.65 m platform standing on the dining table, and the
+            // thief walked up onto **an invisible block** in the middle of the
+            // room. Nothing logged it: a solid collider doing exactly what a
+            // solid collider does.
+            //
+            // Trigger is also what the rest of the game already assumes. The
+            // scanner overlaps with QueryTriggerInteraction.Collide so it still
+            // finds it, and the throw query ignores triggers on purpose — a
+            // thrown rock stopping dead at the nearest pickup is the bug that
+            // note was written about.
+            worldCollider.isTrigger = true;
+
             Transform presentationRoot = CreateChild(
                 "PresentationRoot",
                 target.transform);
