@@ -1008,6 +1008,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-06 | Edit Mode·Play Mode (실내 물건 표면 배치·전리품 아이콘·고양이 가방 2×2 이후) | Edit Mode **291개 전부 통과**, Play Mode 205개 중 **203 통과** + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 아이콘 26종 구움(모델 없는 3종은 손그림이 이미 있다), `HudCanvas.prefab` 재생성 |
+| 2026-08-06 | `-netScenario full` 2프로세스 | **양쪽 `passed=true`.** 판매 200, 체포 3회, 기절, 보물 링크 양쪽 68 일치 |
 | 2026-08-06 | Edit Mode·Play Mode (보물 홀드 획득·쓰레기통 숨기·상점 줄 배치 이후) | Edit Mode **291개 전부 통과**. Play Mode 205개 중 **203 통과** + 1 스킵, 실패 1건은 기준선과 동일한 `CompanionExpression`. 신규 4건(`ThiefTakeAndHide` 3 + `InteriorLootTally` 1) 이름을 XML에서 확인 |
 | 2026-08-06 | `-netScenario full` 2프로세스 (2회) | 1회차 `passed=false` — `sawLootCarried=false`, 투척도 미실행. 2회차 **양쪽 `passed=true`** (판매 200, 체포 3회, 기절, 보물 링크 68 일치). `GAP-006`이 기록한 시간표 경합이고, 실내 재고가 방마다 따로 뽑히면서 편차가 더 커졌다 |
 | 2026-08-06 | Edit Mode·Play Mode (실내 재고 전면 배치·고양이 가방·팔 흔들림·상점 가격 이후) | Edit Mode **291개 전부 통과** (신규 `MerchantShopRowLayoutTests` 1건 포함). Play Mode 201개 중 **199 통과** + 1 스킵, 실패 1건은 기준선과 동일한 `CompanionExpression`(음성 스택 필요). `Game` 씬 재생성 로그: 실내 **13곳 전부** `자리 − 3`, 보물 링크 33 → **68** |

@@ -147,6 +147,64 @@ namespace PawsAndLoot.Gameplay.Players
                     piece.enabled = drawn;
                 }
             }
+
+            SetCompanionDrawn(drawn);
         }
+
+        /// <summary>
+        /// The cat goes in with them.
+        ///
+        /// It follows at the thief's feet and never leaves, so a hidden thief with
+        /// a cat sitting on the dustbin is an arrow pointing at the dustbin — the
+        /// hiding would be worse than useless, because the officer would learn to
+        /// read the cat rather than look for the thief.
+        ///
+        /// Found rather than assigned. The companion is spawned by a different
+        /// part of the scene builder and paired with the player at runtime, and a
+        /// serialized reference across that boundary is the kind that comes back
+        /// from a prefab as null.
+        /// </summary>
+        private void SetCompanionDrawn(bool drawn)
+        {
+            if (_companion == null)
+            {
+                var identity = GetComponent<PlayerRoleIdentity>();
+                foreach (Companions.CompanionAgent candidate in
+                    FindObjectsByType<Companions.CompanionAgent>(
+                        FindObjectsSortMode.None))
+                {
+                    bool isCat = candidate.CompanionKind
+                        == Companions.CompanionKind.Cat;
+                    if (identity != null
+                        && (identity.Role == PlayerRole.Thief) == isCat)
+                    {
+                        _companion = candidate.transform;
+                        break;
+                    }
+                }
+            }
+
+            if (_companion == null)
+            {
+                return;
+            }
+
+            if (_companionRenderers.Length == 0)
+            {
+                _companionRenderers =
+                    _companion.GetComponentsInChildren<Renderer>(true);
+            }
+
+            foreach (Renderer piece in _companionRenderers)
+            {
+                if (piece != null)
+                {
+                    piece.enabled = drawn;
+                }
+            }
+        }
+
+        private Transform _companion;
+        private Renderer[] _companionRenderers = Array.Empty<Renderer>();
     }
 }

@@ -929,6 +929,11 @@ namespace PawsAndLoot.UI
             Sprite sprite = string.IsNullOrWhiteSpace(path)
                 ? null
                 : Resources.Load<Sprite>(path);
+
+            // Then the one baked from the piece's own model. The ledger and the
+            // bag have to agree about what a thing looks like, or the player picks
+            // a cell here that showed a different picture there.
+            sprite ??= Resources.Load<Sprite>($"UI/ItemIcons/Loot/{stableId}");
             IconCache[stableId] = sprite;
             return sprite;
         }

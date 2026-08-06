@@ -20,7 +20,16 @@ namespace PawsAndLoot.Companions
         [SerializeField, Min(0.1f)] private float fallbackInteractionRadius =
             0.8f;
 
-        private readonly QuickSlotController slots = new();
+        /// <summary>
+        /// Four slots, two by two, and its own store rather than the quick
+        /// slots'. A cat carries what a cat can carry. <see cref="QuickSlotController"/> is four by construction — the
+        /// network layer packs four kinds and four quantities into two integers
+        /// against that constant — and widening it would change the wire format
+        /// for every player every frame to give a cat a bigger bag.
+        /// </summary>
+        public const int CatBagSlotCount = 4;
+
+        private PropSlotStore slots = new(CatBagSlotCount);
         private IMatchStateReader matchState;
 
         public Transform InteractionTransform => transform;
@@ -30,7 +39,7 @@ namespace PawsAndLoot.Companions
         // Named for the panel heading rather than reusing the prompt: "고양이 가방
         // 열기" is an instruction and belongs over a key, not over a grid.
         public string DisplayName => "고양이 가방";
-        public int SlotCount => QuickSlotController.SlotCount;
+        public int SlotCount => slots.SlotCount;
         /// <summary>
         /// Below everything else, because the cat is the one interactable the
         /// player never walks up to.
@@ -60,6 +69,11 @@ namespace PawsAndLoot.Companions
             matchState = configuredMatchState;
             matchStateSource = configuredMatchState as MonoBehaviour;
             maximumStackSize = Mathf.Max(1, configuredMaximumStackSize);
+
+            // Rebuilt rather than left at the default. The stack size is a
+            // constructor argument, so a field that says nine while the store
+            // holds five is a number nobody can act on.
+            slots = new PropSlotStore(CatBagSlotCount, maximumStackSize);
             EnsureInteractionCollider();
         }
 
@@ -76,14 +90,13 @@ namespace PawsAndLoot.Companions
         public bool CanStore(ThrowableKind kind, int quantity)
         {
             return ThrowableCatalog.CanUseInQuickSlot(kind)
-                && slots.CanStore(kind, quantity, maximumStackSize);
+                && slots.CanStore(kind, quantity);
         }
 
         public bool TryStore(ThrowableKind kind, int quantity)
         {
             return ThrowableCatalog.CanUseInQuickSlot(kind)
-                && slots.CanStore(kind, quantity, maximumStackSize)
-                && slots.TryStore(kind, quantity, maximumStackSize, out _);
+                && slots.TryStore(kind, quantity);
         }
 
         public bool TryTakeSlot(

@@ -26,7 +26,8 @@ namespace PawsAndLoot.UI
     {
         private const int QuickSlotCount = 4;
         private const int InventorySlotCount = 25;
-        private const int CatBagSlotCount = 4;
+        private const int CatBagSlotCount =
+            PawsAndLoot.Companions.CatInventoryInteractable.CatBagSlotCount;
 
         [SerializeField] private TMP_Text matchTimer;
         [SerializeField] private RoleStatusPanelView roleStatus;
@@ -236,9 +237,33 @@ namespace PawsAndLoot.UI
         {
             ClearExchangeSlots(exchangePlayerSlots);
             ClearExchangeSlots(exchangeCatSlots);
+            ClearExchangeSlots(inventorySlots);
+
+            // The thief's own bag cells answer a click too, now that the cat's bag
+            // sits beside them rather than being redrawn inside its own screen.
+            // They keep their drag handler: a click and a drag are different
+            // gestures and Unity delivers both.
             slotListenersBound =
                 BindExchangeSlots(exchangePlayerSlots, HandleExchangePlayerSlotClicked)
-                | BindExchangeSlots(exchangeCatSlots, HandleExchangeCatSlotClicked);
+                | BindExchangeSlots(exchangeCatSlots, HandleExchangeCatSlotClicked)
+                | BindExchangeSlots(inventorySlots, HandleBagSlotClicked);
+        }
+
+        /// <summary>
+        /// A click on the thief's own bag while the cat's is open.
+        ///
+        /// Silent when the cat's bag is closed, because then a click on a bag cell
+        /// is the start of a drag and moving the item somewhere would be a gesture
+        /// the player did not make.
+        /// </summary>
+        private void HandleBagSlotClicked(int index)
+        {
+            if (!catExchangeOpen || activeContainer == null)
+            {
+                return;
+            }
+
+            HandleExchangePlayerSlotClicked(index);
         }
 
         private static bool BindExchangeSlots(
@@ -273,6 +298,7 @@ namespace PawsAndLoot.UI
         {
             ClearExchangeSlots(exchangePlayerSlots);
             ClearExchangeSlots(exchangeCatSlots);
+            ClearExchangeSlots(inventorySlots);
             slotListenersBound = false;
         }
 
@@ -386,7 +412,12 @@ namespace PawsAndLoot.UI
         public void SetInventoryOpen(bool open)
         {
             inventoryOpen = open;
-            if (open)
+
+            // Closing the bag takes the cat's with it, and opening it leaves the
+            // cat's alone. The two are one screen the player reads across — a bag
+            // that shut and left a cat's bag floating beside nothing would be a
+            // panel with no counterpart to move things to.
+            if (!open && catExchangeOpen)
             {
                 SetCatExchangeOpen(false);
             }
@@ -429,8 +460,11 @@ namespace PawsAndLoot.UI
                 exchangeContainerTitle.text = container.DisplayName;
             }
 
-            SetInventoryOpen(false);
+            // Both, side by side. The thief's own bag is the other half of the
+            // exchange: opening only the cat's would leave the player clicking on
+            // a grid with nowhere to put anything.
             SetCatExchangeOpen(true);
+            SetInventoryOpen(true);
 
             // Headed with the container's own name. The player is looking at two
             // grids of the same icons, and which one is theirs is the only thing
@@ -489,6 +523,17 @@ namespace PawsAndLoot.UI
 
         private void HandleEscape()
         {
+            // The raccoon's ledger first, because it is the one on top. Escape is
+            // the key every player tries on a window they want gone, and the shop
+            // was the only screen in the game that ignored it — it closed on E, at
+            // the market, which is also the key that opened it and the key that
+            // does five other things.
+            if (merchantWindow != null && merchantWindow.IsOpen)
+            {
+                merchantWindow.Close();
+                return;
+            }
+
             if (inventoryOpen || catExchangeOpen)
             {
                 SetInventoryOpen(false);
@@ -1562,6 +1607,13 @@ namespace PawsAndLoot.UI
                 return cached;
             }
 
+            // The hand-drawn icon if a piece has one, then the one baked from its
+            // own model.
+            //
+            // Hand first, on purpose. Baking exists because twenty-nine kinds
+            // share eleven pieces of artwork and the rest were drawn as a letter,
+            // and it must not overwrite the drawings when they arrive — a render
+            // of a model is a stand-in, not the answer.
             string path = stableId switch
             {
                 "common-trinket" => "UI/ItemIcons/gold medal",
@@ -1572,6 +1624,7 @@ namespace PawsAndLoot.UI
             Sprite sprite = string.IsNullOrWhiteSpace(path)
                 ? null
                 : Resources.Load<Sprite>(path);
+            sprite ??= Resources.Load<Sprite>($"UI/ItemIcons/Loot/{stableId}");
             lootIconCache[stableId] = sprite;
             return sprite;
         }
@@ -1742,39 +1795,19 @@ namespace PawsAndLoot.UI
                 new Vector2(0f, 1f),
                 new Vector2(24f, -260f),
                 new Vector2(470f, 780f));
+            // Beside the bag, not over it. Reasserted here as well as in the
+            // builder because a HUD loaded from the prefab carries whatever
+            // geometry the prefab was saved with, and the prefab is regenerated
+            // by hand.
             ApplyRect(
                 "Cat Exchange",
                 new Vector2(0f, 1f),
                 new Vector2(0f, 1f),
                 new Vector2(0f, 1f),
-                new Vector2(24f, -24f),
-                new Vector2(780f, 820f));
-            ApplyRect(
-                "Cat Exchange/Player Bag",
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(24f, -124f),
-                new Vector2(460f, 632f));
-            ApplyRect(
-                "Cat Exchange/Cat Bag",
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(504f, -424f),
-                new Vector2(252f, 302f));
-            ApplyPanelImage(
-                "Cat Exchange",
-                new Color(0.015f, 0.035f, 0.055f, 0.52f),
-                true);
-            ApplyPanelImage(
-                "Cat Exchange/Player Bag",
-                new Color(0.02f, 0.06f, 0.09f, 0.48f),
-                true);
-            ApplyPanelImage(
-                "Cat Exchange/Cat Bag",
-                new Color(0.02f, 0.06f, 0.09f, 0.50f),
-                true);
+                HudRuntimeInstaller.CatBagPanelPosition,
+                new Vector2(
+                    HudRuntimeInstaller.CatBagPanelWidth,
+                    HudRuntimeInstaller.CatBagPanelHeight));
             ApplyRect(
                 "Police Catches",
                 new Vector2(0.5f, 1f),
@@ -1922,7 +1955,38 @@ namespace PawsAndLoot.UI
     public static class HudRuntimeInstaller
     {
         private const int InventorySlotCount = 25;
-        private const int CatBagSlotCount = 4;
+
+        /// <summary>
+        /// The cat's bag, two by two.
+        ///
+        /// Kept here and in <c>CatInventoryInteractable</c>, and they have to
+        /// agree: the panel decides how many cells are drawn and the container
+        /// decides how many exist. If they disagree the extra cells ask a store
+        /// for slots it does not have and draw nothing — which is exactly how the
+        /// old exchange screen came to show twenty-one permanently empty squares.
+        /// </summary>
+        private const int CatBagSlotCount =
+            PawsAndLoot.Companions.CatInventoryInteractable.CatBagSlotCount;
+
+        private const int CatBagColumns = 2;
+        private const float CatBagCellSize = 86f;
+        private const float CatBagCellGap = 12f;
+
+        // 2 x 86 + 12 = 184, plus 28 either side.
+        internal const float CatBagPanelWidth = 240f;
+
+        // The same grid plus 70 above for the heading and 46 below for the hint.
+        internal const float CatBagPanelHeight = 300f;
+
+        /// <summary>
+        /// Immediately right of the bag panel, which is 470 wide at x = 24.
+        ///
+        /// Beside rather than over. The two are read together — take from one,
+        /// put in the other — and a panel that covers the bag would mean the
+        /// player cannot see what they are moving out of.
+        /// </summary>
+        internal static readonly Vector2 CatBagPanelPosition =
+            new(510f, -260f);
 
         /// <summary>
         /// How many of the bag's cells are prop quick slots rather than loot.
@@ -2915,6 +2979,15 @@ namespace PawsAndLoot.UI
             skin.Configure(shape, fill, border, cornerRadius, borderWidth);
         }
 
+        /// <summary>
+        /// The cat's bag: two by two, beside the thief's own bag rather than
+        /// inside a screen of its own.
+        ///
+        /// It used to be a 780x820 window that redrew the thief's twenty-five
+        /// cells next to the cat's four — a second copy of a screen the player had
+        /// just been looking at, with its own bugs. The bag they already know is
+        /// the bag, and the cat's is a small panel that appears next to it.
+        /// </summary>
         private static GameObject BuildCatExchange(
             Transform parent,
             out InventorySlotView[] playerSlots,
@@ -2922,12 +2995,23 @@ namespace PawsAndLoot.UI
             out TMP_Text screenTitle,
             out TMP_Text containerTitle)
         {
-            GameObject panel = CreatePanel(parent, "Cat Exchange", new Vector2(780f, 820f));
-            Image panelImage = panel.GetComponent<Image>();
-            if (panelImage != null)
-            {
-                panelImage.color = new Color(0.015f, 0.035f, 0.055f, 0.52f);
-            }
+            // No second copy of the thief's grid. The caller keeps the parameter
+            // because the HUD prefab builder and the tests both pass it, and an
+            // empty array is what "there is no such grid" looks like to every
+            // loop that reads it.
+            playerSlots = Array.Empty<InventorySlotView>();
+
+            GameObject panel = CreatePanel(
+                parent,
+                "Cat Exchange",
+                new Vector2(CatBagPanelWidth, CatBagPanelHeight));
+            Skin(
+                panel,
+                HudPanelSkin.Shape.Window,
+                HudSpriteLibrary.PanelFill,
+                HudSpriteLibrary.Border,
+                14,
+                2);
 
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.pivot = new Vector2(0f, 1f);
@@ -2935,127 +3019,58 @@ namespace PawsAndLoot.UI
                 panelRect,
                 new Vector2(0f, 1f),
                 new Vector2(0f, 1f),
-                new Vector2(24f, -24f),
-                new Vector2(780f, 820f));
+                CatBagPanelPosition,
+                new Vector2(CatBagPanelWidth, CatBagPanelHeight));
 
             TMP_Text title = CreateText(
                 panel.transform,
                 "Title",
-                "\uBCF4\uAD00\uD568 \uC218\uC0C9",
+                "고양이 가방",
                 24f,
                 TextAlignmentOptions.TopLeft);
+            title.color = HudSpriteLibrary.Accent;
             Anchor(
                 title.rectTransform,
                 new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(54f, -24f),
-                new Vector2(480f, 42f));
+                new Vector2(1f, 1f),
+                new Vector2(24f, -18f),
+                new Vector2(-48f, 40f));
 
-            TMP_Text quickTitle = CreateText(
-                panel.transform,
-                "Quick Slot Title",
-                "QUICK SLOTS",
-                15f,
-                TextAlignmentOptions.TopLeft);
-            Anchor(
-                quickTitle.rectTransform,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(42f, -88f),
-                new Vector2(220f, 24f));
+            Transform gridRoot = CreateGridRoot(panel.transform, "Grid", 0f, 0f);
+            var grid = gridRoot.gameObject.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(CatBagCellSize, CatBagCellSize);
+            grid.spacing = new Vector2(CatBagCellGap, CatBagCellGap);
+            grid.padding = new RectOffset(28, 28, 70, 46);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = CatBagColumns;
 
-            GameObject playerBag = CreatePanel(panel.transform, "Player Bag", new Vector2(460f, 632f));
-            Image playerImage = playerBag.GetComponent<Image>();
-            if (playerImage != null)
-            {
-                playerImage.color = new Color(0.02f, 0.06f, 0.09f, 0.48f);
-            }
-
-            Anchor(
-                playerBag.GetComponent<RectTransform>(),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(24f, -124f),
-                new Vector2(460f, 632f));
-            TMP_Text playerTitle = CreateText(
-                playerBag.transform,
-                "Title",
-                "\uB3C4\uB451 \uAC00\uBC29",
-                21f,
-                TextAlignmentOptions.TopLeft);
-            Anchor(playerTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(22f, -18f), new Vector2(-44f, 34f));
-            Transform playerGridRoot = CreateGridRoot(playerBag.transform, "Grid", 0f, 0f);
-            var playerGrid = playerGridRoot.gameObject.AddComponent<GridLayoutGroup>();
-            playerGrid.cellSize = new Vector2(70f, 70f);
-            playerGrid.spacing = new Vector2(8f, 8f);
-            playerGrid.padding = new RectOffset(35, 35, 72, 72);
-            playerGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            playerGrid.constraintCount = 5;
-            playerSlots = new InventorySlotView[InventorySlotCount];
-            for (int index = 0; index < playerSlots.Length; index++)
-            {
-                playerSlots[index] = BuildInventorySlot(
-                    playerGridRoot,
-                    $"Player Exchange Slot {index + 1}",
-                    new Vector2(70f, 70f),
-                    (index + 1).ToString(),
-                    18f);
-            }
-
-            GameObject catBag = CreatePanel(panel.transform, "Cat Bag", new Vector2(252f, 302f));
-            Image catImage = catBag.GetComponent<Image>();
-            if (catImage != null)
-            {
-                catImage.color = new Color(0.02f, 0.06f, 0.09f, 0.50f);
-            }
-
-            Anchor(
-                catBag.GetComponent<RectTransform>(),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(504f, -424f),
-                new Vector2(252f, 302f));
-            TMP_Text catTitle = CreateText(
-                catBag.transform,
-                "Title",
-                "\uACE0\uC591\uC774 \uAC00\uBC29",
-                21f,
-                TextAlignmentOptions.TopLeft);
-            Anchor(catTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(22f, -18f), new Vector2(-44f, 34f));
-            Transform catGridRoot = CreateGridRoot(catBag.transform, "Grid", 0f, 0f);
-            var catGrid = catGridRoot.gameObject.AddComponent<GridLayoutGroup>();
-            catGrid.cellSize = new Vector2(82f, 82f);
-            catGrid.spacing = new Vector2(12f, 12f);
-            catGrid.padding = new RectOffset(38, 38, 74, 28);
-            catGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            catGrid.constraintCount = 2;
             catSlots = new InventorySlotView[CatBagSlotCount];
             for (int index = 0; index < catSlots.Length; index++)
             {
                 catSlots[index] = BuildInventorySlot(
-                    catGridRoot,
+                    gridRoot,
                     $"Cat Bag Slot {index + 1}",
-                    new Vector2(82f, 82f),
+                    new Vector2(CatBagCellSize, CatBagCellSize),
                     (index + 1).ToString(),
-                    24f);
+                    22f);
             }
 
             TMP_Text hint = CreateText(
                 panel.transform,
                 "Hint",
-                "\uC544\uC774\uD15C \uCE78\uC744 \uD074\uB9AD\uD574\uC11C \uC804\uB2EC\uD558\uAC70\uB098 \uB3CC\uB824\uBC1B\uAE30",
+                "칸을 눌러 서로 옮깁니다",
                 15f,
                 TextAlignmentOptions.Bottom);
-            hint.color = new Color(0.85f, 0.95f, 1f, 0.82f);
+            hint.color = new Color(0.66f, 0.80f, 0.90f, 0.80f);
             Anchor(
                 hint.rectTransform,
                 new Vector2(0f, 0f),
                 new Vector2(1f, 0f),
-                new Vector2(34f, 34f),
-                new Vector2(-42f, 28f));
+                new Vector2(0f, 16f),
+                new Vector2(-40f, 26f));
 
             screenTitle = title;
-            containerTitle = catTitle;
+            containerTitle = title;
             panel.SetActive(false);
             return panel;
         }

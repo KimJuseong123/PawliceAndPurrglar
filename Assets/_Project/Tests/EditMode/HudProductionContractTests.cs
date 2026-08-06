@@ -82,8 +82,12 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(prefab.transform.Find("Inventory/Grid/Inventory Slot 25"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Inventory/Grid/Inventory Slot 5/Price"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Inventory/Grid/Inventory Slot 5/Currency Icon"), Is.Not.Null);
-            Assert.That(prefab.transform.Find("Cat Exchange/Player Bag/Grid/Player Exchange Slot 25"), Is.Not.Null);
-            Assert.That(prefab.transform.Find("Cat Exchange/Cat Bag/Grid/Cat Bag Slot 4"), Is.Not.Null);
+            // The cat's bag is two by two beside the thief's own bag, not a
+            // window that redraws the thief's twenty-five cells next to the
+            // cat's four. A second copy of a screen the player just looked at is
+            // a second place for the same bug.
+            Assert.That(prefab.transform.Find("Cat Exchange/Player Bag"), Is.Null);
+            Assert.That(prefab.transform.Find("Cat Exchange/Grid/Cat Bag Slot 4"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Context Interaction/Hold Progress"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Sensor Radar"), Is.Not.Null);
             Assert.That(prefab.transform.Find("ANIMAL COMMANDS"), Is.Not.Null);
@@ -168,32 +172,25 @@ namespace PawsAndLoot.Tests.EditMode
                 new Vector2(0f, 1f),
                 new Vector2(24f, -260f),
                 new Vector2(470f, 780f));
+            // Immediately right of the bag, which ends at x = 494. Overlapping
+            // them would hide the half the player is moving things out of.
+            var catBag = prefab.transform.Find("Cat Exchange") as RectTransform;
             AssertRect(
-                prefab.transform.Find("Cat Exchange") as RectTransform,
+                catBag,
                 new Vector2(0f, 1f),
                 new Vector2(0f, 1f),
                 new Vector2(0f, 1f),
-                new Vector2(24f, -24f),
-                new Vector2(780f, 820f));
+                new Vector2(510f, -260f),
+                new Vector2(240f, 300f));
+            Assert.That(
+                catBag.anchoredPosition.x,
+                Is.GreaterThanOrEqualTo(24f + 470f),
+                "The cat's bag overlaps the thief's.");
             Image catExchangeBackground =
                 prefab.transform.Find("Cat Exchange").GetComponent<Image>();
             Assert.That(catExchangeBackground, Is.Not.Null);
             Assert.That(catExchangeBackground.color.a, Is.GreaterThan(0.4f));
             Assert.That(catExchangeBackground.raycastTarget, Is.True);
-            AssertRect(
-                prefab.transform.Find("Cat Exchange/Player Bag") as RectTransform,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(24f, -124f),
-                new Vector2(460f, 632f));
-            AssertRect(
-                prefab.transform.Find("Cat Exchange/Cat Bag") as RectTransform,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(504f, -424f),
-                new Vector2(252f, 302f));
             AssertRect(
                 prefab.transform.Find("ANIMAL COMMANDS") as RectTransform,
                 new Vector2(0f, 1f),

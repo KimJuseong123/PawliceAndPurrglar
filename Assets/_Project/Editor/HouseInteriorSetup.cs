@@ -980,17 +980,37 @@ namespace PawsAndLoot.Editor
             // scene, which is the thing this is for avoiding.
             if (LootSpotsInPlan.TryGetValue(stem, out Vector2[] lootMarks))
             {
+                int lifted = 0;
                 for (int place = 0; place < lootMarks.Length; place++)
                 {
+                    Vector3 at = FromPlan(inner, floorTop, lootMarks[place]);
+
+                    // Onto whatever is standing there, not onto the floor.
+                    //
+                    // Every one of these marks was read off the plan as "a
+                    // cabinet, a shelf, a counter" — that is the point of them.
+                    // Put at floor height they land *inside* the furniture they
+                    // name: the model is buried in the mesh, so nothing is drawn
+                    // and the scanner has no line on it either. A room with seven
+                    // marked places looked like a room with nothing in it, and
+                    // the log said seven places marked.
+                    float surface = SurfaceHeightAt(collisionRoot, at, floorTop);
+                    if (surface > floorTop + 0.05f)
+                    {
+                        lifted++;
+                    }
+
+                    at.y = surface;
                     child(
                             $"Interior {number} Loot Spot {place + 1}",
                             room)
-                        .position = FromPlan(inner, floorTop, lootMarks[place]);
+                        .position = at;
                 }
 
                 Debug.Log(
                     $"[LOOT-SPOT] Interior {number} ({stem}): "
-                    + $"{lootMarks.Length} treasure places marked.");
+                    + $"{lootMarks.Length} treasure places marked, "
+                    + $"{lifted} of them onto furniture.");
 
                 StockRoom(room, stem, number, matchRuntime);
             }
@@ -1691,6 +1711,65 @@ namespace PawsAndLoot.Editor
             }
 
             return copy.GetComponent<LootItem>();
+        }
+
+        /// <summary>
+        /// The height of the highest thing standing at a spot, up to waist level.
+        ///
+        /// Measured off the collision mesh's own vertices rather than by
+        /// raycasting, for the same reason <see cref="ClearSpotInside"/> does: a
+        /// collider added moments ago is not reliably in the editor's physics
+        /// scene, and a raycast that hits nothing answers "the floor" — which is
+        /// exactly the wrong answer and looks like the right one.
+        ///
+        /// Capped at waist height. Above that the mark is not furniture, it is a
+        /// wall or a ceiling beam, and putting the shop's stock on a beam is worse
+        /// than putting it on the floor.
+        /// </summary>
+        private static float SurfaceHeightAt(
+            Transform collision,
+            Vector3 at,
+            float floorTop)
+        {
+            const float Radius = 0.36f;
+            const float MaxLift = 1.25f;
+
+            if (collision == null)
+            {
+                return floorTop;
+            }
+
+            float best = floorTop;
+            foreach (MeshFilter filter in
+                collision.GetComponentsInChildren<MeshFilter>(true))
+            {
+                Mesh mesh = filter.sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                Transform space = filter.transform;
+                foreach (Vector3 local in mesh.vertices)
+                {
+                    Vector3 world = space.TransformPoint(local);
+                    if (world.y <= best || world.y > floorTop + MaxLift)
+                    {
+                        continue;
+                    }
+
+                    float dx = world.x - at.x;
+                    float dz = world.z - at.z;
+                    if ((dx * dx) + (dz * dz) > Radius * Radius)
+                    {
+                        continue;
+                    }
+
+                    best = world.y;
+                }
+            }
+
+            return best;
         }
 
         private static Vector3 FromPlan(
