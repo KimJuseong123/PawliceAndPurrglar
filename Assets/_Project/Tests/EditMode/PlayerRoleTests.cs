@@ -19,7 +19,12 @@ namespace PawsAndLoot.Tests.EditMode
 
         [TestCase(PlayerRole.Police, PlayerInteractionType.Arrest, true)]
         [TestCase(PlayerRole.Police, PlayerInteractionType.Loot, false)]
-        [TestCase(PlayerRole.Police, PlayerInteractionType.Sale, false)]
+        // Both roles may stand at the raccoon's stall: the thief sells there and
+        // the officer buys the trap and the sensor. Who may *sell* is still the
+        // thief alone, and that refusal lives in LootSaleZone.TryInteract, which
+        // can name the role it wants — a permission keyed on the interaction type
+        // cannot.
+        [TestCase(PlayerRole.Police, PlayerInteractionType.Sale, true)]
         [TestCase(PlayerRole.Thief, PlayerInteractionType.Arrest, false)]
         [TestCase(PlayerRole.Thief, PlayerInteractionType.Loot, true)]
         [TestCase(PlayerRole.Thief, PlayerInteractionType.Sale, true)]

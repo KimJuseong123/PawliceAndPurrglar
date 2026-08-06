@@ -57,7 +57,26 @@ namespace PawsAndLoot.UI
         private ArrestCompletionController arrestCompletion;
         private PawsAndLoot.Gameplay.Arrest.ThiefJailState jailState;
         private ThiefLootWallet thiefWallet;
+        private PoliceWallet policeWallet;
         private ToolCarrier carrier;
+
+        /// <summary>
+        /// The thief's loot bag, for the bag screen and the merchant screen.
+        /// </summary>
+        private LootCarrier lootCarrier;
+
+        /// <summary>
+        /// Both currency badges, found rather than assigned.
+        ///
+        /// An editor script's assignment into a serialized array of components is
+        /// the thing that vanished in <c>ISSUE-031</c> and left a bar list empty in
+        /// the build while the editor looked fine. Asking the hierarchy at runtime
+        /// cannot go stale.
+        /// </summary>
+        private CurrencyBadgeView[] currencyBadges = Array.Empty<CurrencyBadgeView>();
+
+        /// <summary>The raccoon's ledger, made the first time it is needed.</summary>
+        private MerchantTradePresenter merchantWindow;
         private VoiceCommandInput voice;
         private PlayerInteractionScanner scanner;
         private PlayerInteractionInput interactionInput;
@@ -143,6 +162,7 @@ namespace PawsAndLoot.UI
             GameplayInputRouter.BindingDisplayChanged += BindBindingLabels;
             GameplayInputRouter.AnimalCommandPressed += HandleAnimalCommandPressed;
             GameplayInputRouter.VoicePressed += HandleVoicePressed;
+            GameplayInputRouter.ContextInteractionPressed += HandleInteractPressed;
             CatInventoryInteractable.ExchangeRequested += OpenContainerExchange;
             SearchableContainer.SearchCompleted += OpenContainerExchange;
             GameplayInputRouter.TakeAllPressed += TakeEverythingFromContainer;
@@ -171,6 +191,7 @@ namespace PawsAndLoot.UI
             GameplayInputRouter.BindingDisplayChanged -= BindBindingLabels;
             GameplayInputRouter.AnimalCommandPressed -= HandleAnimalCommandPressed;
             GameplayInputRouter.VoicePressed -= HandleVoicePressed;
+            GameplayInputRouter.ContextInteractionPressed -= HandleInteractPressed;
             CatInventoryInteractable.ExchangeRequested -= OpenContainerExchange;
             SearchableContainer.SearchCompleted -= OpenContainerExchange;
             GameplayInputRouter.TakeAllPressed -= TakeEverythingFromContainer;
@@ -261,6 +282,8 @@ namespace PawsAndLoot.UI
             ResolveSources();
             BindMatchTimer();
             BindRoleStatus();
+            BindCurrencyBadges();
+            BindMerchantWindow();
             HideCentralObjective();
             BindCatchProgress();
             BindBindingLabels();
@@ -275,6 +298,71 @@ namespace PawsAndLoot.UI
             if (matchTimer == null) return;
             int totalSeconds = Mathf.Max(0, Mathf.CeilToInt(seconds));
             matchTimer.text = $"{totalSeconds / 60:00}:{totalSeconds % 60:00}";
+        }
+
+        /// <summary>
+        /// Applies a drag from one cell onto another.
+        ///
+        /// Two stores meet on this grid — the four prop quick slots and the loot
+        /// cells — and an item cannot cross between them: a prop slot holds a
+        /// <c>ThrowableKind</c> the thrower reads, and a loot cell holds real
+        /// world objects with their own state and replication. A cross-store drop
+        /// is refused **with a sentence on screen**, because a refusal the player
+        /// cannot see is indistinguishable from the drag not working, and they
+        /// will try it again rather than aim somewhere else.
+        /// </summary>
+        public void HandleSlotDrop(
+            InventorySlotDragHandler from,
+            InventorySlotDragHandler to)
+        {
+            if (from == null || to == null)
+            {
+                return;
+            }
+
+            if (from.Group != to.Group)
+            {
+                voiceFeed?.ShowMessage(
+                    "옮길 수 없어요",
+                    from.Group == InventorySlotDragHandler.SlotGroup.Bag
+                        ? "보물은 소품 칸에 넣을 수 없어요"
+                        : "소품은 보물 칸에 넣을 수 없어요",
+                    2f);
+                return;
+            }
+
+            switch (from.Group)
+            {
+                case InventorySlotDragHandler.SlotGroup.Bag:
+                    lootCarrier?.TryRearrange(from.Index, to.Index);
+                    break;
+                case InventorySlotDragHandler.SlotGroup.QuickSlot:
+                    if (carrier == null)
+                    {
+                        break;
+                    }
+
+                    // Asked for, or done — never both.
+                    //
+                    // Doing both was the first attempt and it made the drag look
+                    // broken on exactly one of the two machines: the client applied
+                    // the swap, the host's next slot update arrived with the old
+                    // arrangement, and the icon sprang back to where it started
+                    // before the host's own swap landed. Two visible jumps for one
+                    // drag reads as the drag failing.
+                    if (carrier.IsRemoteControlled)
+                    {
+                        GameplayInputRouter.RequestQuickSlotSwap(
+                            from.Index,
+                            to.Index);
+                    }
+                    else
+                    {
+                        carrier.TrySwapSlots(from.Index, to.Index);
+                    }
+
+                    break;
+            }
         }
 
         public void ToggleInventory()
@@ -400,8 +488,34 @@ namespace PawsAndLoot.UI
             }
 
             currencyIcon ??= Resources.Load<Sprite>("UI/CurrencyCoin");
+            if (currencyBadges.Length == 0)
+            {
+                currencyBadges = GetComponentsInChildren<CurrencyBadgeView>(true);
+            }
+
+            policeWallet ??=
+                FindFirstObjectByType<PoliceWallet>();
             EnsureCatInteractablesInstalled();
             PlayerRole role = ResolveRole();
+            if (lootCarrier == null && role == PlayerRole.Thief)
+            {
+                // Only the thief has one, and only theirs. Taking whichever the
+                // scene hands back first would draw the other player's bag on a
+                // two-player machine.
+                foreach (LootCarrier candidate in
+                    FindObjectsByType<LootCarrier>(FindObjectsSortMode.None))
+                {
+                    PlayerRoleIdentity carrierIdentity =
+                        candidate.GetComponent<PlayerRoleIdentity>();
+                    if (carrierIdentity == null
+                        || carrierIdentity.Role == PlayerRole.Thief)
+                    {
+                        lootCarrier = candidate;
+                        break;
+                    }
+                }
+            }
+
             if (carrier == null || carrier.Role != role)
             {
                 carrier = null;
@@ -655,11 +769,24 @@ namespace PawsAndLoot.UI
             BindCatExchangeSlots();
         }
 
+        /// <summary>
+        /// Draws the bag: the four prop slots, then the loot cells.
+        ///
+        /// The loot cells read the thief's own bag. They used to list every
+        /// <c>LootItem</c> in the scene, which meant the bag screen showed things
+        /// lying in shops across town and put their **price** where a count
+        /// belongs — seven identical coins with 20, 10, 20, 10 under them. It
+        /// looked like an inventory, so nobody read it as a bug.
+        ///
+        /// No name and no price in a cell. Both were drawn on top of the icon in
+        /// a 70px square, and a cell that says three things says none of them.
+        /// The name belongs in a tooltip and the price belongs in the merchant's
+        /// ledger, where the player is deciding about money.
+        /// </summary>
         private void BindInventorySlots()
         {
-            LootItem[] lootItems = inventoryOpen
-                ? FindVisibleLootItems()
-                : Array.Empty<LootItem>();
+            LootBag bag = lootCarrier != null ? lootCarrier.Cells : null;
+            LootItem newest = lootCarrier != null ? lootCarrier.LastAcquired : null;
             for (int index = 0; index < inventorySlots.Length; index++)
             {
                 ThrowableKind kind = ThrowableKind.Rock;
@@ -674,61 +801,197 @@ namespace PawsAndLoot.UI
                 bool selected = hasItem
                     && carrier != null
                     && carrier.SelectedSlot == index;
-                int lootIndex = index - QuickSlotCount;
-                LootDefinition definition =
-                    !quickSlotIndex && lootIndex >= 0 && lootIndex < lootItems.Length
-                        ? lootItems[lootIndex].Definition
-                        : null;
-                bool hasLootPrice = definition != null;
-                Sprite lootIcon = hasLootPrice ? GetLootIcon(definition) : null;
 
+                int cell = index - QuickSlotCount;
+                LootDefinition definition = null;
+                int lootCount = 0;
+                bool isNew = false;
+                if (!quickSlotIndex
+                    && bag != null
+                    && bag.TryGetCell(cell, out definition, out lootCount))
+                {
+                    quantity = lootCount;
+                    isNew = newest != null
+                        && bag.IndexOf(newest) == cell;
+                }
+
+                bool hasLoot = definition != null;
                 inventorySlots[index]?.Bind(new InventorySlotViewModel(
                     quickSlotIndex
                         ? GameplayInputRouter.GetQuickSlotLabel(index)
                         : (index + 1).ToString(),
-                    hasItem ? GetItemIcon(kind) : lootIcon,
+                    hasItem ? GetItemIcon(kind) : GetLootIcon(definition),
                     quantity,
                     selected,
-                    !(hasItem || hasLootPrice),
-                    hasItem && GetItemIcon(kind) == null
-                        ? GetItemGlyph(kind)
-                        : string.Empty,
+                    !(hasItem || hasLoot),
                     hasItem
-                        ? ThrowableCatalog.GetDisplayName(kind)
-                        : definition != null
-                            ? definition.DisplayName
+                        ? GetItemIcon(kind) == null
+                            ? GetItemGlyph(kind)
+                            : string.Empty
+                        : hasLoot && GetLootIcon(definition) == null
+                            ? GetLootGlyph(definition)
                             : string.Empty,
-                    hasLootPrice ? GetLootPrice(definition) : 0,
-                    hasLootPrice ? currencyIcon : null));
+                    string.Empty,
+                    0,
+                    null,
+                    isNew));
             }
         }
 
-        private LootItem[] FindVisibleLootItems()
+        /// <summary>
+        /// A letter for a piece with no artwork yet.
+        ///
+        /// Most of the thirty-odd loot definitions have no icon, and a cell with a
+        /// count in the corner and nothing in the middle reads as a broken cell
+        /// rather than as an unfinished one. A letter is at least the same letter
+        /// every time, so the player can tell two kinds apart.
+        /// </summary>
+        private static string GetLootGlyph(LootDefinition definition)
         {
-            LootItem[] all = FindObjectsByType<LootItem>(FindObjectsSortMode.None);
-            if (all.Length == 0)
+            string name = definition != null ? definition.DisplayName : string.Empty;
+            return string.IsNullOrWhiteSpace(name)
+                ? "?"
+                : name.Substring(0, 1);
+        }
+
+        /// <summary>
+        /// Opens the raccoon's ledger while the thief is standing at the market,
+        /// and closes it when they walk off.
+        ///
+        /// Opened by standing there rather than by the interact key, which still
+        /// does what it always did: hand over the piece in your hands. Two
+        /// reasons. The key press is forwarded to the host and executed there, so
+        /// hanging a window off it would open the window on whichever machine is
+        /// the host rather than on the machine that pressed it. And it leaves the
+        /// existing sale path — and the regressions that cover it — untouched.
+        ///
+        /// The window is created on demand rather than baked into the HUD prefab:
+        /// it needs generated sprites and click handlers, and neither survives an
+        /// editor script writing a prefab.
+        /// </summary>
+        private void BindMerchantWindow()
+        {
+            // Closed by walking away, never opened by standing still. Opening on
+            // proximity was the first attempt and it was wrong in a way that only
+            // shows up in play: the window appeared before the player had asked
+            // for it, and there was nothing to press — so a player who wanted to
+            // see the shop had no action to take and read it as broken.
+            if (merchantWindow == null || !merchantWindow.IsOpen)
             {
-                return Array.Empty<LootItem>();
+                return;
             }
 
-            var visible = new List<LootItem>(all.Length);
-            foreach (LootItem item in all)
+            // Range only, not role. Both roles have a screen here now, and keeping
+            // the thief's condition would have slammed the officer's shop shut on
+            // the frame after it opened.
+            bool stillAtMarket = scanner != null
+                && scanner.CurrentTarget is LootSaleZone;
+            if (!stillAtMarket)
             {
-                if (item == null
-                    || item.Definition == null
-                    || item.CurrentState == LootState.Sold)
+                merchantWindow.Close();
+            }
+        }
+
+        /// <summary>
+        /// Opens or closes the raccoon's ledger on the interact key.
+        ///
+        /// Hung off the local key event rather than off the sale zone's
+        /// <c>TryInteract</c>, and that distinction is the whole reason this
+        /// works: the key press is forwarded to the host and executed there, so a
+        /// window opened from the zone opens on **whichever machine is hosting**
+        /// rather than on the machine whose player pressed the key. On a
+        /// host-and-client pair that is the wrong screen exactly half the time.
+        ///
+        /// Refusals say why. An officer pressing E at the market gets a sentence
+        /// rather than nothing, because nothing is indistinguishable from the key
+        /// being broken — which is what it looked like.
+        /// </summary>
+        private void HandleInteractPressed()
+        {
+            ResolveSources();
+            if (scanner == null)
+            {
+                return;
+            }
+
+            // The cat's bag, opened here rather than by the host.
+            //
+            // `CatInventoryInteractable.TryInteract` does nothing but raise the
+            // event, and it ran on the host — so the thief pressed E at their cat
+            // and the two bags appeared on the **officer's** screen. Nothing is
+            // lost by moving it: the transfer that follows is clicks, and those go
+            // through `ContainerTransfer` on their own route.
+            if (scanner.CurrentTarget is CatInventoryInteractable catBag
+                && carrier != null
+                && ResolveRole() == PlayerRole.Thief)
+            {
+                if (catExchangeOpen)
                 {
-                    continue;
+                    SetCatExchangeOpen(false);
+                    return;
                 }
 
-                visible.Add(item);
+                OpenContainerExchange(catBag, carrier);
+                return;
             }
 
-            visible.Sort((left, right) => string.Compare(
-                left.Definition.DisplayName,
-                right.Definition.DisplayName,
-                StringComparison.CurrentCulture));
-            return visible.ToArray();
+            if (scanner.CurrentTarget is not LootSaleZone)
+            {
+                return;
+            }
+
+            merchantWindow ??= gameObject.AddComponent<MerchantTradePresenter>();
+            if (merchantWindow.IsOpen)
+            {
+                merchantWindow.Close();
+                return;
+            }
+
+            // Both roles trade here, in opposite directions. The thief sells
+            // treasure; the officer buys the trap and the sensor that answer a
+            // thief who never comes out into the open. One landmark both players
+            // walk to is worth more than two shops with one customer each.
+            SetInventoryOpen(false);
+            if (ResolveRole() == PlayerRole.Thief && lootCarrier != null)
+            {
+                merchantWindow.Open(lootCarrier, thiefWallet, lootConfig, carrier);
+                return;
+            }
+
+            if (carrier != null)
+            {
+                merchantWindow.OpenShop(carrier, policeWallet);
+                return;
+            }
+
+            voiceFeed?.ShowMessage(
+                "너구리 암시장",
+                "지금은 거래할 수 없어요",
+                2f);
+        }
+
+        /// <summary>
+        /// How much money the local player has, for both currency badges.
+        /// </summary>
+        private void BindCurrencyBadges()
+        {
+            if (currencyBadges == null || currencyBadges.Length == 0)
+            {
+                return;
+            }
+
+            int amount = ResolveRole() == PlayerRole.Thief
+                ? GetThiefSoldAmount()
+                : policeWallet != null
+                    ? policeWallet.Amount
+                    : 0;
+            foreach (CurrencyBadgeView badge in currencyBadges)
+            {
+                if (badge != null)
+                {
+                    badge.Bind(amount);
+                }
+            }
         }
 
         private int GetLootPrice(LootDefinition definition)
@@ -1488,6 +1751,16 @@ namespace PawsAndLoot.UI
         private const int CatBagSlotCount = 4;
 
         /// <summary>
+        /// How many of the bag's cells are prop quick slots rather than loot.
+        ///
+        /// The same number as the controller's, and it has to stay the same: the
+        /// builder decides which cells get a prop drag handler and the controller
+        /// decides which cells read the loot bag. If they disagree, one cell is
+        /// drawn from one store and dragged in the other.
+        /// </summary>
+        private const int QuickSlotCount = 4;
+
+        /// <summary>
         /// How much of a slot the item icon fills.
         ///
         /// 0.8 sits in the middle of the 75-85% the brief asks for. What is left is
@@ -1719,6 +1992,17 @@ namespace PawsAndLoot.UI
             TMP_Text matchTimer = BuildMatchTimer(canvasObject.transform);
 
             RoleStatusPanelView roleStatus = BuildRoleStatus(canvasObject.transform);
+
+            // Under the role panel, on screen the whole match. The thief's win
+            // condition is a number, and putting it only inside the bag would
+            // make "am I close yet?" a question you have to stop running to ask.
+            BuildCurrencyBadge(
+                canvasObject.transform,
+                "Screen Currency",
+                CurrencyBadgeView.Placement.Screen,
+                new Vector2(1f, 1f),
+                new Vector2(-24f, -396f),
+                new Vector2(186f, 52f));
             QuickSlotView[] quickSlots = BuildQuickSlots(canvasObject.transform);
             AnimalCommandShortcutView[] animalCommands =
                 BuildAnimalCommands(canvasObject.transform);
@@ -2294,6 +2578,7 @@ namespace PawsAndLoot.UI
         private static GameObject BuildInventory(Transform parent, out InventorySlotView[] slots)
         {
             GameObject panel = CreatePanel(parent, "Inventory", new Vector2(470f, 780f));
+            SkinWindow(panel);
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.pivot = new Vector2(0f, 1f);
             Anchor(
@@ -2302,8 +2587,24 @@ namespace PawsAndLoot.UI
                 new Vector2(0f, 1f),
                 new Vector2(24f, -260f),
                 new Vector2(470f, 780f));
-            TMP_Text title = CreateText(panel.transform, "Title", "INVENTORY   [TAB]", 20f, TextAlignmentOptions.TopLeft);
-            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(24f, -22f), new Vector2(-48f, 34f));
+
+            TMP_Text title = CreateText(panel.transform, "Title", "INVENTORY", 20f, TextAlignmentOptions.Left);
+            title.color = HudSpriteLibrary.Accent;
+
+            // 34px of rect for a 20pt line, and the height is the part that
+            // matters: TMP draws nothing at all when a rect is shorter than one
+            // line, so a heading that fits in theory disappears in practice
+            // (ISSUE-047). 1.45x the point size is the floor used everywhere here.
+            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(22f, -24f), new Vector2(-196f, 34f));
+
+            BuildCurrencyBadge(
+                panel.transform,
+                "Bag Currency",
+                CurrencyBadgeView.Placement.Bag,
+                new Vector2(1f, 1f),
+                new Vector2(-18f, -18f),
+                new Vector2(146f, 44f));
+
             Transform grid = CreateGridRoot(panel.transform, "Grid", 0f, 0f);
             var layout = grid.gameObject.AddComponent<GridLayoutGroup>();
             layout.cellSize = new Vector2(70f, 70f);
@@ -2320,9 +2621,124 @@ namespace PawsAndLoot.UI
                     new Vector2(70f, 70f),
                     (index + 1).ToString(),
                     18f);
+
+                // The first four cells are the prop quick slots and the rest are
+                // loot cells, so a cell's place on screen is not its place in
+                // either store. Both numbers are written down here, once.
+                slots[index].SetCellIndex(index);
+                bool isQuickSlot = index < QuickSlotCount;
+                slots[index].gameObject
+                    .AddComponent<InventorySlotDragHandler>()
+                    .Configure(
+                        isQuickSlot
+                            ? InventorySlotDragHandler.SlotGroup.QuickSlot
+                            : InventorySlotDragHandler.SlotGroup.Bag,
+                        isQuickSlot ? index : index - QuickSlotCount);
             }
+
+            TMP_Text hint = CreateText(
+                panel.transform,
+                "Hint",
+                "칸을 끌어서 정리할 수 있어요",
+                14f,
+                TextAlignmentOptions.Center);
+            hint.color = new Color(0.72f, 0.86f, 0.94f, 0.72f);
+            Anchor(
+                hint.rectTransform,
+                new Vector2(0f, 0f),
+                new Vector2(1f, 0f),
+                new Vector2(0f, 30f),
+                new Vector2(-40f, 24f));
+
             panel.SetActive(false);
             return panel;
+        }
+
+        /// <summary>
+        /// A coin and a figure. Used in the bag header and on the screen itself.
+        /// </summary>
+        internal static CurrencyBadgeView BuildCurrencyBadge(
+            Transform parent,
+            string name,
+            CurrencyBadgeView.Placement placement,
+            Vector2 anchor,
+            Vector2 position,
+            Vector2 size)
+        {
+            GameObject badge = CreatePanel(parent, name, size);
+            Skin(
+                badge,
+                HudPanelSkin.Shape.Solid,
+                new Color(0.02f, 0.05f, 0.08f, 0.92f),
+                Color.clear,
+                14,
+                0);
+            RectTransform rect = badge.GetComponent<RectTransform>();
+            rect.pivot = anchor;
+            Anchor(rect, anchor, anchor, position, size);
+
+            Image coin = CreateImage(badge.transform, "Coin", Color.white);
+            coin.sprite = Resources.Load<Sprite>("UI/CurrencyCoin");
+            coin.preserveAspect = true;
+            coin.raycastTarget = false;
+
+            // Switched off rather than left as a blank Image. An Image with no
+            // sprite is a white square, not nothing (ISSUE-050's sibling), and a
+            // white square next to the gold figure reads as a broken icon.
+            coin.enabled = coin.sprite != null;
+            Anchor(
+                coin.rectTransform,
+                new Vector2(0f, 0.5f),
+                new Vector2(0f, 0.5f),
+                new Vector2(24f, 0f),
+                new Vector2(26f, 26f));
+
+            TMP_Text amount = CreateText(
+                badge.transform,
+                "Amount",
+                "0",
+                21f,
+                TextAlignmentOptions.Right);
+            amount.color = HudSpriteLibrary.Gold;
+            Anchor(
+                amount.rectTransform,
+                new Vector2(0f, 0.5f),
+                new Vector2(1f, 0.5f),
+                new Vector2(9f, 0f),
+                new Vector2(-58f, 32f));
+
+            var view = badge.AddComponent<CurrencyBadgeView>();
+            view.Configure(placement, amount, coin);
+            return view;
+        }
+
+        internal static void SkinWindow(GameObject panel)
+        {
+            Skin(
+                panel,
+                HudPanelSkin.Shape.Window,
+                HudSpriteLibrary.PanelFill,
+                HudSpriteLibrary.Border,
+                14,
+                2);
+        }
+
+        internal static void Skin(
+            GameObject target,
+            HudPanelSkin.Shape shape,
+            Color fill,
+            Color border,
+            int cornerRadius,
+            int borderWidth)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            HudPanelSkin skin = target.GetComponent<HudPanelSkin>()
+                ?? target.AddComponent<HudPanelSkin>();
+            skin.Configure(shape, fill, border, cornerRadius, borderWidth);
         }
 
         private static GameObject BuildCatExchange(
@@ -2485,7 +2901,7 @@ namespace PawsAndLoot.UI
             return gridObject.transform;
         }
 
-        private static InventorySlotView BuildInventorySlot(
+        internal static InventorySlotView BuildInventorySlot(
             Transform parent,
             string name,
             Vector2 size,
@@ -2493,14 +2909,29 @@ namespace PawsAndLoot.UI
             float glyphSize)
         {
             GameObject slot = CreatePanel(parent, name, size);
+            Skin(
+                slot,
+                HudPanelSkin.Shape.Slot,
+                HudSpriteLibrary.SlotFill,
+                HudSpriteLibrary.BorderSoft,
+                8,
+                2);
             TMP_Text key = CreateText(slot.transform, "Key", keyText, 12f, TextAlignmentOptions.TopLeft);
-            TMP_Text quantity = CreateText(slot.transform, "Quantity", string.Empty, 12f, TextAlignmentOptions.BottomRight);
+            key.color = new Color(0.62f, 0.78f, 0.88f, 0.85f);
+            TMP_Text quantity = CreateText(slot.transform, "Quantity", string.Empty, 15f, TextAlignmentOptions.BottomRight);
             TMP_Text itemName = CreateText(slot.transform, "Item Name", string.Empty, 11f, TextAlignmentOptions.Top);
             TMP_Text price = CreateText(slot.transform, "Price", string.Empty, 12f, TextAlignmentOptions.Right);
             TMP_Text glyph = CreateText(slot.transform, "Item Glyph", string.Empty, glyphSize, TextAlignmentOptions.Center);
             Image icon = CreateImage(slot.transform, "Item Icon", Color.white);
             Image priceIcon = CreateImage(slot.transform, "Currency Icon", Color.white);
-            Image selected = CreateImage(slot.transform, "Selected Frame", new Color(1f, 0.82f, 0.2f, 0.34f));
+            Image selected = CreateImage(slot.transform, "Selected Frame", Color.white);
+            Skin(
+                selected.gameObject,
+                HudPanelSkin.Shape.Outline,
+                Color.clear,
+                HudSpriteLibrary.Accent,
+                8,
+                3);
             Image disabled = CreateImage(slot.transform, "Disabled", new Color(0f, 0f, 0f, 0.22f));
             Anchor(key.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(7f, -6f), new Vector2(28f, 22f));
             Anchor(quantity.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-30f, 6f), new Vector2(24f, 22f));
@@ -2527,14 +2958,50 @@ namespace PawsAndLoot.UI
             priceIcon.raycastTarget = false;
             Stretch(selected.rectTransform);
             Stretch(disabled.rectTransform);
+
+            GameObject newBadge = CreatePanel(slot.transform, "New Badge", new Vector2(42f, 18f));
+            Skin(
+                newBadge,
+                HudPanelSkin.Shape.Solid,
+                HudSpriteLibrary.SellGreen,
+                Color.clear,
+                6,
+                0);
+            RectTransform badgeRect = newBadge.GetComponent<RectTransform>();
+            Anchor(
+                badgeRect,
+                new Vector2(1f, 1f),
+                new Vector2(1f, 1f),
+                new Vector2(-2f, -2f),
+                new Vector2(42f, 18f));
+            badgeRect.pivot = new Vector2(1f, 1f);
+            TMP_Text newLabel = CreateText(
+                newBadge.transform,
+                "Label",
+                "NEW",
+                11f,
+                TextAlignmentOptions.Center);
+            Stretch(newLabel.rectTransform);
+            newBadge.SetActive(false);
+
             Button button = slot.AddComponent<Button>();
             button.targetGraphic = slot.GetComponent<Image>();
             InventorySlotView view = slot.AddComponent<InventorySlotView>();
-            view.Configure(key, quantity, icon, selected, disabled, glyph, itemName, price, priceIcon);
+            view.Configure(
+                key,
+                quantity,
+                icon,
+                selected,
+                disabled,
+                glyph,
+                itemName,
+                price,
+                priceIcon,
+                newBadge);
             return view;
         }
 
-        private static GameObject CreatePanel(Transform parent, string name, Vector2 size)
+        internal static GameObject CreatePanel(Transform parent, string name, Vector2 size)
         {
             var panel = new GameObject(name, typeof(RectTransform), typeof(Image));
             panel.transform.SetParent(parent, false);
@@ -2544,7 +3011,7 @@ namespace PawsAndLoot.UI
             return panel;
         }
 
-        private static Image CreateImage(Transform parent, string name, Color color)
+        internal static Image CreateImage(Transform parent, string name, Color color)
         {
             var imageObject = new GameObject(name, typeof(RectTransform), typeof(Image));
             imageObject.transform.SetParent(parent, false);
@@ -2553,7 +3020,7 @@ namespace PawsAndLoot.UI
             return image;
         }
 
-        private static TMP_Text CreateText(
+        internal static TMP_Text CreateText(
             Transform parent,
             string name,
             string value,
@@ -2578,7 +3045,7 @@ namespace PawsAndLoot.UI
             return text;
         }
 
-        private static void Anchor(
+        internal static void Anchor(
             RectTransform rect,
             Vector2 anchorMin,
             Vector2 anchorMax,
@@ -2591,7 +3058,7 @@ namespace PawsAndLoot.UI
             rect.sizeDelta = sizeDelta;
         }
 
-        private static void Stretch(RectTransform rect)
+        internal static void Stretch(RectTransform rect)
         {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;

@@ -84,7 +84,13 @@ namespace PawsAndLoot.Gameplay.Loot
                 }
             }
 
+            LootCarrier previousCarrier = CurrentCarrier;
             CurrentCarrier = carrier;
+            if (previousCarrier != null && previousCarrier != carrier)
+            {
+                previousCarrier.ForgetReplicated(this);
+            }
+
             if (presentationRoot == null)
             {
                 return;
@@ -96,6 +102,11 @@ namespace PawsAndLoot.Gameplay.Loot
                 presentationRoot.localPosition = Vector3.zero;
                 presentationRoot.localRotation = Quaternion.identity;
                 presentationRoot.gameObject.SetActive(true);
+
+                // After the attach, not before. The carrier decides which one
+                // piece is in the hands and stows the rest; telling it first
+                // would let the line above un-stow whatever it had just hidden.
+                carrier.AdoptReplicated(this);
                 return;
             }
 
@@ -160,6 +171,29 @@ namespace PawsAndLoot.Gameplay.Loot
             AttachPresentation(carryPoint);
             return true;
         }
+
+        /// <summary>
+        /// Hides a carried piece that is in the bag rather than in the hands.
+        ///
+        /// Every carried piece parents its model to the same carry point, so the
+        /// bag needs somewhere for the ones that are not on show to go, and
+        /// "nowhere" is the only place that cannot end up behind a wall or inside
+        /// the thief's head. Driven only by <c>LootCarrier</c>: a piece that
+        /// decided this for itself would fight the carrier over which one is in
+        /// hand.
+        /// </summary>
+        internal void SetStowed(bool stowed)
+        {
+            if (presentationRoot == null)
+            {
+                return;
+            }
+
+            IsStowed = stowed;
+            presentationRoot.gameObject.SetActive(!stowed);
+        }
+
+        public bool IsStowed { get; private set; }
 
         internal bool TryReleaseFromUnavailableCarrier(
             LootCarrier carrier)
@@ -299,6 +333,13 @@ namespace PawsAndLoot.Gameplay.Loot
             transform.position = worldPosition;
             presentationRoot.localPosition = Vector3.zero;
             presentationRoot.localRotation = Quaternion.identity;
+
+            // Un-stowed on the way out. A piece dropped straight from the bag has
+            // its model switched off, and leaving it that way puts an invisible,
+            // solid, pickable object on the pavement — which reads as the drop
+            // key deleting loot.
+            IsStowed = false;
+            presentationRoot.gameObject.SetActive(true);
             SetWorldCollidersEnabled(true);
         }
 

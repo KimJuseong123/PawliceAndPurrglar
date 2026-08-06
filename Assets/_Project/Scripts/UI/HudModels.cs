@@ -156,7 +156,8 @@ namespace PawsAndLoot.UI
             string iconGlyph = "",
             string itemName = "",
             int price = 0,
-            Sprite priceIcon = null)
+            Sprite priceIcon = null,
+            bool isNew = false)
         {
             KeyLabel = keyLabel;
             Icon = icon;
@@ -167,6 +168,7 @@ namespace PawsAndLoot.UI
             ItemName = itemName ?? string.Empty;
             Price = Mathf.Max(0, price);
             PriceIcon = priceIcon;
+            IsNew = isNew;
         }
 
         public string KeyLabel { get; }
@@ -178,6 +180,12 @@ namespace PawsAndLoot.UI
         public string ItemName { get; }
         public int Price { get; }
         public Sprite PriceIcon { get; }
+
+        /// <summary>
+        /// Whether to flag this cell as the newest thing in the bag.
+        /// </summary>
+        public bool IsNew { get; }
+
         public bool HasPrice => Price > 0;
     }
 }

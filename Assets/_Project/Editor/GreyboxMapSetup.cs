@@ -1030,14 +1030,18 @@ namespace PawsAndLoot.Editor
                 }
             }
 
-            // Inside the trading yard (x -15..-4, z -9.5..-2.5), not beside it.
-            // The previous spot put the bin on the southern alley, and once the
-            // bin grew it blocked the PoliceToJewelry_SouthLoop route outright.
-            CreateRaccoonInBin(
-                root,
-                locations[GreyboxLocationId.RaccoonMarket].position
-                    + new Vector3(-3.5f, 0f, 5f));
-
+            // The sixth raccoon is gone.
+            //
+            // There used to be one here as well as the five black market places,
+            // in the trading yard, with no selling point on it — a raccoon in a bin
+            // that could not be traded with. It never switched off either, so while
+            // the draw was hiding three of the five real markets this was the one
+            // raccoon a player could reliably find, and the one that did nothing.
+            // "The market only appears once per game" is exactly what that looks
+            // like from the outside.
+            //
+            // Five places, five bins, two with a raccoon. Nothing else claims to be
+            // a market.
             CreateExpansionDistricts(root);
 
             // MAP-008. The host scatters loot around the rooms when the match
@@ -2095,6 +2099,10 @@ namespace PawsAndLoot.Editor
         /// only two here would fix them in the scene, which is the thing this
         /// exists to avoid.
         ///
+        /// The switch is the <c>Market</c> child, not the whole place. The bin
+        /// stays at all five so the town keeps five landmarks a player can learn;
+        /// what a match decides is which two have a raccoon in them.
+        ///
         /// Named after their place so the order is stable. The match probe picks
         /// the first selling point by name among the **active** ones, which is
         /// exactly right once three of them are switched off.
@@ -2117,6 +2125,19 @@ namespace PawsAndLoot.Editor
                     continue;
                 }
 
+                // Under the Market child, not the holder. The draw switches that
+                // child, so the selling point has to live inside it — left on the
+                // holder it would stay live at all five places and the thief could
+                // sell to a bin with no raccoon in it.
+                Transform market = holder.Find("Market");
+                if (market == null)
+                {
+                    Debug.LogError(
+                        $"[MARKET] '{label}' has no Market child, so its selling "
+                        + "point cannot be switched with the draw.");
+                    continue;
+                }
+
                 // Beside the bin rather than inside it. The offset that used to
                 // be here was measured against a fence in a yard that no longer
                 // exists.
@@ -2124,9 +2145,9 @@ namespace PawsAndLoot.Editor
                     $"Black Market Sale {label}",
                     at + new Vector3(0f, 0.5f, -1.8f),
                     MarketGold,
-                    holder,
+                    market,
                     matchRuntime);
-                holders.Add(holder.gameObject);
+                holders.Add(market.gameObject);
             }
 
             var drawObject = new GameObject("Black Market Draw");
@@ -2135,8 +2156,8 @@ namespace PawsAndLoot.Editor
                 .Configure(matchRuntime, holders);
 
             Debug.Log(
-                $"[MARKET] {holders.Count} selling points built; two open per "
-                + "match.");
+                $"[MARKET] {holders.Count} selling points built under their "
+                + "Market children; two open per match, and all five bins stay.");
         }
 
         /// <summary>
@@ -2167,7 +2188,21 @@ namespace PawsAndLoot.Editor
                     $"Black Market {label}",
                     parent);
                 holder.position = at;
-                CreateRaccoonInBin(holder, at);
+
+                // The bin belongs to the holder and stays; the raccoon and its
+                // selling point belong to a child that the draw switches.
+                //
+                // It used to switch the whole holder, so three of the five places
+                // vanished from the town when a match started. That made the
+                // variation invisible: a player cannot learn "the market is
+                // sometimes here" from a patch of grass, and with two open in a
+                // town this size it reads as there being one market that moves.
+                // Five bins that are always there and two with a raccoon in them
+                // is the same draw, said out loud.
+                Transform market = CreateChild("Market", holder);
+                market.localPosition = Vector3.zero;
+                market.localRotation = Quaternion.identity;
+                CreateRaccoonInBin(holder, market, at);
                 CheckSpotIsOutdoors($"Black Market {label}", at);
             }
 
@@ -2182,8 +2217,17 @@ namespace PawsAndLoot.Editor
                 + string.Join(", ", listed));
         }
 
+        /// <summary>
+        /// The bin, and the raccoon in it.
+        /// </summary>
+        /// <param name="parent">Holds the bin. Always in the scene.</param>
+        /// <param name="marketParent">
+        /// Holds the raccoon. Switched off at the three places a match does not
+        /// open, so the bin is a landmark and the raccoon is the news.
+        /// </param>
         private static void CreateRaccoonInBin(
             Transform parent,
+            Transform marketParent,
             Vector3 groundPosition)
         {
             // Double sided so the open lid reveals the inside of the bin
@@ -2220,7 +2264,7 @@ namespace PawsAndLoot.Editor
             // Nudged north of the bin's centre. The raccoon's rest pose is not
             // centred on its own origin, so sharing the bin's exact position
             // left it sitting visibly toward the south wall.
-            Transform pivot = CreateChild("Raccoon Pivot", parent);
+            Transform pivot = CreateChild("Raccoon Pivot", marketParent);
             pivot.position = groundPosition + new Vector3(0f, 0f, 0.18f);
             pivot.localRotation = Quaternion.Euler(0f, 180f, 0f);
 

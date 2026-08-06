@@ -12,6 +12,7 @@ namespace PawsAndLoot.Companions
         MonoBehaviour,
         IPlayerInteractable,
         IInteractionPriority,
+        IScreenAnsweredInteractable,
         ISlotContainer
     {
         [SerializeField] private CompanionAgent agent;

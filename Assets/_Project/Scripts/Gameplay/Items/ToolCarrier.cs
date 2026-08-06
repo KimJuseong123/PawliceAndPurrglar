@@ -48,6 +48,21 @@ namespace PawsAndLoot.Gameplay.Items
         public int SlotCount => QuickSlotController.SlotCount;
         public string DisplayName => "도둑 가방";
 
+        /// <summary>
+        /// Whether another machine decides what is in these slots.
+        ///
+        /// Set the first time replicated slots are applied, and it never goes back:
+        /// once the host has spoken about this carrier, the host owns it for the
+        /// rest of the session.
+        ///
+        /// It exists for the bag screen's drag. A swap applied locally on a machine
+        /// that does not decide is overwritten by the next update from the host, so
+        /// the icon lands under the cursor and then springs back — which reads as
+        /// the drag not working rather than as the drag being overruled. The screen
+        /// asks this and, when true, only sends the request.
+        /// </summary>
+        public bool IsRemoteControlled { get; private set; }
+
         public bool HasTool => _slots.HasSelectedItem;
         public bool HasAnyTool => _slots.HasAnyItem;
         public ThrowableKind HeldKind =>
@@ -84,6 +99,25 @@ namespace PawsAndLoot.Gameplay.Items
         {
             return ThrowableCatalog.CanUseInQuickSlot(kind)
                 && _slots.CanStore(kind, quantity, maximumStackSize);
+        }
+
+        /// <summary>
+        /// Rearranges two prop slots, for the bag screen's drag.
+        ///
+        /// Not gated on the match state, unlike a pickup. Moving a rock from one
+        /// pocket to another is not a game action — nothing enters the world, and
+        /// refusing it between rounds would leave a drag that silently does
+        /// nothing on a screen the player can still open.
+        /// </summary>
+        public bool TrySwapSlots(int left, int right)
+        {
+            if (!_slots.TrySwap(left, right, maximumStackSize))
+            {
+                return false;
+            }
+
+            PublishChanged();
+            return true;
         }
 
         public bool SelectSlot(int index)
@@ -242,6 +276,7 @@ namespace PawsAndLoot.Gameplay.Items
             int packedQuantities,
             int selectedSlot)
         {
+            IsRemoteControlled = true;
             int clampedSelected = Mathf.Clamp(
                 selectedSlot,
                 0,

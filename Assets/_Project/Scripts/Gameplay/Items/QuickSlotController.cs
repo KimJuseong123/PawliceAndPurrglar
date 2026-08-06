@@ -149,6 +149,69 @@ namespace PawsAndLoot.Gameplay.Items
             return true;
         }
 
+        /// <summary>
+        /// Swaps two slots, or merges them when they hold the same kind.
+        ///
+        /// The selection follows the item rather than staying on the number. A
+        /// player who drags their rock from slot 1 to slot 3 has moved the rock,
+        /// not chosen the banana that used to be in slot 3 — and the next press of
+        /// the use key would have thrown it.
+        /// </summary>
+        public bool TrySwap(int left, int right, int maximumStackSize)
+        {
+            if (left == right
+                || left < 0
+                || right < 0
+                || left >= SlotCount
+                || right >= SlotCount)
+            {
+                return false;
+            }
+
+            if (_slots[left] == EmptyValue && _slots[right] == EmptyValue)
+            {
+                return false;
+            }
+
+            int safeMaximum = Math.Max(1, maximumStackSize);
+            if (_slots[left] == _slots[right]
+                && _slots[left] != EmptyValue)
+            {
+                int moved = Math.Min(
+                    _quantities[left],
+                    safeMaximum - _quantities[right]);
+                if (moved <= 0)
+                {
+                    return false;
+                }
+
+                _quantities[right] += moved;
+                _quantities[left] -= moved;
+                if (_quantities[left] <= 0)
+                {
+                    _slots[left] = EmptyValue;
+                    _quantities[left] = 0;
+                }
+
+                SelectedSlot = right;
+                return true;
+            }
+
+            (_slots[left], _slots[right]) = (_slots[right], _slots[left]);
+            (_quantities[left], _quantities[right]) =
+                (_quantities[right], _quantities[left]);
+            if (SelectedSlot == left)
+            {
+                SelectedSlot = right;
+            }
+            else if (SelectedSlot == right)
+            {
+                SelectedSlot = left;
+            }
+
+            return true;
+        }
+
         public bool TryGet(int slot, out ThrowableKind kind)
         {
             kind = ThrowableKind.Rock;

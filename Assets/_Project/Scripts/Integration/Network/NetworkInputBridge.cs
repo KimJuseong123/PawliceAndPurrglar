@@ -32,6 +32,159 @@ namespace PawsAndLoot.Integration.Network
 
         private bool _configuredLocalControl;
 
+        /// <summary>
+        /// One pending slot swap from the bag screen's drag.
+        ///
+        /// Static because the forwarding runs in a static method alongside the key
+        /// reads, and one place is enough: a second drag before the first is sent
+        /// would mean the player moved the mouse faster than a frame, and the
+        /// newer intent is the right one to keep.
+        /// </summary>
+        private static int _pendingSwapLeft = -1;
+        private static int _pendingSwapRight = -1;
+        private static bool _swapSubscribed;
+
+        private void OnEnable()
+        {
+            if (_swapSubscribed)
+            {
+                return;
+            }
+
+            Input.GameplayInputRouter.QuickSlotSwapRequested += QueueSlotSwap;
+            Input.GameplayInputRouter.LootSaleRequested += QueueSale;
+            Input.GameplayInputRouter.PropPurchaseRequested += QueuePurchase;
+            _swapSubscribed = true;
+        }
+
+        private void OnDisable()
+        {
+            if (!_swapSubscribed)
+            {
+                return;
+            }
+
+            Input.GameplayInputRouter.QuickSlotSwapRequested -= QueueSlotSwap;
+            Input.GameplayInputRouter.LootSaleRequested -= QueueSale;
+            Input.GameplayInputRouter.PropPurchaseRequested -= QueuePurchase;
+            _swapSubscribed = false;
+            _pendingSwapLeft = -1;
+            _pendingSwapRight = -1;
+            _pendingSales.Clear();
+            _pendingPurchases.Clear();
+        }
+
+        /// <summary>
+        /// Purchases from the officer's shop screen, waiting to be sent.
+        ///
+        /// A list rather than one slot: the officer can press BUY twice on the same
+        /// row faster than a frame, and dropping the second press would take a
+        /// click that the shop appeared to accept.
+        /// </summary>
+        private static readonly List<int> _pendingPurchases = new();
+
+        private static void QueuePurchase(int throwableKindValue)
+        {
+            _pendingPurchases.Add(throwableKindValue);
+        }
+
+        private static void ForwardPendingPurchases(NetworkPlayerLink link)
+        {
+            if (_pendingPurchases.Count == 0)
+            {
+                return;
+            }
+
+            var purchases = new List<int>(_pendingPurchases);
+            _pendingPurchases.Clear();
+            foreach (int kind in purchases)
+            {
+                link.SubmitBuyPropRpc(kind);
+            }
+        }
+
+        /// <summary>
+        /// Sale requests from the merchant screen, waiting for a frame to be sent.
+        ///
+        /// A list rather than one slot, unlike the slot swap: a SELL press asks
+        /// for several kinds at once and dropping all but the last would sell one
+        /// row of a four-row ledger with no sign that the rest went missing.
+        /// </summary>
+        private static readonly List<(int Hash, int Count)> _pendingSales = new();
+
+        private static void QueueSale(int definitionIdHash, int count)
+        {
+            _pendingSales.Add((definitionIdHash, count));
+        }
+
+        private static void ForwardPendingSales(NetworkPlayerLink link)
+        {
+            if (_pendingSales.Count == 0)
+            {
+                return;
+            }
+
+            var sales = new List<(int Hash, int Count)>(_pendingSales);
+            _pendingSales.Clear();
+            foreach ((int hash, int count) in sales)
+            {
+                link.SubmitSellRpc(hash, count);
+            }
+        }
+
+        /// <summary>
+        /// Whether the thing in range on this machine is answered by a screen.
+        ///
+        /// Checked before forwarding the key rather than after, because the host
+        /// runs whatever it is sent: forwarding an E press at the raccoon's pitch
+        /// would sell the piece in the thief's hands while they were only asking
+        /// to see the shop. The HUD opens the ledger off the same key press,
+        /// locally, where the player who pressed it can see it.
+        ///
+        /// Asked of every scanner rather than the local role's, because a machine
+        /// only ever has one player standing in front of something — and the cost
+        /// of being wrong is a key press that does nothing, not a wrong sale.
+        /// </summary>
+        private static bool LocalTargetIsAnsweredByAScreen()
+        {
+            foreach (PlayerInteractionScanner scanner in
+                Object.FindObjectsByType<PlayerInteractionScanner>(
+                    FindObjectsSortMode.None))
+            {
+                if (scanner != null
+                    && scanner.CurrentTargetIsAnsweredByAScreen)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void QueueSlotSwap(int left, int right)
+        {
+            _pendingSwapLeft = left;
+            _pendingSwapRight = right;
+        }
+
+        private static void ForwardPendingSlotSwap(NetworkPlayerLink link)
+        {
+            if (_pendingSwapLeft < 0 || _pendingSwapRight < 0)
+            {
+                return;
+            }
+
+            int left = _pendingSwapLeft;
+            int right = _pendingSwapRight;
+
+            // Cleared before the send, not after. A refused or dropped call must
+            // not leave the request in the queue to be replayed every frame —
+            // that would fight the player's next drag.
+            _pendingSwapLeft = -1;
+            _pendingSwapRight = -1;
+            link.SubmitSwapToolSlotsRpc(left, right);
+        }
+
         public PlayerRole LocalRole { get; private set; } =
             PlayerRole.Police;
         public bool HasLocalRole { get; private set; }
@@ -228,7 +381,8 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
-            if (keyboard.eKey.wasPressedThisFrame)
+            if (keyboard.eKey.wasPressedThisFrame
+                && !LocalTargetIsAnsweredByAScreen())
             {
                 link.SubmitInteractRpc();
             }
@@ -237,6 +391,10 @@ namespace PawsAndLoot.Integration.Network
             {
                 link.SubmitDropRpc();
             }
+
+            ForwardPendingSlotSwap(link);
+            ForwardPendingSales(link);
+            ForwardPendingPurchases(link);
 
             int quickSlot = ReadQuickSlotKey(keyboard);
             if (quickSlot >= 0)

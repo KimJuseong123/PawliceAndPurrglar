@@ -58,6 +58,36 @@ namespace PawsAndLoot.Gameplay.Loot
         private string modelStem = string.Empty;
 
         public string StableId => stableId;
+
+        /// <summary>
+        /// A number for this kind that both machines compute the same way.
+        ///
+        /// A sale request crosses the wire as "five of this kind", and the kind
+        /// has to survive the trip. <c>string.GetHashCode</c> cannot be used:
+        /// it is randomised per process, so the host and the client would derive
+        /// different numbers for the same gemstone and every sale would be
+        /// refused as an unknown kind — on some runs and not others.
+        /// </summary>
+        public int IdHash => ComputeIdHash(stableId);
+
+        public static int ComputeIdHash(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return 0;
+            }
+
+            unchecked
+            {
+                int hash = 23;
+                foreach (char character in id)
+                {
+                    hash = (hash * 31) + character;
+                }
+
+                return hash;
+            }
+        }
         public string DisplayName => displayName;
         public LootRarity Rarity => rarity;
         public LootCarryType CarryType => carryType;

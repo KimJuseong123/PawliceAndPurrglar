@@ -36,6 +36,50 @@ namespace PawsAndLoot.Input
         /// told which screens exist would have to be told again for the next one.
         /// </summary>
         public static event Action TakeAllPressed;
+
+        /// <summary>
+        /// The bag screen asking for two prop slots to trade places.
+        ///
+        /// A static event rather than the HUD calling the network link directly:
+        /// the UI layer does not reference <c>Integration.Network</c>, and the
+        /// request has to reach the host on a machine that is only a client. The
+        /// bridge that already forwards key presses forwards this the same way.
+        /// </summary>
+        public static event Action<int, int> QuickSlotSwapRequested;
+
+        public static void RequestQuickSlotSwap(int left, int right)
+        {
+            QuickSlotSwapRequested?.Invoke(left, right);
+        }
+
+        /// <summary>
+        /// The merchant screen asking the host to sell some of one kind.
+        ///
+        /// Raised only by a machine that is not the authority. Where the loot is
+        /// this machine's own to sell, the screen sells it directly — going out
+        /// and back would put a round trip between the click and the coins.
+        /// </summary>
+        public static event Action<int, int> LootSaleRequested;
+
+        public static void RequestLootSale(int definitionIdHash, int count)
+        {
+            LootSaleRequested?.Invoke(definitionIdHash, count);
+        }
+
+        /// <summary>
+        /// The officer's shop screen asking the host to buy one prop.
+        ///
+        /// Raised only by a machine that is not the authority, for the same reason
+        /// the sale is: the host owns the quick slots and the purse, and a purchase
+        /// applied locally would be overwritten by the next update — the officer
+        /// would see the trap appear and vanish.
+        /// </summary>
+        public static event Action<int> PropPurchaseRequested;
+
+        public static void RequestPropPurchase(int throwableKindValue)
+        {
+            PropPurchaseRequested?.Invoke(throwableKindValue);
+        }
         public static event Action BindingDisplayChanged;
 
         public static void SetGameplayInputSuppressed(bool suppressed)

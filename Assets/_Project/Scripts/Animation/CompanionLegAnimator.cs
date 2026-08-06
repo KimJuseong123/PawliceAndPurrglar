@@ -139,9 +139,16 @@ namespace PawsAndLoot.Animation
         /// A walking person's arms travel roughly a third of what their legs do.
         /// At parity the upper body dominated and read as jitter rather than
         /// stride, which is exactly what "눈이 아프다" described.
+        ///
+        /// Raised from 0.34 to 0.62 — about 15° of shoulder rather than 8°.
+        /// A third is anatomically right and read as **nothing moving**, because
+        /// these arms start spread out from the body: eight degrees of swing on a
+        /// limb that is already held wide is lost next to the pose it is swinging
+        /// from. Not back to parity, which is the flail this number was lowered
+        /// to escape.
         /// </summary>
         [SerializeField, Range(0.05f, 1f)]
-        private float armAmplitude = 0.34f;
+        private float armAmplitude = 0.62f;
 
         private readonly List<Leg> _legs = new();
         private Transform _head;

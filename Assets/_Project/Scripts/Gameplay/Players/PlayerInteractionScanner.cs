@@ -33,6 +33,24 @@ namespace PawsAndLoot.Gameplay.Players
         private IMatchStateReader matchState;
         private MonoBehaviour currentTargetComponent;
 
+        /// <summary>
+        /// Whether the thing in range is answered by a screen rather than by the
+        /// key itself.
+        ///
+        /// The raccoon's pitch and the cat's bag. It matters because the interact
+        /// key is forwarded to the host and run there: a key press that both opens
+        /// a screen and performs the action would sell the piece in the thief's
+        /// hands the instant they asked to *look* at the shop, and the cat's bag
+        /// opened **on the officer's monitor** because the officer was hosting.
+        ///
+        /// Read only by the two local input paths. The host's own
+        /// <see cref="TryInteractCurrent"/> is deliberately not gated on it: the
+        /// sale itself still belongs to the zone, and the tests and the
+        /// two-process probe drive it directly.
+        /// </summary>
+        public bool CurrentTargetIsAnsweredByAScreen =>
+            CurrentTarget is IScreenAnsweredInteractable;
+
         public IPlayerInteractable CurrentTarget =>
             currentTargetComponent != null
                 ? currentTargetComponent as IPlayerInteractable

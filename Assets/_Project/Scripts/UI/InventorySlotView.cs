@@ -15,6 +15,32 @@ namespace PawsAndLoot.UI
         [SerializeField] private Image priceIcon;
         [SerializeField] private Image selectedFrame;
         [SerializeField] private Image disabledOverlay;
+        [SerializeField] private GameObject newBadge;
+
+        /// <summary>
+        /// Which cell of which grid this is, so a drag knows what it picked up.
+        ///
+        /// Written by the builder rather than read from the sibling index: the
+        /// grid also holds the four prop quick slots at the front, so a cell's
+        /// place on screen and its place in the bag are different numbers.
+        /// </summary>
+        public int CellIndex { get; private set; } = -1;
+
+        /// <summary>
+        /// Whether this cell is holding something, as of the last bind.
+        ///
+        /// The drag needs it. It used to decide by looking for an icon sprite, and
+        /// only six of the thirty-odd loot definitions have artwork — so every
+        /// other piece drew a letter instead and **could not be picked up at all**.
+        /// The cell looked full, the cursor did nothing, and the feature read as
+        /// broken rather than as unfinished art.
+        /// </summary>
+        public bool HasContent { get; private set; }
+
+        public void SetCellIndex(int index)
+        {
+            CellIndex = index;
+        }
 
         public void Configure(
             TMP_Text configuredKeyLabel,
@@ -25,8 +51,10 @@ namespace PawsAndLoot.UI
             TMP_Text configuredIconGlyph = null,
             TMP_Text configuredItemNameLabel = null,
             TMP_Text configuredPriceLabel = null,
-            Image configuredPriceIcon = null)
+            Image configuredPriceIcon = null,
+            GameObject configuredNewBadge = null)
         {
+            newBadge = configuredNewBadge;
             keyLabel = configuredKeyLabel;
             itemNameLabel = configuredItemNameLabel;
             quantityLabel = configuredQuantityLabel;
@@ -40,6 +68,7 @@ namespace PawsAndLoot.UI
 
         public void Bind(InventorySlotViewModel model)
         {
+            HasContent = !model.Disabled;
             if (keyLabel != null) keyLabel.text = model.KeyLabel;
             if (itemNameLabel != null)
             {
@@ -80,6 +109,15 @@ namespace PawsAndLoot.UI
 
             if (selectedFrame != null) selectedFrame.enabled = model.Selected;
             if (disabledOverlay != null) disabledOverlay.enabled = model.Disabled;
+
+            // Deactivated rather than made transparent. A badge kept alive at zero
+            // alpha still answers "is the badge there?" with yes, which is how the
+            // result screen ended up asserting four labels that nobody could read
+            // (ISSUE-050).
+            if (newBadge != null && newBadge.activeSelf != model.IsNew)
+            {
+                newBadge.SetActive(model.IsNew);
+            }
         }
     }
 }

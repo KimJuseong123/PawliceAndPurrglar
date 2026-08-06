@@ -72,7 +72,7 @@ namespace PawsAndLoot.Companions
             if (HasLoot
                 || loot == null
                 || ownerCarrier == null
-                || ownerCarrier.HasLoot
+                || !ownerCarrier.CanCarryMore
                 || !loot.IsAvailable)
             {
                 return false;
@@ -145,7 +145,7 @@ namespace PawsAndLoot.Companions
 
             LootItem abandoned = CarriedLoot;
             CarriedLoot = null;
-            if (ownerCarrier != null && ownerCarrier.HeldLoot == abandoned)
+            if (ownerCarrier != null && ownerCarrier.IsCarrying(abandoned))
             {
                 AttachPresentation(abandoned, ownerCarrier.CarryPoint);
             }

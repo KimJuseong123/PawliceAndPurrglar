@@ -6,7 +6,10 @@ using UnityEngine;
 
 namespace PawsAndLoot.Gameplay.Loot
 {
-    public sealed class LootSaleZone : MonoBehaviour, IPlayerInteractable
+    public sealed class LootSaleZone :
+        MonoBehaviour,
+        IPlayerInteractable,
+        IScreenAnsweredInteractable
     {
         [SerializeField]
         private BoxCollider saleArea;
@@ -22,7 +25,16 @@ namespace PawsAndLoot.Gameplay.Loot
         public Transform InteractionTransform => transform;
         public PlayerInteractionType InteractionType =>
             PlayerInteractionType.Sale;
-        public string Prompt => "Sell carried loot";
+        /// <summary>
+        /// What the key does now, which is open the ledger — not sell.
+        ///
+        /// It used to read "Sell carried loot" and that was true when the key sold
+        /// the piece in your hands. The key opens a screen now, and a prompt that
+        /// promises a sale on a press that does not make one is worse than no
+        /// prompt: the player presses it, nothing they were told about happens,
+        /// and the window that did open reads as something that went wrong.
+        /// </summary>
+        public string Prompt => "너구리 암시장 열기";
         public bool IsAvailable =>
             isActiveAndEnabled
             && saleArea != null

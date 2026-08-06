@@ -133,7 +133,11 @@ namespace PawsAndLoot.Gameplay.Loot
 
         public bool TryRecover(LootCarrier carrier)
         {
-            if (carrier == null || !HasStoredLoot || carrier.HasLoot)
+            // Refused only when the bag is full. It used to be refused whenever
+            // the thief held anything at all, which was the same sentence back
+            // when the thief could hold one thing — now it would mean a stash can
+            // never be emptied by somebody who is already carrying.
+            if (carrier == null || !HasStoredLoot || !carrier.CanCarryMore)
             {
                 return false;
             }

@@ -88,12 +88,21 @@ namespace PawsAndLoot.Gameplay.Loot
                 return;
             }
 
-            _dealt = true;
+            // Latched after the decision, not before.
+            //
+            // It used to set this first and then ask whether this machine deals,
+            // which means one transient answer switches the draw off for the whole
+            // match. On the frame a match starts the player objects may not have
+            // spawned yet, so "am I the authority" is being asked of a scene that
+            // cannot answer — and a room that misses that one frame stays as it was
+            // authored for the rest of the match, with nothing at the marked places
+            // and no log to say why.
             if (!HasAuthority())
             {
                 return;
             }
 
+            _dealt = true;
             Deal();
         }
 
@@ -105,18 +114,28 @@ namespace PawsAndLoot.Gameplay.Loot
         /// A client that dealt for itself would disagree with the host about
         /// which room holds the ring.
         /// </summary>
+        private PlayerInteriorState _authority;
+
         private bool HasAuthority()
         {
-            foreach (PlayerInteriorState state in
-                FindObjectsByType<PlayerInteriorState>(
-                    FindObjectsSortMode.None))
+            // Remembered once found. This is asked every frame until the deal
+            // happens, and on a machine that never deals that is for the rest of
+            // the match — a scene-wide search per room per frame is not a thing to
+            // leave running on a build whose first target is WebGL.
+            if (_authority == null)
             {
-                return state.HasAuthority;
+                foreach (PlayerInteriorState state in
+                    FindObjectsByType<PlayerInteriorState>(
+                        FindObjectsSortMode.None))
+                {
+                    _authority = state;
+                    break;
+                }
             }
 
             // Nothing to ask means nothing is replicating either — an offline
             // scene or a test — and then dealing is right.
-            return true;
+            return _authority == null || _authority.HasAuthority;
         }
 
         private void Deal()

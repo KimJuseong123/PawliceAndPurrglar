@@ -330,7 +330,11 @@ namespace PawsAndLoot.Companions
             {
                 LootCarrier carrier =
                     thiefTransform.GetComponent<LootCarrier>();
-                if (carrier != null && carrier.HasLoot)
+                // Busy means "no room left", not "holding something". The cat
+                // fetches into the thief's bag, and the bag now takes more than
+                // one piece — refusing while it has space would make the steal
+                // command useless from the second treasure onwards.
+                if (carrier != null && !carrier.CanCarryMore)
                 {
                     return new Resolution(
                         false,

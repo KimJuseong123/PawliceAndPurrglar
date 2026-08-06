@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
@@ -171,6 +173,13 @@ namespace PawsAndLoot.Integration.Network
 
         [SerializeField]
         private ThiefLootWallet wallet;
+
+        /// <summary>
+        /// Prices for a host-side sale. Pulled from the config service on first
+        /// use rather than serialized, because this link is spawned from a prefab
+        /// that predates the merchant screen.
+        /// </summary>
+        private LootConfig lootConfig;
 
         [SerializeField]
         private ArrestProgressController arrestProgress;
@@ -625,6 +634,141 @@ namespace PawsAndLoot.Integration.Network
         public void SubmitSelectToolSlotRpc(int slot)
         {
             toolCarrier?.SelectSlot(slot);
+        }
+
+        /// <summary>
+        /// Asks the host to swap two prop slots, from a drag on the bag screen.
+        ///
+        /// It has to go to the host even though nothing about it is a game
+        /// action: the host owns the packed slot state and replicates it back, so
+        /// a swap applied only on the client is overwritten by the next update.
+        /// The client applies it immediately as well, so the drag lands under the
+        /// cursor rather than a round trip later.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitSwapToolSlotsRpc(int left, int right)
+        {
+            toolCarrier?.TrySwapSlots(left, right);
+        }
+
+        /// <summary>
+        /// MERCHANT-002. Asks the host to sell some of one kind out of the bag.
+        ///
+        /// By kind and count rather than by object: the merchant screen on the
+        /// requesting machine knows it ticked "Blue Gem x5", and which five
+        /// objects those are is the host's business. Sending object ids would make
+        /// a sale fail whenever the two machines were a frame apart on which gem
+        /// is which — and the duplicate-sale guard already lives on the host,
+        /// where the sale happens.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitSellRpc(int definitionIdHash, int count)
+        {
+            if (carrier == null || wallet == null)
+            {
+                return;
+            }
+
+            LootDefinition definition = null;
+            foreach (LootItem candidate in carrier.CarriedLoot)
+            {
+                if (candidate == null || candidate.Definition == null)
+                {
+                    continue;
+                }
+
+                if (candidate.Definition.IdHash == definitionIdHash)
+                {
+                    definition = candidate.Definition;
+                    break;
+                }
+            }
+
+            if (definition == null)
+            {
+                return;
+            }
+
+            carrier.SellAllOfKind(
+                definition,
+                wallet,
+                ResolveLootConfig(),
+                Mathf.Max(1, count));
+        }
+
+        /// <summary>
+        /// Asks the host to buy one prop for this officer.
+        ///
+        /// The rule stays in <c>PoliceSupplyCounter.TryInteract</c> — role, purse,
+        /// room, and the prop handed over before the money is taken. This only
+        /// carries the request, because the host owns the purse and the slots: a
+        /// purchase applied on the client would be overwritten by the next update
+        /// and the trap would appear and vanish.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitBuyPropRpc(int throwableKindValue)
+        {
+            if (identity == null || scanner == null)
+            {
+                return;
+            }
+
+            var kind = (PawsAndLoot.Gameplay.Items.ThrowableKind)throwableKindValue;
+            foreach (PawsAndLoot.Gameplay.Items.PoliceSupplyCounter counter in
+                FindObjectsByType<PawsAndLoot.Gameplay.Items.PoliceSupplyCounter>(
+                    FindObjectsSortMode.None))
+            {
+                if (counter != null
+                    && counter.Kind == kind
+                    && counter.TryInteract(
+                        new PlayerInteractionContext(identity)))
+                {
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// MERCHANT-002. Asks the host to sell the whole bag.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitSellAllRpc()
+        {
+            if (carrier == null || wallet == null)
+            {
+                return;
+            }
+
+            LootConfig config = ResolveLootConfig();
+            var kinds = new List<LootDefinition>();
+            foreach (LootItem candidate in carrier.CarriedLoot)
+            {
+                if (candidate?.Definition != null
+                    && !kinds.Contains(candidate.Definition))
+                {
+                    kinds.Add(candidate.Definition);
+                }
+            }
+
+            foreach (LootDefinition kind in kinds)
+            {
+                carrier.SellAllOfKind(kind, wallet, config);
+            }
+        }
+
+        private LootConfig ResolveLootConfig()
+        {
+            if (lootConfig != null)
+            {
+                return lootConfig;
+            }
+
+            if (GameConfigService.IsInitialized)
+            {
+                lootConfig = GameConfigService.Current.Loot;
+            }
+
+            return lootConfig;
         }
 
         /// <summary>

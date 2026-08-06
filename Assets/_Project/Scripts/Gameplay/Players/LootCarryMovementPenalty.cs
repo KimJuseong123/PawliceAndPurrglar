@@ -52,23 +52,32 @@ namespace PawsAndLoot.Gameplay.Players
             LootItem previous,
             LootItem current)
         {
-            movementMotor.SetLootCarryPenalty(
-                current != null,
-                WeightOf(current));
+            SyncFromBag();
+        }
+
+        private void HandleCarriedLootChanged()
+        {
+            SyncFromBag();
         }
 
         /// <summary>
-        /// How heavy a piece is, defaulting to one hand.
+        /// Reads the whole bag rather than the piece in hand.
         ///
-        /// A piece with no definition is a broken piece, and refusing to slow
-        /// the thief at all would make the broken case the fastest one to
-        /// carry.
+        /// The bag holds several pieces now, and the hands hold the last one
+        /// taken. Weighing the hands would let a thief carry two gold bars at
+        /// ring speed by picking the ring up last, which is the one order every
+        /// player would find.
         /// </summary>
-        private static LootCarryType WeightOf(LootItem loot)
+        private void SyncFromBag()
         {
-            return loot != null && loot.Definition != null
-                ? loot.Definition.CarryType
-                : LootCarryType.OneHand;
+            if (carrier == null || movementMotor == null)
+            {
+                return;
+            }
+
+            movementMotor.SetLootCarryPenalty(
+                carrier.HasLoot,
+                carrier.HeaviestCarryType);
         }
 
         private void SubscribeAndSync()
@@ -83,12 +92,11 @@ namespace PawsAndLoot.Gameplay.Players
             if (!_subscribed)
             {
                 carrier.HeldLootChanged += HandleHeldLootChanged;
+                carrier.CarriedLootChanged += HandleCarriedLootChanged;
                 _subscribed = true;
             }
 
-            movementMotor.SetLootCarryPenalty(
-                carrier.HasLoot,
-                WeightOf(carrier.HeldLoot));
+            SyncFromBag();
         }
 
         private void Unsubscribe()
@@ -96,6 +104,7 @@ namespace PawsAndLoot.Gameplay.Players
             if (_subscribed && carrier != null)
             {
                 carrier.HeldLootChanged -= HandleHeldLootChanged;
+                carrier.CarriedLootChanged -= HandleCarriedLootChanged;
             }
 
             _subscribed = false;

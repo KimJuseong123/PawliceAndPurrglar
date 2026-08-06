@@ -75,6 +75,15 @@ namespace PawsAndLoot.Gameplay.Players
                 return;
             }
 
+            // The raccoon's pitch is answered by a screen, so the key opens the
+            // screen and does nothing else. Letting the interaction run as well
+            // would sell the piece in the thief's hands on the same press — an
+            // item leaving the bag that the player never chose.
+            if (scanner.CurrentTargetIsAnsweredByAScreen)
+            {
+                return;
+            }
+
             ResolveIdentity();
             if (identity == null)
             {

@@ -467,7 +467,9 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 - 결과 XML의 실제 테스트 수와 실패 목록
 - **테스트 0개 발견은 성공이 아니다**
 
-현재 기준선: Edit Mode 215개, Play Mode 183개 (2026-08-03).
+현재 기준선: Edit Mode 290개 전부 통과, Play Mode 200개 중 198 통과 + 1 스킵
+(2026-08-06). Play Mode의 남은 1건은 `CompanionExpressionPlayModeTests`로 음성
+스택이 필요하다.
 테스트를 추가하면 `13_CURRENT_STATE.md`의 `최근 검증` 표에 실제 수치를 기록한다.
 
 ### 런타임 검증 (자체 보고 프로브 패턴)
