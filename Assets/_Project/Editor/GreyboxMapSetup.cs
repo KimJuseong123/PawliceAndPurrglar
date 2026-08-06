@@ -190,6 +190,24 @@ namespace PawsAndLoot.Editor
         private const float AuthoredRaccoonHeight = 1.35f;
         private const float TrashBinHeight = 2.08f;
 
+        /// <summary>
+        /// Whether the greybox's own scaffolding is drawn: the coloured discs
+        /// under every named place, the shouty capitals over them, and the blue
+        /// line tracing the measured crossing route.
+        ///
+        /// Off. They were built to answer "did the generator put this where I
+        /// asked" and they answer it from a screenshot, which is worth a great
+        /// deal while a town is being laid out and nothing at all once it is.
+        /// A player walking past CENTRALPLAZA painted on the grass is being told
+        /// about the tool that made the grass.
+        ///
+        /// Kept as a switch rather than deleted. The anchors, the routes and the
+        /// map definition are all still built — only the paint is skipped — so
+        /// turning this on brings the whole diagnostic back for the next time the
+        /// town moves under something.
+        /// </summary>
+        private const bool ShowGreyboxDebugMarkers = false;
+
         [MenuItem("Paws & Loot/Setup/Rebuild MAP-001 Greybox Village")]
         public static void CreateGameScene()
         {
@@ -4824,6 +4842,14 @@ namespace PawsAndLoot.Editor
         {
             Transform anchor = CreateChild(id.ToString(), parent);
             anchor.position = position;
+            if (!ShowGreyboxDebugMarkers)
+            {
+                // The anchor itself stays. Everything that reads a place reads
+                // this transform; the disc and the caption were only ever for
+                // the person building the town.
+                result.Add(id, anchor);
+                return;
+            }
 
             GameObject marker = GameObject.CreatePrimitive(
                 PrimitiveType.Cylinder);
@@ -4904,6 +4930,12 @@ namespace PawsAndLoot.Editor
                 typeof(LineRenderer));
             lineObject.transform.SetParent(parent);
             LineRenderer line = lineObject.GetComponent<LineRenderer>();
+
+            // Built and switched off rather than skipped. The route is a real
+            // thing the map definition and the traversal probe both read, and
+            // the object carries its waypoints — it is the blue paint over the
+            // pavement that has no business in a match.
+            line.enabled = ShowGreyboxDebugMarkers;
             line.sharedMaterial = material;
             line.startWidth = 0.18f;
             line.endWidth = 0.18f;
@@ -5996,12 +6028,21 @@ namespace PawsAndLoot.Editor
             UnityEngine.Object.DestroyImmediate(cube.GetComponent<Collider>());
         }
 
+        /// <summary>
+        /// A caption floating over a place, for whoever is laying the town out.
+        /// Silent unless <see cref="ShowGreyboxDebugMarkers"/> is on.
+        /// </summary>
         private static void CreateWorldLabel(
             string name,
             string value,
             Vector3 position,
             Transform parent)
         {
+            if (!ShowGreyboxDebugMarkers)
+            {
+                return;
+            }
+
             var labelObject = new GameObject(name, typeof(TextMesh));
             labelObject.transform.SetParent(parent);
             labelObject.transform.position = position;

@@ -1018,6 +1018,7 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-06 | Edit Mode·Play Mode (그레이박스 표식 제거 이후) | Edit Mode **291/291**, Play Mode 206개 중 **204 통과** + 1 스킵 (실패 1건은 기준선과 동일). 씬의 `TextMesh` **0개** — 장소 이름이 하나도 남지 않았다 |
 | 2026-08-06 | Edit Mode·Play Mode (실내 커서 해제·거리 보물 제거 이후) | Edit Mode **291/291**, Play Mode 206개 중 **204 통과** + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 `CatBagExchangePlayModeTests`가 칸의 `onClick`을 직접 눌러 양방향 이동을 단정한다 |
 | 2026-08-06 | `-netScenario full` 2프로세스 | **양쪽 `passed=true`.** 판매 350, 체포 3회, 기절, 승자 합의. 거리 보물을 없앤 뒤에도 프로브가 실내 보물을 팔아 통과한다 |
 | 2026-08-06 | Edit Mode·Play Mode (한 번 눌러 줍기·지목 상호작용·고양이 가방 게이트 이후) | Edit Mode **291/291**, Play Mode 205개 중 **203 통과** + 1 스킵 (실패 1건은 기준선과 동일) |
