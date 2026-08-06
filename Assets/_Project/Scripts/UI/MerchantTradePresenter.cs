@@ -1268,32 +1268,45 @@ namespace PawsAndLoot.UI
                 new Vector2(34f, 0f),
                 new Vector2(40f, 40f));
 
+            // Both pivoted to their left edge, and both inside the row.
+            //
+            // `Anchor` places the **pivot**, and a fresh RectTransform pivots at
+            // its middle — so a 260-wide caption whose centre sat 66px from the
+            // row's left edge actually started at -64, outside the row, printed
+            // over the section behind it. The name and the stock count were
+            // hanging off the left of every shelf line and reading as labels for
+            // the panel rather than for the goods.
             TMP_Text name = HudRuntimeInstaller.CreateText(
                 row.transform,
                 "Name",
                 string.Empty,
-                18f,
+                19f,
                 TextAlignmentOptions.Left);
+            name.rectTransform.pivot = new Vector2(0f, 0.5f);
             HudRuntimeInstaller.Anchor(
                 name.rectTransform,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(66f, -6f),
-                new Vector2(260f, 28f));
+                new Vector2(0f, 0.5f),
+                new Vector2(0f, 0.5f),
+                new Vector2(66f, 0f),
+                new Vector2(220f, 30f));
 
+            // Beside the name rather than under it, and short. "보유 2" is the one
+            // thing the officer checks before spending, and stacked under the name
+            // it read as a second line of the name.
             TMP_Text count = HudRuntimeInstaller.CreateText(
                 row.transform,
                 "Count",
                 string.Empty,
-                15f,
+                16f,
                 TextAlignmentOptions.Left);
             count.color = new Color(0.72f, 0.86f, 0.94f, 0.88f);
+            count.rectTransform.pivot = new Vector2(0f, 0.5f);
             HudRuntimeInstaller.Anchor(
                 count.rectTransform,
-                new Vector2(0f, 0f),
-                new Vector2(0f, 0f),
-                new Vector2(66f, 6f),
-                new Vector2(260f, 24f));
+                new Vector2(0f, 0.5f),
+                new Vector2(0f, 0.5f),
+                new Vector2(292f, 0f),
+                new Vector2(80f, 26f));
 
             // Laid out from the right edge inwards, measured off the button this
             // row ends with rather than off a hand-tuned constant. Two rounds of

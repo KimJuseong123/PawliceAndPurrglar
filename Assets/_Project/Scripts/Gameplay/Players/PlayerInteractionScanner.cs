@@ -51,6 +51,19 @@ namespace PawsAndLoot.Gameplay.Players
         public bool CurrentTargetIsAnsweredByAScreen =>
             CurrentTarget is IScreenAnsweredInteractable;
 
+        /// <summary>
+        /// Whether the thing in range is taken by holding the key rather than by
+        /// pressing it.
+        ///
+        /// Read by the network bridge, which otherwise sends the interact request
+        /// once per press. The host charges a theft by counting the frames the
+        /// client keeps asking (<c>LootPickupProgress</c>), so one request buys
+        /// one frame of a two-second wait and the piece never leaves the shelf.
+        /// </summary>
+        public bool CurrentTargetIsHeldToUse =>
+            CurrentTarget is IHoldInteractable holdable
+            && holdable.HoldDurationSeconds > 0f;
+
         public IPlayerInteractable CurrentTarget =>
             currentTargetComponent != null
                 ? currentTargetComponent as IPlayerInteractable

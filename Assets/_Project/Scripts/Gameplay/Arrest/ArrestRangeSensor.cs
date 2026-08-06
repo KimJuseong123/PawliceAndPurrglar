@@ -24,6 +24,8 @@ namespace PawsAndLoot.Gameplay.Arrest
         private readonly RaycastHit[] sightHits =
             new RaycastHit[MaxSightHits];
 
+        private ThiefHidingState _thiefHiding;
+
         public event Action<PlayerRoleIdentity> TargetEntered;
         public event Action<PlayerRoleIdentity> TargetExited;
 
@@ -54,9 +56,25 @@ namespace PawsAndLoot.Gameplay.Arrest
         public void Evaluate()
         {
             bool detected = HasValidTarget()
+                && !ThiefIsHiding()
                 && DistanceToTarget <= arrestConfig.ArrestDistance
                 && HasLineOfSight();
             SetDetection(detected);
+        }
+
+        /// <summary>
+        /// Inside a bin, so not there as far as an arrest is concerned.
+        ///
+        /// Checked here rather than by moving the character out of range, because
+        /// the officer can stand on top of the bin — that is the whole tension of
+        /// hiding — and a distance check would catch them through the lid.
+        /// </summary>
+        private bool ThiefIsHiding()
+        {
+            _thiefHiding ??= thief != null
+                ? thief.GetComponent<ThiefHidingState>()
+                : null;
+            return _thiefHiding != null && _thiefHiding.IsHiding;
         }
 
         public void ValidateOrThrow()

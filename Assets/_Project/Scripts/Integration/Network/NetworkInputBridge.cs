@@ -185,20 +185,33 @@ namespace PawsAndLoot.Integration.Network
         /// only ever has one player standing in front of something — and the cost
         /// of being wrong is a key press that does nothing, not a wrong sale.
         /// </summary>
-        private static bool LocalTargetIsAnsweredByAScreen()
+        /// <summary>
+        /// The scanner belonging to the role this machine drives.
+        ///
+        /// By role rather than "any scanner that says yes". The permissive form
+        /// was safe for the screen check — a wrong answer there only ever
+        /// *withholds* a key press — and it is not safe for the hold check, which
+        /// answers "may I send this every frame". One player standing at a piece
+        /// of treasure would have let the other hold E at the raccoon and sell
+        /// their bag one item per frame.
+        /// </summary>
+        private static PlayerInteractionScanner LocalScanner(PlayerRole role)
         {
             foreach (PlayerInteractionScanner scanner in
                 Object.FindObjectsByType<PlayerInteractionScanner>(
                     FindObjectsSortMode.None))
             {
-                if (scanner != null
-                    && scanner.CurrentTargetIsAnsweredByAScreen)
+                PlayerRoleIdentity identity =
+                    scanner != null
+                        ? scanner.GetComponent<PlayerRoleIdentity>()
+                        : null;
+                if (identity != null && identity.Role == role)
                 {
-                    return true;
+                    return scanner;
                 }
             }
 
-            return false;
+            return null;
         }
 
         private static void QueueSlotSwap(int left, int right)
@@ -421,8 +434,26 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
-            if (keyboard.eKey.wasPressedThisFrame
-                && !LocalTargetIsAnsweredByAScreen())
+            // Held for a theft, tapped for everything else.
+            //
+            // The host charges a theft by counting the frames the client keeps
+            // asking, so one request per press bought one frame of a two-second
+            // wait and the treasure never left the shelf — with no message,
+            // because from the host's side nothing failed. Doors, ladders and
+            // shop counters stay on the press edge: repeating those would work a
+            // door back and forth for as long as the key is down.
+            //
+            // The screen guard applies to both. It is what stops an E at the
+            // raccoon's pitch selling the piece in the thief's hands while they
+            // were only asking to look at the shop.
+            PlayerInteractionScanner local = LocalScanner(link.Role);
+            bool answeredByAScreen =
+                local != null && local.CurrentTargetIsAnsweredByAScreen;
+            bool heldToUse = local != null && local.CurrentTargetIsHeldToUse;
+            if (!answeredByAScreen
+                && (heldToUse
+                    ? keyboard.eKey.isPressed
+                    : keyboard.eKey.wasPressedThisFrame))
             {
                 link.SubmitInteractRpc();
             }

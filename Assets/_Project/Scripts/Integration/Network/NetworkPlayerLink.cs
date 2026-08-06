@@ -247,6 +247,20 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableWritePermission.Server);
 
         /// <summary>
+        /// Whether this player is inside a bin, written only by the host.
+        ///
+        /// Replicated because the half that matters happens on the *other*
+        /// machine: the officer's screen has to stop drawing a thief the host
+        /// says is hidden. A thief who vanished only on their own screen would be
+        /// standing in plain sight for the one person it matters to.
+        /// </summary>
+        private readonly NetworkVariable<bool> _hiding =
+            new(
+                false,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        /// <summary>
         /// THROW-011. The officer's purse, written only by the host.
         ///
         /// Replicated for the same reason the tool slot is: the officer decides
@@ -468,6 +482,13 @@ namespace PawsAndLoot.Integration.Network
             // on one walking into a doorway. A client's capsule passes through the
             // same trigger while following replicated positions.
             interiorState?.SetAuthority(IsServer);
+
+            // Same reason. Climbing into a bin is a key press, so it already
+            // reaches the host — but the state it sets moves the character, and a
+            // client that moved its own copy would be dragged straight back by the
+            // next position packet.
+            GetComponent<PawsAndLoot.Gameplay.Players.ThiefHidingState>()
+                ?.SetAuthority(IsServer);
 
             // Same reason as the interior: a client running its own sentence
             // teleports the thief on its screen only, and its clock drifts from
@@ -1281,6 +1302,13 @@ namespace PawsAndLoot.Integration.Network
                 _interiorId.Value = interiorState.CurrentInteriorId;
             }
 
+            var hidingState =
+                GetComponent<PawsAndLoot.Gameplay.Players.ThiefHidingState>();
+            if (hidingState != null)
+            {
+                _hiding.Value = hidingState.IsHiding;
+            }
+
             if (wallet != null)
             {
                 _soldAmount.Value = wallet.SoldAmount;
@@ -1328,6 +1356,9 @@ namespace PawsAndLoot.Integration.Network
             {
                 interiorState.ApplyReplicated(_interiorId.Value);
             }
+
+            GetComponent<PawsAndLoot.Gameplay.Players.ThiefHidingState>()
+                ?.ApplyReplicated(_hiding.Value);
 
             // What is in hand, so the HUD on this screen matches the hand the
             // host is actually simulating.

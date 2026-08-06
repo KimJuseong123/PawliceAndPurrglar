@@ -1008,6 +1008,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-06 | Edit Mode·Play Mode (보물 홀드 획득·쓰레기통 숨기·상점 줄 배치 이후) | Edit Mode **291개 전부 통과**. Play Mode 205개 중 **203 통과** + 1 스킵, 실패 1건은 기준선과 동일한 `CompanionExpression`. 신규 4건(`ThiefTakeAndHide` 3 + `InteriorLootTally` 1) 이름을 XML에서 확인 |
+| 2026-08-06 | `-netScenario full` 2프로세스 (2회) | 1회차 `passed=false` — `sawLootCarried=false`, 투척도 미실행. 2회차 **양쪽 `passed=true`** (판매 200, 체포 3회, 기절, 보물 링크 68 일치). `GAP-006`이 기록한 시간표 경합이고, 실내 재고가 방마다 따로 뽑히면서 편차가 더 커졌다 |
 | 2026-08-06 | Edit Mode·Play Mode (실내 재고 전면 배치·고양이 가방·팔 흔들림·상점 가격 이후) | Edit Mode **291개 전부 통과** (신규 `MerchantShopRowLayoutTests` 1건 포함). Play Mode 201개 중 **199 통과** + 1 스킵, 실패 1건은 기준선과 동일한 `CompanionExpression`(음성 스택 필요). `Game` 씬 재생성 로그: 실내 **13곳 전부** `자리 − 3`, 보물 링크 33 → **68** |
 | 2026-08-06 | `-netScenario full` 2프로세스 | **양쪽 `passed=true`.** 판매 200골드, 체포 3회·감옥 3회, 승자·사유 합의(`Police`/`ThiefArrested`), 보물 링크 **양쪽 68개로 일치** — 방마다 복제한 물건이 클라이언트에도 전부 스폰됐다는 뜻이다 |
 | 2026-08-06 | Edit Mode·Play Mode (암시장 구조 변경·`Sale` 권한 개방 이후) | Edit Mode 290개 **전부 통과**, Play Mode 200개 중 **198 통과** + 1 스킵. `Game` 씬을 재생성했고 `ProjectSettings`는 깨끗하다. 로그: 다섯 곳 모두 `Market` 자식 아래 판매처, 쓰레기통은 다섯 곳 유지 |

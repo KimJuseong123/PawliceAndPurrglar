@@ -1043,23 +1043,58 @@ namespace PawsAndLoot.UI
 
         private void BindCatExchangeSlots()
         {
+            // The same twenty-five cells the bag screen draws: four prop slots and
+            // then the loot.
+            //
+            // It used to read the prop carrier for all twenty-five, so cells 5-25
+            // asked a four-slot store for slot 17 and drew nothing. A thief with a
+            // full bag opened this screen and saw twenty-one empty squares — which
+            // reads as the screen having lost the bag, not as "treasure does not go
+            // in a cat". The treasure is drawn and the refusal is said out loud on
+            // the click.
             ToolCarrier sourceCarrier = exchangeCarrier ?? carrier;
+            LootBag bag = lootCarrier != null ? lootCarrier.Cells : null;
             for (int index = 0; index < exchangePlayerSlots.Length; index++)
             {
                 ThrowableKind kind = ThrowableKind.Rock;
-                bool hasItem = sourceCarrier != null
+                bool quickSlotIndex = index < QuickSlotCount;
+                bool hasItem = quickSlotIndex
+                    && sourceCarrier != null
                     && sourceCarrier.TryGetSlot(index, out kind)
                     && ThrowableCatalog.CanUseInQuickSlot(kind);
+
+                LootDefinition definition = null;
+                int lootCount = 0;
+                if (!quickSlotIndex && bag != null)
+                {
+                    bag.TryGetCell(index - QuickSlotCount, out definition, out lootCount);
+                }
+
+                bool hasLoot = definition != null;
                 exchangePlayerSlots[index]?.Bind(new InventorySlotViewModel(
-                    GameplayInputRouter.GetQuickSlotLabel(index),
-                    hasItem ? GetItemIcon(kind) : null,
-                    hasItem ? sourceCarrier.GetSlotQuantity(index) : 0,
-                    sourceCarrier != null && sourceCarrier.SelectedSlot == index,
-                    !hasItem,
-                    hasItem && GetItemIcon(kind) == null
-                        ? GetItemGlyph(kind)
-                        : string.Empty,
-                    hasItem ? ThrowableCatalog.GetDisplayName(kind) : string.Empty));
+                    quickSlotIndex
+                        ? GameplayInputRouter.GetQuickSlotLabel(index)
+                        : (index + 1).ToString(),
+                    hasItem ? GetItemIcon(kind) : GetLootIcon(definition),
+                    hasItem
+                        ? sourceCarrier.GetSlotQuantity(index)
+                        : lootCount,
+                    hasItem
+                        && sourceCarrier != null
+                        && sourceCarrier.SelectedSlot == index,
+                    !(hasItem || hasLoot),
+                    hasItem
+                        ? GetItemIcon(kind) == null
+                            ? GetItemGlyph(kind)
+                            : string.Empty
+                        : hasLoot && GetLootIcon(definition) == null
+                            ? GetLootGlyph(definition)
+                            : string.Empty,
+                    hasItem
+                        ? ThrowableCatalog.GetDisplayName(kind)
+                        : hasLoot
+                            ? definition.DisplayName
+                            : string.Empty));
             }
 
             for (int index = 0; index < exchangeCatSlots.Length; index++)
@@ -1177,6 +1212,19 @@ namespace PawsAndLoot.UI
                 || activeContainer == null
                 || exchangeCarrier == null)
             {
+                return;
+            }
+
+            // Said out loud rather than ignored. A treasure cell that does nothing
+            // when clicked is indistinguishable from a click that did not
+            // register, and the player tries it again rather than aiming
+            // elsewhere.
+            if (index >= QuickSlotCount)
+            {
+                voiceFeed?.ShowMessage(
+                    activeContainer.DisplayName,
+                    "보물은 넣을 수 없어요. 소품 칸만 옮겨져요",
+                    2f);
                 return;
             }
 

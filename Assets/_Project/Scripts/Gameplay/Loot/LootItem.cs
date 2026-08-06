@@ -4,7 +4,24 @@ using UnityEngine;
 
 namespace PawsAndLoot.Gameplay.Loot
 {
-    public sealed class LootItem : MonoBehaviour, IPlayerInteractable
+    /// <summary>
+    /// A piece of treasure lying in the world.
+    ///
+    /// Held rather than tapped (<see cref="IHoldInteractable"/>). Taking one is
+    /// supposed to cost the thief a committed moment beside it, and
+    /// <see cref="LootPickupProgress"/> was written to charge that — but it only
+    /// counts while it is being *asked*, and one tap of E asks exactly once. The
+    /// attempt then lapsed 0.35 s later and the piece stayed on the shelf, every
+    /// time, with no message. It looked like the key not working.
+    ///
+    /// The two-process regression never saw it because the probe presses the key
+    /// on every frame it runs — 988 requests in one match. Spamming is the one
+    /// input pattern that satisfies a repeated-request design by accident.
+    /// </summary>
+    public sealed class LootItem :
+        MonoBehaviour,
+        IPlayerInteractable,
+        IHoldInteractable
     {
         [SerializeField]
         private LootDefinition definition;
@@ -118,7 +135,9 @@ namespace PawsAndLoot.Gameplay.Loot
 
         public bool TryInteract(PlayerInteractionContext context)
         {
-            if (context.Player == null || IsRemoteControlled)
+            if (context.Player == null
+                || context.Role != PlayerRole.Thief
+                || IsRemoteControlled)
             {
                 return false;
             }
@@ -139,6 +158,64 @@ namespace PawsAndLoot.Gameplay.Loot
             return progress != null
                 ? progress.Request(this)
                 : carrier.TryAcquire(this);
+        }
+
+        /// <summary>
+        /// How long the thief has to stand beside it, from the piece's own data.
+        ///
+        /// The same number <see cref="LootPickupProgress"/> charges, read from the
+        /// same place. A second constant here would be a second thing to tune and
+        /// the two would part company on the first balance pass — and the symptom
+        /// would be a progress ring that fills before or after the theft lands.
+        /// </summary>
+        public float HoldDurationSeconds =>
+            definition != null ? definition.PickupSeconds : 0f;
+
+        /// <summary>
+        /// Whether this player may start taking it.
+        ///
+        /// The role is checked here and not only in
+        /// <c>PlayerRolePermissions</c>. That table is consulted by the scanner
+        /// when it ranks what is in range, and the host runs interactions the
+        /// scanner never ranked — it is handed a request and acts on it. And every
+        /// player carries a <see cref="LootCarrier"/>, officer included, so
+        /// "has somewhere to put it" is not the question it looks like.
+        /// </summary>
+        public bool CanBeginHold(PlayerInteractionContext context)
+        {
+            return context.Player != null
+                && context.Role == PlayerRole.Thief
+                && !IsRemoteControlled
+                && IsAvailable
+                && context.Player.GetComponent<LootCarrier>() != null;
+        }
+
+        /// <summary>
+        /// Takes it, at the end of the hold.
+        ///
+        /// Straight to the carrier rather than through
+        /// <see cref="LootPickupProgress"/>: the hold that just finished *is* the
+        /// wait that component exists to impose, and asking it again would start a
+        /// second timer and hand back false on the frame the theft should land.
+        /// The progress component still runs the show in a session, where the host
+        /// decides and the client can only keep asking.
+        /// </summary>
+        public bool CompleteHold(PlayerInteractionContext context)
+        {
+            if (!CanBeginHold(context))
+            {
+                return false;
+            }
+
+            context.Player.GetComponent<LootPickupProgress>()
+                ?.Cancel(LootPickupInterruption.ChangedTarget);
+            return context.Player.GetComponent<LootCarrier>().TryAcquire(this);
+        }
+
+        public void CancelHold(PlayerInteractionContext context)
+        {
+            context.Player?.GetComponent<LootPickupProgress>()
+                ?.Cancel(LootPickupInterruption.StoppedAsking);
         }
 
         internal bool TryAcquire(

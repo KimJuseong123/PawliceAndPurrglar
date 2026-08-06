@@ -73,7 +73,27 @@ namespace PawsAndLoot.Gameplay.Players
 
         public bool CanMove =>
             _matchState?.IsGameplayActive == true
-            && !IsStunned;
+            && !IsStunned
+            && !IsHiding;
+
+        /// <summary>
+        /// Inside a bin. Kept off <see cref="IsStunned"/> rather than reusing it:
+        /// a stun grants an immunity window afterwards so a thief cannot be
+        /// chain-stunned, and climbing out of a dustbin should not hand them that.
+        ///
+        /// Only the thief carries the component, so the officer never resolves one
+        /// and never stops moving.
+        /// </summary>
+        public bool IsHiding
+        {
+            get
+            {
+                _hiding ??= GetComponent<ThiefHidingState>();
+                return _hiding != null && _hiding.IsHiding;
+            }
+        }
+
+        private ThiefHidingState _hiding;
 
         /// <summary>
         /// False when there is no stun component at all, so a player without one

@@ -3191,6 +3191,13 @@ namespace PawsAndLoot.Editor
                 player.AddComponent<LootPickupProgress>();
             pickupProgress.Configure(lootCarrier, motor);
 
+            // Climbing into a bin. Given to both roles rather than to the thief
+            // only: the component does nothing until something calls it, and the
+            // spot refuses an officer by name — whereas a component that exists on
+            // one character and not the other is a null check somebody forgets.
+            player.AddComponent<ThiefHidingState>()
+                .Configure(player.GetComponent<PlayerVisualRoot>());
+
             // THROW-001/002/003. A prop slot separate from the loot slot, so
             // picking up a rock never costs the thief their jewels.
             player.AddComponent<PawsAndLoot.Gameplay.Players.StunState>();
@@ -3812,6 +3819,7 @@ namespace PawsAndLoot.Editor
 
             int shopPieces = CreateShopLoot(root, locations, matchRuntime);
             CreateDisplayCaseKey(root, locations, matchRuntime);
+            CreateHidingSpots(parent, matchRuntime);
 
             var alarmObject = new GameObject("Loot Alarm");
             alarmObject.transform.SetParent(root);
@@ -3870,6 +3878,91 @@ namespace PawsAndLoot.Editor
             PrototypeInteractable interactable =
                 target.AddComponent<PrototypeInteractable>();
             interactable.Configure(interactionType, prompt);
+        }
+
+        /// <summary>
+        /// Turns the town's four verge bins into places the thief can climb into.
+        ///
+        /// The bins rather than the cardboard boxes, and that is a decision rather
+        /// than laziness: the boxes are already <c>LootHidingSpot</c>s answering
+        /// the same key, and one object with two meanings on E is a press whose
+        /// outcome the player cannot predict — stash the ring, or get in? The bins
+        /// mean nothing else.
+        ///
+        /// A child with its own identity scale, not the bin itself. The bin is a
+        /// cube stretched 1.6 x 2.08 x 1.6 with the model fitted inside it, and a
+        /// sphere trigger inherits the largest of those — the reach would be
+        /// whatever the bin's height happened to be.
+        /// </summary>
+        private static void CreateHidingSpots(
+            Transform parent,
+            MatchRuntimeState matchRuntime)
+        {
+            int made = 0;
+            foreach (Transform candidate in
+                parent.GetComponentsInChildren<Transform>(true))
+            {
+                if (!candidate.name.StartsWith(
+                        "Trash Bin",
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                Transform holder = CreateChild("Hiding Spot", candidate);
+                holder.position = candidate.position;
+
+                // The bin's stretch divided back out, not a local scale of one.
+                //
+                // A local one still inherits the parent, and a sphere trigger
+                // takes the largest axis of what it inherits — so a 1.6 m reach
+                // became 3.3 m and swallowed the banana shelf standing three
+                // metres away. A pickup inside another collider is a pickup
+                // nobody can select, and it fails as "that item is broken".
+                Vector3 stretch = candidate.lossyScale;
+                holder.localScale = new Vector3(
+                    stretch.x == 0f ? 1f : 1f / stretch.x,
+                    stretch.y == 0f ? 1f : 1f / stretch.y,
+                    stretch.z == 0f ? 1f : 1f / stretch.z);
+
+                // Where the hidden character is parked: down inside the bin, and
+                // low enough that their capsule is not standing on the lid.
+                Transform anchor = CreateChild("Occupant", holder);
+                anchor.position = candidate.position
+                    - new Vector3(0f, TrashBinHeight * 0.35f, 0f);
+
+                // The bin's own volume, not a sphere around it.
+                //
+                // A sphere wide enough to be comfortable reached a metre past the
+                // bin and swallowed the shelf pickups standing beside it, and a
+                // pickup inside another collider is one the scanner will not
+                // offer. The box is the thing the player is climbing into, which
+                // is also the honest answer to "how close is close enough".
+                BoxCollider trigger = holder.gameObject.AddComponent<BoxCollider>();
+                trigger.isTrigger = true;
+                trigger.size = new Vector3(
+                    TrashBinHeight * 0.77f,
+                    TrashBinHeight,
+                    TrashBinHeight * 0.77f);
+
+                holder.gameObject
+                    .AddComponent<PawsAndLoot.Gameplay.Players.PlayerHidingSpot>()
+                    .Configure(matchRuntime, anchor);
+                made++;
+            }
+
+            // Counted out loud. A name match that finds nothing is silent — the
+            // bins would still stand there and E would still do nothing at them,
+            // which is exactly how ISSUE-054's partitions went missing.
+            if (made == 0)
+            {
+                Debug.LogError(
+                    "[HIDE-001] No 'Trash Bin' found to put a hiding spot on, so "
+                    + "the thief has nowhere to hide.");
+                return;
+            }
+
+            Debug.Log($"[HIDE-001] {made} hiding spots placed on the bins.");
         }
 
         /// <summary>

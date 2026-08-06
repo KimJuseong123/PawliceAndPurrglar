@@ -123,6 +123,37 @@ namespace PawsAndLoot.Tests.EditMode
                     $"'{row.name}' puts its coin at {coinRect.xMax:0} and its "
                     + $"price at {priceRect.xMin:0}. The coin belongs on the "
                     + "left of the figure.");
+
+                // The name and the stock count belong to the shelf line, and they
+                // were hanging off the left of it — drawn over the section behind
+                // the row, reading as labels for the panel rather than for the
+                // goods. `Anchor` places the pivot and a fresh rect pivots at its
+                // middle, so a 260-wide caption set 66px in started at -64.
+                Rect rowRect = WorldRect((RectTransform)row);
+                foreach (string label in new[] { "Name", "Count" })
+                {
+                    TMP_Text text = FindText(row, label);
+                    Assert.That(text, Is.Not.Null, $"'{row.name}' has no {label}.");
+                    Assert.That(
+                        text.text,
+                        Is.Not.Empty,
+                        $"'{row.name}' has an empty {label}.");
+
+                    Rect textRect = WorldRect(text.rectTransform);
+                    Assert.That(
+                        textRect.xMin,
+                        Is.GreaterThanOrEqualTo(rowRect.xMin),
+                        $"'{row.name}' draws its {label} at {textRect.xMin:0}, "
+                        + $"left of the row's own edge at {rowRect.xMin:0}.");
+                    Assert.That(
+                        textRect.Overlaps(coinRect),
+                        Is.False,
+                        $"'{row.name}' runs its {label} into the coin.");
+                    Assert.That(
+                        textRect.Overlaps(priceRect),
+                        Is.False,
+                        $"'{row.name}' runs its {label} into the price.");
+                }
             }
         }
 
