@@ -164,6 +164,7 @@ namespace PawsAndLoot.UI
             GameplayInputRouter.AnimalCommandPressed += HandleAnimalCommandPressed;
             GameplayInputRouter.VoicePressed += HandleVoicePressed;
             GameplayInputRouter.ContextInteractionPressed += HandleInteractPressed;
+            GameplayInputRouter.ScreenInteractionPressed += HandleCatBagPressed;
             // The cat's bag is deliberately absent from this list. It used to be
             // opened by a static event raised inside the interactable, which runs
             // on the **host** because the interact key is forwarded there — so a
@@ -207,6 +208,7 @@ namespace PawsAndLoot.UI
             GameplayInputRouter.AnimalCommandPressed -= HandleAnimalCommandPressed;
             GameplayInputRouter.VoicePressed -= HandleVoicePressed;
             GameplayInputRouter.ContextInteractionPressed -= HandleInteractPressed;
+            GameplayInputRouter.ScreenInteractionPressed -= HandleCatBagPressed;
             SearchableContainer.SearchCompleted -= OpenContainerExchange;
             GameplayInputRouter.TakeAllPressed -= TakeEverythingFromContainer;
             UnsubscribeDispatcher();
@@ -973,32 +975,47 @@ namespace PawsAndLoot.UI
         /// rather than nothing, because nothing is indistinguishable from the key
         /// being broken — which is what it looked like.
         /// </summary>
+        /// <summary>
+        /// The cat's bag, on a key press that reaches here whether or not a panel
+        /// is already open.
+        ///
+        /// Split out of <see cref="HandleInteractPressed"/> and hung off the
+        /// ungated event. Opening the thief's own bag suppresses gameplay input,
+        /// and the gated event is not raised while it is — so a thief with their
+        /// bag open pressed E at the cat and nothing at all happened. The
+        /// suppression exists to stop the *world* being acted on through an open
+        /// panel, and a screen the HUD opens beside that panel is not the world.
+        ///
+        /// Opened here rather than by the host, which is the other half of
+        /// `ISSUE-055`: the interact key is forwarded and run on the host, so a
+        /// screen hung off the interaction itself opens on whichever machine is
+        /// hosting rather than on the one that pressed the key.
+        /// </summary>
+        private void HandleCatBagPressed()
+        {
+            ResolveSources();
+            if (scanner == null
+                || carrier == null
+                || scanner.CurrentTarget is not CatInventoryInteractable catBag
+                || ResolveRole() != PlayerRole.Thief)
+            {
+                return;
+            }
+
+            if (catExchangeOpen)
+            {
+                SetCatExchangeOpen(false);
+                return;
+            }
+
+            OpenContainerExchange(catBag, carrier);
+        }
+
         private void HandleInteractPressed()
         {
             ResolveSources();
             if (scanner == null)
             {
-                return;
-            }
-
-            // The cat's bag, opened here rather than by the host.
-            //
-            // `CatInventoryInteractable.TryInteract` does nothing but raise the
-            // event, and it ran on the host — so the thief pressed E at their cat
-            // and the two bags appeared on the **officer's** screen. Nothing is
-            // lost by moving it: the transfer that follows is clicks, and those go
-            // through `ContainerTransfer` on their own route.
-            if (scanner.CurrentTarget is CatInventoryInteractable catBag
-                && carrier != null
-                && ResolveRole() == PlayerRole.Thief)
-            {
-                if (catExchangeOpen)
-                {
-                    SetCatExchangeOpen(false);
-                    return;
-                }
-
-                OpenContainerExchange(catBag, carrier);
                 return;
             }
 

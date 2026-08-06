@@ -42,16 +42,17 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         /// <summary>
-        /// One press of E used to do nothing at all.
+        /// One press of E takes it, and the prompt goes away.
         ///
-        /// <c>LootPickupProgress</c> charges a theft by counting the frames the
-        /// thief keeps *asking*, and a tap asks once — the attempt lapsed 0.35 s
-        /// later and the piece stayed on the shelf, silently, every time. The
-        /// piece is a hold interaction now, so the wait it was always supposed to
-        /// impose is the wait the player actually performs.
+        /// Both halves are the fix. The theft used to be charged by counting the
+        /// frames the thief kept *asking* (<c>LootPickupProgress</c>) and a tap
+        /// asks once, so the attempt lapsed 0.35 s later and the piece stayed on
+        /// the shelf — silently, every time. Holding was never signposted either:
+        /// in a session the local input is off, so the progress ring meant to show
+        /// it never ran.
         /// </summary>
         [UnityTest]
-        public IEnumerator HoldingEOnAPiecePutsItInTheBagAndTakesItOffTheShelf()
+        public IEnumerator OnePressOfEPutsAPieceInTheBagAndClearsThePrompt()
         {
             LocalPlayerRoleSelector.OverrideRole(PlayerRole.Thief);
             yield return LoadPlayingScene();
@@ -64,10 +65,10 @@ namespace PawsAndLoot.Tests.PlayMode
 
             Assert.That(
                 piece.HoldDurationSeconds,
-                Is.GreaterThan(0f),
-                $"'{piece.name}' is taken by a tap. A tap asks the progress "
-                + "component once and it needs asking every frame, so the theft "
-                + "lapses and nothing says why.");
+                Is.EqualTo(0f),
+                $"'{piece.name}' wants the key held. A hold has to be visible to "
+                + "be a rule, and in a session the ring that would show it does "
+                + "not run.");
 
             PlayerRoleIdentity thief = Player(PlayerRole.Thief);
             var context = new PlayerInteractionContext(thief);
@@ -93,6 +94,19 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.True,
                 $"'{piece.name}' is in the bag and its model is still standing "
                 + "in the room.");
+
+            // And the key stops offering it. A prompt over something already in
+            // the bag is an invitation to press E again at nothing.
+            Assert.That(
+                piece.IsAvailable,
+                Is.False,
+                $"'{piece.name}' still offers itself after being taken.");
+            Assert.That(
+                PawsAndLoot.Gameplay.Players.InteractionResolver.IsValid(
+                    piece,
+                    thief),
+                Is.False,
+                $"The scanner would still rank '{piece.name}' as a target.");
         }
 
         /// <summary>

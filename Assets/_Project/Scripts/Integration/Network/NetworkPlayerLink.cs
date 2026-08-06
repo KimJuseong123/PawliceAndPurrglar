@@ -600,12 +600,53 @@ namespace PawsAndLoot.Integration.Network
         /// the second finds the item already carried.
         /// </summary>
         [Rpc(SendTo.Server)]
-        public void SubmitInteractRpc()
+        public void SubmitInteractRpc(ulong targetObjectId = 0UL)
         {
-            if (scanner != null)
+            if (scanner == null)
             {
-                scanner.TryInteractCurrent();
+                return;
             }
+
+            // The piece the player's own screen named, not whatever this machine
+            // would have picked.
+            //
+            // Both machines run their own scan and rank by distance, and two
+            // pieces on the same shelf are a few centimetres apart — so the
+            // officer's host and the thief's client routinely disagreed about
+            // which one was nearest. The prompt said "캐릭터 피규어" and a
+            // paperweight went into the bag. Sending the id makes the sentence on
+            // screen and the thing that moves the same object by construction.
+            if (targetObjectId != 0UL
+                && NetworkManager.Singleton != null
+                && NetworkManager.Singleton.SpawnManager.SpawnedObjects
+                    .TryGetValue(targetObjectId, out NetworkObject named)
+                && named != null)
+            {
+                foreach (MonoBehaviour behaviour in
+                    named.GetComponents<MonoBehaviour>())
+                {
+                    if (behaviour is not PawsAndLoot.Gameplay.Players.IPlayerInteractable
+                        candidate)
+                    {
+                        continue;
+                    }
+
+                    // Through the resolver, so the role and availability rules the
+                    // scanner applies are applied here too. Naming a target must
+                    // not become a way around them.
+                    if (PawsAndLoot.Gameplay.Players.InteractionResolver.TryExecute(
+                            candidate,
+                            new PawsAndLoot.Gameplay.Players.PlayerInteractionContext(
+                                identity),
+                            PawsAndLoot.Gameplay.Players.ContextInteractionKey.E))
+                    {
+                        scanner.RefreshTarget();
+                        return;
+                    }
+                }
+            }
+
+            scanner.TryInteractCurrent();
         }
 
         /// <summary>

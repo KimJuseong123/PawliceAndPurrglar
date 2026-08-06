@@ -7,16 +7,14 @@ namespace PawsAndLoot.Gameplay.Loot
     /// <summary>
     /// A piece of treasure lying in the world.
     ///
-    /// Held rather than tapped (<see cref="IHoldInteractable"/>). Taking one is
-    /// supposed to cost the thief a committed moment beside it, and
-    /// <see cref="LootPickupProgress"/> was written to charge that — but it only
-    /// counts while it is being *asked*, and one tap of E asks exactly once. The
-    /// attempt then lapsed 0.35 s later and the piece stayed on the shelf, every
-    /// time, with no message. It looked like the key not working.
+    /// One press takes it. <c>LootPickupProgress</c> is no longer on the path.
     ///
-    /// The two-process regression never saw it because the probe presses the key
-    /// on every frame it runs — 988 requests in one match. Spamming is the one
-    /// input pattern that satisfies a repeated-request design by accident.
+    /// A committed moment beside the treasure is a good rule and this is not a
+    /// rejection of it — it is a rejection of a rule the player cannot see. The
+    /// wait was charged by counting the frames the thief kept *asking*, one press
+    /// asks once, and in a session the local input is switched off so the progress
+    /// ring that was meant to signpost the hold never ran at all. Every version of
+    /// it read as "the key does nothing".
     /// </summary>
     public sealed class LootItem :
         MonoBehaviour,
@@ -120,6 +118,13 @@ namespace PawsAndLoot.Gameplay.Loot
                 presentationRoot.localRotation = Quaternion.identity;
                 presentationRoot.gameObject.SetActive(true);
 
+                // The world collider goes with it. Only the host runs
+                // AttachPresentation, so on a client a carried piece left a solid
+                // box standing where it was picked up — invisible, and in the way
+                // of the thief who had just taken it.
+                CacheWorldColliders();
+                SetWorldCollidersEnabled(false);
+
                 // After the attach, not before. The carrier decides which one
                 // piece is in the hands and stows the rest; telling it first
                 // would let the line above un-stow whatever it had just hidden.
@@ -129,8 +134,11 @@ namespace PawsAndLoot.Gameplay.Loot
 
             presentationRoot.SetParent(transform, false);
             presentationRoot.position = worldPosition;
-            presentationRoot.gameObject.SetActive(
-                state != LootState.Sold && state != LootState.Hidden);
+            bool onTheGround =
+                state != LootState.Sold && state != LootState.Hidden;
+            presentationRoot.gameObject.SetActive(onTheGround);
+            CacheWorldColliders();
+            SetWorldCollidersEnabled(onTheGround);
         }
 
         public bool TryInteract(PlayerInteractionContext context)
@@ -149,27 +157,29 @@ namespace PawsAndLoot.Gameplay.Loot
                 return false;
             }
 
-            // Through the timer if the thief has one. Without it the old
-            // instant grab still works, which keeps every test and every tool
-            // that builds a bare carrier honest rather than silently unable to
-            // steal.
-            var progress =
-                context.Player.GetComponent<LootPickupProgress>();
-            return progress != null
-                ? progress.Request(this)
-                : carrier.TryAcquire(this);
+            // Straight into the bag on one press.
+            //
+            // It used to go through LootPickupProgress, which charges a wait by
+            // counting the frames the thief keeps asking. That design is sound and
+            // the input was not: one press asks once, so a tap never finished and
+            // holding was never signposted — in a session the local input is off,
+            // so the progress ring the hold was supposed to fill does not even
+            // run. Two attempts at making the hold legible both landed on "the key
+            // does nothing", which is the worst reading a key can have.
+            return carrier.TryAcquire(this);
         }
 
         /// <summary>
-        /// How long the thief has to stand beside it, from the piece's own data.
+        /// Zero: one press takes it.
         ///
-        /// The same number <see cref="LootPickupProgress"/> charges, read from the
-        /// same place. A second constant here would be a second thing to tune and
-        /// the two would part company on the first balance pass — and the symptom
-        /// would be a progress ring that fills before or after the theft lands.
+        /// Still an <see cref="IHoldInteractable"/> rather than dropping back to a
+        /// plain interactable, and that is what makes the press work offline —
+        /// <c>PlayerInteractionInput</c> reads a zero duration as "complete it
+        /// now" and calls <see cref="CompleteHold"/> on the press frame. The route
+        /// through <c>TryInteract</c> stays for the host, which is handed requests
+        /// rather than pressing keys.
         /// </summary>
-        public float HoldDurationSeconds =>
-            definition != null ? definition.PickupSeconds : 0f;
+        public float HoldDurationSeconds => 0f;
 
         /// <summary>
         /// Whether this player may start taking it.
@@ -193,12 +203,9 @@ namespace PawsAndLoot.Gameplay.Loot
         /// <summary>
         /// Takes it, at the end of the hold.
         ///
-        /// Straight to the carrier rather than through
-        /// <see cref="LootPickupProgress"/>: the hold that just finished *is* the
-        /// wait that component exists to impose, and asking it again would start a
-        /// second timer and hand back false on the frame the theft should land.
-        /// The progress component still runs the show in a session, where the host
-        /// decides and the client can only keep asking.
+        /// The same route <see cref="TryInteract"/> takes. Two entry points and
+        /// one rule: a press from this machine and a request from the host both
+        /// end at <c>LootCarrier.TryAcquire</c>.
         /// </summary>
         public bool CompleteHold(PlayerInteractionContext context)
         {
@@ -207,15 +214,11 @@ namespace PawsAndLoot.Gameplay.Loot
                 return false;
             }
 
-            context.Player.GetComponent<LootPickupProgress>()
-                ?.Cancel(LootPickupInterruption.ChangedTarget);
             return context.Player.GetComponent<LootCarrier>().TryAcquire(this);
         }
 
         public void CancelHold(PlayerInteractionContext context)
         {
-            context.Player?.GetComponent<LootPickupProgress>()
-                ?.Cancel(LootPickupInterruption.StoppedAsking);
         }
 
         internal bool TryAcquire(
@@ -390,6 +393,17 @@ namespace PawsAndLoot.Gameplay.Loot
             {
                 carrier.HandleLootUnavailable(this);
             }
+        }
+
+        private void CacheWorldColliders()
+        {
+            if (_worldColliders != null)
+            {
+                return;
+            }
+
+            _worldColliders = GetComponentsInChildren<Collider>(true);
+            _worldClearance = CalculateWorldClearance(_worldColliders);
         }
 
         private void AttachPresentation(Transform carryPoint)

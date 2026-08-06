@@ -195,6 +195,27 @@ namespace PawsAndLoot.Integration.Network
         /// of treasure would have let the other hold E at the raccoon and sell
         /// their bag one item per frame.
         /// </summary>
+        /// <summary>
+        /// The network id of what this machine is looking at, or zero.
+        ///
+        /// Zero for anything that is not a spawned object — doors, ladders, bins
+        /// are scene furniture with no id — and the host falls back to its own
+        /// scan for those. They are single objects in a place, so the two machines
+        /// cannot disagree about which one is meant.
+        /// </summary>
+        private static ulong NamedTarget(PlayerInteractionScanner scanner)
+        {
+            Transform at = scanner != null && scanner.CurrentTarget != null
+                ? scanner.CurrentTarget.InteractionTransform
+                : null;
+            NetworkObject spawned = at != null
+                ? at.GetComponentInParent<NetworkObject>()
+                : null;
+            return spawned != null && spawned.IsSpawned
+                ? spawned.NetworkObjectId
+                : 0UL;
+        }
+
         private static PlayerInteractionScanner LocalScanner(PlayerRole role)
         {
             foreach (PlayerInteractionScanner scanner in
@@ -455,7 +476,11 @@ namespace PawsAndLoot.Integration.Network
                     ? keyboard.eKey.isPressed
                     : keyboard.eKey.wasPressedThisFrame))
             {
-                link.SubmitInteractRpc();
+                // Named, when the thing in range is a spawned object the host can
+                // look up. Both machines scan independently and rank by distance,
+                // so two pieces on one shelf are routinely ranked differently —
+                // the prompt said one thing and another went into the bag.
+                link.SubmitInteractRpc(NamedTarget(local));
             }
 
             if (keyboard.qKey.wasPressedThisFrame)

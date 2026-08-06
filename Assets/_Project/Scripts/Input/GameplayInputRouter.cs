@@ -26,6 +26,14 @@ namespace PawsAndLoot.Input
         public static event Action<int> QuickSlotPressed;
         public static event Action<int> AnimalCommandPressed;
         public static event Action ContextInteractionPressed;
+
+        /// <summary>
+        /// The interact key, raised whether or not a panel is open.
+        ///
+        /// Only for interactions a screen answers — the cat's bag. Everything the
+        /// key does to the world stays behind the suppression gate.
+        /// </summary>
+        public static event Action ScreenInteractionPressed;
         public static event Action InventoryTogglePressed;
         public static event Action VoicePressed;
         public static event Action EscapePressed;
@@ -216,6 +224,18 @@ namespace PawsAndLoot.Input
             if (keyboard.fKey.wasPressedThisFrame)
             {
                 TakeAllPressed?.Invoke();
+            }
+
+            // Above the gate, like the take-all key.
+            //
+            // The cat's bag is opened from this event, and opening the thief's own
+            // bag suppresses gameplay input — so pressing E at the cat with the
+            // bag already open reached nothing at all. The suppression is there to
+            // stop the world being acted on through an open panel; a screen the
+            // HUD opens beside that panel is not the world.
+            if (keyboard.eKey.wasPressedThisFrame)
+            {
+                ScreenInteractionPressed?.Invoke();
             }
 
             if (GameplayInputSuppressed)
