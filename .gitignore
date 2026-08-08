@@ -38,10 +38,17 @@ crashlytics-build.properties
 
 # Written by the Performance Testing Extension on every test run and full of
 # this machine's hardware details.
+#
+# These two files are the only thing here that should be ignored. The rule used
+# to be the whole `/Assets/Resources/` folder, which swept out everything else
+# in it — and *everything under a Resources folder is what the game loads by
+# name at runtime*. A teammate who cloned the repo got no
+# `PawliceAndPurrglarDefaultFont`, so `Resources.Load<TMP_FontAsset>` returned
+# null and every Korean string in the game rendered as blank boxes.
+#
+# Widen this again and the same thing happens, quietly, to whoever clones next.
 /Assets/Resources/PerformanceTestRunInfo.json*
 /Assets/Resources/PerformanceTestRunSettings.json*
-/Assets/Resources/
-/Assets/Resources.meta
 
 # Burst leaves generated WebGL plugin sources at the repo root after a WebGL
 # build. Build output, not source.
