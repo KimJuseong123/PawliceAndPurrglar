@@ -90,6 +90,19 @@ namespace PawsAndLoot.Companions
                     ? CompanionCommandId.Scout
                     : CompanionCommandId.Search,
                 "DISTRACT_TARGET" => CompanionCommandId.Distract,
+
+                // BARK and HIDE had no intent name at all until 2026-08-07, so
+                // `Ctrl+4` reached them and voice could not — a perfect transcript
+                // of "짖으라고" resolved to `None` and the dog did nothing. The
+                // silence is what made it look like a microphone problem.
+                // `VoiceCommandReachabilityTests` now fails if a number-key
+                // command loses its voice route again.
+                "BARK" => kind == CompanionKind.Dog
+                    ? CompanionCommandId.Bark
+                    : CompanionCommandId.Distract,
+                "HIDE" => kind == CompanionKind.Cat
+                    ? CompanionCommandId.Hide
+                    : CompanionCommandId.Guard,
                 "MOVE_TO_POSITION" => kind == CompanionKind.Dog
                     ? CompanionCommandId.Guard
                     : CompanionCommandId.Scout,

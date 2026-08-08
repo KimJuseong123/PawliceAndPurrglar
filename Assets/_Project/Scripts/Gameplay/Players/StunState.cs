@@ -36,6 +36,16 @@ namespace PawsAndLoot.Gameplay.Players
         public float RemainingSeconds => _remainingSeconds;
 
         /// <summary>
+        /// What put the player here, for the screen to draw.
+        ///
+        /// Kept after the stun runs out rather than reset, because the views that
+        /// read it fade out over the following half second and a cause that
+        /// snapped back to <see cref="StunCause.Impact"/> on the last frame would
+        /// pop four stars onto a character who had just finished sliding.
+        /// </summary>
+        public StunCause Cause { get; private set; } = StunCause.Impact;
+
+        /// <summary>
         /// True while another stun would be refused. Exposed so the thrower can
         /// be told the hit did nothing instead of silently wasting a rock.
         /// </summary>
@@ -47,6 +57,19 @@ namespace PawsAndLoot.Gameplay.Players
         /// </summary>
         public bool TryApply(float seconds)
         {
+            return TryApply(seconds, StunCause.Impact);
+        }
+
+        /// <summary>
+        /// Returns false when the stun was refused, either because one is
+        /// already running or because the last one ended too recently.
+        ///
+        /// The cause only reaches the screen. Refusing on the same terms
+        /// whatever the cause is deliberate: a banana that could re-trip a
+        /// player a rock could not would be a rule change wearing a costume.
+        /// </summary>
+        public bool TryApply(float seconds, StunCause cause)
+        {
             if (seconds <= 0f || IsStunned || IsImmune)
             {
                 return false;
@@ -54,9 +77,10 @@ namespace PawsAndLoot.Gameplay.Players
 
             _remainingSeconds = seconds;
             _cooldownSeconds = seconds + minimumGapSeconds;
+            Cause = cause;
             GameLogger.Info(
                 GameLogCategory.Player,
-                $"'{name}' stunned for {seconds:0.0}s.",
+                $"'{name}' stunned for {seconds:0.0}s ({cause}).",
                 this);
             Stunned?.Invoke(seconds);
             return true;

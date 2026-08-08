@@ -3,11 +3,15 @@ import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
 import websocket from "@fastify/websocket";
-import { env } from "./config/env.js";
+import { env, usingStubVoiceProviders } from "./config/env.js";
 import { SessionCapabilityService } from "./auth/session-capability-service.js";
 import { VoiceEventChannel } from "./ws/voice-event-channel.js";
 import { OpenAiIntentClassifierClient } from "./voice/intent-classifier-client.js";
 import { OpenAiSpeechToTextClient } from "./voice/speech-to-text-client.js";
+import {
+  StubIntentClassifierClient,
+  StubSpeechToTextClient
+} from "./voice/stub-voice-providers.js";
 import { VoiceCommandService } from "./voice/voice-command-service.js";
 import { registerVoiceRoutes } from "./http/voice-command-routes.js";
 
@@ -15,12 +19,26 @@ export function buildApp() {
   const app = Fastify({ logger: true });
   const sessions = new SessionCapabilityService();
   const events = new VoiceEventChannel(sessions);
+
+  // Stubs when no speech provider is configured, so the game stays playable and
+  // the obedience numbers stay tunable before anyone has paid for a key.
   const commands = new VoiceCommandService(
     sessions,
     events,
-    new OpenAiSpeechToTextClient(),
-    new OpenAiIntentClassifierClient()
+    usingStubVoiceProviders
+      ? new StubSpeechToTextClient()
+      : new OpenAiSpeechToTextClient(),
+    usingStubVoiceProviders
+      ? new StubIntentClassifierClient()
+      : new OpenAiIntentClassifierClient()
   );
+
+  if (usingStubVoiceProviders) {
+    app.log.warn(
+      "No OPENAI_API_KEY: voice is running on stubs. Transcription is a fixed "
+        + "rotation, not speech. Set the key before judging accuracy."
+    );
+  }
 
   void app.register(cors, {
     origin: env.allowedOrigins.length > 0 ? env.allowedOrigins : false

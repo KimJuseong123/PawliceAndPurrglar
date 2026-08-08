@@ -317,14 +317,23 @@ namespace PawsAndLoot.Gameplay.Items
         }
 
         /// <summary>
-        /// A per-container seed derived from its own id, so two cupboards on the
-        /// same table hold different things and the same cupboard holds the same
-        /// thing on a re-run. Replaced by the host's match seed once containers are
-        /// replicated; the shape is already right for it.
+        /// The host's match seed, mixed with this container's id so two cupboards
+        /// on the same table hold different things.
+        ///
+        /// It used to be <c>ContainerId.GetHashCode()</c> alone, which was wrong
+        /// twice over. .NET randomises string hashing **per process**, so the host
+        /// and the client rolled different contents for the same cupboard in the
+        /// same match — the one thing the id was there to prevent. And a seed with
+        /// no match in it makes every match identical, which the comment here
+        /// described as a feature ("the same cupboard holds the same thing on a
+        /// re-run") without noticing it also meant the second match is the first
+        /// one.
         /// </summary>
         private int ResolveSeed()
         {
-            return ContainerId.GetHashCode();
+            return Loot.MatchDrawSeed.For(
+                Loot.MatchDrawSeed.Current,
+                ContainerId);
         }
 
         private IMatchStateReader ResolveMatchState()

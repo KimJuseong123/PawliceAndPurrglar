@@ -128,7 +128,9 @@ namespace PawsAndLoot.Gameplay.Items
                 || (profile.Effects & ThrowableEffectType.Stun) != 0)
             {
                 StunState stun = victim.GetComponent<StunState>();
-                if (stun?.TryApply(profile.Duration) == true
+                if (stun?.TryApply(
+                        profile.Duration,
+                        ThrowableCatalog.GetStunCause(kind)) == true
                     && kind == ThrowableKind.Rock)
                 {
                     PawsAndLoot.Gameplay.Loot.LootConfiscationRule.Apply(

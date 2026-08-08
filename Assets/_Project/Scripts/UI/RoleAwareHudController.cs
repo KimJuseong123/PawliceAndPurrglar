@@ -512,15 +512,22 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            if (voice.State != VoiceCommandInputState.Recording
-                && voice.CooldownRemainingSeconds <= 0f)
+            // A real toggle. The key is push-to-talk, but a button cannot be
+            // held, so the second press has to be the one that stops — otherwise
+            // clicking the microphone always cost the full five seconds.
+            if (voice.State == VoiceCommandInputState.Recording)
             {
-                voice.StartListening();
+                voice.StopListening();
+                return;
             }
-            else if (voice.CooldownRemainingSeconds > 0f)
+
+            if (voice.CooldownRemainingSeconds > 0f)
             {
                 ShowVoiceCooldownFeedback();
+                return;
             }
+
+            voice.StartListening();
         }
 
         private void HandleEscape()

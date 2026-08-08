@@ -64,9 +64,25 @@ namespace PawsAndLoot.Integration.Network
         public static readonly int NoiseMessageBytes =
             sizeof(float) * 4 + sizeof(int);
 
+        /// <summary>
+        /// Who, which prop, where, and for how long.
+        ///
+        /// The duration used to be assumed at the far end
+        /// (<c>ThrowableCatalog.RevealSeconds</c>), which was fine while the
+        /// sensor light was the only thing that revealed anybody. The display
+        /// case's alarm reveals for four seconds, so the number has to travel
+        /// with the message rather than be guessed from it.
+        /// </summary>
         public static readonly int RevealMessageBytes =
             FastBufferWriter.GetWriteSize<int>() * 2
-            + FastBufferWriter.GetWriteSize<Vector3>();
+            + FastBufferWriter.GetWriteSize<Vector3>()
+            + FastBufferWriter.GetWriteSize<float>();
+
+        /// <summary>
+        /// A reveal that came from something other than a placed prop, so there
+        /// is no lamp to flash.
+        /// </summary>
+        public const int NoTrap = -1;
 
         public static readonly int PickupMessageBytes =
             FastBufferWriter.GetWriteSize<int>()
@@ -366,13 +382,18 @@ namespace PawsAndLoot.Integration.Network
 
             if (effect == TrapEffect.Reveal)
             {
-                Reveal(victim.Role, trap.TrapId, trap.transform.position);
+                Reveal(
+                    victim.Role,
+                    trap.TrapId,
+                    trap.transform.position,
+                    ThrowableCatalog.RevealSeconds);
                 return;
             }
 
             StunState stun = victim.GetComponent<StunState>();
             bool held = stun?.TryApply(
-                ThrowableCatalog.GetStunSeconds(trap.Kind)) == true;
+                ThrowableCatalog.GetStunSeconds(trap.Kind),
+                ThrowableCatalog.GetStunCause(trap.Kind)) == true;
 
             // A glue trap that catches the thief takes money too, on the same
             // terms as a thrown rock — the officer's props should not be worth
@@ -483,12 +504,32 @@ namespace PawsAndLoot.Integration.Network
                 (PlayerRole)madeBy);
         }
 
+        /// <summary>
+        /// Reveals a role from something that is not a placed prop — the display
+        /// case's alarm, for now.
+        ///
+        /// Public because the alternative was for each source to sweep the
+        /// scene itself, and the alarm's own attempt at that was wrong in a way
+        /// nothing could see (it asked the thief for a component only the
+        /// officer has). Going through here also means the reveal **replicates**,
+        /// which the alarm's local sweep never did: the thief's screen has to
+        /// know it is lit up, and that is the whole point of telling them.
+        /// </summary>
+        public void RevealRole(
+            PlayerRole revealed,
+            float seconds,
+            Vector3 source)
+        {
+            Reveal(revealed, NoTrap, source, seconds);
+        }
+
         private void Reveal(
             PlayerRole revealed,
             int trapId,
-            Vector3 source)
+            Vector3 source,
+            float seconds)
         {
-            ApplyRevealLocally(revealed, trapId, source);
+            ApplyRevealLocally(revealed, trapId, source, seconds);
 
             NetworkManager manager = ResolveManager();
             if (manager == null
@@ -504,6 +545,7 @@ namespace PawsAndLoot.Integration.Network
             writer.WriteValueSafe((int)revealed);
             writer.WriteValueSafe(trapId);
             writer.WriteValueSafe(source);
+            writer.WriteValueSafe(seconds);
             manager.CustomMessagingManager.SendNamedMessageToAll(
                 RevealMessageName,
                 writer);
@@ -512,23 +554,14 @@ namespace PawsAndLoot.Integration.Network
         private void ApplyRevealLocally(
             PlayerRole revealed,
             int trapId,
-            Vector3 source)
+            Vector3 source,
+            float seconds)
         {
-            foreach (FlashlightVisibility visibility in
-                FindObjectsByType<FlashlightVisibility>(
-                    FindObjectsSortMode.None))
-            {
-                // The component sits on the watcher and hides the other side, so
-                // the one to switch off is the one that is not the revealed
-                // player.
-                if (visibility.GetComponent<PlayerRoleIdentity>()?.Role
-                    != revealed)
-                {
-                    visibility.RevealFor(
-                        ThrowableCatalog.RevealSeconds,
-                        source);
-                }
-            }
+            // The component sits on the watcher and hides the other side, so the
+            // one to switch off is the one that is not the revealed player. That
+            // rule lives on FlashlightVisibility now, because it was written
+            // twice and the second copy had it backwards.
+            FlashlightVisibility.RevealRole(revealed, seconds, source);
 
             if (_traps.TryGetValue(trapId, out PlacedTrap trap)
                 && trap != null)
@@ -545,6 +578,7 @@ namespace PawsAndLoot.Integration.Network
             reader.ReadValueSafe(out int revealed);
             reader.ReadValueSafe(out int trapId);
             reader.ReadValueSafe(out Vector3 source);
+            reader.ReadValueSafe(out float seconds);
 
             NetworkManager manager = ResolveManager();
             if (manager != null && manager.IsServer)
@@ -553,7 +587,11 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
-            ApplyRevealLocally((PlayerRole)revealed, trapId, source);
+            ApplyRevealLocally(
+                (PlayerRole)revealed,
+                trapId,
+                source,
+                seconds);
         }
 
         /// <summary>

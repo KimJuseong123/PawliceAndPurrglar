@@ -13,7 +13,7 @@ namespace PawsAndLoot.Tests.EditMode
     /// This case needs a real AnimatorController with a clip in it, which is an
     /// editor-only type, so it lives here rather than in the Play Mode suite. It
     /// builds its own controller instead of loading the project's, so the result
-    /// is the same whether or not this machine has TopDownEngine installed.
+    /// is the same whether the controller is absent, empty, or fully populated.
     /// </summary>
     public sealed class AnimatorClipGuardTests
     {
@@ -79,7 +79,7 @@ namespace PawsAndLoot.Tests.EditMode
                 AnimatorClipGuard.CountUsableClips(animator),
                 Is.EqualTo(0),
                 "An assigned but empty controller is still nothing to play, "
-                + "which is exactly the TopDownEngine-absent case.");
+                + "which is exactly the no-authored-clips case this ships in.");
 
             Object.DestroyImmediate(root);
         }

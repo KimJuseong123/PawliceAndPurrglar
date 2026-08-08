@@ -7,11 +7,16 @@ namespace PawsAndLoot.Animation
     /// Switches an Animator off when its controller has no usable clips, so a
     /// character without animation still stands up straight.
     ///
-    /// The locomotion clips come from TopDownEngine, a paid asset whose licence
-    /// forbids redistribution, so it is not in this repository. In a checkout
-    /// without it the controller's clip references are dangling, and a humanoid
-    /// Animator with nothing to play retargets the rig to a rest pose that does
-    /// not match the one the scene was built against.
+    /// The authored characters ship no clips of their own (<c>MODEL-002</c> is
+    /// the job that changes that), so there is no locomotion controller to
+    /// assign and the Animator is left holding nothing. A humanoid Animator
+    /// with nothing to play retargets the rig to a rest pose that does not
+    /// match the one the scene was built against.
+    ///
+    /// This used to be described as a TopDownEngine problem — its clips were
+    /// what the controller referenced. That dependency is gone, and the rule is
+    /// not: any controller with no usable clips does the same thing, which is
+    /// why the guard stayed when the asset went.
     ///
     /// That mismatch is the bug this prevents. Model height and foot placement
     /// are baked at scene-build time from the bind pose
@@ -142,9 +147,9 @@ namespace PawsAndLoot.Animation
             GameLogger.Warning(
                 GameLogCategory.Player,
                 "No animation clips are available, so Animators are switched "
-                + "off and characters hold their bind pose. Install "
-                + "TopDownEngine locally, or wait for MODEL-002 to supply the "
-                + "characters' own clips.",
+                + "off and characters hold their bind pose. Expected until "
+                + "MODEL-002 delivers the characters' own clips into "
+                + "Assets/_Project/Art/Characters/Animations/.",
                 this);
         }
     }

@@ -112,8 +112,26 @@ namespace PawsAndLoot.Gameplay.Loot
             // Lit from the cushion rather than from wherever they are standing,
             // so the mark on the officer's screen is the place worth running to
             // and not a place the thief has already left.
-            thief?.GetComponent<FlashlightVisibility>()?.RevealFor(
-                ThiefRevealSeconds,
+            //
+            // This used to ask the thief for their own FlashlightVisibility.
+            // **Only the officer has one** — the component sits on the watcher
+            // and hides the other side — so the null-conditional swallowed the
+            // whole thing and the alarm's four seconds of exposure never
+            // happened, not once, since the day it was written. The siren still
+            // sounded and the officer still got their sprint, which is why it
+            // read as working.
+            //
+            // Through the coordinator rather than a local sweep, because the
+            // alarm is raised on the host and the person being exposed is on the
+            // other machine. Telling only the host is telling nobody who needed
+            // to hear it.
+            // Whoever actually lifted it, rather than an assumption that it
+            // was the thief. It always is today — only the thief can take a
+            // piece — but an alarm that names the wrong role would expose the
+            // wrong player, and that is a silent failure of exactly the kind
+            // this line already made once.
+            RevealLifter(
+                thief != null ? thief.Role : PlayerRole.Thief,
                 at);
 
             GameLogger.Info(
@@ -122,6 +140,53 @@ namespace PawsAndLoot.Gameplay.Loot
                 + $"{PoliceBoostSeconds}s.",
                 this);
             Raised?.Invoke(at);
+        }
+
+        /// <summary>
+        /// How many watchers the last alarm switched off. Zero means nobody was
+        /// exposed, which is what this did for its whole existence — latched so
+        /// a test can tell that apart from "the alarm never fired".
+        /// </summary>
+        public int LastRevealedWatchers { get; private set; }
+
+        private void RevealLifter(PlayerRole lifter, Vector3 at)
+        {
+            Integration.Network.NetworkItemCoordinator coordinator =
+                FindFirstObjectByType<
+                    Integration.Network.NetworkItemCoordinator>();
+
+            if (coordinator != null)
+            {
+                coordinator.RevealRole(lifter, ThiefRevealSeconds, at);
+            }
+
+            // Counted from the components afterwards rather than from the
+            // coordinator's return, so an offline scene with no coordinator is
+            // still measured — and so is the case where the coordinator is
+            // there and reveals nobody.
+            LastRevealedWatchers = coordinator != null
+                ? CountRevealed(lifter)
+                : FlashlightVisibility.RevealRole(
+                    lifter,
+                    ThiefRevealSeconds,
+                    at);
+        }
+
+        private static int CountRevealed(PlayerRole lifter)
+        {
+            int revealed = 0;
+            foreach (FlashlightVisibility watcher in
+                FindObjectsByType<FlashlightVisibility>(
+                    FindObjectsSortMode.None))
+            {
+                if (watcher.ViewerRole != lifter
+                    && watcher.IsRevealed)
+                {
+                    revealed++;
+                }
+            }
+
+            return revealed;
         }
 
         private NoiseBoard ResolveNoiseBoard()

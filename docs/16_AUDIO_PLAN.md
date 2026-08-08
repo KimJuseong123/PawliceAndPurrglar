@@ -24,6 +24,48 @@
 규칙은 `GameSoundId`를 이름으로 올리기만 하고 `AudioSource`를 만지지 않는다. 클립이
 없거나 믹서가 음소거여도 경기 판정이 달라지지 않는다 — 이 단방향 규칙은 유지한다.
 
+## A-0. 파일을 어디에 어떤 이름으로 넣는가
+
+```text
+Assets/_Project/Audio/SFX/<파일이름>.<확장자>
+```
+
+**확장자는 무엇이든 된다.** `SoundBankSetup.Extensions`가 `.wav` `.mp3` `.ogg`
+`.flac` `.aiff` `.aif` 순으로 찾으므로 **파일 이름(확장자 없는 부분)만 맞추면** 된다.
+이름은 `SoundBankSetup.cs`의 `Mapping` 배열에 적혀 있다.
+
+넣은 다음에 **한 번 실행한다**:
+
+```text
+Paws & Loot > Setup > Assign Sound Bank Clips
+```
+
+콘솔에 `[AUDIO-001] Victory ← sfx_victory (3.00s)` 처럼 **ID · 파일 · 길이**가 한
+줄씩 찍힌다. 길이가 여기 찍히는 이유는 그것이 가장 자주 틀리고 아무도 확인하지 않는
+값이기 때문이다 — 소리가 짧게 끊기면 이 줄을 먼저 본다.
+
+**교체할 때는 같은 이름으로 덮어쓴다.** 새 이름으로 넣으면 뱅크가 옛 파일을 계속
+가리킨다. 확장자가 달라지는 것은 괜찮다 (`sfx_victory.wav` → `sfx_victory.ogg`).
+
+새 소리를 **추가**할 때는 세 곳을 함께 손댄다 — 하나라도 빠지면 조용히 실패한다:
+
+| 순서 | 파일 | 하는 일 |
+|---|---|---|
+| 1 | `GameSoundId.cs` | enum에 값 추가 |
+| 2 | `SoundBankSetup.cs` | `Mapping`에 `(ID, "파일이름")` 추가 |
+| 3 | 뱅크 에셋 | `Rebuild MAP-001` 또는 `EnsureAllSoundIds()`로 엔트리 생성 |
+
+3번을 빼면 `Validate Sound Bank`가 "엔트리 없음"으로 예외를 던진다. **그게 의도다** —
+enum에만 있고 뱅크에 없는 ID는 영원히 소리가 안 나는데 로그도 안 남는다.
+
+### 이름 규칙
+
+- `sfx_` 접두사 + 소문자 + `_` 구분: `sfx_glass_break`, `sfx_door_open`
+- BGM은 `Assets/_Project/Audio/Music/`에 `bgm_lobby`, `bgm_match`, `bgm_chase`,
+  `bgm_interior`, `bgm_result_win`, `bgm_result_lose` (**폴더가 아직 없다**)
+- 받은 즉시 [17_AUDIO_CREDITS.md](17_AUDIO_CREDITS.md)와
+  [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) **양쪽에** URL까지 적는다
+
 ## A. 완료된 10종
 
 파일은 [`Assets/_Project/Audio/SFX/`](../Assets/_Project/Audio/SFX)에 있고, 파일명↔ID
@@ -40,8 +82,17 @@
 | `ArrestCompleted` | `sfx_arrest_done.mp3` | `ArrestCompletionController.ArrestCompleted` |
 | `DogBark` | `sfx_dog_bark.flac` | 강아지 명령 수락 |
 | `CatMeow` | `sfx_cat_meow.wav` | 고양이 명령 수락, `DistractionBoard.DistractionStarted` |
-| `Victory` | `sfx_victory.wav` | `MatchEndController.MatchEndingStarted` (승) |
-| `Defeat` | `sfx_defeat.wav` | 같은 이벤트 (패) |
+| `Victory` | `sfx_victory.wav` | `MatchEndController.MatchEndingStarted`, **보는 사람이 이겼을 때** |
+| `Defeat` | `sfx_defeat.wav` | 같은 이벤트, 보는 사람이 졌을 때 |
+
+> **승·패는 승자 기준이 아니라 보는 사람 기준이다.** `GameSoundObserver`가 경찰이
+> 이기면 무조건 팡파르를 울리고 있었다 — 도둑은 **져도 승리 팡파르**를 듣고 이겨도
+> 패배음을 들었다. `UI-016`이 결과 화면 제목에서 고친 것과 정확히 같은 혼동이고 소리만
+> 남아 있었다 (`ISSUE-070`).
+>
+> **길이**: 두 파일은 지금 각각 **1.81초 · 2.00초**다. 3초짜리로 교체하려면 같은
+> 이름으로 덮어쓰고 `Assign Sound Bank Clips`를 한 번 돌린다 — 이 둘은 2.5초 길이
+> 경고에서 면제돼 있다.
 
 ## B. 클립을 받기 전에 고쳐야 하는 것 — 재생 구조의 한계
 
@@ -56,6 +107,18 @@
 | **피치 랜덤이 없다** | 발소리가 같은 파형 반복이라 기계처럼 들린다 | `pitch` 흔들기 (±5% 정도) |
 | **역할별 청취가 없다** | `SensorTripped`는 경찰에게만 들려야 하는데 구분할 자리가 없다 | 요청 시 대상 역할 지정 |
 | **0.08초 중복 억제가 전역이다** | 발소리처럼 의도적으로 빠른 반복과, 프레임마다 올라오는 사고를 같은 규칙으로 다룬다 | ID별 억제 시간 |
+| ~~**씬이 언로드되면 재생이 끊긴다**~~ | ~~승·패 스팅어가 몇 프레임 만에 잘렸다~~ | **해결** (`ISSUE-070`) — `PersistentOneShotAudio` |
+
+`GameSoundService`와 그 `AudioSource`는 `GreyboxMapSetup`이 **Game 씬 안에** 만든다.
+그래서 경기가 끝나는 순간 올린 소리는 결과 씬이 로드될 때 **재생 중인 오브젝트가
+파괴돼서** 잘렸다. 승·패 스팅어만 `PersistentOneShotAudio`(`DontDestroyOnLoad`)에서
+재생한다. **이 목록의 다른 소리에는 이 문제가 없다** — 경기 중에 나고 경기 중에 끝난다.
+
+> **`DontDestroyOnLoad`를 `Game Audio` 오브젝트 자체에 걸지 않았다.** 그 오브젝트에는
+> `GameSoundObserver`가 함께 붙어 있고, 관찰자는 그 씬의 플레이어·지갑·체포 컨트롤러를
+> 참조한다. 씬을 다시 로드하면 살아남은 낡은 관찰자가 죽은 참조를 들고 있고 새 것은
+> 싱글턴 가드에 막힌다 — `ISSUE-052`의 낡은 `NetworkManager`와 같은 함정이다.
+> 살아남는 오브젝트는 **씬 참조를 하나도 갖지 않는다.**
 
 그리고 **`GameSoundId`에 값을 추가하면 뱅크 에셋을 다시 만들어야 한다.**
 `Validate Sound Bank`가 엔트리 없는 ID에서 예외를 던지므로, enum만 늘리고 에셋을

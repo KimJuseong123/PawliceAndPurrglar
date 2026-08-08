@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 namespace PawsAndLoot.Tests.PlayMode
 {
     /// <summary>
-    /// A checkout without TopDownEngine has no locomotion clips, and a humanoid
+    /// The characters ship no locomotion clips yet, and a humanoid
     /// Animator with nothing to play buried the characters in the ground. The
     /// guard is what turns that into "standing still" instead of "broken", so it
     /// is worth holding in place.

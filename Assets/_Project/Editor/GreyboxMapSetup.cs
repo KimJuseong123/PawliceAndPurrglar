@@ -1448,6 +1448,13 @@ namespace PawsAndLoot.Editor
                         : "cat",
                     string.Empty);
 
+                // Same locality the number keys get. Without it both role
+                // objects opened the microphone on one key press and one of the
+                // two captures received silence (`ISSUE-069`).
+                voiceInput.IsLocallyControlled =
+                    binding.KeyboardInput != null
+                    && binding.KeyboardInput.IsLocallyControlled;
+
                 // ART-003. Reflects the decided result and accepted commands.
                 Animator playerAnimator = binding.Identity
                     .GetComponentInChildren<Animator>(true);
@@ -2989,28 +2996,18 @@ namespace PawsAndLoot.Editor
             Material roleMaterial =
                 LoadOrCreateMaterial($"Role_{role}", color);
 
-            // Authored textured characters take priority. The borrowed cartoon
-            // mesh stays as the fallback for anyone without the external
-            // package, and the greybox capsule as the last resort.
+            // Authored textured characters, then a greybox capsule.
+            //
+            // There used to be a rung between them that borrowed a cartoon mesh
+            // from TopDownEngine. That asset was never in the repository and was
+            // not installed on this machine either, so the middle rung could
+            // never be reached — and the authored characters have been in place
+            // for weeks regardless.
             GameObject placeholder =
                 PlaceholderModelLibrary.TryInstantiateAuthoredCharacter(
                     role == PlayerRole.Police ? "police" : "thief",
                     visualRoot,
                     AuthoredCharacterHeight);
-            if (placeholder == null)
-            {
-                // A light head against the role colour keeps the two
-                // silhouettes readable while both roles share one mesh.
-                Material headMaterial = LoadOrCreateMaterial(
-                    "Placeholder_Head",
-                    new Color(0.96f, 0.84f, 0.71f));
-                placeholder =
-                    PlaceholderModelLibrary.TryInstantiateCharacter(
-                        role,
-                        visualRoot,
-                        roleMaterial,
-                        headMaterial);
-            }
 
             if (placeholder == null)
             {
@@ -3122,7 +3119,7 @@ namespace PawsAndLoot.Editor
             }
 
             // Procedural walk for the players, driven only when the Animator is
-            // off. The locomotion clips come from TopDownEngine and cannot be
+            // off. There are no locomotion clips yet (`MODEL-002`) and cannot be
             // committed, so without it the characters would slide along with no
             // leg motion at all; this swings their real bones instead.
             //
@@ -3282,6 +3279,15 @@ namespace PawsAndLoot.Editor
                         // orientation change unable to silently delete them
                         // again.
                         true));
+
+            // A banana spins instead. Same second of control, same guard, a
+            // different accident on the screen — the stars above now stay out of
+            // the way when the cause is a slip.
+            player.AddComponent<PawsAndLoot.Animation.SlipSpinView>()
+                .Configure(
+                    player.GetComponent<
+                        PawsAndLoot.Gameplay.Players.StunState>(),
+                    player.transform.Find("VisualRoot"));
 
             // Per-screen night adaptation. The thief's is brighter — they are the
             // one being hunted in the dark, and this is the cheapest
@@ -4817,29 +4823,35 @@ namespace PawsAndLoot.Editor
             saleArea.isTrigger = true;
             saleArea.size = new Vector3(3f, 2f, 3f);
 
-            // Keep the flat gold marker so the sale trigger footprint stays
-            // readable, then stand the market stall model behind it.
-            GameObject placeholder = GameObject.CreatePrimitive(
-                PrimitiveType.Cylinder);
-            placeholder.name = "SaleZoneMarker";
-            placeholder.transform.SetParent(target.transform, false);
-            placeholder.transform.localPosition =
-                new Vector3(0f, -0.45f, 0f);
-            placeholder.transform.localScale =
-                new Vector3(1.4f, 0.05f, 1.4f);
-            placeholder.GetComponent<Renderer>().sharedMaterial =
-                LoadOrCreateMaterial("Interaction_Sale", color);
-            UnityEngine.Object.DestroyImmediate(
-                placeholder.GetComponent<Collider>());
-
             // No stall. The shop is the bin the raccoon lives in, and a gold
             // market stall standing beside it is a second thing claiming to be
             // the shop — the merchant ended up perched on a podium in front of
             // the object that actually matters.
             //
-            // The flat disc above stays: it is where the trigger is, drawn on
-            // the ground, and a sale point you cannot see the edge of is one
-            // players learn by failing to sell.
+            // No painted disc either, for the same reason one step further. The
+            // argument for keeping it was that a sale point whose edge you
+            // cannot see is one players learn by failing to sell — but the
+            // raccoon in its bin is now a landmark you can see from across the
+            // yard, and `MerchantTradePresenter` opens the trade window the
+            // moment you are in range. Walking up and having the shop open is
+            // better feedback than a circle on the grass, and the circle reads
+            // as a level-editor artefact next to finished art. Same call as the
+            // place-name captions (`ShowGreyboxDebugMarkers`).
+            if (ShowGreyboxDebugMarkers)
+            {
+                GameObject footprint = GameObject.CreatePrimitive(
+                    PrimitiveType.Cylinder);
+                footprint.name = "SaleZoneMarker";
+                footprint.transform.SetParent(target.transform, false);
+                footprint.transform.localPosition =
+                    new Vector3(0f, -0.45f, 0f);
+                footprint.transform.localScale =
+                    new Vector3(1.4f, 0.05f, 1.4f);
+                footprint.GetComponent<Renderer>().sharedMaterial =
+                    LoadOrCreateMaterial("Interaction_Sale", color);
+                UnityEngine.Object.DestroyImmediate(
+                    footprint.GetComponent<Collider>());
+            }
 
             LootSaleZone saleZone =
                 target.AddComponent<LootSaleZone>();

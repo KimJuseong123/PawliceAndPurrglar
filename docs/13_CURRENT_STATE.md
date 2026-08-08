@@ -301,6 +301,24 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
 
 기존 파일을 삭제하거나 이동하는 작업은 별도 요청과 백업 후 진행한다.
 
+## Node.js (2026-08-07 설치)
+
+`server/`를 돌리려면 필요하고 이 PC에 없었다. **portable zip을 사용자 폴더에** 풀었다 —
+관리자 권한 불필요, 시스템 설정 무변경, 폴더 삭제로 완전 원복.
+
+| 항목 | 값 |
+|---|---|
+| 버전 | Node **24.19.0** LTS (Krypton), npm **11.17.0** |
+| 위치 | `C:\Users\SSAFY\nodejs` |
+| 출처 | `nodejs.org/dist/v24.19.0/node-v24.19.0-win-x64.zip` (35.6MB) |
+| 검증 | 공식 `SHASUMS256.txt`와 SHA256 **일치** |
+| PATH | **사용자 PATH만.** 시스템 PATH·레지스트리 무변경 |
+
+**`winget`을 쓰지 않은 이유**: 전역 설치라 UAC 창이 뜨고 비대화형 셸에서 멈춘다.
+
+`esbuild`의 postinstall이 npm 11의 기본 차단에 걸려서 `npm approve-scripts esbuild`가
+한 번 필요했다. 새 체크아웃에서도 같다.
+
 ## 현재 알려진 환경 상태
 
 - 실행 중인 Unity 프로세스는 확인되지 않았다.
@@ -416,11 +434,15 @@ WebGL은 목표 플랫폼이 아니며(`ISSUE-008`) 측정 목적으로만 빌�
 | `WebGL.wasm.gz` (코드) | 14.02MB |
 | `WebGL.framework.js.gz` | 0.08MB |
 
-판정: 첫 로딩에 33.9MB는 **웹 배포 기준으로 무겁다.** 절반 이상이 코드
-(`wasm` 14MB)인데, 이는 외부 TopDown Engine 전체가 여전히 프로젝트에 임포트돼
-있어 IL2CPP가 함께 컴파일하기 때문이다. 웹을 실제 목표로 채택하면 미사용 외부
-에셋 제거가 가장 큰 절감 수단이다. 에셋 19.8MB는 건물 텍스처와 캐릭터
-베이스컬러가 대부분이다.
+판정: 첫 로딩에 33.9MB는 **웹 배포 기준으로 무겁다.**
+
+> **2026-08-08 정정.** 이 문단은 `wasm` 14MB의 원인을 "TopDown Engine 전체가 여전히
+> 프로젝트에 임포트돼 있어서"라고 적었는데 **그런 적이 없다.** 실측하니 폴더 자체가
+> 존재하지 않고, git이 추적한 적도 없고, 정의도 꺼져 있었다. 즉 여기 적힌 "가장 큰
+> 절감 수단"은 처음부터 절감할 것이 없는 항목이었고, 그것을 믿고 다른 곳을 안 봤다.
+> 실제로 큰 것은 **`Resources` 폴더**였다 — 참조 여부와 무관하게 전부 들어가는데,
+> 손그림 HUD 아이콘 11종이 1254×1254로 거기 있었다 (`CLEAN-002`).
+> `wasm` 크기의 실제 원인은 아직 안 쟀다.
 
 판정: 현재 프레임은 목표에 여유가 있으나 **렌더러 1,604개는 과다하다.**
 평균이 중간값의 1.5배인 것은 초기 로드 구간의 스파이크이며, 정상 구간은
@@ -571,7 +593,21 @@ VSync 상한에 붙어 있다. `ART-012` 머티리얼 통합과 정적 배칭을
 
 ## 바로 다음 작업
 
-`LOOT-014` 소품 다섯 종의 실내 랜덤 스폰. 계획은 백로그에 적혀 있다.
+**음성 정확도** (`VOICE-012`~`015`). 경로는 열렸지만 받아쓰기가 못 쓸 수준이다 —
+"짖으라고"가 "지지라고", "숨어"가 "스모"로 온다. 순서는 이렇다.
+
+1. `VOICE-012` 전송을 `#if UNITY_WEBGL`이 아니라 **설정**으로 고른다. 그러면 Windows
+   개발 중에 WebGL과 같은 경로를 테스트하고, AI 백엔드가 하나가 된다.
+2. `VOICE-013` 받아쓰기 정확도. 명령 어휘를 `initial_prompt`로 주는 것이 모델을
+   바꾸지 않고 얻는 가장 큰 개선이고, 그다음이 클라우드 STT다.
+3. `VOICE-014` 의도 해석은 **항상 하나를 고른다.** 받아쓰기가 조금 틀려도 닫힌 명령
+   목록 안에서 가장 가까운 것으로 복구된다 — "못 알아들었어요"를 없앤다.
+4. `VOICE-015` 엉뚱한 행동은 **호스트가 굴린다.** LLM에게 "가끔 틀려라"를 맡기면
+   양쪽 화면이 어긋나고 테스트할 수도 없다. 자리는 `PetCognitionResolver`에 있다.
+
+`cublas64_12.dll`(`VOICE-009`)은 **보류**했다 — 클라우드 STT로 가면 GPU는 무관해진다.
+
+그다음이 `LOOT-014` 소품 다섯 종의 실내 랜덤 스폰. 계획은 백로그에 적혀 있다.
 
 **이것부터 읽을 것**: 잔디밭 남동쪽의 소품 줄 다섯 개는 **지우면 안 된다**. 그것이
 바나나·개껌·폭죽·고무닭·냉동문어의 유일한 획득처다 — 씬의 수색 컨테이너는 0개이고
@@ -579,7 +615,67 @@ VSync 상한에 붙어 있다. `ART-012` 머티리얼 통합과 정적 배칭을
 지운다. 거리의 보물 여섯 개를 지운 것과는 상황이 정반대다(그쪽은 실내 열세 곳이
 9,000골드를 대신 들고 있었다).
 
-## 현재 작업
+## 현재 작업 (2026-08-08)
+
+- 작업 ID: `THROW-014` 당한 쪽 화면 표시 3종 / `LOOT-012` 호스트 시드 / `DOC-004` 요강
+- 상태: **셋 다 `DONE`.** `LOOT-013`은 `DROPPED`(작업자 결정)
+- 바나나: 별 4개 대신 캐릭터가 한 바퀴 돈다. **1초·재기절 간격·몰수는 그대로**이고
+  바뀐 것은 누가 그리는가뿐이다 (`StunCause`를 나누고 복제한다). 회전은 플레이어
+  루트가 아니라 `VisualRoot`에 건다 — 루트는 모터가 진행 방향으로 매 프레임 덮어쓰고,
+  기절이 끝났을 때 엉뚱한 방향을 보면 플레이어는 "입력이 씹혔다"로 읽는다
+- `LOOT-012`: **백로그에 적힌 증상은 실제로 도는 코드가 아니었다.** "컨테이너 id 해시"는
+  `SearchableContainer` 얘기이고 그건 씬에도 코드에도 인스턴스가 0개다. 실제로 도는
+  것은 `LootSpotDraw`이고 그쪽은 `UnityEngine.Random`으로 **호스트만** 뽑았다.
+  `NetworkLootLink`가 위치를 복제하지만 그것은 **연출 트랜스폼**이라 클라이언트의
+  `LootItem` 자체는 저장된 자리에 남아 있었다 — 그림만 맞고 나머지는 아무것도 합의되지
+  않은 상태였다. 호스트가 정수 하나를 굴려 보내고 양쪽이 같은 추첨을 돌린다
+- 끈끈이·센서등: 화면 가장자리 배너 + 남은 초. 센서등은 특히 **결과가 전부 상대 화면에서
+  일어나는** 효과라, 당한 사람은 물어볼 데조차 없었다 — `FlashlightVisibility`에
+  `ViewerRole`·`RevealRemainingSeconds`를 열어 반대편에서 읽는다
+- **실내 물건 확인 (질문에 대한 답)**: `Report Interior Loot Models` 실측으로 **62개
+  전부 자기 모델·자기 텍스처**, 큐브 0, 흰 모델 0, 13개 방 전부 채워짐. 렌더러에 역할
+  제한이 없으므로 **경찰·도둑 양쪽에 보인다**. 문(`HouseDoorway`)도 두 역할 공용이다.
+  역할로 갈리는 것은 **줍기**뿐(`PlayerInteractionType.Loot` = 도둑)이고, 경찰에게는
+  남은 개수가 화면에 적힌다(`InteriorLootTallyPresenter`)
+
+---
+
+- 작업 ID: `VOICE-008` / `ISSUE-069` Windows 음성 경로 복구
+- 상태: `DONE` (저장소 몫). **사람이 실제 마이크로 말하는 확인은 남았다**
+- 결과: 증상은 하나("음성이 안 되고 가끔 나가진다")였고 원인은 넷이었다. 어느 하나만
+  고쳐도 여전히 안 되므로 순서대로 적는다.
+
+  **1. 빌드에 도달할 서버가 없었다.** `LocalAiConfiguration`이
+  `Application.dataPath`의 부모에서 `LocalAI/`를 찾고 멈췄다 — 에디터에서는 프로젝트
+  루트이고 빌드에서는 `Builds/Playtest/Windows`다. 게이트웨이 실행 파일이 존재한 적이
+  없으니 `GATEWAY_NOT_READY`. 흔적은 `Player.log`의 경고 두 줄뿐이라 마이크 문제로
+  보였다. 이제 위로 올라가며 찾고 찾은 경로를 로그로 남긴다.
+
+  **2. STT가 CUDA에서 매 요청 500이었다.** 이 기계에 `cublas64_12.dll`이 없는데
+  `WhisperModel(device="cuda")`는 **생성에 성공한다.** `/health`는 `cuda, ready: true`,
+  실제 요청은 전부 실패. `transcribe`에 폴백을 넣어 CPU로 계속 서비스한다.
+
+  **3. 마이크를 두 번 열고 있었다.** `V`가 모든 `VoiceCommandInput`을 켜서 경찰용과
+  도둑용이 같은 프레임에 같은 장치를 열었다. 한쪽 클립은 표본이 전부 0이 되고, 한쪽의
+  `Microphone.End`가 다른 쪽 녹음을 끊는다 — 무음이 간헐적이었던 이유이고, 보고된
+  종료 현상의 가장 유력한 후보다.
+
+  **4. `V` 떼기가 없고 실패가 쿨타임을 썼다.** 문서는 처음부터 press/release였지만
+  누름만 배선돼 있어 5초 상한까지 돌았고, 쿨타임은 결과를 알기 전에 걸려서 실패한
+  시도가 키를 30초 잠갔다.
+
+  그리고 실패 문구가 코드 대신 원인을 말한다 — 윈도우 권한(`MIC_RETURNED_ONLY_ZEROS`)과
+  볼륨(`VOICE_AUDIO_SILENT`)과 서버 부재를 분리했다.
+- 실측: 한국어 TTS 5초 WAV → 게이트웨이 → `강아지 냄새 추적해` → `intent: TRACK`,
+  2.5초 (첫 요청은 CPU 재적재 포함 4.2초). 새 Windows 빌드가
+  `Local AI stack found above the build folder at 'C:\Users\SSAFY\paws-and-loot'`를
+  찍고 ollama와 게이트웨이를 실제로 띄웠다
+- 남은 위험: `cublas64_12.dll`이 없어 STT가 CPU 2.5초다 (`VOICE-009`).
+  사람 발화 확인 미실시 (`VOICE-010`). WebGL은 여전히 별도 백엔드
+  (`server/` Fastify + OpenAI)로 가고, https 종단이 없으면 LAN 주소에서
+  브라우저 마이크 자체가 없다 (`VOICE-011`)
+
+## 지난 작업 (음성 이전)
 
 - 작업 ID: `ISSUE-063`~`065`, `LOOT-011` 실내 재고 전면 배치, `ART-014` 팔 흔들림
 - 상태: `DONE` (저장소 몫). **2인 실기 확인은 남았다**
@@ -982,14 +1078,23 @@ VSync 상한에 붙어 있다. `ART-012` 머티리얼 통합과 정적 배칭을
   아니라 Game 씬에 직접 적용해 검증했다. Unity `6000.5.4f1` 경로를 찾지
   못했다는 기록은 오진이었다 (`ISSUE-014`).
 
-## 바로 다음 작업
+## 바로 다음 작업 (2026-08-08 갱신 — 요강 확보 후)
 
-1. **관문 B 2인 실기 플레이테스트.** 차단 요소가 모두 해소됐다
-2. `UI-009` 체포 횟수 `X/3`과 구금 카운트다운
-3. 도로 모델 재작업 후 샌드박스 맵 마무리 → 본 게임 이식
-4. `MAP-004` 루트 밸런스 (플레이테스트 결과 반영)
-4. `MODEL-002` 애니메이션 클립 6종 (작업자 몫, 현재 클립 0개)
-5. 낡은 백로그 상태 정리 (`MAP-002`·`LOOT-005`·`UI-004` 등 완료됐는데 TODO)
+요강이 **다섯 항목 중 하나라도 빠지면 심사 제외**라고 못박았으므로 순서가 바뀌었다.
+`docs/18_SUBMISSION_GAPS.md` 0-c 참고.
+
+1. **`SUBMIT-005` 라이선스 정리.** 가장 싸고 **제외 사유**다 — 효과음 10종의
+   freesound URL, BGM 출처, 폰트. 지금 `docs/17`에 URL이 없다
+2. **`SUBMIT-001` WebGL 배포 + 서버 https.** 1·2번 제출물이 3번 문서 안에 링크로
+   들어가므로 이것이 먼저다 (`TASK-DEPLOY-004~006`)
+3. **관문 B 2인 실기 플레이테스트.** 밸런싱은 이것의 결과다
+4. **`SUBMIT-002` 30~60초 실플레이 영상.** **편집 영상 불가** — 실제 플레이 화면
+   그대로여야 하므로, 게임이 그 길이 안에 읽히는지가 곧 3번의 결과다
+5. `SUBMIT-003`·`004` PDF 두 개 (`004`는 `005`를 그대로 싣는다)
+6. `LOOT-014` 소품 다섯 종 실내 랜덤 스폰 (**잔디밭 줄을 먼저 지우면 안 된다**)
+7. `MODEL-002` 애니메이션 클립 6종 (작업자 몫, 현재 클립 0개)
+8. 도로 모델 재작업 후 샌드박스 맵 마무리 → 본 게임 이식
+9. 낡은 백로그 상태 정리 (`MAP-002`·`LOOT-005`·`UI-004` 등 완료됐는데 TODO)
 
 ## 차단 요소
 
@@ -1018,6 +1123,25 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-08 | TopDownEngine 의존 제거 후 Edit Mode·Play Mode | Edit Mode **299/299** (TDE 전용 테스트 5건이 함께 사라져 304 → 299), Play Mode 213개 중 **211 통과** + 1 실패 + 1 스킵. `error CS` 0. **중간에 회귀를 하나 만들었고 테스트가 잡았다** — 컨트롤러를 지우자 `AnimatorClipGuard`가 붙지 않아(컨트롤러를 찾은 분기 안에서만 붙고 있었다) 다리가 전부 멈췄다 |
+| 2026-08-08 | TDE 실재 여부 실측 | `Assets/TopDownEngine/` **존재하지 않음**, git 추적 0건, `CATCOPS_TOPDOWNENGINE` 미정의, `CharacterLocomotion.controller`의 클립 GUID **6개 전부 미해결**. 즉 이 저장소의 TDE 참조는 **한 번도 해석된 적이 없다** |
+| 2026-08-08 | Edit Mode·Play Mode (경보 노출 결함 · 배너 캐시 · 질주/은신 표시 이후) | Edit Mode **304/304**, Play Mode 213개 중 **211 통과** + 1 실패 + 1 스킵. `error CS` 0 |
+| 2026-08-08 | `-netScenario full` 2프로세스 (노출 메시지 형식 변경 후) | **양쪽 `passed=true`**, 판매 500, 체포 3회, 승자 합의, 예외 0, **양쪽 13개 방 추첨**. 기준선(`false/false`)보다 나아졌다 |
+| 2026-08-08 | Edit Mode·Play Mode (바나나 회전 · `LOOT-012` 호스트 시드 · 끈끈이·센서등 표시 이후) | Edit Mode **304/304** (신규 6건 이름 XML에서 확인), Play Mode 212개 중 **210 통과** + 1 실패 + 1 스킵. 실패 1건은 기준선과 동일한 `CompanionExpression`. `error CS` 0 |
+| 2026-08-08 | 씬 재생성 (`Rebuild MAP-001`) | `SlipSpinView` 2개(플레이어 둘) 배치 확인. 씬 3.752MB → 3.753MB (+581바이트), `ProjectSettings/` 깨끗, 누락 모델 0개 |
+| 2026-08-08 | `Report Interior Loot Models` (신규) | **62개 전부 자기 모델과 자기 텍스처.** 큐브 0, 렌더러 없음 0, 기본 머티리얼 0. 13개 방 전부 채워짐(감옥 제외). 렌더러에 역할 제한이 없으므로 **경찰·도둑 양쪽에 보인다** — 줍는 것만 도둑 전용 |
+| 2026-08-08 | `-netScenario full` 2프로세스, **기준선 대조** | 내 변경을 stash하고 빌드해 먼저 기준선을 쟀다. **기준선도 양쪽 `passed=false`였다** (판매 500·체포 3회·승자 Police인데도) — 즉 `passed=false`는 내 것이 아니다. 변경 후 2회 중 **1회 양쪽 `passed=true`**, 1회는 접속 실패로 경기 자체가 안 돌았다(`GAP-006` 시간표 경합). **결정적 차이: 클라이언트가 뽑은 방 개수 0 → 13.** 기준선에서는 호스트만 뽑고 있었다 |
+| 2026-08-07 | Edit Mode (전송 통합 `VOICE-012` 이후) | **298/298 통과**, `error CS` 0. `VoiceCommandInput`을 재작성했는데 공개 API를 그대로 유지했으므로 HUD·피드·테스트가 전부 그대로 통과한다 |
+| 2026-08-07 | Edit Mode·Play Mode (음성 도달성 + 자모 매처 이후) | Edit Mode **298/298** (신규 4건 이름 XML에서 확인), Play Mode 208개 중 **206 통과** + 1 실패 + 1 스킵 (기준선 동일). `error CS` 0 |
+| 2026-08-07 | 자모 거리 알고리즘 (파이썬 재현 13사례) | **13/13 일치, 오탐 0.** 이 검증이 결함을 하나 잡았다 — 초성/종성을 다른 코드포인트로 분해하면 `스모`→`숨`이 거리 2로 탈락한다. 공유 자음 알파벳으로 고쳐 1이 됐다 |
+| 2026-08-07 | Edit·Play Mode (게임이 `?wait=1`을 쓰도록 배선한 뒤) | Edit Mode **298/298**, Play Mode 208개 중 **206 통과** + 1 실패 + 1 스킵 (기준선 동일), `error CS` 0. **결과 XML을 지우고 돌렸다** — 처음에 `using` 하나가 빠져 컴파일이 실패했는데 낡은 XML이 "298 통과"를 그대로 보여줬다 (`ISSUE-051`과 같은 함정). `error CS` 개수를 먼저 세는 습관이 잡아냈다 |
+| 2026-08-07 | 서버 (스텁 + 전사 주입 + `?wait=1` 이후) | **14/14 통과**, `tsc --noEmit` 오류 0. Unity Edit Mode **298/298** 유지. 신규 `transcript-override.test.ts` 4건이 **키도 마이크도 없이** 문장→명령 사슬을 끝까지 돈다 |
+| 2026-08-07 | 서버 `npm run typecheck` + `npm test` | **10/10 통과** (자모 매처 9건 + 세션 1건), `tsc --noEmit` 오류 0. 파이썬 재현이 아니라 실제 TypeScript로 검증됐다 — `지지라고`→`BARK`, `스모`→`HIDE` 복구가 진짜로 동작한다 |
+| 2026-08-07 | 씬 재생성 + Edit Mode·Play Mode (판매 원판 제거 이후) | `Validate MAP-001` 통과(예외 없음). 씬 YAML에서 `SaleZoneMarker` **5개 → 0개**, `Black Market Sale` **5개 유지** — 그림만 빠지고 트리거는 남았다. Edit Mode **294/294**, Play Mode 208개 중 **206 통과** + 1 실패 + 1 스킵 (기준선과 동일). `ProjectSettings/` 깨끗, 씬 3.68MB → 3.67MB |
+| 2026-08-06 | Edit Mode·Play Mode (승·패 효과음 절단 수정 이후) | Edit Mode **294/294**, Play Mode 208개 중 **206 통과** + 1 실패 + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 2건(`MatchEndSoundsPlayFromAnObjectTheSceneLoadCannotDestroy`, `TheMatchEndStingFollowsTheViewerNotTheWinner`) 이름을 XML에서 확인. 절단은 **귀가 아니라 구조로** 단정한다 — 배치 모드에는 오디오 장치가 없어서 `isPlaying`은 어느 쪽이든 false다 |
+| 2026-08-06 | Edit Mode·Play Mode (Windows 음성 경로 복구 이후) | Edit Mode **294/294**, Play Mode 206개 중 **204 통과** + 1 실패 + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 3건(`AFailedCommandDoesNotSpendTheCooldown`, `ARoleThisMachineDoesNotPlayCannotOpenTheMicrophone`, `EachVoiceFailureExplainsWhatToDoAboutIt`) 이름을 XML에서 확인. 컴파일 `error CS` 0개 |
+| 2026-08-06 | Windows 빌드 실행 (`-mapAutoQuit`) | `Local AI stack found above the build folder at 'C:\Users\SSAFY\paws-and-loot'`. 빌드가 ollama와 게이트웨이를 실제로 띄웠고 `/health` 200. **이전 실행은 같은 자리에서 `GATEWAY_NOT_READY`였다** |
+| 2026-08-06 | 게이트웨이 직접 호출 (한국어 TTS 5초 WAV) | `강아지 냄새 추적해` → `intent: TRACK`, STT 2.5초. `--device cuda`로 띄우면 첫 요청에서 `GPU_RUNTIME_FALLBACK:Library cublas64_12.dll is not found`로 CPU로 넘어가고 4.2초, 이후 2.5초 |
 | 2026-08-06 | Edit Mode·Play Mode (그레이박스 표식 제거 이후) | Edit Mode **291/291**, Play Mode 206개 중 **204 통과** + 1 스킵 (실패 1건은 기준선과 동일). 씬의 `TextMesh` **0개** — 장소 이름이 하나도 남지 않았다 |
 | 2026-08-06 | Edit Mode·Play Mode (실내 커서 해제·거리 보물 제거 이후) | Edit Mode **291/291**, Play Mode 206개 중 **204 통과** + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 `CatBagExchangePlayModeTests`가 칸의 `onClick`을 직접 눌러 양방향 이동을 단정한다 |
 | 2026-08-06 | `-netScenario full` 2프로세스 | **양쪽 `passed=true`.** 판매 350, 체포 3회, 기절, 승자 합의. 거리 보물을 없앤 뒤에도 프로브가 실내 보물을 팔아 통과한다 |

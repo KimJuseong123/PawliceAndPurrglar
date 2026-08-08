@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { fileTypeFromBuffer } from "file-type";
 import { parseBuffer } from "music-metadata";
 import { env } from "../config/env.js";
@@ -69,6 +69,12 @@ export async function registerVoiceRoutes(
     let sessionId = "";
     let petId = "";
     let clientCommandId = "";
+    let transcript = "";
+
+    // Wait for the answer in this response instead of over the socket. The
+    // socket client is WebGL-only, so without this a Windows build cannot use
+    // this backend and the two platforms drift onto different AI stacks.
+    const wait = "wait" in (request.query as Record<string, unknown>);
 
     try {
       for await (const part of parts) {
@@ -82,12 +88,44 @@ export async function registerVoiceRoutes(
           petId = String(part.value);
         } else if (part.fieldname === "clientCommandId") {
           clientCommandId = String(part.value);
+        } else if (part.fieldname === "transcript") {
+          transcript = String(part.value);
         }
       }
 
-      if (!audio || !sessionId || !petId || !clientCommandId) {
+      // Refused rather than ignored. Silently dropping it would look like the
+      // override was applied and the model disagreed.
+      if (transcript && !env.allowTranscriptOverride) {
+        return reply
+          .code(403)
+          .send({ errorCode: "TRANSCRIPT_OVERRIDE_DISABLED" });
+      }
+
+      if (!sessionId || !petId || !clientCommandId) {
         return reply.code(400).send({ errorCode: "INVALID_REQUEST" });
       }
+
+      // With a transcript there is nothing to transcribe, so audio is optional —
+      // that is what lets the intent and obedience chain be tuned with no
+      // microphone and no speech key.
+      if (!audio && !transcript) {
+        return reply.code(400).send({ errorCode: "INVALID_REQUEST" });
+      }
+
+      if (!audio) {
+        const result = commands.accept({
+          token,
+          sessionId,
+          petId,
+          clientCommandId,
+          audio: Buffer.alloc(0),
+          mimeType: "text/plain",
+          filename: "override.txt",
+          transcriptOverride: transcript
+        });
+        return await respond(reply, commands, result, token, wait);
+      }
+
       const baseMimeType = mimeType.split(";", 1)[0].trim().toLowerCase();
       if (!allowedMimeTypes.has(baseMimeType)) {
         return reply.code(415).send({ errorCode: "UNSUPPORTED_MEDIA" });
@@ -113,12 +151,10 @@ export async function registerVoiceRoutes(
         clientCommandId,
         audio,
         mimeType: baseMimeType,
-        filename
+        filename,
+        transcriptOverride: transcript || undefined
       });
-      return reply.code(202).send({
-        commandId: result.commandId,
-        status: result.duplicate ? "DUPLICATE" : "PROCESSING"
-      });
+      return await respond(reply, commands, result, token, wait);
     } catch (error) {
       const code = error instanceof Error ? error.message : "VOICE_COMMAND_ERROR";
       const status = code.includes("CAPABILITY")
@@ -160,6 +196,31 @@ export async function registerVoiceRoutes(
       }
     }
   );
+}
+
+/**
+ * 202 with an id, or — when asked to wait — the finished record.
+ *
+ * The waiting form is not a different pipeline: it runs the same processing and
+ * then reads the same record the socket listener would have received. Two code
+ * paths producing an answer would eventually produce two different answers.
+ */
+async function respond(
+  reply: FastifyReply,
+  commands: VoiceCommandService,
+  result: { commandId: string; duplicate: boolean; completion: Promise<void> },
+  token: string,
+  wait: boolean
+) {
+  if (!wait) {
+    return reply.code(202).send({
+      commandId: result.commandId,
+      status: result.duplicate ? "DUPLICATE" : "PROCESSING"
+    });
+  }
+
+  await result.completion;
+  return reply.code(200).send(commands.get(result.commandId, token));
 }
 
 function bearerToken(value: string | undefined): string {

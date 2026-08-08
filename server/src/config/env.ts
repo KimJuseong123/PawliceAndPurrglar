@@ -32,8 +32,30 @@ export const env = {
     .filter(Boolean),
   sessionRegistrationKey:
     process.env.VOICE_SESSION_REGISTRATION_KEY ?? "",
-  capabilityTtlSeconds: numberEnv("VOICE_CAPABILITY_TTL_SECONDS", 3600)
+  capabilityTtlSeconds: numberEnv("VOICE_CAPABILITY_TTL_SECONDS", 3600),
+
+  /**
+   * Lets a request carry the transcript instead of audio.
+   *
+   * This is how the intent and obedience chain gets tuned before anyone has paid
+   * for a speech key or plugged in a microphone: type `짖어`, watch the dog, and
+   * turn the numbers in `PetCognitionConfig` until the misbehaviour rate feels
+   * right.
+   *
+   * **Off unless explicitly enabled.** It is a way to put words in a player's
+   * mouth, which is exactly what a submitted build must not have.
+   */
+  allowTranscriptOverride: booleanEnv("VOICE_ALLOW_TRANSCRIPT_OVERRIDE", false)
 };
+
+/**
+ * True when no speech provider is configured.
+ *
+ * Derived rather than declared: a stub that has to be switched on by hand gets
+ * left on, and a stub that stays on while a real key is present would silently
+ * throw away the thing you are paying for.
+ */
+export const usingStubVoiceProviders = env.openAiApiKey.length === 0;
 
 if (env.maxDurationSeconds <= 0 || env.maxDurationSeconds > 5) {
   throw new Error("VOICE_COMMAND_MAX_DURATION_SECONDS must be between 0 and 5");

@@ -140,7 +140,8 @@ namespace PawsAndLoot.Gameplay.Items
         {
             StunState stun = victim.GetComponent<StunState>();
             bool landed = stun?.TryApply(
-                ThrowableCatalog.GetStunSeconds(flight.Kind)) == true;
+                ThrowableCatalog.GetStunSeconds(flight.Kind),
+                ThrowableCatalog.GetStunCause(flight.Kind)) == true;
 
             // Sight is taken separately from time, because they are separate
             // things. The octopus stuns nobody and blinds; the rock blinds

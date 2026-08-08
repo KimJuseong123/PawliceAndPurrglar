@@ -272,6 +272,20 @@ namespace PawsAndLoot.Input
                     voice.StartListening();
                 }
             }
+
+            // The release half. `docs/INPUT_BINDINGS.md` has said "V
+            // press/release" since the key was routed here, but only the press
+            // was ever wired: letting go did nothing and the recording ran until
+            // the five-second cap. A short command meant four seconds of staring
+            // at RECORDING, which reads as the key not working.
+            if (keyboard.vKey.wasReleasedThisFrame)
+            {
+                foreach (VoiceCommandInput voice in
+                    FindObjectsByType<VoiceCommandInput>(FindObjectsSortMode.None))
+                {
+                    voice.StopListening();
+                }
+            }
         }
 
         private void OnApplicationFocus(bool hasFocus)

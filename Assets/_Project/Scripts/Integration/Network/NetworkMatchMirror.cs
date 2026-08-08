@@ -54,6 +54,30 @@ namespace PawsAndLoot.Integration.Network
         public int OpenMarkets => _openMarkets.Value;
 
         /// <summary>
+        /// The number every random draw in the match starts from, rolled once
+        /// by the host.
+        ///
+        /// The market mask above is the choice itself; this is the choice's
+        /// *input*, and it is here for the draws whose result is too large to
+        /// send. A room's layout is seven positions per room across thirteen
+        /// rooms, and a message carrying that is a format to keep in step
+        /// forever. One integer covers every draw there is and every draw added
+        /// later.
+        ///
+        /// Zero means the host has not rolled yet — a drawer waits rather than
+        /// running on zero, which would be the same layout every match. It goes
+        /// back to zero when the match ends, so a rematch is not the match both
+        /// players have just learned.
+        /// </summary>
+        private readonly NetworkVariable<int> _matchSeed =
+            new(
+                0,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        public int MatchSeed => _matchSeed.Value;
+
+        /// <summary>
         /// Told by the host's draw. Ignored anywhere else — a client that wrote
         /// here would be refused by the write permission, loudly and every
         /// frame.
@@ -171,6 +195,7 @@ namespace PawsAndLoot.Integration.Network
                     matchRuntime.RemainingMatchSeconds;
                 _countdownSeconds.Value =
                     matchRuntime.ReadyCountdownRemainingSeconds;
+                PublishMatchSeed();
                 return;
             }
 
@@ -178,6 +203,33 @@ namespace PawsAndLoot.Integration.Network
                 (MatchState)_state.Value,
                 _remainingSeconds.Value,
                 _countdownSeconds.Value);
+        }
+
+        /// <summary>
+        /// Rolled on the first frame of a match and cleared when it ends.
+        ///
+        /// Rolled here rather than by whoever needs it, because there are
+        /// thirteen rooms that need it and they must all get the same one. This
+        /// component is already the single thing in the match scene the server
+        /// writes and everybody reads, so it is the only place that can say
+        /// "once".
+        ///
+        /// Never zero: zero is the value a drawer treats as "not told yet", and
+        /// a roll that landed on it would leave every room waiting for the whole
+        /// match.
+        /// </summary>
+        private void PublishMatchSeed()
+        {
+            if (matchRuntime.CurrentState != MatchState.Playing)
+            {
+                _matchSeed.Value = 0;
+                return;
+            }
+
+            if (_matchSeed.Value == 0)
+            {
+                _matchSeed.Value = Random.Range(1, int.MaxValue);
+            }
         }
     }
 }

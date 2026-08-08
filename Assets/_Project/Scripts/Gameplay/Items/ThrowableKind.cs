@@ -355,6 +355,30 @@ namespace PawsAndLoot.Gameplay.Items
         }
 
         /// <summary>
+        /// What the stun should look like. Presentation only — the duration and
+        /// the re-stun guard are the same for all three.
+        ///
+        /// A banana and a rock both take a second of control and were both being
+        /// drawn as four stars over the head, which is the drawing for "somebody
+        /// hit you". Nobody is hit by a banana; they stand on it and go over, and
+        /// the joke only lands if the screen shows the fall. The glue trap is the
+        /// third case: you are upright, awake, and your feet will not come off
+        /// the floor.
+        ///
+        /// Anything new falls to <see cref="StunCause.Impact"/>, which is the
+        /// safe default — it is what the stars already meant.
+        /// </summary>
+        public static StunCause GetStunCause(ThrowableKind kind)
+        {
+            return kind switch
+            {
+                ThrowableKind.Banana => StunCause.Slip,
+                ThrowableKind.GlueTrap => StunCause.Stuck,
+                _ => StunCause.Impact
+            };
+        }
+
+        /// <summary>
         /// How close somebody has to pass to set a placed prop off.
         ///
         /// The sensor reaches further than the things underfoot, because it is a

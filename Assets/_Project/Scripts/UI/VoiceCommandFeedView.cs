@@ -56,7 +56,11 @@ namespace PawsAndLoot.UI
                     break;
                 case VoiceCommandInputState.Recording:
                     first = "LISTENING...";
-                    second = "5초 동안 듣고 있어요";
+                    // Push-to-talk, so the instruction is to keep holding rather
+                    // than to wait out a fixed five seconds.
+                    second = "V를 누른 채로 말해 주세요 (최대 "
+                        + Mathf.RoundToInt(input.MaximumRecordingSeconds)
+                        + "초)";
                     break;
                 case VoiceCommandInputState.Encoding:
                 case VoiceCommandInputState.Transcribing:
@@ -79,9 +83,7 @@ namespace PawsAndLoot.UI
                     first = string.IsNullOrWhiteSpace(input.LastTranscript)
                         ? "음성 명령 처리 실패"
                         : FormatRawTranscript(input.LastTranscript);
-                    second = string.IsNullOrWhiteSpace(input.LastError)
-                        ? "다시 시도해 주세요"
-                        : input.LastError;
+                    second = DescribeError(input.LastError);
                     break;
                 default:
                     if (!string.IsNullOrWhiteSpace(input.LastTranscript))
@@ -103,6 +105,66 @@ namespace PawsAndLoot.UI
                 displaySeconds,
                 false,
                 showInterpretationIcon);
+        }
+
+        /// <summary>
+        /// Turns a failure code into the sentence that says what to do about it.
+        ///
+        /// The panel used to print the raw code, so a build told the player
+        /// `VOICE_COMMAND_REQUEST_FAILED:Cannot connect to destination host` and
+        /// a missing local server, a muted microphone, and a denied permission
+        /// all read as "voice is broken". Each of those is fixed somewhere else.
+        ///
+        /// Codes may carry a `:detail` suffix, so only the part before the first
+        /// colon is matched.
+        /// </summary>
+        public static string DescribeError(string error)
+        {
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                return "다시 시도해 주세요";
+            }
+
+            int separator = error.IndexOf(':');
+            string code = separator > 0 ? error.Substring(0, separator) : error;
+            return code switch
+            {
+                "MIC_DEVICE_MISSING" =>
+                    "마이크를 찾지 못했습니다",
+                "MIC_PERMISSION_DENIED" or "NotAllowedError" =>
+                    "마이크 권한이 거부되었습니다",
+                "MIC_DEVICE_BUSY" or "MIC_START_FAILED" =>
+                    "마이크가 다른 프로그램에 잡혀 있습니다",
+                "MIC_HELD_BY_ANOTHER_CAPTURE" =>
+                    "다른 음성 입력이 마이크를 쓰고 있습니다",
+                "MIC_RETURNED_ONLY_ZEROS" =>
+                    "마이크가 무음만 보냅니다. Windows 마이크 권한을 확인하세요",
+                "VOICE_AUDIO_SILENT" =>
+                    "소리가 너무 작습니다. 마이크 볼륨을 올려 주세요",
+                "VOICE_AUDIO_TOO_SHORT" =>
+                    "너무 짧습니다. V를 누른 채로 말해 주세요",
+                "VOICE_AUDIO_EMPTY" or "MIC_AUDIO_EMPTY"
+                    or "MIC_AUDIO_READ_FAILED" or "MIC_NOT_RECORDING" =>
+                    "녹음된 소리가 없습니다",
+                "GATEWAY_NOT_READY" or "LOCAL_AI_NOT_READY"
+                    or "GATEWAY_URL_MISSING" or "LOCAL_AI_MANAGER_MISSING" =>
+                    "로컬 음성 서버가 실행되지 않았습니다",
+                "VOICE_COMMAND_REQUEST_FAILED" or "VOICE_UPLOAD_FAILED" =>
+                    "음성 서버에 연결하지 못했습니다",
+                "MIC_REQUIRES_HTTPS" =>
+                    "브라우저는 https에서만 마이크를 허용합니다",
+                "MICROPHONE_UNSUPPORTED" or "MEDIA_RECORDER_UNSUPPORTED"
+                    or "MIME_UNSUPPORTED" =>
+                    "이 브라우저는 음성 녹음을 지원하지 않습니다",
+                "VOICE_CAPABILITY_MISSING" =>
+                    "음성 세션이 준비되지 않았습니다",
+                "VOICE_CAPTURE_NO_RESPONSE" or "RECORDER_ERROR"
+                    or "RECORDER_ALREADY_RUNNING" =>
+                    "녹음이 응답하지 않았습니다. 다시 시도해 주세요",
+                "VOICE_INPUT_DISABLED" =>
+                    "음성 입력이 꺼져 있습니다",
+                _ => error
+            };
         }
 
         public void ShowMessage(

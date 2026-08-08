@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Logging;
 using PawsAndLoot.Match;
 using UnityEngine;
@@ -16,13 +14,24 @@ namespace PawsAndLoot.Gameplay.Loot
     /// the thief cannot run a route from memory. What they both keep is the
     /// shape of the room and the case in the middle.
     ///
-    /// The host draws and nobody else. Positions replicate host to client, so
-    /// one machine choosing and the other following is the whole mechanism —
-    /// two machines each shuffling would put the same ring in two rooms, which
-    /// is the failure this project has met from four directions.
+    /// <b>Both machines draw, from the host's seed.</b> It used to be "the host
+    /// draws and the positions replicate", which worked — the pieces carry a
+    /// <c>NetworkLootLink</c> and their positions do arrive — but only for what
+    /// the link happens to send. The link moves the piece's *presentation*, so a
+    /// client's <c>LootItem</c> transform stayed wherever the scene was authored
+    /// and the two machines disagreed about everything except the picture:
+    /// nothing on the client could ask where a piece was and get the same answer
+    /// the host had. It also meant a room could not draw anything the network
+    /// was not already carrying.
+    ///
+    /// Seeding both draws from one host-rolled number costs one integer and
+    /// makes the two rooms identical by construction rather than by a correction
+    /// arriving a frame later. Nobody waits for a position to catch up because
+    /// nobody was told a position.
     ///
     /// Redealt for a rematch. A room that keeps the first match's layout is a
-    /// room the second match already knows.
+    /// room the second match already knows — the seed is cleared with the match
+    /// state, so this falls out rather than needing its own rule.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LootSpotDraw : MonoBehaviour
@@ -110,8 +119,13 @@ namespace PawsAndLoot.Gameplay.Loot
             if (_matchState.CurrentState != MatchState.Playing)
             {
                 // Rearmed, so a rematch deals again instead of replaying the
-                // layout the last match taught both players.
+                // layout the last match taught both players. In a session the
+                // host clears its seed on the same transition; offline there is
+                // no host, so the seed is dropped here. Every room does this on
+                // the same frame and the first one to ask for a seed next match
+                // rolls the one they all share.
                 _dealt = false;
+                MatchDrawSeed.ClearOfflineSeed();
                 return;
             }
 
@@ -125,52 +139,32 @@ namespace PawsAndLoot.Gameplay.Loot
             // It used to set this first and then ask whether this machine deals,
             // which means one transient answer switches the draw off for the whole
             // match. On the frame a match starts the player objects may not have
-            // spawned yet, so "am I the authority" is being asked of a scene that
-            // cannot answer — and a room that misses that one frame stays as it was
+            // spawned yet, so the question was being asked of a scene that cannot
+            // answer — and a room that misses that one frame stays as it was
             // authored for the rest of the match, with nothing at the marked places
-            // and no log to say why.
-            if (!HasAuthority())
+            // and no log to say why. The question is now "has the host told us the
+            // seed", which has the same shape and the same trap.
+            int matchSeed = MatchDrawSeed.Current;
+            if (matchSeed == MatchDrawSeed.Unknown)
             {
                 return;
             }
 
             _dealt = true;
-            Deal();
+            _seed = MatchDrawSeed.For(matchSeed, name);
+            Deal(new System.Random(_seed));
         }
 
         /// <summary>
-        /// Only the machine that decides where things are.
-        ///
-        /// Asked of the thief's interior state, which is the one component in
-        /// the scene that already knows whether this machine is the authority.
-        /// A client that dealt for itself would disagree with the host about
-        /// which room holds the ring.
+        /// What this room drew from, logged so two machines can be compared
+        /// without a screenshot. The counts alone match whether or not the
+        /// layouts do.
         /// </summary>
-        private PlayerInteriorState _authority;
+        private int _seed;
 
-        private bool HasAuthority()
-        {
-            // Remembered once found. This is asked every frame until the deal
-            // happens, and on a machine that never deals that is for the rest of
-            // the match — a scene-wide search per room per frame is not a thing to
-            // leave running on a build whose first target is WebGL.
-            if (_authority == null)
-            {
-                foreach (PlayerInteriorState state in
-                    FindObjectsByType<PlayerInteriorState>(
-                        FindObjectsSortMode.None))
-                {
-                    _authority = state;
-                    break;
-                }
-            }
+        public int Seed => _seed;
 
-            // Nothing to ask means nothing is replicating either — an offline
-            // scene or a test — and then dealing is right.
-            return _authority == null || _authority.HasAuthority;
-        }
-
-        private void Deal()
+        private void Deal(System.Random random)
         {
             if (spots.Count < pieces.Count)
             {
@@ -182,9 +176,11 @@ namespace PawsAndLoot.Gameplay.Loot
                     this);
             }
 
-            // Shuffled by picking, so a spot cannot come up twice. Random.Range
-            // rather than an ordering trick: the draw has to be different every
-            // match and readable by whoever reads this next.
+            // Shuffled by picking, so a spot cannot come up twice. The generator
+            // is passed in rather than taken from UnityEngine.Random: the draw
+            // has to be different every match *and the same on both machines*,
+            // and only the second of those needs saying because the first is
+            // what everybody assumes a shuffle does.
             var remaining = new List<Transform>(spots);
             int dealt = 0;
             foreach (LootItem piece in pieces)
@@ -194,7 +190,7 @@ namespace PawsAndLoot.Gameplay.Loot
                     continue;
                 }
 
-                int index = Random.Range(0, remaining.Count);
+                int index = random.Next(remaining.Count);
                 Transform spot = remaining[index];
                 remaining.RemoveAt(index);
                 if (spot == null)
@@ -208,7 +204,8 @@ namespace PawsAndLoot.Gameplay.Loot
 
             GameLogger.Info(
                 GameLogCategory.Loot,
-                $"{name} dealt {dealt} pieces over {spots.Count} places.",
+                $"{name} dealt {dealt} pieces over {spots.Count} places "
+                + $"from seed {_seed}.",
                 this);
         }
     }

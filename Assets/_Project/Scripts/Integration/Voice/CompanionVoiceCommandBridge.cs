@@ -199,6 +199,60 @@ namespace PawsAndLoot.Integration.Voice
             }
         }
 
+        /// <summary>
+        /// Entry point for the synchronous HTTP path, which carries the same
+        /// information the socket would have pushed.
+        ///
+        /// Deliberately reuses <see cref="HandleBackendEvent"/> rather than
+        /// repeating the resolve-and-dispatch below: the obedience roll, the seed,
+        /// the dispatch and the replication are the interesting part, and two
+        /// copies of them would eventually disagree about whether the animal
+        /// obeyed. Only the delivery differs, so only the delivery is new.
+        /// </summary>
+        public void ApplyBackendResult(
+            string commandId,
+            string petId,
+            string transcript,
+            VoiceIntentClassificationResult classification,
+            int commandSequence)
+        {
+            if (string.IsNullOrWhiteSpace(petId))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(transcript))
+            {
+                HandleBackendEvent(new VoiceBackendEvent
+                {
+                    type = "VOICE_COMMAND_TRANSCRIBED",
+                    commandId = commandId,
+                    petId = petId,
+                    payload = new VoiceBackendEventPayload
+                    {
+                        transcript = transcript
+                    }
+                });
+            }
+
+            if (classification == null)
+            {
+                return;
+            }
+
+            HandleBackendEvent(new VoiceBackendEvent
+            {
+                type = "VOICE_INTENT_CANDIDATES_READY",
+                commandId = commandId,
+                petId = petId,
+                payload = new VoiceBackendEventPayload
+                {
+                    classification = classification,
+                    commandSequence = commandSequence
+                }
+            });
+        }
+
         private void HandleBackendEvent(VoiceBackendEvent backendEvent)
         {
             if (!IsServer || backendEvent == null) return;
@@ -327,9 +381,14 @@ namespace PawsAndLoot.Integration.Voice
 
         private static string[] AllowedIntents(PlayerRole role)
         {
+            // `BARK` and `HIDE` were missing here as well as from
+            // `FromIntent`, so the fourth number-key command of each animal had
+            // no voice route. The server clamps candidates to this list
+            // (`validateCandidates`), which means an intent absent here is
+            // dropped without a word in any log.
             return role == PlayerRole.Police
-                ? new[] { "STOP", "FOLLOW_OWNER", "STAY", "RETURN_OWNER", "CANCEL", "SEARCH_AREA", "CHASE_TARGET", "GUARD_AREA", "INSPECT_TARGET" }
-                : new[] { "STOP", "FOLLOW_OWNER", "STAY", "RETURN_OWNER", "CANCEL", "SEARCH_AREA", "FETCH_OBJECT", "DISTRACT_TARGET", "INSPECT_TARGET" };
+                ? new[] { "STOP", "FOLLOW_OWNER", "STAY", "RETURN_OWNER", "CANCEL", "SEARCH_AREA", "CHASE_TARGET", "GUARD_AREA", "INSPECT_TARGET", "BARK" }
+                : new[] { "STOP", "FOLLOW_OWNER", "STAY", "RETURN_OWNER", "CANCEL", "SEARCH_AREA", "FETCH_OBJECT", "DISTRACT_TARGET", "INSPECT_TARGET", "HIDE" };
         }
 
         private static int StableSeed(

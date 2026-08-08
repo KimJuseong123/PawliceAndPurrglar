@@ -118,11 +118,22 @@ namespace PawsAndLoot.Tests.PlayMode
             GameObject floor = CreateFloor();
             Fixture thief = CreatePlayer(PlayerRole.Thief);
             Fixture police = CreatePlayer(PlayerRole.Police);
+
+            // The officer's torch rule, which is where "the thief is visible"
+            // is actually stored. Without it this test could only ever see half
+            // the alarm — and for a long time that is all it did see.
+            FlashlightVisibility watcher =
+                police.Root.AddComponent<FlashlightVisibility>();
+            watcher.Configure(
+                police.Root.GetComponent<PlayerRoleIdentity>(),
+                new Active());
+
             LootItem jewel = CreateLoot(alarmed: true);
             Physics.SyncTransforms();
             yield return null;
 
             Assert.That(alarm.RaisedCount, Is.EqualTo(0));
+            Assert.That(watcher.IsRevealed, Is.False);
             Assert.That(
                 police.Motor.MovementSpeedMultiplier,
                 Is.EqualTo(1f).Within(0.001f));
@@ -154,6 +165,37 @@ namespace PawsAndLoot.Tests.PlayMode
             Assert.That(
                 thief.Motor.MovementSpeedMultiplier,
                 Is.LessThan(1f));
+
+            // The other half of the alarm, which **never happened once.**
+            //
+            // `LootAlarm` asked the thief for a `FlashlightVisibility`, and only
+            // the officer has one — the component sits on the watcher and hides
+            // the other side. The null-conditional swallowed it silently. The
+            // siren sounded and the sprint landed, so from here it looked like a
+            // working alarm; the four seconds of exposure that make the piece
+            // worth guarding were simply absent.
+            // Greater than zero rather than exactly one: an earlier test in
+            // this assembly leaves the real Game scene loaded, so its officer is
+            // standing here too. The distinction that matters is zero versus
+            // not-zero — zero is the bug, and it was zero every time.
+            Assert.That(
+                alarm.LastRevealedWatchers,
+                Is.GreaterThan(0),
+                "Zero means the alarm exposed nobody.");
+            Assert.That(
+                watcher.IsRevealed,
+                Is.True,
+                "The thief has to be visible through the dark, which is the "
+                + "entire reason the case is worth alarming.");
+            Assert.That(
+                watcher.RevealRemainingSeconds,
+                Is.GreaterThan(LootAlarm.ThiefRevealSeconds - 0.5f),
+                "Four seconds, not the sensor light's 2.5.");
+            Assert.That(
+                watcher.RevealSource,
+                Is.EqualTo(cushion),
+                "Lit from the cushion, so the mark is the place worth running "
+                + "to and not one the thief has already left.");
 
             // And it ends. An alarm that never expires is an officer who is
             // permanently fast, which reads as the officer being broken.

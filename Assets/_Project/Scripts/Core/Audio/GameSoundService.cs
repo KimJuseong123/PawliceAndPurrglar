@@ -108,6 +108,15 @@ namespace PawsAndLoot.Audio
                 return;
             }
 
+            // The match-end stingers cannot play from this object: it lives in the
+            // Game scene, and the Result scene load that follows the win destroys it
+            // a few frames into the clip (`ISSUE-070`).
+            if (GameSoundBank.OutlivesTheScene(soundId))
+            {
+                PersistentOneShotAudio.Play(clip, bank.GetVolume(soundId));
+                return;
+            }
+
             oneShotSource.PlayOneShot(clip, bank.GetVolume(soundId));
         }
 

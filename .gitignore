@@ -47,13 +47,6 @@ crashlytics-build.properties
 # build. Build output, not source.
 /Data/
 
-# Paid Asset Store content must not be redistributed. Its own license.txt
-# states "You can't redistribute the code or any of the content of the asset",
-# so each developer imports TopDown Engine from their own Asset Store account.
-# See README.md for the import step.
-/Assets/TopDownEngine/
-/Assets/TopDownEngine.meta
-
 # Voice server secrets and local debug captures.
 server/.env
 server/.env.*

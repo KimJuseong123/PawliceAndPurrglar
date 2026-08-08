@@ -140,6 +140,26 @@ namespace PawsAndLoot.Audio
             return false;
         }
 
+        /// <summary>
+        /// True for the sounds raised at the moment the scene is about to change.
+        ///
+        /// The match-end stingers are raised by `MatchEndController` and the Result
+        /// scene loads immediately after, which destroys the AudioSource built into
+        /// the Game scene mid-clip. These two play from
+        /// <see cref="PersistentOneShotAudio"/> instead so the whole clip is heard
+        /// (`ISSUE-070`).
+        ///
+        /// Kept as code rather than a serialized flag on the entry: it is a fact
+        /// about when the game raises the sound, not a mixing choice, and a field
+        /// would default to false on every existing bank asset — silently
+        /// reintroducing the bug.
+        /// </summary>
+        public static bool OutlivesTheScene(GameSoundId soundId)
+        {
+            return soundId == GameSoundId.Victory
+                || soundId == GameSoundId.Defeat;
+        }
+
         public int CountMissingClips()
         {
             int missing = 0;

@@ -102,13 +102,23 @@ namespace PawsAndLoot.Editor
                 // Length is reported because it is the thing most likely to be
                 // wrong and the thing nobody checks. A three-second blip on a
                 // command that fires every few seconds overlaps itself.
-                if (clip.length > 2.5f)
+                //
+                // The match-end stingers are exempt — the sentence below always
+                // said "unless it is the end of a match" and then warned about
+                // them anyway, which trains you to ignore the warning.
+                if (clip.length > 2.5f && !GameSoundBank.OutlivesTheScene(id))
                 {
                     Debug.LogWarning(
                         $"[AUDIO-001] {id} is {clip.length:0.0}s long. Anything "
                         + "over about two seconds outstays its welcome unless it "
                         + "is the end of a match.");
                 }
+
+                // Printed for every clip, not just the suspicious ones. The length
+                // on disk is the first thing to check when a sound is cut short,
+                // and until now nothing reported it.
+                Debug.Log(
+                    $"[AUDIO-001] {id} ← {stem} ({clip.length:0.00}s)");
             }
 
             EditorUtility.SetDirty(bank);

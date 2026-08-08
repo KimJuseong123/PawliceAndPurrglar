@@ -24,11 +24,11 @@ Claude Code 전용 작업 지침서다.
 | 항목 | 값 |
 |---|---|
 | 엔진 | Unity `6000.5.4f1` (URP `17.5.0`) |
-| 저장소 루트 | `C:\Users\SSAFY\CatCops` (Unity 프로젝트 루트와 동일) |
+| 저장소 루트 | `C:\Users\SSAFY\paws-and-loot` (Unity 프로젝트 루트와 동일) |
+| 에디터 스크립트 네임스페이스 | `PawsAndLoot.Editor`. `-executeMethod`에 이 이름을 쓴다 |
 | 런타임 어셈블리 | `PawsAndLoot.Runtime` (루트 네임스페이스 `PawsAndLoot`) |
 | 현재 코드 위치 | `Assets/_Project/` |
-| 레거시 실험물 | `Assets/CatCops/` — **기준으로 사용하지 않음** |
-| 외부 에셋 | `Assets/TopDownEngine/` — 수정하지 않음. `Assets/ThirdParty/`는 비어 있음 |
+| 외부 유료 에셋 | **없다.** 2026-08-08에 TopDownEngine 잔재와 `Assets/CatCops/` 레거시를 전부 제거했다. `Assets/ThirdParty/`는 비어 있다 |
 | 빌드 씬 | `Bootstrap`, `Game`, `Result` 3개만 등록됨 |
 
 프로젝트 이름은 `CatCops`(폴더)와 `PawsAndLoot`(어셈블리·제품명)이 섞여 있다.
@@ -121,15 +121,18 @@ Claude Code 전용 작업 지침서다.
 > `GraphicsSettings`가 더러워진다. 도구가 원복하지만, 실행 후
 > `git status -- ProjectSettings/`가 비어 있는지 확인한다.
 
-> **TopDownEngine은 저장소에 없다. 이걸 전제로 확인한다.** 라이선스가 재배포를
-> 금지해서 제외돼 있고, 이 개발 PC에만 로컬로 있다. 두 가지가 걸린다
-> (`ISSUE-019`).
+> **캐릭터 클립은 0개다. 이걸 전제로 확인한다.** TopDownEngine 의존은 2026-08-08에
+> 제거했다 — 그 에셋은 라이선스가 재배포를 금지해 저장소에 없었고 **이 PC에도 설치돼
+> 있지 않았다.** 즉 `CharacterLocomotion.controller`가 가리키던 클립 6개는 처음부터
+> 하나도 해석되지 않았고, 커밋된 컨트롤러는 빈 구멍 여섯 개였다 (`ISSUE-019` 종결).
 >
-> 1. **컴파일**: `Assets/CatCops/`의 레거시 브리지가 TDE를 참조한다.
->    `CATCOPS_TOPDOWNENGINE` 정의로 감싸져 있으니 그 안의 코드를 되살리지 않는다.
-> 2. **애니메이션**: `CharacterLocomotion.controller`의 클립 6개가 TDE 파일이다.
->    TDE 없는 환경에서는 참조가 끊기고, `AnimatorClipGuard`가 Animator를 끈다.
->    이 가드를 없애면 캐릭터가 땅에 묻힌다 (힙 0.45m → 0.07m로 주저앉음).
+> 남은 것은 `AnimatorClipGuard` 하나다. 컨트롤러가 없거나 쓸 수 있는 클립이 0개면
+> Animator를 끈다. **끄지 않으면 휴머노이드 리타게팅이 캐릭터를 주저앉힌다**
+> (힙 0.45m → 0.07m). 이건 TDE와 무관한 규칙이므로 남겨 뒀다.
+>
+> 클립이 들어올 자리는 `Assets/_Project/Art/Characters/Animations/`이고
+> `Rebuild Character Locomotion Animator`가 이름으로 찾아 컨트롤러를 만든다.
+> 비어 있으면 컨트롤러를 만들지 않고 그 사실을 로그로 남긴다 (`MODEL-002`).
 >
 > **스킨드 캐릭터의 위치는 `Renderer.bounds`로 재지 않는다.** 루트 본 기준
 > 사전 계산 박스라 애니메이션된 실제 포즈를 반영하지 않는다. 주저앉은 캐릭터도
@@ -369,6 +372,67 @@ Claude Code 전용 작업 지침서다.
 > 하지 않는다 (`ISSUE-039`). 기준점·오프셋·회전축을 전부 그 오브젝트의 로컬 공간에서
 > 계산하고, **돌린 사례로 테스트한다** — 항등 회전만 시험하면 셋 다 통과한다.
 
+> **빌드에서 프로젝트 루트를 `Application.dataPath`의 부모로 잡지 않는다.** 에디터에서는
+> 그게 프로젝트 루트지만 **빌드에서는 exe가 있는 폴더**다. `LocalAI/`를 그렇게 찾다가
+> Windows 빌드의 음성이 통째로 죽어 있었다 — 게이트웨이 실행 파일이 존재한 적이 없으므로
+> 포트 16개를 훑고 `GATEWAY_NOT_READY`로 끝나고, 흔적은 시작 시 `LogWarning` 한 줄이다.
+> 그래서 증상이 마이크 문제로 보인다 (`ISSUE-069`). 위로 올라가며 표식 파일을 찾고,
+> **찾은 경로를 한 번 로그로 남긴다.** 모델이 1GB를 넘으면 빌드마다 복사하지 않는다.
+
+> **`/health`가 `ready`라고 해서 그 장치로 실제 작업이 되는 것은 아니다.**
+> `WhisperModel(device="cuda")`는 `cublas64_12.dll`이 없어도 **생성에 성공한다** —
+> ctranslate2가 첫 encode에서야 DLL을 연다. 그래서 헬스체크는 `cuda, ready: true`를
+> 보고하고 요청은 **100% 500**이었고, 적재 시점 폴백은 예외를 볼 기회가 없었다.
+> 게이트웨이를 의심할 근거가 헬스체크뿐이면 통과로 읽힌다. 폴백은 **실제로 쓰는
+> 지점**에도 둔다.
+
+> **`FlashlightVisibility`는 *보는 쪽*에 붙어 있다.** 도둑을 드러내려면 **경찰의**
+> 컴포넌트를 꺼야 한다. 이 규칙이 두 곳에 쓰여 있었고 한 곳이 거꾸로였다 —
+> `LootAlarm`이 도둑에게 자기 `FlashlightVisibility`를 물었는데 도둑에게는 없으므로
+> `?.`가 통째로 삼켰고, **경보의 4초 노출은 만들어진 날부터 한 번도 일어나지
+> 않았다.** 사이렌과 경찰 질주는 정상이라 동작하는 경보로 보였다. 드러내는 것은
+> `FlashlightVisibility.RevealRole` 하나로만 한다.
+>
+> 그리고 **드러남은 복제해야 한다.** 호스트에서 결정되고 노출되는 사람은 반대쪽
+> 기계에 있다 — 호스트만 아는 노출은 아무도 모르는 노출이다.
+
+> **매 프레임 `FindObjectsByType`을 부르지 않는다.** 경기 중 한 번 생기고 다시
+> 만들어지지 않는 오브젝트를 보려고 초당 120번 씬을 훑는 코드는 WebGL에서 그대로
+> 비용이 된다. 캐시하고, **못 찾았을 때만** 낮은 빈도로 다시 훑는다. 캐시를 채울 때
+> **첫 일치에서 멈추지 않는다** — 절반만 채워진 잔여 오브젝트가 먼저 걸리면 루프가
+> 거기서 끝나고, 그 뒤로는 아무것도 보고하지 않는다.
+
+> **입력을 `FindObjectsByType`으로 전부 켜지 않는다.** `V`가 모든
+> `VoiceCommandInput`을 시작해서 경찰용과 도둑용이 같은 프레임에 같은 마이크를 열었다.
+> 윈도우는 장치를 한 클라이언트에게 주므로 한쪽은 **표본이 전부 0인 클립**을 받는다 —
+> 무음이 간헐적으로 나오고, 한쪽의 `Microphone.End`가 다른 쪽 녹음을 끊는다. 역할마다
+> 붙는 컴포넌트는 **자기가 이 기계의 역할인지 스스로 묻게 한다**
+> (`CanCaptureLocally`, `CompanionCommandKeyboardInput.CanReadLocalInput`).
+
+> **쿨타임을 결과보다 먼저 시작하지 않는다.** 음성 쿨타임이 말이 끝난 순간 걸려서,
+> 실패한 시도가 키를 30초 잠갔다. 플레이어는 눌렀는데 아무 일이 없고, 다시 눌러도
+> 아무 일이 없다. **성공만 비용을 쓴다.**
+
+> **PyInstaller로 게이트웨이를 다시 굽기 전에 conda DLL 경로를 PATH에 넣는다.**
+> `LocalAI/.venv`는 miniforge 위에 얹혀 있고 `_ctypes`는 `ffi-8.dll`을
+> `<base>\Library\bin`에서 찾는다. PyInstaller는 PATH만 보고, 없으면 **경고로 넘기고
+> 종료 코드 0**을 준다. 나온 exe는 첫 import에서 죽는다. `build-service.ps1`이 이제
+> base prefix의 DLL 경로를 스스로 넣고 스테이징에 빌드한 뒤 `_ctypes.pyd`를 확인하고서야
+> 교체한다 — 예전 스크립트는 PyInstaller를 부르기 **전에** 동작하는 게이트웨이를 지웠고,
+> `LocalAI/runtime/`은 gitignore라 되돌릴 것이 없었다.
+
+> **배치 빌드는 성공해도 `.exe` 날짜가 안 바뀐다.** Mono 빌드라 게임 코드는
+> `PawsAndLoot_Data/Managed/*.dll`에 있고 플레이어 실행 파일은 바뀔 이유가 없다.
+> 일주일 전 날짜의 exe를 보고 "빌드가 안 됐다"고 판단하면 틀린다 — `Managed/`의
+> 날짜와 로그의 `build succeeded`를 본다.
+
+> **`-netScenario full`의 `passed`를 회귀 판정에 쓰지 않는다.** 2026-08-08 기준
+> **아무것도 바꾸지 않은 트리에서도 양쪽 `passed=false`**가 나온다 — 판매 500,
+> 체포 3회, 승자 합의까지 정상으로 치르고서다 (`GAP-006`). 무엇이 달라졌는지는
+> **호스트·클라이언트 로그의 사건 수**로 센다 (`dealt N pieces`, `Arrest completed`,
+> `-> Sold`). 그리고 재보기 전에 **변경을 stash하고 기준선을 실측한다** — 이걸
+> 안 했으면 남의 실패를 내 것으로 고칠 뻔했다.
+
 `Game` 씬의 마을, 상호작용 지점, HUD, 시스템 배선은 `.unity` 파일을 손으로
 편집해서 만든 것이 아니라 **에디터 스크립트가 코드로 생성**한다.
 
@@ -458,7 +522,7 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 ### 테스트 (배치 모드)
 
 ```bash
-"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -projectPath "C:/Users/SSAFY/CatCops" -runTests -testPlatform EditMode -testResults "C:/Users/SSAFY/CatCops/Logs/TestResults/editmode.xml" -logFile "C:/Users/SSAFY/CatCops/Logs/editmode-tests.log"
+"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -projectPath "C:/Users/SSAFY/paws-and-loot" -runTests -testPlatform EditMode -testResults "C:/Users/SSAFY/paws-and-loot/Logs/TestResults/editmode.xml" -logFile "C:/Users/SSAFY/paws-and-loot/Logs/editmode-tests.log"
 ```
 
 `-testPlatform PlayMode`로 바꿔 Play Mode도 실행한다. 확인 사항:
@@ -467,9 +531,10 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 - 결과 XML의 실제 테스트 수와 실패 목록
 - **테스트 0개 발견은 성공이 아니다**
 
-현재 기준선: Edit Mode 290개 전부 통과, Play Mode 200개 중 198 통과 + 1 스킵
-(2026-08-06). Play Mode의 남은 1건은 `CompanionExpressionPlayModeTests`로 음성
-스택이 필요하다.
+현재 기준선: **Edit Mode 299개 전부 통과, Play Mode 213개 중 211 통과 + 1 실패 +
+1 스킵 (2026-08-08).** Play Mode의 실패 1건은
+`CompanionExpressionPlayModeTests.ShowingAFacePutsExactlyOneIconOnScreen`이며
+음성 스택이 아니라 **애니메이션 클립 부재**(`MODEL-002` 미완)에 딸린 것이다.
 테스트를 추가하면 `13_CURRENT_STATE.md`의 `최근 검증` 표에 실제 수치를 기록한다.
 
 ### 런타임 검증 (자체 보고 프로브 패턴)

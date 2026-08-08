@@ -1,4 +1,3 @@
-using System.IO;
 using NUnit.Framework;
 using PawsAndLoot.Animation;
 using UnityEditor;
@@ -119,19 +118,12 @@ namespace PawsAndLoot.Tests.EditMode
             }
         }
 
-        [Test]
-        public void LegacyControllerGuidTextRemainsUnchanged()
-        {
-            const string path =
-                "Assets/_Project/Art/Characters/CharacterLocomotion.controller";
-            string text = File.ReadAllText(path);
-            Assert.That(text, Does.Contain("4154cd260b34a4c408b7abaf7ddadc97"));
-            Assert.That(text, Does.Contain("27cca24148160794ea268c6d64671e5b"));
-            Assert.That(text, Does.Contain("70c18e0752b220f439894f5c0b0fe381"));
-            Assert.That(text, Does.Contain("dca26005bd5b52e499d280f68bfe24ea"));
-            Assert.That(text, Does.Contain("1f6a9fbf200d8684e83ba2a8237e83b9"));
-            Assert.That(text, Does.Contain("9cd03327ea1e2e146adce20d40d05a49"));
-        }
+        // LegacyControllerGuidTextRemainsUnchanged lived here. It pinned the
+        // six clip GUIDs inside CharacterLocomotion.controller so nobody
+        // "tidied" them away — but every one of them was dangling: they pointed
+        // at TopDownEngine FBX files that were never in the repository and were
+        // not installed on this machine either. The test was guarding six holes.
+        // Removed with the controller on 2026-08-08.
 
         private static AnimationClip CreateClip(string name)
         {

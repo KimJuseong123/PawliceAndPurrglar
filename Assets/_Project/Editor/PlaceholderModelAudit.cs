@@ -79,48 +79,6 @@ namespace PawsAndLoot.Editor
                 + $"clips={(clips.Count == 0 ? "none" : string.Join(", ", clips))}");
         }
 
-        private static readonly string[] CandidatePaths =
-        {
-            "Assets/TopDownEngine/Demos/Explodudes/Models/"
-            + "ExplodudePrototype.fbx",
-            "Assets/TopDownEngine/Demos/Explodudes/Animations/Characters/"
-            + "MM/MMExplodude.fbx",
-            "Assets/TopDownEngine/Demos/Minimal3D/Models/MinimalDude.fbx",
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Tie/"
-            + "LoftTie.fbx",
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/"
-            + "Suspenders/LoftSuspenders.fbx",
-            "Assets/TopDownEngine/Demos/Colonel/Models/Colonel@T-Pose.fbx",
-            "Assets/TopDownEngine/ThirdParty/MoreMountains/MMFeedbacks/"
-            + "Demos/MMFeedbacksDemo/Models/Dude/"
-            + "MMFeedbackDemoDude@TPose.fbx"
-        };
-
-        [MenuItem("Paws & Loot/Setup/Audit Placeholder Character Models")]
-        public static void Audit()
-        {
-            foreach (string path in CandidatePaths)
-            {
-                GameObject asset =
-                    AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (asset == null)
-                {
-                    Debug.Log($"[Audit] MISSING {path}");
-                    continue;
-                }
-
-                GameObject instance = Object.Instantiate(asset);
-                try
-                {
-                    Report(path, instance);
-                }
-                finally
-                {
-                    Object.DestroyImmediate(instance);
-                }
-            }
-        }
-
         private static void Report(string path, GameObject instance)
         {
             var renderers =
@@ -192,5 +150,11 @@ namespace PawsAndLoot.Editor
                 + $"  parts={string.Join(", ", parts)}\n"
                 + $"  boneNames={string.Join(", ", boneNames)}");
         }
+
+        // "Audit Placeholder Character Models" lived here and listed seven
+        // TopDownEngine demo FBX paths. That asset was never in the repository
+        // and was not installed on the machine either, so the tool's only
+        // possible output was seven lines of MISSING. Removed with the rest of
+        // the dependency on 2026-08-08.
     }
 }

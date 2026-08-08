@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.IO;
-using System.Runtime.InteropServices;
 using PawsAndLoot.Companions;
 using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Players;
@@ -34,11 +33,34 @@ namespace PawsAndLoot.Integration.Voice
         CommandConfused = Error
     }
 
+    /// <summary>
+    /// Push-to-talk voice input for one animal.
+    ///
+    /// The state machine below is **platform-agnostic on purpose.** Capture is the
+    /// only thing that genuinely differs between a browser and a Windows build
+    /// (`Microphone` does not exist in one, `MediaRecorder` in the other), and that
+    /// difference lives behind <see cref="IVoiceCaptureProvider"/>. Where the bytes
+    /// are *sent* is <see cref="VoiceConfig.Transport"/> — configuration, not
+    /// compilation.
+    ///
+    /// It used to be `#if UNITY_WEBGL` for both, which meant the browser talked to
+    /// `server/` and Windows talked to a local Python gateway: **two AI backends**,
+    /// so the same sentence could be understood differently depending on which
+    /// build you held, and nothing tuned during Windows playtesting reached the
+    /// build being submitted (`VOICE-012`).
+    /// </summary>
     [DisallowMultipleComponent]
     public sealed class VoiceCommandInput : MonoBehaviour
     {
         private const float DefaultMaximumRecordingSeconds = 5f;
         private const float DefaultPostCommandCooldownSeconds = 30f;
+
+        /// <summary>
+        /// Shortest recording the key can produce. The native capture rejects
+        /// anything under 250ms outright; this leaves room above that so a tap
+        /// still carries a word rather than the start of one.
+        /// </summary>
+        private const float MinimumRecordingSeconds = 0.7f;
 
         [SerializeField] private VoiceConfig config;
         [SerializeField] private string gameSessionId;
@@ -47,11 +69,22 @@ namespace PawsAndLoot.Integration.Voice
         [SerializeField] private PlayerRoleIdentity issuer;
         [SerializeField] private bool preserveDebugRecordings;
 
+        /// <summary>
+        /// Whether this component belongs to the player sitting at this machine.
+        ///
+        /// One of these is attached to each role object, so both existed on both
+        /// machines and the voice key started both. Two captures then fought over
+        /// one recording device and one of them got silence (`ISSUE-069`).
+        /// </summary>
+        [SerializeField] private bool isLocallyControlled = true;
+
         private readonly VoiceCommandBackendClient backendClient = new();
-        private NativeVoiceCaptureProvider nativeCapture;
+        private IVoiceCaptureProvider capture;
+        private BrowserVoiceCaptureProvider browserCapture;
         private string clientCommandId;
         private bool captureInProgress;
         private bool finishRequested;
+        private bool releaseRequested;
         private string lastRecordingPath;
 
         public VoiceCommandInputState State { get; private set; } =
@@ -62,12 +95,20 @@ namespace PawsAndLoot.Integration.Voice
         public string LastError { get; private set; } = string.Empty;
         public VoiceCommandResult LastResult { get; private set; }
         public string PetId => petId;
-        public string VoiceProviderName =>
-#if UNITY_WEBGL && !UNITY_EDITOR
-            "WebGL Gateway";
-#else
-            "Local AI";
-#endif
+
+        /// <summary>
+        /// Named after where the answer comes from rather than the platform, which
+        /// is now the honest description — a Windows build set to `Backend` really
+        /// is using the same service the WebGL submission will.
+        /// </summary>
+        public string VoiceProviderName => Transport == VoiceTransport.LocalGateway
+            ? "Local AI"
+            : "Voice Backend";
+
+        public VoiceTransport Transport => config != null
+            ? config.Transport
+            : VoiceTransport.Backend;
+
         public PlayerRole IssuerRole => issuer != null
             ? issuer.Role
             : petId == "dog" ? PlayerRole.Police : PlayerRole.Thief;
@@ -95,6 +136,37 @@ namespace PawsAndLoot.Integration.Voice
         }
 
         public void SetCapabilityToken(string token) => capabilityToken = token;
+
+        public bool IsLocallyControlled
+        {
+            get => isLocallyControlled;
+            set => isLocallyControlled = value;
+        }
+
+        /// <summary>
+        /// Whether this machine is allowed to open the microphone for this role.
+        ///
+        /// The role selector is asked first and its answer wins, in a session and
+        /// offline alike. Both role objects exist on both machines, so a
+        /// serialized flag cannot distinguish them — the machine's own role can.
+        /// </summary>
+        public bool CanCaptureLocally()
+        {
+            if (issuer == null)
+            {
+                return isLocallyControlled;
+            }
+
+            LocalPlayerRoleSelector selector =
+                FindFirstObjectByType<LocalPlayerRoleSelector>();
+            if (selector == null)
+            {
+                return isLocallyControlled;
+            }
+
+            return selector.IsGameplayInputEnabled
+                && selector.ActiveRole == issuer.Role;
+        }
 
         private void Start()
         {
@@ -154,15 +226,35 @@ namespace PawsAndLoot.Integration.Voice
                 SetState(VoiceCommandInputState.Executing);
             }
 
-            // The legacy WebGL callback arrives after the server has already
-            // completed execution. Keep the visible terminal state consistent
-            // with the native LocalAI pipeline.
             BeginCooldown();
         }
 
         public void ApplyServerFailure(string error)
         {
             SetError(error);
+        }
+
+        /// <summary>
+        /// Which capture backend this platform has. The one place a platform check
+        /// is unavoidable — a browser has no `Microphone` and a Windows player has
+        /// no `MediaRecorder`, and no amount of configuration changes that.
+        /// </summary>
+        private IVoiceCaptureProvider ResolveCapture()
+        {
+            if (capture != null)
+            {
+                return capture;
+            }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            browserCapture = new BrowserVoiceCaptureProvider(
+                gameObject.name,
+                nameof(OnCaptureResult));
+            capture = browserCapture;
+#else
+            capture = new NativeVoiceCaptureProvider();
+#endif
+            return capture;
         }
 
         public void StartListening()
@@ -174,35 +266,50 @@ namespace PawsAndLoot.Integration.Voice
                 return;
             }
 
+            // Silent, not an error. The router broadcasts the key to every voice
+            // component, so the other role's component reaches here on every
+            // press; reporting a failure would fill the feed with a refusal the
+            // player did not cause.
+            if (!CanCaptureLocally())
+            {
+                return;
+            }
+
             if (config != null && !config.VoiceInputEnabled)
             {
                 SetError("VOICE_INPUT_DISABLED");
                 return;
             }
 
-            captureInProgress = true;
-            finishRequested = false;
-            ListeningElapsedSeconds = 0f;
-            LastError = string.Empty;
-            LastResult = null;
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-            if (string.IsNullOrWhiteSpace(capabilityToken))
+            // Only the shared backend needs a session capability. The local
+            // gateway runs on this machine and has nobody to authenticate to.
+            if (Transport == VoiceTransport.Backend
+                && string.IsNullOrWhiteSpace(capabilityToken))
             {
                 SetError("VOICE_CAPABILITY_MISSING");
                 return;
             }
 
-            SetState(VoiceCommandInputState.Recording);
-            PawsAndLoot_VoiceMediaRecorder_Start(
-                gameObject.name,
-                nameof(OnCaptureResult),
-                MaximumRecordingSeconds);
-#else
-            StartCoroutine(BeginNativeCapture());
-#endif
+            captureInProgress = true;
+            finishRequested = false;
+            releaseRequested = false;
+            ListeningElapsedSeconds = 0f;
+            LastError = string.Empty;
+            LastResult = null;
+
+            StartCoroutine(BeginCapture());
         }
 
+        /// <summary>
+        /// Records the key release. It does not stop the capture on the spot.
+        ///
+        /// Opening a device takes a moment, so a quick tap releases while the
+        /// state is still <c>Starting</c> and there is nothing to stop. A release
+        /// below <see cref="MinimumRecordingSeconds"/> also produces audio the
+        /// capture rejects as too short. So the release is remembered and
+        /// <see cref="Update"/> ends the recording once it is long enough to
+        /// contain a word — a tap becomes a short command instead of a failure.
+        /// </summary>
         public void StopListening()
         {
             if (!captureInProgress || finishRequested)
@@ -210,20 +317,18 @@ namespace PawsAndLoot.Integration.Voice
                 return;
             }
 
-#if UNITY_WEBGL && !UNITY_EDITOR
-            PawsAndLoot_VoiceMediaRecorder_Stop(gameObject.name);
-#else
-            if (State == VoiceCommandInputState.Recording)
+            releaseRequested = true;
+            if (State == VoiceCommandInputState.Recording
+                && ListeningElapsedSeconds >= MinimumRecordingSeconds)
             {
-                FinishNativeCapture();
+                FinishCapture();
             }
-#endif
         }
 
         public void CancelListening()
         {
             finishRequested = true;
-            nativeCapture?.Cancel();
+            capture?.Cancel();
             captureInProgress = false;
             StopAllCoroutines();
             if (State == VoiceCommandInputState.Recording
@@ -233,34 +338,32 @@ namespace PawsAndLoot.Integration.Voice
             }
         }
 
-        private IEnumerator BeginNativeCapture()
+        private IEnumerator BeginCapture()
         {
-            nativeCapture ??= new NativeVoiceCaptureProvider();
-            yield return nativeCapture.Begin(
+            yield return ResolveCapture().Begin(
                 MaximumRecordingSeconds,
                 () => SetState(VoiceCommandInputState.Starting),
                 () => SetState(VoiceCommandInputState.Recording),
                 SetError);
         }
 
-        private void FinishNativeCapture()
+        private void FinishCapture()
         {
-            if (finishRequested || nativeCapture == null)
+            if (finishRequested || capture == null)
             {
                 return;
             }
 
             finishRequested = true;
-            StartCooldownTimer();
             SetState(VoiceCommandInputState.Encoding);
-            StartCoroutine(EndNativeCapture());
+            StartCoroutine(EndCapture());
         }
 
-        private IEnumerator EndNativeCapture()
+        private IEnumerator EndCapture()
         {
             VoiceCaptureData data = null;
             string error = string.Empty;
-            yield return nativeCapture.End(
+            yield return capture.End(
                 completed => data = completed,
                 failed => error = failed);
 
@@ -277,22 +380,90 @@ namespace PawsAndLoot.Integration.Voice
                 yield break;
             }
 
-            string directory = Path.Combine(
-                Application.persistentDataPath,
-                "VoiceTemp");
-            Directory.CreateDirectory(directory);
-            lastRecordingPath = Path.Combine(
-                directory,
-                Guid.NewGuid().ToString("N") + ".wav");
-
-            try
+            if (config != null
+                && config.MaximumFileSizeMegabytes > 0f
+                && data.AudioBytes.Length
+                    > config.MaximumFileSizeMegabytes * 1024f * 1024f)
             {
-                File.WriteAllBytes(lastRecordingPath, data.AudioBytes);
-            }
-            catch (Exception exception)
-            {
-                SetError("VOICE_WAV_WRITE_FAILED:" + exception.Message);
+                SetError("VOICE_AUDIO_TOO_LARGE");
                 yield break;
+            }
+
+            if (Transport == VoiceTransport.LocalGateway)
+            {
+                yield return SubmitToLocalGateway(data);
+                yield break;
+            }
+
+            yield return SubmitToBackend(data);
+        }
+
+        /// <summary>
+        /// The shared `server/` backend. The answer does not come back in this
+        /// response — it arrives as a socket event and lands on
+        /// <see cref="ApplyServerTranscript"/> / <see cref="ApplyServerDecision"/>.
+        /// </summary>
+        private IEnumerator SubmitToBackend(VoiceCaptureData data)
+        {
+            clientCommandId = Guid.NewGuid().ToString("N");
+            SubmitMetadataToHost();
+
+            VoiceCommandResponse response = null;
+            yield return backendClient.Submit(
+                config != null ? config.BackendBaseUrl : string.Empty,
+                gameSessionId,
+                petId,
+                clientCommandId,
+                capabilityToken,
+                data.AudioBytes,
+                data.MimeType,
+                config != null ? config.RequestTimeoutSeconds : 15f,
+                result =>
+                {
+                    response = result;
+                    SetState(VoiceCommandInputState.Transcribing);
+                },
+                SetError);
+
+            if (response == null)
+            {
+                yield break;
+            }
+
+            // Nothing to hand over means the socket is still the delivery route
+            // (an older server, or a deployment where `?wait` is ignored). The
+            // socket listener will finish the command, so this must not report a
+            // failure — that would blame the request for arriving early.
+            if (response.classification == null
+                && string.IsNullOrWhiteSpace(response.transcript))
+            {
+                yield break;
+            }
+
+            // Handed to the bridge rather than acted on here: the obedience roll
+            // has to run in one place, on the host, or the two screens disagree
+            // about whether the animal listened.
+            FindFirstObjectByType<CompanionVoiceCommandBridge>()
+                ?.ApplyBackendResult(
+                    response.commandId,
+                    petId,
+                    response.transcript,
+                    response.classification,
+                    0);
+        }
+
+        /// <summary>
+        /// The local Python gateway, which answers synchronously in its HTTP
+        /// response and so executes the command here.
+        /// </summary>
+        private IEnumerator SubmitToLocalGateway(VoiceCaptureData data)
+        {
+            // Written only when asked for. The request carries the bytes, so a
+            // file per command was pure disk churn — and it was the one step in
+            // this path that could not work in a browser.
+            if (preserveDebugRecordings)
+            {
+                WriteDebugRecording(data.AudioBytes);
             }
 
             LocalAiProcessManager manager =
@@ -306,10 +477,10 @@ namespace PawsAndLoot.Integration.Voice
             SetState(VoiceCommandInputState.Transcribing);
             bool ready = false;
             string startupError = string.Empty;
-            yield return manager.EnsureReady((success, error) =>
+            yield return manager.EnsureReady((success, message) =>
             {
                 ready = success;
-                startupError = error;
+                startupError = message;
             });
 
             if (!captureInProgress)
@@ -326,13 +497,11 @@ namespace PawsAndLoot.Integration.Voice
             }
 
             LocalAiVoiceClient client = new();
-            string context = LocalAiCommandContext.BuildJson(
-                issuer,
-                petId);
+            string context = LocalAiCommandContext.BuildJson(issuer, petId);
             LocalAiVoiceResponse response = null;
             string requestError = string.Empty;
             yield return client.Submit(
-                manager != null ? manager.GatewayBaseUrl : string.Empty,
+                manager.GatewayBaseUrl,
                 data.AudioBytes,
                 config != null ? config.RequestTimeoutSeconds : 30f,
                 petId,
@@ -362,75 +531,45 @@ namespace PawsAndLoot.Integration.Voice
                 DontDestroyOnLoad(executorObject);
                 executor = executorObject.AddComponent<LocalAiCommandExecutor>();
             }
-            SetState(VoiceCommandInputState.Executing);
-            bool accepted = executor != null
-                && executor.TryExecute(this, resultDto, response);
-            if (!accepted && executor == null)
-            {
-                SetError("LOCAL_AI_EXECUTOR_MISSING");
-            }
-            else
-            {
-                ResultReceived?.Invoke(resultDto);
-                BeginCooldown();
-            }
 
-            captureInProgress = false;
+            SetState(VoiceCommandInputState.Executing);
+            executor.TryExecute(this, resultDto, response);
+            ResultReceived?.Invoke(resultDto);
+            BeginCooldown();
             CleanupRecording();
         }
 
-        public void OnCaptureResult(string json)
+        private void WriteDebugRecording(byte[] audio)
         {
-            if (!captureInProgress) return;
-            captureInProgress = false;
-            StartCooldownTimer();
-
-            VoiceCapturePayload payload;
             try
             {
-                payload = JsonUtility.FromJson<VoiceCapturePayload>(json);
+                string directory = Path.Combine(
+                    Application.persistentDataPath,
+                    "VoiceTemp");
+                Directory.CreateDirectory(directory);
+                lastRecordingPath = Path.Combine(
+                    directory,
+                    Guid.NewGuid().ToString("N") + ".wav");
+                File.WriteAllBytes(lastRecordingPath, audio);
             }
             catch (Exception exception)
             {
-                SetError("VOICE_CAPTURE_RESPONSE_INVALID:" + exception.Message);
-                return;
+                // Never fails the command: a debug artefact is not the point of
+                // the request.
+                Debug.LogWarning(
+                    "Voice debug recording could not be written: "
+                    + exception.Message);
+                lastRecordingPath = string.Empty;
             }
+        }
 
-            if (payload == null || !string.IsNullOrWhiteSpace(payload.error))
-            {
-                SetError(payload?.error ?? "VOICE_CAPTURE_FAILED");
-                return;
-            }
-
-            byte[] audio;
-            try
-            {
-                audio = Convert.FromBase64String(payload.base64Audio ?? string.Empty);
-            }
-            catch (FormatException)
-            {
-                SetError("VOICE_AUDIO_ENCODING_INVALID");
-                return;
-            }
-
-            if (audio.Length == 0)
-            {
-                SetError("VOICE_AUDIO_EMPTY");
-                return;
-            }
-
-            if (config != null
-                && config.MaximumFileSizeMegabytes > 0f
-                && audio.Length > config.MaximumFileSizeMegabytes * 1024f * 1024f)
-            {
-                SetError("VOICE_AUDIO_TOO_LARGE");
-                return;
-            }
-
-            clientCommandId = Guid.NewGuid().ToString("N");
-            SubmitMetadataToHost();
-            SetState(VoiceCommandInputState.Encoding);
-            StartCoroutine(Upload(audio, payload.mimeType));
+        /// <summary>
+        /// The browser plugin's `SendMessage` target. Forwards to the provider,
+        /// which is the thing waiting on the bytes.
+        /// </summary>
+        public void OnCaptureResult(string json)
+        {
+            browserCapture?.SubmitCallbackPayload(json);
         }
 
         private void SubmitMetadataToHost()
@@ -456,21 +595,6 @@ namespace PawsAndLoot.Integration.Voice
                 ?.SubmitOfflineVoiceContext(clientCommandId, petId);
         }
 
-        private IEnumerator Upload(byte[] audio, string mimeType)
-        {
-            yield return backendClient.Submit(
-                config.BackendBaseUrl,
-                gameSessionId,
-                petId,
-                clientCommandId,
-                capabilityToken,
-                audio,
-                mimeType,
-                config.RequestTimeoutSeconds,
-                _ => SetState(VoiceCommandInputState.Transcribing),
-                SetError);
-        }
-
         private void Update()
         {
             if (CooldownRemainingSeconds > 0f)
@@ -485,14 +609,26 @@ namespace PawsAndLoot.Integration.Voice
                 }
             }
 
-            if (State == VoiceCommandInputState.Recording)
+            if (State != VoiceCommandInputState.Recording)
             {
-                ListeningElapsedSeconds += Time.unscaledDeltaTime;
-                if (ListeningElapsedSeconds >= MaximumRecordingSeconds)
-                {
-                    FinishNativeCapture();
-                }
+                return;
             }
+
+            ListeningElapsedSeconds += Time.unscaledDeltaTime;
+            if (ListeningElapsedSeconds < MaximumRecordingSeconds)
+            {
+                // The key was let go earlier; end as soon as the recording is
+                // long enough to be a command.
+                if (releaseRequested
+                    && ListeningElapsedSeconds >= MinimumRecordingSeconds)
+                {
+                    FinishCapture();
+                }
+
+                return;
+            }
+
+            FinishCapture();
         }
 
         private void BeginCooldown()
@@ -513,6 +649,12 @@ namespace PawsAndLoot.Integration.Voice
         private void SetError(string error)
         {
             captureInProgress = false;
+
+            // No cooldown on failure. It used to start the moment the player
+            // stopped speaking, before the result was known, so a recording that
+            // was too quiet or a gateway that was not running locked the key for
+            // thirty seconds. A failed attempt spends nothing.
+            CooldownRemainingSeconds = 0f;
             LastError = error ?? "VOICE_ERROR";
             ErrorReceived?.Invoke(LastError);
             SetState(VoiceCommandInputState.Error);
@@ -527,7 +669,8 @@ namespace PawsAndLoot.Integration.Voice
 
         private void CleanupRecording()
         {
-            if (preserveDebugRecordings || string.IsNullOrWhiteSpace(lastRecordingPath))
+            if (preserveDebugRecordings
+                || string.IsNullOrWhiteSpace(lastRecordingPath))
             {
                 return;
             }
@@ -545,26 +688,6 @@ namespace PawsAndLoot.Integration.Voice
             }
 
             lastRecordingPath = string.Empty;
-        }
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-        [DllImport("__Internal")]
-        private static extern void PawsAndLoot_VoiceMediaRecorder_Start(
-            string gameObjectName,
-            string callbackMethod,
-            float maximumSeconds);
-
-        [DllImport("__Internal")]
-        private static extern void PawsAndLoot_VoiceMediaRecorder_Stop(
-            string gameObjectName);
-#endif
-
-        [Serializable]
-        private sealed class VoiceCapturePayload
-        {
-            public string base64Audio;
-            public string mimeType;
-            public string error;
         }
     }
 }

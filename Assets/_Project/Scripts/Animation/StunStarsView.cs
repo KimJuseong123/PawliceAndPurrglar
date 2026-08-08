@@ -196,7 +196,16 @@ namespace PawsAndLoot.Animation
         private void LateUpdate()
         {
             Build();
-            bool showing = ResolveStun()?.IsStunned == true;
+
+            // Stars mean "something hit you", so they are no longer the drawing
+            // for every stun. A banana spins the character (SlipSpinView) and
+            // the glue trap marks the screen edge; drawing stars on top of
+            // either would say the player had been struck by something they were
+            // never struck by. The stun itself is unchanged — only who draws it.
+            StunState state = ResolveStun();
+            bool showing = state != null
+                && state.IsStunned
+                && state.Cause == StunCause.Impact;
             if (showing != IsShowing)
             {
                 IsShowing = showing;

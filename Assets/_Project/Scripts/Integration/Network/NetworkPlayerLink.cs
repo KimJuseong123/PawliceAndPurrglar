@@ -355,6 +355,22 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableWritePermission.Server);
 
         /// <summary>
+        /// Which of the three the stun was, so the client draws the same
+        /// accident. Presentation only — the duration above is what holds the
+        /// player still, on both machines.
+        ///
+        /// Sent alongside the count rather than inferred from the prop, because
+        /// the client is never told which prop landed: it is told a player is
+        /// held for a length of time. Without this a banana spun the host's
+        /// screen and put four stars on the client's.
+        /// </summary>
+        private readonly NetworkVariable<int> _stunCause =
+            new(
+                (int)StunCause.Impact,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+
+        /// <summary>
         /// Off the ground, replicated.
         ///
         /// The pose cannot work this out for itself on a client. A replicated
@@ -571,6 +587,12 @@ namespace PawsAndLoot.Integration.Network
 
             _stunCount.Value++;
             _stunSeconds.Value = seconds;
+
+            // Read off the component rather than passed through the event, so a
+            // stun applied by a path that does not raise it still carries the
+            // right cause. The component has already recorded it by the time
+            // this runs.
+            _stunCause.Value = (int)stun.Cause;
         }
 
         public override void OnNetworkDespawn()
@@ -1376,7 +1398,9 @@ namespace PawsAndLoot.Integration.Network
                 && _stunCount.Value > _appliedStunCount)
             {
                 _appliedStunCount = _stunCount.Value;
-                stun.TryApply(_stunSeconds.Value);
+                stun.TryApply(
+                    _stunSeconds.Value,
+                    (StunCause)_stunCause.Value);
             }
 
             if (policeWallet != null)

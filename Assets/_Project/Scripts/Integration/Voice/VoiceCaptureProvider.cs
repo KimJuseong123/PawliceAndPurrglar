@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Globalization;
 using System.IO;
 using UnityEngine;
 
@@ -55,12 +56,38 @@ namespace PawsAndLoot.Integration.Voice
         private const int SampleRate = 16000;
         private const int MinimumMilliseconds = 250;
         private const float SilenceRmsThreshold = 0.003f;
+
+        /// <summary>
+        /// The one provider currently allowed to hold the recording device.
+        ///
+        /// Windows hands a capture device to a single client, and this game asks
+        /// twice: a <c>VoiceCommandInput</c> is attached to both role objects, so
+        /// pressing the voice key started the police one and the thief one in the
+        /// same frame. The second <c>Microphone.Start</c> left one of the two
+        /// clips receiving nothing, and either one's <c>Microphone.End</c> stopped
+        /// the other's recording — that is where `VOICE_AUDIO_SILENT` came from,
+        /// and why it was intermittent rather than constant (`ISSUE-069`).
+        ///
+        /// Static because the device is one machine-wide resource, not a field of
+        /// whichever component happened to ask first.
+        /// </summary>
+        private static NativeVoiceCaptureProvider deviceOwner;
+
         private AudioClip clip;
         private string deviceName;
         private bool recording;
 
         public bool IsAvailable => Microphone.devices != null
             && Microphone.devices.Length > 0;
+
+        /// <summary>
+        /// Peak absolute sample of the last capture. Reported so a rejected
+        /// recording says whether the device produced exact silence — a blocked
+        /// Windows privacy setting returns a clip of zeros *successfully* — or
+        /// something too quiet to be speech. The two look identical in the HUD
+        /// and are fixed in different places.
+        /// </summary>
+        public float LastPeakAmplitude { get; private set; }
 
         public IEnumerator Begin(
             float maximumSeconds,
@@ -69,6 +96,12 @@ namespace PawsAndLoot.Integration.Voice
             Action<string> failed)
         {
             permissionRequested?.Invoke();
+
+            if (deviceOwner != null && deviceOwner != this)
+            {
+                failed?.Invoke("MIC_HELD_BY_ANOTHER_CAPTURE");
+                yield break;
+            }
 
 #if UNITY_2020_1_OR_NEWER
             if (!Application.HasUserAuthorization(UserAuthorization.Microphone))
@@ -100,6 +133,7 @@ namespace PawsAndLoot.Integration.Voice
                 Mathf.CeilToInt(maximumSeconds),
                 1,
                 60);
+            deviceOwner = this;
             try
             {
                 clip = Microphone.Start(
@@ -110,12 +144,14 @@ namespace PawsAndLoot.Integration.Voice
             }
             catch (Exception exception)
             {
+                ReleaseDevice();
                 failed?.Invoke("MIC_START_FAILED:" + exception.Message);
                 yield break;
             }
 
             if (clip == null)
             {
+                ReleaseDevice();
                 failed?.Invoke("MIC_DEVICE_BUSY");
                 yield break;
             }
@@ -130,6 +166,7 @@ namespace PawsAndLoot.Integration.Voice
             if (!Microphone.IsRecording(deviceName))
             {
                 clip = null;
+                ReleaseDevice();
                 failed?.Invoke("MIC_DEVICE_BUSY");
                 yield break;
             }
@@ -149,11 +186,7 @@ namespace PawsAndLoot.Integration.Voice
             }
 
             int sampleFrames = Microphone.GetPosition(deviceName);
-            if (Microphone.IsRecording(deviceName))
-            {
-                Microphone.End(deviceName);
-            }
-
+            ReleaseDevice();
             recording = false;
             yield return null;
 
@@ -186,12 +219,19 @@ namespace PawsAndLoot.Integration.Voice
             }
 
             float sumSquares = 0f;
+            float peak = 0f;
             for (int index = 0; index < sampleCount; index++)
             {
                 float value = samples[index];
                 sumSquares += value * value;
+                float magnitude = Mathf.Abs(value);
+                if (magnitude > peak)
+                {
+                    peak = magnitude;
+                }
             }
 
+            LastPeakAmplitude = peak;
             float sensitivity = VoiceCaptureSettings.MicrophoneSensitivity;
             float rms = Mathf.Sqrt(sumSquares / Mathf.Max(1, sampleCount));
             float silenceThreshold = SilenceRmsThreshold
@@ -199,7 +239,17 @@ namespace PawsAndLoot.Integration.Voice
             if (rms < silenceThreshold)
             {
                 clip = null;
-                failed?.Invoke("VOICE_AUDIO_SILENT");
+
+                // Two different failures with one old name. A clip of exact
+                // zeros is a device that was opened but is not being fed —
+                // Windows privacy settings return that *successfully*. Anything
+                // above zero is a real signal that was too quiet, which is a
+                // volume or sensitivity matter. Naming them apart is the whole
+                // point: the fix is in a different place.
+                failed?.Invoke(peak <= 0f
+                    ? "MIC_RETURNED_ONLY_ZEROS"
+                    : "VOICE_AUDIO_SILENT:peak="
+                        + peak.ToString("F4", CultureInfo.InvariantCulture));
                 yield break;
             }
 
@@ -239,14 +289,32 @@ namespace PawsAndLoot.Integration.Voice
 
         public void Cancel()
         {
-            if (recording && !string.IsNullOrEmpty(deviceName)
+            ReleaseDevice();
+            recording = false;
+            clip = null;
+        }
+
+        /// <summary>
+        /// Stops the recording and gives the device back, but only if this
+        /// provider is the one holding it. The guard matters on cancellation:
+        /// Escape and losing window focus cancel *every* capture component, and
+        /// an unguarded <c>Microphone.End</c> would let the idle one stop the
+        /// recording the player is in the middle of.
+        /// </summary>
+        private void ReleaseDevice()
+        {
+            if (deviceOwner != this)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(deviceName)
                 && Microphone.IsRecording(deviceName))
             {
                 Microphone.End(deviceName);
             }
 
-            recording = false;
-            clip = null;
+            deviceOwner = null;
         }
     }
 

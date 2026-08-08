@@ -1,6 +1,7 @@
 using PawsAndLoot.Companions;
 using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Loot;
+using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Match;
 using UnityEngine;
 
@@ -197,12 +198,34 @@ namespace PawsAndLoot.Audio
 
         private static void HandleMatchEnded(MatchResult result)
         {
-            // Both players hear both sides of the result on one machine, so the
-            // local role decides which one plays.
-            GameSoundService.Request(
-                result.Winner == MatchWinner.Police
-                    ? GameSoundId.Victory
-                    : GameSoundId.Defeat);
+            // Whose ears, not whose win. The comment here has always said the local
+            // role decides — the code never asked it, and played the fanfare whenever
+            // the *police* won. So the thief heard a victory sting for losing and a
+            // defeat sting for winning, on every single match. `UI-016` fixed exactly
+            // this confusion in the result screen's title (winner-based → viewer-based)
+            // and the audio was left behind.
+            //
+            // Same expression the title uses (`ResultScreenPresenter`), so the two
+            // cannot disagree.
+            GameSoundService.Request(ResolveMatchEndSound(
+                result.Winner,
+                LocalPlayerRoleSelector.OverriddenRole ?? PlayerRole.Police));
+        }
+
+        /// <summary>
+        /// Which sting the player at this machine hears. Separated from the event
+        /// handler and given the viewer as an argument so a test can check all four
+        /// combinations without setting the local role — that role is a static value
+        /// and setting it leaks into whatever test runs next (`ISSUE-054`).
+        /// </summary>
+        public static GameSoundId ResolveMatchEndSound(
+            MatchWinner winner,
+            PlayerRole viewer)
+        {
+            bool viewerWon = winner == MatchWinner.Police
+                ? viewer == PlayerRole.Police
+                : viewer == PlayerRole.Thief;
+            return viewerWon ? GameSoundId.Victory : GameSoundId.Defeat;
         }
 
         /// <summary>

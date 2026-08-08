@@ -65,6 +65,39 @@ namespace PawsAndLoot.Gameplay.Players
         public bool IsRevealed => Time.time < _revealUntil;
 
         /// <summary>
+        /// Whose eyes this is. Exposed so the *other* player's screen can find
+        /// the component that is currently seeing them — being revealed is a
+        /// fact stored on the watcher, and the person it happens to had no way
+        /// to ask.
+        /// </summary>
+        /// <remarks>
+        /// Falls back to the identity on this object rather than assuming a
+        /// role. Assuming would be silent and wrong exactly once — on the
+        /// object where the field was left unassigned.
+        /// </remarks>
+        public PlayerRole ViewerRole
+        {
+            get
+            {
+                if (viewer != null)
+                {
+                    return viewer.Role;
+                }
+
+                PlayerRoleIdentity identity =
+                    GetComponent<PlayerRoleIdentity>();
+                return identity != null ? identity.Role : PlayerRole.Police;
+            }
+        }
+
+        /// <summary>
+        /// How much longer the reveal has to run, for a countdown on the
+        /// revealed player's screen. Zero when nothing is revealed.
+        /// </summary>
+        public float RevealRemainingSeconds =>
+            Mathf.Max(0f, _revealUntil - Time.time);
+
+        /// <summary>
         /// Where the reveal came from, in world space.
         ///
         /// Remembered here rather than looked up, because the sensor that tripped
@@ -99,6 +132,43 @@ namespace PawsAndLoot.Gameplay.Players
             _revealUntil = Mathf.Max(
                 _revealUntil,
                 Time.time + seconds);
+        }
+
+        /// <summary>
+        /// Makes one role visible to everybody who is not that role.
+        ///
+        /// The one way to reveal somebody, because there were two and one of
+        /// them was wrong. This component sits on the **watcher** and hides the
+        /// other side, so revealing the thief means switching off the
+        /// *officer's* copy. <c>LootAlarm</c> instead called
+        /// <c>thief.GetComponent&lt;FlashlightVisibility&gt;()</c> — and only
+        /// the officer has one, so the null-conditional swallowed it and the
+        /// alarm's four-second reveal **never happened once**. Nothing logged,
+        /// nothing threw, and the siren still sounded.
+        ///
+        /// Duration is a parameter because the two callers disagree: a sensor
+        /// light is 2.5 seconds and the display-case alarm is 4.
+        /// </summary>
+        public static int RevealRole(
+            PlayerRole revealed,
+            float seconds,
+            Vector3 source)
+        {
+            int switched = 0;
+            foreach (FlashlightVisibility watcher in
+                FindObjectsByType<FlashlightVisibility>(
+                    FindObjectsSortMode.None))
+            {
+                if (watcher.ViewerRole == revealed)
+                {
+                    continue;
+                }
+
+                watcher.RevealFor(seconds, source);
+                switched++;
+            }
+
+            return switched;
         }
 
         public void Configure(

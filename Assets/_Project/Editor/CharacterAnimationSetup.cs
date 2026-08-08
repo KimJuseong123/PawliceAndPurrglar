@@ -20,33 +20,30 @@ namespace PawsAndLoot.Editor
         public const string ControllerPath =
             "Assets/_Project/Art/Characters/CharacterLocomotion.controller";
 
-        private static readonly string[] WalkClipCandidates =
-        {
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Tie/"
-            + "LoftTie@Walking.fbx",
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Suit/"
-            + "LoftSuit@Walking.fbx"
-        };
+        /// <summary>
+        /// Where authored humanoid clips are looked for.
+        ///
+        /// This used to be six hard-coded paths into
+        /// <c>Assets/TopDownEngine/Demos/Loft3D/...</c>. That package is a paid
+        /// asset whose licence forbids redistribution, so it was never in the
+        /// repository and is not installed here — which made every one of those
+        /// paths a miss, and the controller that *was* committed (built once on
+        /// a machine that had it) reference six clips that resolve to nothing.
+        ///
+        /// Searched by name in our own folder instead. Nothing is there yet;
+        /// <c>MODEL-002</c> is the job that fills it, and until it does the
+        /// rebuild below says so and builds no controller at all, which is the
+        /// honest state rather than a controller full of holes.
+        /// </summary>
+        private const string ClipFolder =
+            "Assets/_Project/Art/Characters/Animations";
 
-        private static readonly string[] CommandClipCandidates =
-        {
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Suit/"
-            + "LoftSuit@StandingMeleeKick.fbx",
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Tie/"
-            + "LoftTie@Jump.fbx"
-        };
-
-        private static readonly string[] WinClipCandidates =
-        {
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Suit/"
-            + "LoftSuit@StandingIdle2.fbx"
-        };
-
-        private static readonly string[] LoseClipCandidates =
-        {
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Suit/"
-            + "LoftSuit@CrouchingIdle.fbx"
-        };
+        private static readonly string[] IdleClipNames = { "Idle" };
+        private static readonly string[] RunClipNames = { "Run", "Running" };
+        private static readonly string[] WalkClipNames = { "Walk", "Walking" };
+        private static readonly string[] CommandClipNames = { "Command" };
+        private static readonly string[] WinClipNames = { "Win" };
+        private static readonly string[] LoseClipNames = { "Lose" };
 
         private static readonly string[] HumanoidRigTargets =
         {
@@ -54,22 +51,7 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Art/Characters/thief.fbx"
         };
 
-        // Preferred clip sources, in priority order.
-        private static readonly string[] IdleClipCandidates =
-        {
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Tie/"
-            + "LoftTie@Idle.fbx",
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Suit/"
-            + "LoftSuit@StandingIdle.fbx"
-        };
 
-        private static readonly string[] RunClipCandidates =
-        {
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Tie/"
-            + "LoftTie@Running.fbx",
-            "Assets/TopDownEngine/Demos/Loft3D/Models/Characters/Suit/"
-            + "LoftSuit@Running.fbx"
-        };
 
         /// <summary>
         /// The animals must stay Generic. Unity will happily build a Humanoid
@@ -89,8 +71,8 @@ namespace PawsAndLoot.Editor
             EnsureHumanoidRigs();
             EnsureGenericAnimalRigs();
 
-            AnimationClip idle = FindHumanoidClip(IdleClipCandidates);
-            AnimationClip run = FindHumanoidClip(RunClipCandidates);
+            AnimationClip idle = FindAuthoredClip(IdleClipNames);
+            AnimationClip run = FindAuthoredClip(RunClipNames);
             if (run == null)
             {
                 Debug.LogWarning(
@@ -100,11 +82,11 @@ namespace PawsAndLoot.Editor
                 return;
             }
 
-            AnimationClip walk = FindHumanoidClip(WalkClipCandidates);
+            AnimationClip walk = FindAuthoredClip(WalkClipNames);
             AnimationClip command =
-                FindHumanoidClip(CommandClipCandidates);
-            AnimationClip win = FindHumanoidClip(WinClipCandidates);
-            AnimationClip lose = FindHumanoidClip(LoseClipCandidates);
+                FindAuthoredClip(CommandClipNames);
+            AnimationClip win = FindAuthoredClip(WinClipNames);
+            AnimationClip lose = FindAuthoredClip(LoseClipNames);
 
             var controller =
                 AnimatorController.CreateAnimatorControllerAtPath(
@@ -339,32 +321,42 @@ namespace PawsAndLoot.Editor
             return false;
         }
 
-        private static AnimationClip FindHumanoidClip(
-            IEnumerable<string> candidatePaths)
+        /// <summary>
+        /// The first humanoid clip in <see cref="ClipFolder"/> whose name
+        /// contains one of these words.
+        ///
+        /// By name rather than by path, because the authored clips are not here
+        /// yet and guessing their filenames would put this back in the business
+        /// of hard-coded paths that silently miss.
+        /// </summary>
+        private static AnimationClip FindAuthoredClip(
+            IEnumerable<string> names)
         {
-            foreach (string path in candidatePaths)
+            if (!AssetDatabase.IsValidFolder(ClipFolder))
             {
-                var importer = AssetImporter.GetAtPath(path) as ModelImporter;
-                if (importer == null)
-                {
-                    continue;
-                }
+                return null;
+            }
 
-                if (importer.animationType
-                    != ModelImporterAnimationType.Human)
+            foreach (string guid in
+                AssetDatabase.FindAssets("t:AnimationClip", new[] { ClipFolder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                foreach (Object sub in AssetDatabase.LoadAllAssetsAtPath(path))
                 {
-                    importer.animationType =
-                        ModelImporterAnimationType.Human;
-                    importer.SaveAndReimport();
-                }
-
-                foreach (Object sub in
-                    AssetDatabase.LoadAllAssetsAtPath(path))
-                {
-                    if (sub is AnimationClip clip
-                        && !clip.name.StartsWith("__preview__"))
+                    if (sub is not AnimationClip clip
+                        || clip.name.StartsWith("__preview__"))
                     {
-                        return clip;
+                        continue;
+                    }
+
+                    foreach (string name in names)
+                    {
+                        if (clip.name.IndexOf(
+                                name,
+                                System.StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            return clip;
+                        }
                     }
                 }
             }

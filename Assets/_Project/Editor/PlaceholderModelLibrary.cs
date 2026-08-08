@@ -22,32 +22,6 @@ namespace PawsAndLoot.Editor
     {
         public const string PropDirectory = "Assets/_Project/Art/Props";
 
-        // The external package ships no two-heads-tall character, so the
-        // roundest cartoon body it has is reused for both roles and separated
-        // by colour. Its head bone is enlarged to approach the intended
-        // chibi silhouette.
-        private const string CharacterModelPath =
-            "Assets/TopDownEngine/Demos/Explodudes/Animations/Characters/"
-            + "MM/MMExplodude.fbx";
-
-        private const string CharacterAnimatorPath =
-            "Assets/TopDownEngine/Demos/Explodudes/Animations/Characters/"
-            + "MM/MMExplodudeAnimatorController.controller";
-
-        private const string HeadBoneName = "MM:Head";
-
-        /// <summary>
-        /// The source mesh is a realistic seven-heads build. Scaling the head
-        /// bone by this factor brings the silhouette to roughly two and a
-        /// quarter heads, which reads as the intended cartoon proportion at
-        /// the top-down camera distance.
-        /// </summary>
-        private const float HeadBoneScale = 2.2f;
-
-        /// <summary>
-        /// Standing height the placeholder is normalised to, chosen to sit
-        /// inside the 2m CharacterController without dwarfing the props.
-        /// </summary>
         private const float TargetCharacterHeight = 1.7f;
 
         /// <summary>
@@ -111,19 +85,23 @@ namespace PawsAndLoot.Editor
         }
 
         /// <summary>
-        /// Assigns the shared locomotion controller when one exists and the
-        /// model imported as Humanoid. Quadrupeds and Generic rigs are left
-        /// alone because humanoid clips cannot retarget onto them.
+        /// Assigns the shared locomotion controller when one exists, and always
+        /// fits the guard.
+        ///
+        /// The guard used to be attached *inside* the "a controller was found"
+        /// branch. That was fine while a controller was always found — and the
+        /// moment the TopDownEngine-derived one was deleted it meant the
+        /// characters shipped with an enabled Animator holding zero clips, which
+        /// is the exact state the guard exists to prevent: the procedural walk
+        /// defers to the Animator, the Animator has nothing to play, and no leg
+        /// moves. Two Play Mode tests caught it, which is the only reason this
+        /// paragraph is not a bug report.
+        ///
+        /// Quadrupeds and Generic rigs are left alone because humanoid clips
+        /// cannot retarget onto them.
         /// </summary>
         private static void ApplyLocomotionController(GameObject instance)
         {
-            UnityEditor.Animations.AnimatorController controller =
-                CharacterAnimationSetup.LoadController();
-            if (controller == null)
-            {
-                return;
-            }
-
             Animator animator = instance.GetComponent<Animator>();
             if (animator == null
                 || animator.avatar == null
@@ -132,16 +110,22 @@ namespace PawsAndLoot.Editor
                 return;
             }
 
-            animator.runtimeAnimatorController = controller;
+            UnityEditor.Animations.AnimatorController controller =
+                CharacterAnimationSetup.LoadController();
+            if (controller != null)
+            {
+                animator.runtimeAnimatorController = controller;
+            }
+
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
 
-            // The clips this controller points at live in TopDownEngine, which
-            // cannot be committed. Height and foot placement were measured just
-            // above in the bind pose, before any controller existed, so a
-            // checkout without those clips must not let the Animator retarget
-            // the rig to a different rest pose — that is what sank the
-            // characters into the ground.
+            // Height and foot placement were measured just above in the bind
+            // pose, before any controller existed, so an Animator with no
+            // usable clips must not be left running: it would retarget the rig
+            // to a different rest pose, which is what sank the characters into
+            // the ground. There are no clips at all today (`MODEL-002`), so the
+            // guard is what is actually running.
             AnimatorClipGuard guard =
                 instance.GetComponent<AnimatorClipGuard>()
                 ?? instance.AddComponent<AnimatorClipGuard>();
@@ -313,34 +297,13 @@ namespace PawsAndLoot.Editor
             return instance;
         }
 
-        /// <summary>
-        /// Instantiates the temporary character mesh for a role and forces a
-        /// readable single-colour project material on it.
-        /// </summary>
-        public static GameObject TryInstantiateCharacter(
-            PlayerRole role,
-            Transform parent,
-            Material bodyMaterial,
-            Material headMaterial)
-        {
-            GameObject instance = TryInstantiate(
-                CharacterModelPath,
-                parent,
-                $"{role}PlaceholderModel");
-            if (instance == null)
-            {
-                return null;
-            }
-
-            instance.transform.localRotation = Quaternion.identity;
-            instance.transform.localScale = Vector3.one;
-            StripColliders(instance);
-            ApplyRoleMaterials(instance, bodyMaterial, headMaterial);
-            EnlargeHeadBone(instance);
-            ApplyIdleAnimator(instance);
-            NormaliseHeight(instance, parent);
-            return instance;
-        }
+        // TryInstantiateCharacter lived here: it borrowed TopDownEngine's
+        // MMExplodude mesh for both roles and separated them by colour, with
+        // its head bone scaled 2.2x to fake a chibi silhouette. It was the
+        // middle rung of authored -> borrowed -> capsule, and the authored
+        // characters have been in place for weeks, so the borrowed one could
+        // only ever have been reached on a machine that had the paid asset.
+        // Nobody had one. Removed 2026-08-08 with the rest of the dependency.
 
         /// <summary>
         /// Head-to-total ratio of the instance, expressed in heads. Reported
@@ -383,30 +346,6 @@ namespace PawsAndLoot.Editor
             return true;
         }
 
-        private static void EnlargeHeadBone(GameObject instance)
-        {
-            foreach (Transform child in
-                instance.GetComponentsInChildren<Transform>(true))
-            {
-                if (child.name != HeadBoneName)
-                {
-                    continue;
-                }
-
-                child.localScale *= HeadBoneScale;
-                Debug.Log(
-                    $"[Placeholder] head bone '{HeadBoneName}' scaled to "
-                    + $"{child.localScale.x:0.00}. Skinned mesh bounds are "
-                    + "not re-baked in the editor, so the reported head "
-                    + "ratio still reflects the source proportions.");
-                return;
-            }
-
-            Debug.LogWarning(
-                $"[Placeholder] head bone '{HeadBoneName}' not found; "
-                + "character keeps its source proportions.");
-        }
-
         /// <summary>
         /// Scales the instance so it stands at the target height and rests its
         /// feet on the ground, whatever authored size the source mesh uses.
@@ -437,34 +376,6 @@ namespace PawsAndLoot.Editor
             float groundY = parent.position.y + CharacterFootOffset;
             float delta = groundY - scaled.min.y;
             instance.transform.localPosition += new Vector3(0f, delta, 0f);
-        }
-
-        private static void ApplyIdleAnimator(GameObject instance)
-        {
-            var controller =
-                AssetDatabase.LoadAssetAtPath<
-                    UnityEditor.Animations.AnimatorController>(
-                    CharacterAnimatorPath);
-            if (controller == null)
-            {
-                MissingAssets.Add(CharacterAnimatorPath);
-                return;
-            }
-
-            Animator animator = instance.GetComponent<Animator>()
-                ?? instance.AddComponent<Animator>();
-            animator.runtimeAnimatorController = controller;
-            animator.applyRootMotion = false;
-            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-
-            // The clips live in TopDownEngine, which cannot be committed. In a
-            // checkout without it this guard switches the Animator off so the
-            // character keeps the bind pose the height offsets were measured
-            // from, instead of sinking into the ground.
-            AnimatorClipGuard guard =
-                instance.GetComponent<AnimatorClipGuard>()
-                ?? instance.AddComponent<AnimatorClipGuard>();
-            guard.Configure(animator);
         }
 
         private static void ApplyRoleMaterials(

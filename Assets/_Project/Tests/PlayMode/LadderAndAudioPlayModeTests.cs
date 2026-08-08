@@ -227,6 +227,105 @@ namespace PawsAndLoot.Tests.PlayMode
             yield return null;
         }
 
+        /// <summary>
+        /// The clip was never short. The AudioSource playing it lives in the Game
+        /// scene, and the Result scene load that follows a win destroyed it a few
+        /// frames in — so a two-second fanfare came out as a click (`ISSUE-070`).
+        ///
+        /// Asserted structurally rather than by listening: batch mode has no audio
+        /// device, so `isPlaying` is false either way and an ear-based assertion
+        /// would pass while the bug was back.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator MatchEndSoundsPlayFromAnObjectTheSceneLoadCannotDestroy()
+        {
+            GameSoundBank bank =
+                ScriptableObject.CreateInstance<GameSoundBank>();
+            bank.EnsureAllSoundIds();
+            AudioClip fanfare = AudioClip.Create("fanfare", 44100, 1, 44100, false);
+            Assert.That(
+                bank.TryAssignClip(GameSoundId.Victory, fanfare),
+                Is.True,
+                "The bank must have a Victory slot to fill.");
+
+            var audioObject = new GameObject("Audio");
+            audioObject.SetActive(false);
+            AudioSource sceneSource = audioObject.AddComponent<AudioSource>();
+            sceneSource.playOnAwake = false;
+            GameSoundService service =
+                audioObject.AddComponent<GameSoundService>();
+            service.Configure(bank, sceneSource, null);
+            audioObject.SetActive(true);
+
+            service.Play(GameSoundId.Victory);
+            yield return null;
+
+            GameObject persistent = null;
+            foreach (GameObject candidate in
+                Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
+            {
+                if (candidate.name == "Persistent One Shot Audio")
+                {
+                    persistent = candidate;
+                    break;
+                }
+            }
+
+            Assert.That(
+                persistent,
+                Is.Not.Null,
+                "A match-end sound must play from a persistent object, or the "
+                + "Result scene load cuts it off.");
+            Assert.That(
+                persistent.scene.name,
+                Is.EqualTo("DontDestroyOnLoad"),
+                "The player has to be outside the Game scene to survive the load.");
+            Assert.That(
+                GameSoundBank.OutlivesTheScene(GameSoundId.Victory),
+                Is.True);
+            Assert.That(
+                GameSoundBank.OutlivesTheScene(GameSoundId.Defeat),
+                Is.True);
+            Assert.That(
+                GameSoundBank.OutlivesTheScene(GameSoundId.LootAcquired),
+                Is.False,
+                "Only the match-end stingers outlive the scene; everything else "
+                + "belongs to the match that raised it.");
+
+            Object.DestroyImmediate(audioObject);
+            Object.DestroyImmediate(persistent);
+            Object.DestroyImmediate(bank);
+            yield return null;
+        }
+
+        /// <summary>
+        /// Whose ears, not whose win. The handler played the fanfare whenever the
+        /// police won, so the thief heard a victory sting for losing on every match
+        /// — the same winner-vs-viewer confusion `UI-016` fixed in the title.
+        /// </summary>
+        [Test]
+        public void TheMatchEndStingFollowsTheViewerNotTheWinner()
+        {
+            Assert.That(
+                GameSoundObserver.ResolveMatchEndSound(
+                    MatchWinner.Police, PlayerRole.Police),
+                Is.EqualTo(GameSoundId.Victory));
+            Assert.That(
+                GameSoundObserver.ResolveMatchEndSound(
+                    MatchWinner.Police, PlayerRole.Thief),
+                Is.EqualTo(GameSoundId.Defeat),
+                "The thief lost; the fanfare is not theirs.");
+            Assert.That(
+                GameSoundObserver.ResolveMatchEndSound(
+                    MatchWinner.Thief, PlayerRole.Thief),
+                Is.EqualTo(GameSoundId.Victory),
+                "The thief won and must hear the fanfare.");
+            Assert.That(
+                GameSoundObserver.ResolveMatchEndSound(
+                    MatchWinner.Thief, PlayerRole.Police),
+                Is.EqualTo(GameSoundId.Defeat));
+        }
+
         [Test]
         public void SoundBankCoversEverySoundId()
         {

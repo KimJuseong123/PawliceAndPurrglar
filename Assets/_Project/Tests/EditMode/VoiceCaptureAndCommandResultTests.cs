@@ -49,6 +49,89 @@ namespace PawsAndLoot.Tests.EditMode
             Object.DestroyImmediate(root);
         }
 
+        /// <summary>
+        /// A failed attempt must cost nothing. The cooldown used to be started
+        /// the moment the player stopped speaking, before the result was known,
+        /// so a recording that was too quiet or a gateway that was not running
+        /// locked the key for thirty seconds and the second press did nothing
+        /// either (`ISSUE-069`).
+        /// </summary>
+        [Test]
+        public void AFailedCommandDoesNotSpendTheCooldown()
+        {
+            GameObject root = new("Voice Cooldown Test");
+            VoiceCommandInput input = root.AddComponent<VoiceCommandInput>();
+
+            input.ApplyServerFailure("MIC_RETURNED_ONLY_ZEROS");
+            Assert.That(input.CooldownRemainingSeconds, Is.EqualTo(0f));
+
+            input.ApplyServerDecision(true, new VoiceCommandResult
+            {
+                transcript = "따라와",
+                interpretedCommand = "DOG FOLLOW",
+                confidence = 1f
+            });
+            Assert.That(input.CooldownRemainingSeconds, Is.EqualTo(30f));
+
+            input.ApplyServerFailure("GATEWAY_NOT_READY");
+            Assert.That(
+                input.CooldownRemainingSeconds,
+                Is.EqualTo(0f),
+                "A failure must leave the key usable.");
+
+            Object.DestroyImmediate(root);
+        }
+
+        /// <summary>
+        /// One of these components is attached to each role object, so both
+        /// exist on both machines. Without a locality gate one key press opened
+        /// the recording device twice and one of the two captures received
+        /// silence.
+        /// </summary>
+        [Test]
+        public void ARoleThisMachineDoesNotPlayCannotOpenTheMicrophone()
+        {
+            GameObject root = new("Voice Locality Test");
+            VoiceCommandInput input = root.AddComponent<VoiceCommandInput>();
+
+            input.IsLocallyControlled = true;
+            Assert.That(input.CanCaptureLocally(), Is.True);
+
+            input.IsLocallyControlled = false;
+            Assert.That(input.CanCaptureLocally(), Is.False);
+
+            Object.DestroyImmediate(root);
+        }
+
+        /// <summary>
+        /// The failure panel used to print the raw code, so a missing local
+        /// server, a muted microphone, and a denied permission all read the
+        /// same to the player. They are fixed in three different places.
+        /// </summary>
+        [Test]
+        public void EachVoiceFailureExplainsWhatToDoAboutIt()
+        {
+            Assert.That(
+                UI.VoiceCommandFeedView.DescribeError("MIC_RETURNED_ONLY_ZEROS"),
+                Does.Contain("무음"));
+            Assert.That(
+                UI.VoiceCommandFeedView.DescribeError("GATEWAY_NOT_READY"),
+                Does.Contain("서버"));
+            Assert.That(
+                UI.VoiceCommandFeedView.DescribeError("MIC_REQUIRES_HTTPS"),
+                Does.Contain("https"));
+
+            // The detail suffix must not defeat the lookup.
+            Assert.That(
+                UI.VoiceCommandFeedView.DescribeError("VOICE_AUDIO_SILENT:peak=0.0012"),
+                Does.Contain("볼륨"));
+
+            // An unmapped code is still shown rather than swallowed.
+            Assert.That(
+                UI.VoiceCommandFeedView.DescribeError("SOMETHING_NEW"),
+                Is.EqualTo("SOMETHING_NEW"));
+        }
+
         [Test]
         public void CompatibilityAliasesDoNotCreateAdditionalRuntimeStates()
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using PawsAndLoot.Companions;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -10,6 +11,20 @@ namespace PawsAndLoot.Integration.Voice
     {
         public string commandId;
         public string status;
+
+        /// <summary>
+        /// Present only on a `?wait=1` request, where the server runs the whole
+        /// pipeline and answers in this response instead of over the socket.
+        ///
+        /// The socket client is a jslib plugin and therefore WebGL-only, so
+        /// without this a Windows build cannot use this backend at all — and then
+        /// the two platforms are back on different AI stacks, which is what
+        /// `VOICE-012` set out to end.
+        /// </summary>
+        public string transcript;
+
+        public VoiceIntentClassificationResult classification;
+        public string errorCode;
     }
 
     [Serializable]
@@ -34,7 +49,12 @@ namespace PawsAndLoot.Integration.Voice
             Action<VoiceCommandResponse> completed,
             Action<string> failed)
         {
-            string url = baseUrl.TrimEnd('/') + "/api/game/voice-commands";
+            // `?wait=1` on every platform. The socket remains for pushing events
+            // to the *other* player; keeping it on the critical path would mean
+            // Windows and WebGL receive their own answers by different routes,
+            // and routes diverge.
+            string url = baseUrl.TrimEnd('/')
+                + "/api/game/voice-commands?wait=1";
             using var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST);
             var form = new WWWForm();
             form.AddField("gameSessionId", sessionId ?? string.Empty);

@@ -2818,7 +2818,7 @@ namespace PawsAndLoot.Editor
             else
             {
                 // The guard the real scene uses. The shared locomotion controller's
-                // clips come from TopDownEngine, which is not in the repository, and
+                // clips do not exist yet (`MODEL-002`), and
                 // an Animator left running on missing clips buries the character.
                 var animator = model.GetComponent<Animator>();
                 if (animator != null)
@@ -2839,7 +2839,7 @@ namespace PawsAndLoot.Editor
             }
 
             // The same procedural biped walk the real scene uses. Without it the
-            // character slides: the locomotion clips come from TopDownEngine, which
+            // character slides: there are no locomotion clips yet (`MODEL-002`), which
             // is not in the repository, so nothing moves the legs unless this does.
             if (model != null)
             {
