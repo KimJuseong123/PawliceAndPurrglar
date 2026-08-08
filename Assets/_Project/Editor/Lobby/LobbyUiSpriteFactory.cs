@@ -45,7 +45,7 @@ namespace PawsAndLoot.Editor
         private static readonly Color FieldFill = FromHex("FBF3E8");
         private static readonly Color FieldOutline = FromHex("D8C8B6");
 
-        [MenuItem("Pawlice and Purrglar/UI/Generate Lobby Chrome Sprites")]
+        [MenuItem("PawliceAndPurrglar/UI/Generate Lobby Chrome Sprites")]
         public static void Generate()
         {
             LobbyArtExtractor.EnsureFolder(OutputFolder);

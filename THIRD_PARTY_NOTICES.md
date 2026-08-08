@@ -44,7 +44,7 @@
 ### 권리
 
 ```text
-© 2026 Pawlice and Purrglar 팀. All rights reserved.
+© 2026 PawliceAndPurrglar 팀. All rights reserved.
 ```
 
 > **팀명 또는 대표 제작자명을 실제 표기로 바꿔 넣을 것.** 위 이름은 Unity 프로젝트

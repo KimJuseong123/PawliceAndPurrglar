@@ -123,7 +123,7 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private const string CollisionSuffix = "_col";
 
-        [MenuItem("Pawlice and Purrglar/Build/Optimize Texture And Audio Budgets")]
+        [MenuItem("PawliceAndPurrglar/Build/Optimize Texture And Audio Budgets")]
         public static void Run()
         {
             var changed = new List<string>();

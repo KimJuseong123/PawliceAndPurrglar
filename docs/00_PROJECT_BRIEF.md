@@ -3,7 +3,7 @@
 ## 프로젝트명
 
 - 제목: 멍경찰과 냥도둑 (확정)
-- 영문명: Pawlice and Purrglar
+- 영문명: PawliceAndPurrglar
 
 ## 한 줄 소개
 

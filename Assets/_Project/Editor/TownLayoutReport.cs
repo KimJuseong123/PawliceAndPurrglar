@@ -15,7 +15,7 @@ namespace PawsAndLoot.Editor
     /// </summary>
     internal static class TownLayoutReport
     {
-        [MenuItem("Pawlice and Purrglar/Setup/Report Town Layout")]
+        [MenuItem("PawliceAndPurrglar/Setup/Report Town Layout")]
         public static void Report()
         {
             EditorSceneManager.OpenScene(

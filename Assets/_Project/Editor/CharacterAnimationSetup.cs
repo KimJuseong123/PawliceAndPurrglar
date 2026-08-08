@@ -65,7 +65,7 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Art/Characters/raccoon.fbx"
         };
 
-        [MenuItem("Pawlice and Purrglar/Setup/Rebuild Character Locomotion Animator")]
+        [MenuItem("PawliceAndPurrglar/Setup/Rebuild Character Locomotion Animator")]
         public static void Rebuild()
         {
             EnsureHumanoidRigs();

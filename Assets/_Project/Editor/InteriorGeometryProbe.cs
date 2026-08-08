@@ -21,7 +21,7 @@ namespace PawsAndLoot.Editor
     /// </summary>
     internal static class InteriorGeometryProbe
     {
-        [MenuItem("Pawlice and Purrglar/Setup/Probe Interior Geometry")]
+        [MenuItem("PawliceAndPurrglar/Setup/Probe Interior Geometry")]
         public static void Report()
         {
             Scene scene = EditorSceneManager.OpenScene(

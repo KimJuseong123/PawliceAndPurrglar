@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace PawsAndLoot.Config
 {
-    [CreateAssetMenu(menuName = "Pawlice and Purrglar/Config/Loot", fileName = "LootConfig")]
+    [CreateAssetMenu(menuName = "PawliceAndPurrglar/Config/Loot", fileName = "LootConfig")]
     public sealed class LootConfig : GameConfigAsset
     {
         [Header("Sale Prices")]

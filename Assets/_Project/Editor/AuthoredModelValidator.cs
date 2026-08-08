@@ -79,7 +79,7 @@ namespace PawsAndLoot.Editor
             "Command"
         };
 
-        [MenuItem("Pawlice and Purrglar/Setup/Validate Authored Models")]
+        [MenuItem("PawliceAndPurrglar/Setup/Validate Authored Models")]
         public static void Validate()
         {
             int problems = 0;

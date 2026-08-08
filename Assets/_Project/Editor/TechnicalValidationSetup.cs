@@ -20,7 +20,7 @@ namespace PawsAndLoot.Editor
         private const string FloorMaterialPath = MaterialRoot + "/Floor.mat";
         private const string CubeMaterialPath = MaterialRoot + "/PlayerCube.mat";
 
-        [MenuItem("Pawlice and Purrglar/Technical Validation/Create TECH-001 Scene")]
+        [MenuItem("PawliceAndPurrglar/Technical Validation/Create TECH-001 Scene")]
         public static void CreateTechnicalTestScene()
         {
             EnsureMaterialFolder();
@@ -58,7 +58,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("TECH-001 scene created and validated.");
         }
 
-        [MenuItem("Pawlice and Purrglar/Technical Validation/Validate TECH-001 Scene")]
+        [MenuItem("PawliceAndPurrglar/Technical Validation/Validate TECH-001 Scene")]
         public static void ValidateTechnicalTestScene()
         {
             string scenePath = GameSceneCatalog.GetPath(GameSceneId.TechnicalTest);
@@ -87,7 +87,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("TECH-001 scene validation passed.");
         }
 
-        [MenuItem("Pawlice and Purrglar/Technical Validation/Build Windows TECH-001")]
+        [MenuItem("PawliceAndPurrglar/Technical Validation/Build Windows TECH-001")]
         public static void BuildWindowsTechnicalValidation()
         {
             CreateTechnicalTestScene();

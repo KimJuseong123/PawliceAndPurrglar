@@ -33,7 +33,7 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private const string ResultRootName = "ResultCanvas";
 
-        [MenuItem("Pawlice and Purrglar/Setup/Rebuild Basic Scenes")]
+        [MenuItem("PawliceAndPurrglar/Setup/Rebuild Basic Scenes")]
         public static void CreateBasicScenes()
         {
             EnsureSceneDirectory();
@@ -66,7 +66,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("BASE-003 basic scenes created and validated.");
         }
 
-        [MenuItem("Pawlice and Purrglar/Setup/Validate Basic Scenes")]
+        [MenuItem("PawliceAndPurrglar/Setup/Validate Basic Scenes")]
         public static void ValidateBasicScenes()
         {
             ValidateBuildSettings();
@@ -87,7 +87,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("BASE-003 scene validation passed.");
         }
 
-        [MenuItem("Pawlice and Purrglar/Setup/Rebuild Result UI")]
+        [MenuItem("PawliceAndPurrglar/Setup/Rebuild Result UI")]
         public static void RebuildResultUi()
         {
             EnsureSceneDirectory();
@@ -131,7 +131,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("Result UI rebuilt.");
         }
 
-        [MenuItem("Pawlice and Purrglar/Setup/Ensure Bootstrap Services")]
+        [MenuItem("PawliceAndPurrglar/Setup/Ensure Bootstrap Services")]
         public static void EnsureBootstrapServices()
         {
             EnsureSceneDirectory();
@@ -416,7 +416,7 @@ namespace PawsAndLoot.Editor
             {
                 throw new GameConfigurationException(
                     $"Required GameConfigSet is missing at '{GameConfigSetup.DefaultSetPath}'. " +
-                    "Run 'Pawlice and Purrglar/Setup/Create Default Config Assets' first.");
+                    "Run 'PawliceAndPurrglar/Setup/Create Default Config Assets' first.");
             }
 
             return configSet;
@@ -430,7 +430,7 @@ namespace PawsAndLoot.Editor
             {
                 throw new GameConfigurationException(
                     $"Required GameLogConfig is missing at '{GameLogSetup.DefaultConfigPath}'. " +
-                    "Run 'Pawlice and Purrglar/Setup/Create Default Log Config' first.");
+                    "Run 'PawliceAndPurrglar/Setup/Create Default Log Config' first.");
             }
 
             return logConfig;

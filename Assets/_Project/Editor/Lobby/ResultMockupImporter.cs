@@ -42,7 +42,7 @@ namespace PawsAndLoot.Editor
             ("thief win theif view", "result_thief_win_thief_view")
         };
 
-        [MenuItem("Pawlice and Purrglar/UI/Import Result Mockups")]
+        [MenuItem("PawliceAndPurrglar/UI/Import Result Mockups")]
         public static void Import()
         {
             MockupCutter.EnsureFolder(OutputFolder);

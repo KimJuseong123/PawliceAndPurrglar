@@ -37,7 +37,7 @@ Assets/_Project/Audio/SFX/<파일이름>.<확장자>
 넣은 다음에 **한 번 실행한다**:
 
 ```text
-Pawlice and Purrglar > Setup > Assign Sound Bank Clips
+PawliceAndPurrglar > Setup > Assign Sound Bank Clips
 ```
 
 콘솔에 `[AUDIO-001] Victory ← sfx_victory (3.00s)` 처럼 **ID · 파일 · 길이**가 한

@@ -71,7 +71,7 @@ namespace PawsAndLoot.Editor
         /// art, draw the chrome, build the prefab, then put it in the scene.
         /// One entry point because each step reads the previous step's output.
         /// </summary>
-        [MenuItem("Pawlice and Purrglar/UI/Rebuild Result (Art, Prefab, Scene)")]
+        [MenuItem("PawliceAndPurrglar/UI/Rebuild Result (Art, Prefab, Scene)")]
         public static void RebuildAll()
         {
             ResultArtExtractor.Extract();
@@ -80,7 +80,7 @@ namespace PawsAndLoot.Editor
             BasicSceneSetup.RebuildResultUi();
         }
 
-        [MenuItem("Pawlice and Purrglar/UI/Rebuild Result Canvas Prefab")]
+        [MenuItem("PawliceAndPurrglar/UI/Rebuild Result Canvas Prefab")]
         public static void Rebuild()
         {
             GameObject root = Build();

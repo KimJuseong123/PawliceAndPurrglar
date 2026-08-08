@@ -10,7 +10,7 @@ namespace PawsAndLoot.Editor
     /// </summary>
     internal static class TempHouseModelProbe
     {
-        [MenuItem("Pawlice and Purrglar/Temp/Probe House Model")]
+        [MenuItem("PawliceAndPurrglar/Temp/Probe House Model")]
         public static void Probe()
         {
             foreach (string stem in new[]

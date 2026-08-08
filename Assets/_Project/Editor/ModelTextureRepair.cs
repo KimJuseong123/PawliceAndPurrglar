@@ -35,7 +35,7 @@ namespace PawsAndLoot.Editor
         private const string ArtRoot = "Assets/_Project/Art";
         private const string MaterialRoot = "Assets/_Project/Materials/Models";
 
-        [MenuItem("Pawlice and Purrglar/Setup/Repair Model Textures")]
+        [MenuItem("PawliceAndPurrglar/Setup/Repair Model Textures")]
         public static void Repair()
         {
             Directory.CreateDirectory(MaterialRoot);
@@ -81,7 +81,7 @@ namespace PawsAndLoot.Editor
         /// question directly: load the model, look at what its renderers were
         /// given, and complain about any that were handed nothing.
         /// </summary>
-        [MenuItem("Pawlice and Purrglar/Setup/Validate Model Textures")]
+        [MenuItem("PawliceAndPurrglar/Setup/Validate Model Textures")]
         public static void Validate()
         {
             var blank = new List<string>();

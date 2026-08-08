@@ -77,7 +77,7 @@
 
 ## 7. 게임 소개 문서
 
-- 제목: 멍경찰과 냥도둑 / Pawlice and Purrglar
+- 제목: 멍경찰과 냥도둑 / PawliceAndPurrglar
 - 한 줄 소개
 - 30초 소개
 - 장르와 플랫폼

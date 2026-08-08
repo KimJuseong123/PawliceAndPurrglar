@@ -3,7 +3,7 @@
 마지막 갱신: 2026-07-27
 
 이 문서는 Blender에서 캐릭터를 제작할 때의 확정 규격이다. 여기서 벗어난 모델은
-`Pawlice and Purrglar > Setup > Validate Authored Models`가 경고로 잡는다.
+`PawliceAndPurrglar > Setup > Validate Authored Models`가 경고로 잡는다.
 
 규격을 바꾸려면 코드만 고치지 말고 이 문서와 `docs/14_DECISION_LOG.md`를 함께
 갱신한다.
@@ -162,7 +162,7 @@ Assets/_Project/Art/Characters/ 반입한 .fbx 와 텍스처
 ## 9. 검사 방법
 
 ```text
-Pawlice and Purrglar > Setup > Validate Authored Models
+PawliceAndPurrglar > Setup > Validate Authored Models
 ```
 
 스케일, 원점, 리그 종류, 머티리얼 개수, 삼각형 수, 클립 이름을 검사하고 규격에

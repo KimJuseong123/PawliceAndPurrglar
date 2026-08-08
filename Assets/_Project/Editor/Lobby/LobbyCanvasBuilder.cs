@@ -140,7 +140,7 @@ namespace PawsAndLoot.Editor
         /// point because each step reads the previous step's output, and running
         /// them out of order fails on a missing asset.
         /// </summary>
-        [MenuItem("Pawlice and Purrglar/UI/Rebuild Lobby (Art, Prefab, Scene)")]
+        [MenuItem("PawliceAndPurrglar/UI/Rebuild Lobby (Art, Prefab, Scene)")]
         public static void RebuildAll()
         {
             LobbyArtExtractor.Extract();
@@ -149,7 +149,7 @@ namespace PawsAndLoot.Editor
             NetworkLobbySetup.RebuildBootstrapLobby();
         }
 
-        [MenuItem("Pawlice and Purrglar/UI/Rebuild Lobby Canvas Prefab")]
+        [MenuItem("PawliceAndPurrglar/UI/Rebuild Lobby Canvas Prefab")]
         public static void Rebuild()
         {
             GameObject root = Build();

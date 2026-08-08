@@ -12,7 +12,7 @@ namespace PawsAndLoot.Editor
     {
         private const string BuildPath = "Build/Windows/PawsAndLoot.exe";
 
-        [MenuItem("Pawlice and Purrglar/Build/Build Windows Standalone with Local AI")]
+        [MenuItem("PawliceAndPurrglar/Build/Build Windows Standalone with Local AI")]
         public static void BuildWindowsStandalone()
         {
             bool allowMissing = LocalAiInstallationValidator.AllowMissingFromCommandLine();

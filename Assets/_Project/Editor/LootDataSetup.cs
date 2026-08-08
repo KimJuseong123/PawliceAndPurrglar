@@ -11,7 +11,7 @@ namespace PawsAndLoot.Editor
         public const string LootDataRoot =
             "Assets/_Project/Data/Loot";
 
-        [MenuItem("Pawlice and Purrglar/Setup/Create Default Loot Data")]
+        [MenuItem("PawliceAndPurrglar/Setup/Create Default Loot Data")]
         public static void CreateDefaultLootData()
         {
             EnsureFolder();
@@ -46,7 +46,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("LOOT-008 default loot data created and validated.");
         }
 
-        [MenuItem("Pawlice and Purrglar/Setup/Validate Default Loot Data")]
+        [MenuItem("PawliceAndPurrglar/Setup/Validate Default Loot Data")]
         public static void ValidateDefaultLootData()
         {
             string[] guids = AssetDatabase.FindAssets(

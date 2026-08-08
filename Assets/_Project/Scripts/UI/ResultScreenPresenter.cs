@@ -274,7 +274,7 @@ namespace PawsAndLoot.UI
                 throw new InvalidOperationException(
                     $"ResultScreenPresenter '{name}' is missing references. "
                     + "Rebuild the result prefab with "
-                    + "'Pawlice and Purrglar/UI/Rebuild Result Canvas Prefab'.");
+                    + "'PawliceAndPurrglar/UI/Rebuild Result Canvas Prefab'.");
             }
         }
 

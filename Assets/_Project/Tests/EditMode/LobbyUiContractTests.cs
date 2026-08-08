@@ -68,7 +68,7 @@ namespace PawsAndLoot.Tests.EditMode
                 _prefab,
                 Is.Not.Null,
                 $"The lobby prefab is missing: {PrefabPath}. Run "
-                + "'Pawlice and Purrglar/UI/Rebuild Lobby (Art, Prefab, Scene)'.");
+                + "'PawliceAndPurrglar/UI/Rebuild Lobby (Art, Prefab, Scene)'.");
         }
 
         [Test]

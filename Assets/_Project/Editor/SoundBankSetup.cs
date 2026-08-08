@@ -56,7 +56,7 @@ namespace PawsAndLoot.Editor
             ".wav", ".mp3", ".ogg", ".flac", ".aiff", ".aif"
         };
 
-        [MenuItem("Pawlice and Purrglar/Setup/Assign Sound Bank Clips")]
+        [MenuItem("PawliceAndPurrglar/Setup/Assign Sound Bank Clips")]
         public static void AssignClips()
         {
             var bank = AssetDatabase.LoadAssetAtPath<GameSoundBank>(BankPath);
@@ -130,7 +130,7 @@ namespace PawsAndLoot.Editor
                 + "still without one.");
         }
 
-        [MenuItem("Pawlice and Purrglar/Setup/Validate Sound Bank")]
+        [MenuItem("PawliceAndPurrglar/Setup/Validate Sound Bank")]
         public static void ValidateBank()
         {
             var bank = AssetDatabase.LoadAssetAtPath<GameSoundBank>(BankPath);

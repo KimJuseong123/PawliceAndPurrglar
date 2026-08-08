@@ -24,7 +24,7 @@ namespace PawsAndLoot.Editor
         /// <summary>
         /// ART-005 measures the WebGL payload without development metadata.
         /// </summary>
-        [MenuItem("Pawlice and Purrglar/Build/Measure WebGL Build Size")]
+        [MenuItem("PawliceAndPurrglar/Build/Measure WebGL Build Size")]
         public static void BuildWebGl()
         {
             BuildWebGl(BuildOptions.None, true);
@@ -35,7 +35,7 @@ namespace PawsAndLoot.Editor
         /// separate from the measurement command makes the batch entry point
         /// explicit without changing the existing validation workflow.
         /// </summary>
-        [MenuItem("Pawlice and Purrglar/Build/Build WebGL Playtest")]
+        [MenuItem("PawliceAndPurrglar/Build/Build WebGL Playtest")]
         public static void BuildWebGlPlaytest()
         {
             BuildWebGl(BuildOptions.Development, false);
@@ -108,7 +108,7 @@ namespace PawsAndLoot.Editor
         /// build report: Unity Hub &gt; Installs &gt; Add modules &gt; Linux
         /// Build Support (IL2CPP).
         /// </remarks>
-        [MenuItem("Pawlice and Purrglar/Build/Build Linux Dedicated Server")]
+        [MenuItem("PawliceAndPurrglar/Build/Build Linux Dedicated Server")]
         public static void BuildLinuxServer()
         {
             const string ServerBuildPath =
@@ -151,7 +151,7 @@ namespace PawsAndLoot.Editor
                 + "it with: ./PawsAndLoot.x86_64 -dedicatedServer -netPort 7979");
         }
 
-        [MenuItem("Pawlice and Purrglar/Build/Build Windows Playtest")]
+        [MenuItem("PawliceAndPurrglar/Build/Build Windows Playtest")]
         public static void BuildWindows()
         {
             string[] scenePaths = ResolveScenePaths();

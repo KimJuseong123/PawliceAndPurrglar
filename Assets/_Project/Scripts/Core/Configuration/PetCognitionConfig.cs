@@ -3,7 +3,7 @@ using UnityEngine;
 namespace PawsAndLoot.Config
 {
     [CreateAssetMenu(
-        menuName = "Pawlice and Purrglar/Config/Pet Cognition",
+        menuName = "PawliceAndPurrglar/Config/Pet Cognition",
         fileName = "PetCognitionConfig")]
     public sealed class PetCognitionConfig : GameConfigAsset
     {

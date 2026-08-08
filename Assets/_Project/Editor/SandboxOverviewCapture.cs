@@ -45,7 +45,7 @@ namespace PawsAndLoot.Editor
         private const float MinZ = -22f;
         private const float MaxZ = 50f;
 
-        [MenuItem("Pawlice and Purrglar/Sandbox/Capture Sandbox Overview")]
+        [MenuItem("PawliceAndPurrglar/Sandbox/Capture Sandbox Overview")]
         public static void Capture()
         {
             Scene scene = EditorSceneManager.OpenScene(

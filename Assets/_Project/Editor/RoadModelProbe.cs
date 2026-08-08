@@ -17,7 +17,7 @@ namespace PawsAndLoot.Editor
         private const string RoadModelPath =
             "Assets/_Project/Art/Environment/env_road_section.fbx";
 
-        [MenuItem("Pawlice and Purrglar/Setup/Report Road Model")]
+        [MenuItem("PawliceAndPurrglar/Setup/Report Road Model")]
         public static void Report()
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(

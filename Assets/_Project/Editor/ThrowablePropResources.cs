@@ -30,7 +30,7 @@ namespace PawsAndLoot.Editor
     {
         private const string OutputFolder = "Assets/_Project/Resources/Props";
 
-        [MenuItem("Pawlice and Purrglar/Setup/Sync Throwable Props To Resources")]
+        [MenuItem("PawliceAndPurrglar/Setup/Sync Throwable Props To Resources")]
         public static void Sync()
         {
             EnsureFolder(OutputFolder);

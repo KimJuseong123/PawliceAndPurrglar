@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace PawsAndLoot.Logging
 {
-    [CreateAssetMenu(menuName = "Pawlice and Purrglar/Logging/Game Log Config", fileName = "GameLogConfig")]
+    [CreateAssetMenu(menuName = "PawliceAndPurrglar/Logging/Game Log Config", fileName = "GameLogConfig")]
     public sealed class GameLogConfig : GameConfigAsset
     {
         [Header("Minimum Level")]

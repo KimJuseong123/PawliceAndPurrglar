@@ -11,7 +11,7 @@ namespace PawsAndLoot.Audio
     /// authored. Missing clips are reported by the validator, not at runtime.
     /// </summary>
     [CreateAssetMenu(
-        menuName = "Pawlice and Purrglar/Game Sound Bank",
+        menuName = "PawliceAndPurrglar/Game Sound Bank",
         fileName = "GameSoundBank")]
     public sealed class GameSoundBank : ScriptableObject
     {

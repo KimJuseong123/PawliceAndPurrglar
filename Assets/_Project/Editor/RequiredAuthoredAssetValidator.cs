@@ -48,7 +48,7 @@ namespace PawsAndLoot.Editor
             "building_supermarket"
         };
 
-        [MenuItem("Pawlice and Purrglar/Technical Validation/Validate Authored Production Assets")]
+        [MenuItem("PawliceAndPurrglar/Technical Validation/Validate Authored Production Assets")]
         public static void ValidateRequiredAuthoredAssets()
         {
             ValidateAllOrThrow();

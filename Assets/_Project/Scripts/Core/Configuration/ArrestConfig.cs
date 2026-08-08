@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace PawsAndLoot.Config
 {
-    [CreateAssetMenu(menuName = "Pawlice and Purrglar/Config/Arrest", fileName = "ArrestConfig")]
+    [CreateAssetMenu(menuName = "PawliceAndPurrglar/Config/Arrest", fileName = "ArrestConfig")]
     public sealed class ArrestConfig : GameConfigAsset
     {
         [Header("Arrest")]

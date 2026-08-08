@@ -20,7 +20,7 @@ namespace PawsAndLoot.Editor
         private const string BuildingDirectory =
             "Assets/_Project/Art/Buildings";
 
-        [MenuItem("Pawlice and Purrglar/Setup/Report Interior Parts")]
+        [MenuItem("PawliceAndPurrglar/Setup/Report Interior Parts")]
         public static void Report()
         {
             foreach (string path in AssetDatabase

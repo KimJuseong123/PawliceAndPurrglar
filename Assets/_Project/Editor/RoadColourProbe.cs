@@ -22,7 +22,7 @@ namespace PawsAndLoot.Editor
         private const string EnvironmentDirectory =
             "Assets/_Project/Art/Environment";
 
-        [MenuItem("Pawlice and Purrglar/Setup/Report Road Colours")]
+        [MenuItem("PawliceAndPurrglar/Setup/Report Road Colours")]
         public static void Report()
         {
             var readings = new List<(string Name, Color Colour)>();

@@ -23,7 +23,7 @@ namespace PawsAndLoot.Editor
         public const string WindowsBuildPath =
             "Builds/TechnicalValidation/Windows/PawsAndLootBlenderTech.exe";
 
-        [MenuItem("Pawlice and Purrglar/Technical Validation/Create TECH-002 Scene")]
+        [MenuItem("PawliceAndPurrglar/Technical Validation/Create TECH-002 Scene")]
         public static void CreateScene()
         {
             ConfigureModelImporter();
@@ -60,7 +60,7 @@ namespace PawsAndLoot.Editor
             ValidateScene();
         }
 
-        [MenuItem("Pawlice and Purrglar/Technical Validation/Validate TECH-002 Scene")]
+        [MenuItem("PawliceAndPurrglar/Technical Validation/Validate TECH-002 Scene")]
         public static void ValidateScene()
         {
             string scenePath =
@@ -92,7 +92,7 @@ namespace PawsAndLoot.Editor
                 player.VisualAnimator.runtimeAnimatorController);
         }
 
-        [MenuItem("Pawlice and Purrglar/Technical Validation/Build Windows TECH-002")]
+        [MenuItem("PawliceAndPurrglar/Technical Validation/Build Windows TECH-002")]
         public static void BuildWindows()
         {
             CreateScene();

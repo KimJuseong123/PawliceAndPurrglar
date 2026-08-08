@@ -26,7 +26,7 @@ namespace PawsAndLoot.Editor
 
         private const int PixelsPerMeter = 12;
 
-        [MenuItem("Pawlice and Purrglar/Setup/Capture Map Overview")]
+        [MenuItem("PawliceAndPurrglar/Setup/Capture Map Overview")]
         public static void Capture()
         {
             CaptureScene(
@@ -41,7 +41,7 @@ namespace PawsAndLoot.Editor
         /// what nobody can check by reading. Overlap can be measured, but "this
         /// block is empty and that one is crammed" only shows up in a picture.
         /// </summary>
-        [MenuItem("Pawlice and Purrglar/Setup/Capture MAP-002 Overview")]
+        [MenuItem("PawliceAndPurrglar/Setup/Capture MAP-002 Overview")]
         public static void CaptureMap02()
         {
             CaptureScene(Map02GreyboxSetup.ScenePath, Map02OutputPath);

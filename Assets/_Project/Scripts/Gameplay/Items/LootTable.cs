@@ -63,7 +63,7 @@ namespace PawsAndLoot.Gameplay.Items
     /// </summary>
     [CreateAssetMenu(
         fileName = "LootTable",
-        menuName = "Pawlice and Purrglar/Loot Table",
+        menuName = "PawliceAndPurrglar/Loot Table",
         order = 40)]
     public sealed class LootTable : ScriptableObject
     {

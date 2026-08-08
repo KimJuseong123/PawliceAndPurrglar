@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace PawsAndLoot.Config
 {
-    [CreateAssetMenu(menuName = "Pawlice and Purrglar/Config/Match", fileName = "MatchConfig")]
+    [CreateAssetMenu(menuName = "PawliceAndPurrglar/Config/Match", fileName = "MatchConfig")]
     public sealed class MatchConfig : GameConfigAsset
     {
         [Header("Match Rules")]

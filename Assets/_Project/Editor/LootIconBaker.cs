@@ -42,7 +42,7 @@ namespace PawsAndLoot.Editor
         private const string OutputDirectory =
             "Assets/_Project/Resources/UI/ItemIcons/Loot";
 
-        [MenuItem("Pawlice and Purrglar/UI/Bake Loot Icons")]
+        [MenuItem("PawliceAndPurrglar/UI/Bake Loot Icons")]
         public static void BakeAll()
         {
             Directory.CreateDirectory(OutputDirectory);

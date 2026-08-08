@@ -17,7 +17,7 @@
 ## 확정된 제품 방향
 
 - 제목: 멍경찰과 냥도둑 (확정)
-- 영문명: Pawlice and Purrglar
+- 영문명: PawliceAndPurrglar
 - 경찰 1명 대 도둑 1명
 - 경기 시간 4분
 - 원근감 있는 3D 기울어진 탑다운
@@ -41,7 +41,7 @@
 - `AGENTS.md` 존재
 - `README.md` 존재
 - 프로젝트 문서 패키지 작성
-- `C:\Users\SSAFY\paws-and-loot`를 로컬 Git 저장소 루트로 초기화
+- `C:\Users\SSAFY\pawlice-and-purrglar`를 로컬 Git 저장소 루트로 초기화
 - 기본 브랜치 `main`과 로컬 Git LFS 설정
 - 프로젝트 전용 Unity 자산 경로 생성:
 
@@ -337,7 +337,7 @@ Assets/_Project/Scripts/Animation/PlayerLocomotionAnimator.cs
 
 ## ART-002 규격 검사 결과
 
-`Pawlice and Purrglar > Setup > Validate Authored Models`가 확정 모델 5종을 검사해
+`PawliceAndPurrglar > Setup > Validate Authored Models`가 확정 모델 5종을 검사해
 **14건의 규격 위반**을 보고했다. 경고는 빌드를 막지 않는다.
 
 | 모델 | 위반 |
@@ -445,7 +445,7 @@ Static으로 구우면 줄지만 빠진 글자가 안 보인다), Unity 스플�
 
 ### (낡음) 2026-08-06 측정
 
-`Pawlice and Purrglar > Build > Measure WebGL Build Size`로 실제 빌드해 측정했다.
+`PawliceAndPurrglar > Build > Measure WebGL Build Size`로 실제 빌드해 측정했다.
 WebGL은 목표 플랫폼이 아니며(`ISSUE-008`) 측정 목적으로만 빌드한다.
 
 | 항목 | 값 |
@@ -690,7 +690,7 @@ VSync 상한에 붙어 있다. `ART-012` 머티리얼 통합과 정적 배칭을
   볼륨(`VOICE_AUDIO_SILENT`)과 서버 부재를 분리했다.
 - 실측: 한국어 TTS 5초 WAV → 게이트웨이 → `강아지 냄새 추적해` → `intent: TRACK`,
   2.5초 (첫 요청은 CPU 재적재 포함 4.2초). 새 Windows 빌드가
-  `Local AI stack found above the build folder at 'C:\Users\SSAFY\paws-and-loot'`를
+  `Local AI stack found above the build folder at 'C:\Users\SSAFY\pawlice-and-purrglar'`를
   찍고 ollama와 게이트웨이를 실제로 띄웠다
 - 남은 위험: `cublas64_12.dll`이 없어 STT가 CPU 2.5초다 (`VOICE-009`).
   사람 발화 확인 미실시 (`VOICE-010`). WebGL은 여전히 별도 백엔드
@@ -1162,7 +1162,7 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 | 2026-08-07 | 씬 재생성 + Edit Mode·Play Mode (판매 원판 제거 이후) | `Validate MAP-001` 통과(예외 없음). 씬 YAML에서 `SaleZoneMarker` **5개 → 0개**, `Black Market Sale` **5개 유지** — 그림만 빠지고 트리거는 남았다. Edit Mode **294/294**, Play Mode 208개 중 **206 통과** + 1 실패 + 1 스킵 (기준선과 동일). `ProjectSettings/` 깨끗, 씬 3.68MB → 3.67MB |
 | 2026-08-06 | Edit Mode·Play Mode (승·패 효과음 절단 수정 이후) | Edit Mode **294/294**, Play Mode 208개 중 **206 통과** + 1 실패 + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 2건(`MatchEndSoundsPlayFromAnObjectTheSceneLoadCannotDestroy`, `TheMatchEndStingFollowsTheViewerNotTheWinner`) 이름을 XML에서 확인. 절단은 **귀가 아니라 구조로** 단정한다 — 배치 모드에는 오디오 장치가 없어서 `isPlaying`은 어느 쪽이든 false다 |
 | 2026-08-06 | Edit Mode·Play Mode (Windows 음성 경로 복구 이후) | Edit Mode **294/294**, Play Mode 206개 중 **204 통과** + 1 실패 + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 3건(`AFailedCommandDoesNotSpendTheCooldown`, `ARoleThisMachineDoesNotPlayCannotOpenTheMicrophone`, `EachVoiceFailureExplainsWhatToDoAboutIt`) 이름을 XML에서 확인. 컴파일 `error CS` 0개 |
-| 2026-08-06 | Windows 빌드 실행 (`-mapAutoQuit`) | `Local AI stack found above the build folder at 'C:\Users\SSAFY\paws-and-loot'`. 빌드가 ollama와 게이트웨이를 실제로 띄웠고 `/health` 200. **이전 실행은 같은 자리에서 `GATEWAY_NOT_READY`였다** |
+| 2026-08-06 | Windows 빌드 실행 (`-mapAutoQuit`) | `Local AI stack found above the build folder at 'C:\Users\SSAFY\pawlice-and-purrglar'`. 빌드가 ollama와 게이트웨이를 실제로 띄웠고 `/health` 200. **이전 실행은 같은 자리에서 `GATEWAY_NOT_READY`였다** |
 | 2026-08-06 | 게이트웨이 직접 호출 (한국어 TTS 5초 WAV) | `강아지 냄새 추적해` → `intent: TRACK`, STT 2.5초. `--device cuda`로 띄우면 첫 요청에서 `GPU_RUNTIME_FALLBACK:Library cublas64_12.dll is not found`로 CPU로 넘어가고 4.2초, 이후 2.5초 |
 | 2026-08-06 | Edit Mode·Play Mode (그레이박스 표식 제거 이후) | Edit Mode **291/291**, Play Mode 206개 중 **204 통과** + 1 스킵 (실패 1건은 기준선과 동일). 씬의 `TextMesh` **0개** — 장소 이름이 하나도 남지 않았다 |
 | 2026-08-06 | Edit Mode·Play Mode (실내 커서 해제·거리 보물 제거 이후) | Edit Mode **291/291**, Play Mode 206개 중 **204 통과** + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 `CatBagExchangePlayModeTests`가 칸의 `onClick`을 직접 눌러 양방향 이동을 단정한다 |

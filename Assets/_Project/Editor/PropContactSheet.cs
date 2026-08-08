@@ -30,7 +30,7 @@ namespace PawsAndLoot.Editor
         private static readonly Color Background =
             new(0.16f, 0.17f, 0.20f);
 
-        [MenuItem("Pawlice and Purrglar/Setup/Capture Prop Sheet")]
+        [MenuItem("PawliceAndPurrglar/Setup/Capture Prop Sheet")]
         public static void Capture()
         {
             string[] paths = AssetDatabase

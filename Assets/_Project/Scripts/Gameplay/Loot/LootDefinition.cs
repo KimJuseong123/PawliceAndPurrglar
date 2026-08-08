@@ -5,7 +5,7 @@ using UnityEngine;
 namespace PawsAndLoot.Gameplay.Loot
 {
     [CreateAssetMenu(
-        menuName = "Pawlice and Purrglar/Loot/Definition",
+        menuName = "PawliceAndPurrglar/Loot/Definition",
         fileName = "LootDefinition")]
     public sealed class LootDefinition : ScriptableObject
     {

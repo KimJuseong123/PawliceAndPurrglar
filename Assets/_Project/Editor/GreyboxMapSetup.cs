@@ -208,7 +208,7 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private const bool ShowGreyboxDebugMarkers = false;
 
-        [MenuItem("Pawlice and Purrglar/Setup/Rebuild MAP-001 Greybox Village")]
+        [MenuItem("PawliceAndPurrglar/Setup/Rebuild MAP-001 Greybox Village")]
         public static void CreateGameScene()
         {
             // Static, so a second rebuild in the same editor session would
@@ -543,7 +543,7 @@ namespace PawsAndLoot.Editor
             }
         }
 
-        [MenuItem("Pawlice and Purrglar/Setup/Validate MAP-001 Greybox Village")]
+        [MenuItem("PawliceAndPurrglar/Setup/Validate MAP-001 Greybox Village")]
         public static void ValidateScene()
         {
             string scenePath = GameSceneCatalog.GetPath(GameSceneId.Game);
@@ -598,7 +598,7 @@ namespace PawsAndLoot.Editor
             }
         }
 
-        [MenuItem("Pawlice and Purrglar/Technical Validation/Build Windows MAP-001")]
+        [MenuItem("PawliceAndPurrglar/Technical Validation/Build Windows MAP-001")]
         public static void BuildWindows()
         {
             CreateGameScene();
