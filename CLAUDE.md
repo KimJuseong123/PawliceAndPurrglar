@@ -427,6 +427,27 @@ URL을 함께 움직일 이유가 없다. `-executeMethod`에는 여전히
 > 교체한다 — 예전 스크립트는 PyInstaller를 부르기 **전에** 동작하는 게이트웨이를 지웠고,
 > `LocalAI/runtime/`은 gitignore라 되돌릴 것이 없었다.
 
+> **두 기계는 반드시 같은 빌드여야 한다.** `Game.unity`를 재생성하면 in-scene
+> `NetworkObject` **130개의 `GlobalObjectIdHash`가 전부 바뀐다**. 다른 커밋으로 만든
+> 빌드끼리 붙이면 NGO가 오브젝트마다 이렇게 찍는다:
+>
+> ```text
+> [Netcode] NetworkPrefab hash was not found! In-Scene placed NetworkObject
+>           soft synchronization failure for Hash: 2322046117!
+> [Netcode] [GlobalObjectIdHash=...] Failed to spawn NetworkObject!
+> NullReferenceException
+> ```
+>
+> **어디에도 "빌드가 다르다"는 말이 없다.** 플레이어가 겪는 것은 "안 움직인다"인데,
+> 실패한 오브젝트가 `Police Player`이고 거기에 이동 입력이 지나가는
+> `NetworkPlayerLink`가 붙어 있어서다. 가방은 로컬 UI라 멀쩡히 동작하므로 **이동
+> 버그로 읽힌다.** 아니다.
+>
+> `NetworkSceneFingerprint`가 접속 시 커밋을 비교해 한 줄로 말한다. 도장은
+> `PlaytestBuild`가 빌드할 때 `PlayerSettings.bundleVersion`에 찍고 끝나면 되돌린다
+> (저장소를 더럽히지 않는다). **에디터 실행이나 손으로 만든 빌드는 도장이 없어서
+> 비교가 안 되고, 그때는 비교 불가라고 말한다.**
+
 > **배치 빌드는 성공해도 `.exe` 날짜가 안 바뀐다.** Mono 빌드라 게임 코드는
 > `PawsAndLoot_Data/Managed/*.dll`에 있고 플레이어 실행 파일은 바뀔 이유가 없다.
 > 일주일 전 날짜의 exe를 보고 "빌드가 안 됐다"고 판단하면 틀린다 — `Managed/`의

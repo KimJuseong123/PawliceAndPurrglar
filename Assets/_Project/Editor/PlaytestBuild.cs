@@ -49,6 +49,7 @@ namespace PawsAndLoot.Editor
             string absolute = Path.GetFullPath(WebGlBuildPath);
             Directory.CreateDirectory(absolute);
 
+            using BuildStamp stamp = BuildStamp.Apply();
             BuildReport report = BuildPipeline.BuildPlayer(
                 new BuildPlayerOptions
                 {
@@ -129,6 +130,7 @@ namespace PawsAndLoot.Editor
             Directory.CreateDirectory(
                 Path.GetDirectoryName(absoluteBuildPath));
 
+            using BuildStamp stamp = BuildStamp.Apply();
             BuildReport report = BuildPipeline.BuildPlayer(
                 new BuildPlayerOptions
                 {
@@ -151,6 +153,99 @@ namespace PawsAndLoot.Editor
                 + "it with: ./PawsAndLoot.x86_64 -dedicatedServer -netPort 7979");
         }
 
+        /// <summary>
+        /// Stamps the current commit into the player's version, for the duration
+        /// of one build.
+        ///
+        /// Two machines running builds from different commits disagree about the
+        /// <c>GlobalObjectIdHash</c> of every <c>NetworkObject</c> placed in the
+        /// match scene — regenerating `Game.unity` renumbers all 130 of them — and
+        /// NGO reports that as a wall of "soft synchronization failure" lines
+        /// followed by a <c>NullReferenceException</c>. What the player sees is
+        /// that they cannot move while the bag still opens. Nothing in that says
+        /// "different build", so <c>NetworkSceneFingerprint</c> compares this
+        /// string at connect time and says it.
+        ///
+        /// Restored afterwards, so running a build does not leave the repository
+        /// dirty. The stamp lives in the built player, which is where it is
+        /// needed, and nowhere else.
+        /// </summary>
+        private readonly struct BuildStamp : IDisposable
+        {
+            private readonly string _previous;
+
+            private BuildStamp(string previous)
+            {
+                _previous = previous;
+            }
+
+            public static BuildStamp Apply()
+            {
+                string previous = PlayerSettings.bundleVersion;
+                string commit = ReadCommit();
+                if (!string.IsNullOrEmpty(commit))
+                {
+                    // Kept on the base version rather than replacing it, so a
+                    // released version number survives and the commit is
+                    // additional. `+` is the build-metadata separator in semver
+                    // and is what NetworkSceneFingerprint looks for.
+                    string baseVersion = previous.Split('+')[0];
+                    PlayerSettings.bundleVersion = $"{baseVersion}+{commit}";
+                    Debug.Log(
+                        $"[BUILD] Stamped version '{PlayerSettings.bundleVersion}'. "
+                        + "Both machines must run a build with the same stamp.");
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        "[BUILD] Could not read the git commit, so this build "
+                        + "carries no stamp and the connect-time build check "
+                        + "will not be able to compare it.");
+                }
+
+                return new BuildStamp(previous);
+            }
+
+            public void Dispose()
+            {
+                PlayerSettings.bundleVersion = _previous;
+            }
+
+            private static string ReadCommit()
+            {
+                try
+                {
+                    var info = new System.Diagnostics.ProcessStartInfo(
+                        "git",
+                        "rev-parse --short HEAD")
+                    {
+                        WorkingDirectory =
+                            Path.GetDirectoryName(Application.dataPath),
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+
+                    using System.Diagnostics.Process process =
+                        System.Diagnostics.Process.Start(info);
+                    if (process == null)
+                    {
+                        return string.Empty;
+                    }
+
+                    string output = process.StandardOutput.ReadToEnd().Trim();
+                    process.WaitForExit(5000);
+                    return output;
+                }
+                catch (System.Exception error)
+                {
+                    Debug.LogWarning(
+                        $"[BUILD] git rev-parse failed: {error.Message}");
+                    return string.Empty;
+                }
+            }
+        }
+
         [MenuItem("PawliceAndPurrglar/Build/Build Windows Playtest")]
         public static void BuildWindows()
         {
@@ -165,6 +260,7 @@ namespace PawsAndLoot.Editor
             }
 
             Directory.CreateDirectory(directory);
+            using BuildStamp stamp = BuildStamp.Apply();
             BuildReport report = BuildPipeline.BuildPlayer(
                 new BuildPlayerOptions
                 {

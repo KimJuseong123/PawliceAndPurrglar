@@ -1617,6 +1617,19 @@ namespace PawsAndLoot.Editor
             matchProbe.AddComponent<
                 PawsAndLoot.TechnicalValidation.NetworkMatchProbe>();
 
+            // Says out loud when the two machines are running different
+            // builds. Regenerating this scene renumbers every in-scene
+            // NetworkObject, so a build from another commit disagrees about all
+            // 130 of them — and NGO reports that as 130 unreadable lines plus a
+            // NullReferenceException, while the player just cannot move.
+            //
+            // Deliberately not a NetworkBehaviour: that would be an in-scene
+            // NetworkObject itself and would fail to spawn for the very reason
+            // it exists to report.
+            var fingerprintObject = new GameObject("Scene Fingerprint");
+            fingerprintObject.transform.SetParent(parent);
+            fingerprintObject.AddComponent<NetworkSceneFingerprint>();
+
             // THROW-007. Placed props are replicated as named messages rather
             // than spawned NetworkObjects, and the host owns triggering.
             var trapObject = new GameObject("Trap Coordinator");

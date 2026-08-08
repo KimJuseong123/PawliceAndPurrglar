@@ -4,6 +4,27 @@
 
 ## Unreleased
 
+### Added
+- **`NetworkSceneFingerprint`** — 두 기계가 다른 빌드일 때 한 줄로 말한다.
+  `Game.unity`를 재생성하면 in-scene `NetworkObject` **130개의
+  `GlobalObjectIdHash`가 전부 바뀐다.** 다른 커밋 빌드끼리 붙이면 NGO가
+  오브젝트마다 `soft synchronization failure`를 찍고 `NullReferenceException`으로
+  끝나는데, **어디에도 "빌드가 다르다"는 말이 없다.**
+  - 플레이어가 겪는 것은 "안 움직인다"다. 실패한 오브젝트가 `Police Player`이고
+    거기에 이동 입력이 지나가는 `NetworkPlayerLink`가 붙어 있다. **가방은 로컬
+    UI라 멀쩡히 동작해서 이동 버그로 읽힌다**
+  - `NetworkBehaviour`가 **아니다.** 그랬다면 자기가 보고하려는 바로 그 이유로
+    스폰에 실패한다. 명명 메시지는 스폰된 오브젝트가 필요 없어서 이때도 도달한다
+  - 처음엔 씬의 `GlobalObjectIdHash`를 직접 지문으로 쓰려 했는데 **컴파일이 안 된다**
+    — 그 필드는 Netcode 패키지 `internal`이다. 커밋을 비교하는 쪽이 어차피 더 맞는
+    질문이다
+  - 도장이 없는 빌드(에디터·수동 빌드)는 **비교 불가라고 말한다.** 조용히 넘어가면
+    통과와 구분되지 않는다
+- **`PlaytestBuild`가 빌드마다 git 커밋을 박는다** (`PlayerSettings.bundleVersion`).
+  빌드가 끝나면 되돌리므로 **저장소는 더럽혀지지 않는다.** Windows·WebGL·서버 3곳
+  전부.
+
+
 ### Fixed
 - **건물에 들어가면 캐릭터가 바닥에 허리까지 파묻혔다.** 내가 앞 커밋에서 만든
   회귀다. 메시 예산 패스가 충돌 사본(`*_col.fbx`)의 **법선을 벗겨냈는데**,
