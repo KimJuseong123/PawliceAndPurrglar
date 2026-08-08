@@ -707,6 +707,12 @@ namespace PawsAndLoot.Editor
 
             // Close to the model's own cream wall so the rebuilt partitions do not
             // read as a different material from the shell they stand in.
+            // Flat red. The rooms are dim, so the way out is given a colour
+            // nothing else in a house uses rather than relying on brightness.
+            Material exitMarkerMaterial = materialFactory(
+                "Interior_ExitMarker",
+                new Color(0.95f, 0.16f, 0.18f, 1f));
+
             Material partitionMaterial = materialFactory(
                 "Greybox_InteriorPartition",
                 new Color(0.80f, 0.77f, 0.71f));
@@ -755,6 +761,7 @@ namespace PawsAndLoot.Editor
                         centre,
                         floorMaterial,
                         partitionMaterial,
+                        exitMarkerMaterial,
                         cubeFactory,
                         childFactory,
                         ref solids,
@@ -782,6 +789,7 @@ namespace PawsAndLoot.Editor
             Vector3 centre,
             Material floorMaterial,
             Material partitionMaterial,
+            Material exitMarkerMaterial,
             System.Func<string, Vector3, Vector3, Material, Transform, bool,
                 GameObject> cube,
             System.Func<string, Transform, Transform> child,
@@ -1119,7 +1127,8 @@ namespace PawsAndLoot.Editor
                 matchRuntime,
                 HouseDoorSide.Front,
                 doorAt,
-                number);
+                number,
+                exitMarkerMaterial);
 
             BuildPerimeter(colliders, inner, floorTop, doorway);
 
@@ -2392,7 +2401,8 @@ namespace PawsAndLoot.Editor
             MatchRuntimeState matchRuntime,
             HouseDoorSide side,
             Vector3 position,
-            int number)
+            int number,
+            Material exitMarkerMaterial)
         {
             var outward = new GameObject(
                 $"Interior {number} Exit Door {side}");
@@ -2416,6 +2426,20 @@ namespace PawsAndLoot.Editor
             trigger.isTrigger = true;
             trigger.size = new Vector3(2.6f, 5f, 1.2f);
             trigger.center = new Vector3(0f, 1.5f, 0f);
+
+            // And something to see. The trigger is a patch of floor identical
+            // to the rest of the floor, in a room whose walls are one scanned
+            // mesh with no door drawn on the inside — so leaving was a memory
+            // test about which wall you came through.
+            //
+            // Built by the component at runtime rather than assembled here,
+            // because SceneOptimizationPass bakes scene renderers static and a
+            // baked marker sits at the world origin while its room is
+            // somewhere else.
+            // Flat red. The rooms are dim, so the marker is given a colour
+            // nothing else in a house uses rather than relying on brightness.
+            outward.AddComponent<PawsAndLoot.Animation.InteriorExitMarkerView>()
+                .Configure(exitMarkerMaterial);
 
             // Walked into, not pressed.
             //

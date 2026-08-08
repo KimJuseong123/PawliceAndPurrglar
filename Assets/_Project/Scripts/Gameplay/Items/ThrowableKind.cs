@@ -527,8 +527,15 @@ namespace PawsAndLoot.Gameplay.Items
                 ThrowableKind.RubberChicken => "throwable_rubber_chicken",
                 ThrowableKind.Firework => "throwable_firework",
                 ThrowableKind.FrozenOctopus => "throwable_octopus",
-                // The officer's two placed props. No authored art, so
-                // PlacedTrapView keeps drawing the shapes it drew before.
+
+                // The officer's two placed props. These were `null` for months,
+                // which meant `PlacedTrapView` drew primitives — so putting one
+                // down left a plain blue box on the road and the player could
+                // not tell what they had placed, or that they had placed
+                // anything. The art existed the whole time, in `ArtSource` under
+                // the same names the HUD icons already used.
+                ThrowableKind.GlueTrap => "trap_glue",
+                ThrowableKind.SensorLight => "trap_sensor_light",
                 _ => null
             };
         }
@@ -562,6 +569,13 @@ namespace PawsAndLoot.Gameplay.Items
                 ThrowableKind.RubberChicken => 0.38f,
                 ThrowableKind.Banana => 0.36f,
                 ThrowableKind.DogTreat => 0.32f,
+
+                // The officer's two, sized for what they have to say from the
+                // fixed camera. The pouch reads as something dropped on the
+                // ground and the lantern has to be seen standing on a dark
+                // street, so it is the tallest of the set.
+                ThrowableKind.SensorLight => 0.60f,
+                ThrowableKind.GlueTrap => 0.45f,
                 _ => 0.30f
             };
         }

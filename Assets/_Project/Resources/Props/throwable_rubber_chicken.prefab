@@ -29,10 +29,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4852366799854569836}
+  - {fileID: 8953328261206196937}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &4962307736286424711
+--- !u!1001 &8919983658515047714
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -42,27 +42,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 5929173006086764db3e5cceb42147e5, type: 3}
       propertyPath: m_LocalScale.x
-      value: 37.988926
+      value: 37.98755
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5929173006086764db3e5cceb42147e5, type: 3}
       propertyPath: m_LocalScale.y
-      value: 37.988926
+      value: 37.98755
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5929173006086764db3e5cceb42147e5, type: 3}
       propertyPath: m_LocalScale.z
-      value: 37.988926
+      value: 37.98755
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5929173006086764db3e5cceb42147e5, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.0000122326155
+      value: -0.000012232173
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5929173006086764db3e5cceb42147e5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.0000047409126
+      value: 0.0000116395795
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5929173006086764db3e5cceb42147e5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.000031906075
+      value: -0.000031904918
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5929173006086764db3e5cceb42147e5, type: 3}
       propertyPath: m_LocalRotation.w
@@ -98,15 +98,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 5929173006086764db3e5cceb42147e5, type: 3}
       propertyPath: m_Name
-      value: throwable_rubber_chicken
+      value: throwable_rubber_chicken_Model
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5929173006086764db3e5cceb42147e5, type: 3}
---- !u!4 &4852366799854569836 stripped
+--- !u!4 &8953328261206196937 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5929173006086764db3e5cceb42147e5, type: 3}
-  m_PrefabInstance: {fileID: 4962307736286424711}
+  m_PrefabInstance: {fileID: 8919983658515047714}
   m_PrefabAsset: {fileID: 0}

@@ -113,6 +113,51 @@ namespace PawsAndLoot.Animation
             _flashUntil = Time.time + flashSeconds;
         }
 
+        /// <summary>
+        /// Fits the sensor's lamp, wherever its body turned out to be.
+        ///
+        /// One place rather than two, because the lamp is the part that does the
+        /// work — a sensor light with a body and no lamp reveals nobody, and it
+        /// looks completely finished.
+        /// </summary>
+        private void AttachLamp(Transform on, float height)
+        {
+            var lampObject = new GameObject("Lamp", typeof(Light));
+            lampObject.transform.SetParent(on, false);
+            lampObject.transform.localPosition = new Vector3(0f, height, 0f);
+            _lamp = lampObject.GetComponent<Light>();
+            _lamp.type = LightType.Point;
+            _lamp.range = 9f;
+            _lamp.intensity = 5.5f;
+            _lamp.color = new Color(1f, 0.95f, 0.75f);
+            _lamp.shadows = LightShadows.None;
+            _lamp.enabled = false;
+        }
+
+        /// <summary>
+        /// Where the lamp sits on an authored lantern: its own mid height, so
+        /// the glow comes out of the model rather than from the ground under it.
+        /// Measured rather than assumed, because the prop is scaled on import.
+        /// </summary>
+        private static float LampHeightOn(GameObject model)
+        {
+            Renderer[] parts = model.GetComponentsInChildren<Renderer>(true);
+            if (parts.Length == 0)
+            {
+                return 0.3f;
+            }
+
+            Bounds bounds = parts[0].bounds;
+            for (int index = 1; index < parts.Length; index++)
+            {
+                bounds.Encapsulate(parts[index].bounds);
+            }
+
+            return Mathf.Max(
+                0.1f,
+                bounds.size.y * 0.5f / Mathf.Max(0.0001f, model.transform.lossyScale.y));
+        }
+
         private GameObject AddPart(
             PrimitiveType shape,
             Vector3 localPosition,
@@ -145,12 +190,26 @@ namespace PawsAndLoot.Animation
 
             _built = true;
 
-            // The authored prop, when it exists. Only the officer's glue trap
-            // and sensor light have no model, and the sensor light needs its
-            // lamp either way, so both keep going through the shapes below.
-            if (kind != ThrowableKind.SensorLight
-                && ThrowableModelLibrary.TryInstantiate(kind, transform) != null)
+            // The authored prop, when it exists.
+            //
+            // The officer's two props had no model for months and drew the
+            // primitives below instead — a plain box on the road, which does not
+            // say what was placed or even that anything was. The art was in
+            // `ArtSource` the whole time under the same names the HUD icons
+            // already used (`catnip pouch`, `police lantern alarm`).
+            GameObject authored =
+                ThrowableModelLibrary.TryInstantiate(kind, transform);
+            if (authored != null)
             {
+                // The sensor light needs its lamp whether or not it has a body,
+                // so it gets one fitted to the model rather than being excluded
+                // from having a model at all. That exclusion is why it kept its
+                // grey cylinder after every other prop had art.
+                if (kind == ThrowableKind.SensorLight)
+                {
+                    AttachLamp(authored.transform, LampHeightOn(authored));
+                }
+
                 return;
             }
 
@@ -165,17 +224,7 @@ namespace PawsAndLoot.Animation
                         PrimitiveType.Cube,
                         new Vector3(0f, 0.78f, 0f),
                         new Vector3(0.38f, 0.2f, 0.26f));
-                    var lampObject = new GameObject("Lamp", typeof(Light));
-                    lampObject.transform.SetParent(
-                        head.transform,
-                        false);
-                    _lamp = lampObject.GetComponent<Light>();
-                    _lamp.type = LightType.Point;
-                    _lamp.range = 9f;
-                    _lamp.intensity = 5.5f;
-                    _lamp.color = new Color(1f, 0.95f, 0.75f);
-                    _lamp.shadows = LightShadows.None;
-                    _lamp.enabled = false;
+                    AttachLamp(head.transform, 0f);
                     break;
 
                 case ThrowableKind.GlueTrap:

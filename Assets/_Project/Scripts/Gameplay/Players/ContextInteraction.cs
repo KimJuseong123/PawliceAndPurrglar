@@ -46,6 +46,19 @@ namespace PawsAndLoot.Gameplay.Players
                 return false;
             }
 
+            // Asked before the prompt is drawn, not after the key is pressed.
+            //
+            // Some Generic interactables mean different things to the two roles
+            // and used to keep that entirely inside TryInteract, so the officer
+            // was offered every empty hiding box in the town and got nothing for
+            // pressing. Gating here covers the prompt and the press together,
+            // because both go through this method.
+            if (candidate is IRoleAwareInteractable roleAware
+                && !roleAware.IsAvailableFor(identity.Role))
+            {
+                return false;
+            }
+
             return candidate is IContextInteractable contextual
                 ? contextual.Supports(key)
                 : key == ContextInteractionKey.E;

@@ -1419,7 +1419,11 @@ namespace PawsAndLoot.Editor
                         placement.Yaw,
                         FootprintOf(placement.Fill),
                         placement.Label,
-                        sizes))
+                        sizes,
+                        walkThrough: false,
+                        // The square is scenery you cross, not a building you go
+                        // round. Everything else in this loop is a building.
+                        walkOn: placement.Fill == Fill.Plaza))
                 {
                     Vector2 footprint = FootprintOf(placement.Fill);
                     GameObject box = CreateBox(
@@ -1589,7 +1593,8 @@ namespace PawsAndLoot.Editor
             Vector2 footprint,
             string name,
             Measurements sizes,
-            bool walkThrough = false)
+            bool walkThrough = false,
+            bool walkOn = false)
         {
             Vector3 size = sizes.Of(stem);
             float scale = Mathf.Min(
@@ -1625,7 +1630,13 @@ namespace PawsAndLoot.Editor
             // Measured off the mesh rather than typed, because the number belongs
             // to the model and the models get replaced. A typed 1.3 would survive
             // the next import and be wrong.
-            float sink = walkThrough ? GroundHeightOf(instance, bounds) : 0f;
+            // `walkOn` is sunk the same way as `walkThrough` and for the same
+            // reason — its paved surface is what the player stands on, not the
+            // underside of the slab it is modelled on — but it keeps a lip so it
+            // still reads as a raised square rather than paint on the road.
+            float sink = walkThrough || walkOn
+                ? GroundHeightOf(instance, bounds) - (walkOn ? WalkOnLip : 0f)
+                : 0f;
             instance.transform.position += new Vector3(
                 centre.x - bounds.center.x,
                 -bounds.min.y - sink,
@@ -1640,6 +1651,52 @@ namespace PawsAndLoot.Editor
                 // is a solid cube, and a mesh collider would make every trunk a
                 // wall to be caught on. Left open, the thief runs in and the
                 // canopy does the work.
+                MakeInstanced(instance);
+                return true;
+            }
+
+            if (walkOn)
+            {
+                // The shape, not a box round it.
+                //
+                // A box is right for a building, where the whole footprint is
+                // solid. The garden square is the opposite: the paving is the
+                // point and only the fountain and hedges should stop anybody. It
+                // was getting the building treatment — an 8 x 2.8 x 8 solid box
+                // with its top 2.78 m up — so the player bounced off the kerb of
+                // a park they were plainly meant to walk into. Nothing logged
+                // it; from the game it read as invisible-wall jank.
+                //
+                // Non-convex, which static colliders allow and which is what
+                // makes the paving walkable and the fountain solid at once.
+                var shape = instance.AddComponent<MeshCollider>();
+                shape.convex = false;
+
+                // And then measured, not assumed.
+                //
+                // `GroundHeightOf` finds the lowest band holding a real share of
+                // the mesh, which for the forest is its terrain and for this
+                // model is the slab underneath — it left the paving 0.61 m up,
+                // still above the 0.35 m step, so the square was as unreachable
+                // as it had been with a box round it. The surface a player
+                // stands on is the one a downward ray lands on, so that is what
+                // gets asked.
+                Physics.SyncTransforms();
+                float paving = PavingHeight(shape, footprint);
+                if (paving > float.MinValue)
+                {
+                    instance.transform.position +=
+                        Vector3.up * (WalkOnLip - paving);
+                    Physics.SyncTransforms();
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"[SANDBOX] '{name}' is walk-on but no downward ray hit "
+                        + "its paving, so its height was left alone. It may be "
+                        + "too high to step onto.");
+                }
+
                 MakeInstanced(instance);
                 return true;
             }
@@ -1661,6 +1718,63 @@ namespace PawsAndLoot.Editor
             MakeInstanced(instance);
             return true;
         }
+
+        /// <summary>
+        /// The height of the surface a player would walk on, in world metres.
+        ///
+        /// The lowest of a grid of downward rays.
+        ///
+        /// The median was tried first and it picked the hedges: on an eight
+        /// metre square most of a centred grid lands in the planting, so the
+        /// "typical" height is a bed and not the path between them. Aligning
+        /// that to the kerb pushed the paving to seven centimetres *below* the
+        /// street.
+        ///
+        /// The paving is the lowest surface the model has — the beds and the
+        /// fountain are built up from it — so the minimum is the one that means
+        /// "the floor of this thing". The rays only ever test this collider, so
+        /// there is no ground underneath for the minimum to fall through to.
+        /// </summary>
+        private static float PavingHeight(Collider shape, Vector2 footprint)
+        {
+            var hits = new List<float>();
+            Vector3 centre = shape.bounds.center;
+            for (float u = -0.35f; u <= 0.351f; u += 0.175f)
+            {
+                for (float v = -0.35f; v <= 0.351f; v += 0.175f)
+                {
+                    var from = new Vector3(
+                        centre.x + footprint.x * u,
+                        shape.bounds.max.y + 2f,
+                        centre.z + footprint.y * v);
+
+                    if (shape.Raycast(
+                            new Ray(from, Vector3.down),
+                            out RaycastHit hit,
+                            shape.bounds.size.y + 6f))
+                    {
+                        hits.Add(hit.point.y);
+                    }
+                }
+            }
+
+            if (hits.Count == 0)
+            {
+                return float.MinValue;
+            }
+
+            hits.Sort();
+            return hits[0];
+        }
+
+        /// <summary>
+        /// How far a walk-on square stands above the street.
+        ///
+        /// Under the characters' 0.35 m step offset, so it is a kerb they walk
+        /// up rather than a wall they stop at, and enough to still read as a
+        /// raised square from the fixed camera.
+        /// </summary>
+        private const float WalkOnLip = 0.22f;
 
         /// <summary>
         /// How far above its lowest point a landscape model's own ground sits,

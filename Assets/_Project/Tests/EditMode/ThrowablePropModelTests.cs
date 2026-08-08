@@ -173,21 +173,44 @@ namespace PawsAndLoot.Tests.EditMode
         }
 
         /// <summary>
-        /// The officer's two placed props have no art, and must say so rather
-        /// than borrow somebody else's model. A grey shape reads as unfinished;
-        /// a wrong model reads as a lie.
+        /// Every prop a player can place names a model.
+        ///
+        /// This test used to assert the opposite for the officer's two — that
+        /// the glue trap and the sensor light **must** name nothing, because
+        /// they had no art. That was true when it was written and it quietly
+        /// became the thing keeping them grey: the art had been sitting in
+        /// `ArtSource` under the names the HUD icons already used
+        /// (`catnip pouch`, `police lantern alarm`), and placing either one put
+        /// a plain box on the road that said neither what it was nor that
+        /// anything had been placed.
+        ///
+        /// Inverted rather than deleted. "No prop is left as a primitive" is the
+        /// rule worth holding, and the old test held its exact negation.
         /// </summary>
         [Test]
-        public void PropsWithoutArtNameNoModel()
+        public void EveryPlaceablePropNamesAModel()
         {
-            foreach (ThrowableKind kind in new[]
-                { ThrowableKind.GlueTrap, ThrowableKind.SensorLight })
+            var missing = new System.Collections.Generic.List<string>();
+            foreach (ThrowableKind kind in
+                System.Enum.GetValues(typeof(ThrowableKind)))
             {
-                Assert.That(
-                    ThrowableCatalog.GetModelStem(kind),
-                    Is.Null.Or.Empty,
-                    $"{kind} has no authored model, so it must not name one.");
+                if (ThrowableCatalog.GetUse(kind) != ThrowableUse.Placed)
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(ThrowableCatalog.GetModelStem(kind)))
+                {
+                    missing.Add(kind.ToString());
+                }
             }
+
+            Assert.That(
+                missing,
+                Is.Empty,
+                "A placed prop with no model draws a primitive, which reads as "
+                + "unfinished and does not say what was put down: "
+                + string.Join(", ", missing));
         }
 
         private static GameObject Instantiate(ThrowableKind kind)

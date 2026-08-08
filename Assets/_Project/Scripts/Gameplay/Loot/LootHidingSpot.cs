@@ -12,7 +12,8 @@ namespace PawsAndLoot.Gameplay.Loot
     /// terminal and can never be hidden.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LootHidingSpot : MonoBehaviour, IPlayerInteractable
+    public sealed class LootHidingSpot : MonoBehaviour, IPlayerInteractable,
+        PawsAndLoot.Gameplay.Players.IRoleAwareInteractable
     {
         [SerializeField]
         private Collider area;
@@ -49,6 +50,20 @@ namespace PawsAndLoot.Gameplay.Loot
             : IsSheltering
                 ? "끌어내기"
                 : "숨기거나 보물 넣기";
+        /// <summary>
+        /// The thief's alone.
+        ///
+        /// <see cref="TryInteract"/> already refused anybody else, but only
+        /// after the press — so the officer was offered "숨기기" on every crate
+        /// and bin and got nothing for it. Stashing loot is a thief verb; the
+        /// officer's business with a container is the raccoon's market, which is
+        /// a different component.
+        /// </summary>
+        public bool IsAvailableFor(PawsAndLoot.Gameplay.Players.PlayerRole role)
+        {
+            return role == PawsAndLoot.Gameplay.Players.PlayerRole.Thief;
+        }
+
         public bool IsAvailable =>
             isActiveAndEnabled
             && ResolveMatchState()?.IsGameplayActive == true;

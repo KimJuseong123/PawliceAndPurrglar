@@ -19,7 +19,10 @@ namespace PawsAndLoot.Gameplay.Players
     /// depending on who is standing there.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerHidingSpot : MonoBehaviour, IPlayerInteractable
+    public sealed class PlayerHidingSpot :
+        MonoBehaviour,
+        IPlayerInteractable,
+        IRoleAwareInteractable
     {
         [SerializeField]
         private MonoBehaviour matchStateSource;
@@ -58,6 +61,20 @@ namespace PawsAndLoot.Gameplay.Players
         public bool IsAvailable =>
             isActiveAndEnabled
             && ResolveMatchState()?.IsGameplayActive == true;
+
+        /// <summary>
+        /// The officer is only offered an occupied one.
+        ///
+        /// <see cref="TryInteract"/> has always refused an empty box for the
+        /// police — it returns <c>IsOccupied &amp;&amp; Turf()</c> — but the
+        /// prompt did not know that, so the officer was told "숨기" at every
+        /// empty box in the town and pressing did nothing. Hiding is the thief's
+        /// alone, and turfing out only exists when there is somebody to turf.
+        /// </summary>
+        public bool IsAvailableFor(PlayerRole role)
+        {
+            return role != PlayerRole.Police || IsOccupied;
+        }
 
         public void Configure(
             IMatchStateReader configuredMatchState,
