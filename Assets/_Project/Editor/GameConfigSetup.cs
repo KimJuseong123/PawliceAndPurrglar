@@ -16,7 +16,7 @@ namespace PawsAndLoot.Editor
         private const string CompanionPath = ConfigRoot + "/CompanionConfig.asset";
         private const string VoicePath = ConfigRoot + "/VoiceConfig.asset";
 
-        [MenuItem("Paws & Loot/Setup/Create Default Config Assets")]
+        [MenuItem("Pawlice and Purrglar/Setup/Create Default Config Assets")]
         public static void CreateDefaultConfigAssets()
         {
             EnsureConfigFolder();
@@ -41,7 +41,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("BASE-004 default configuration assets created and validated.");
         }
 
-        [MenuItem("Paws & Loot/Setup/Validate Default Config Assets")]
+        [MenuItem("Pawlice and Purrglar/Setup/Validate Default Config Assets")]
         public static void ValidateDefaultConfigAssets()
         {
             GameConfigSet configSet = AssetDatabase.LoadAssetAtPath<GameConfigSet>(DefaultSetPath);

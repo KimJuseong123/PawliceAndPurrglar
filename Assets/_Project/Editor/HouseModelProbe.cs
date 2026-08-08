@@ -16,7 +16,7 @@ namespace PawsAndLoot.Editor
     /// </summary>
     internal static class HouseModelProbe
     {
-        [MenuItem("Paws & Loot/Setup/Report House Model Layout")]
+        [MenuItem("Pawlice and Purrglar/Setup/Report House Model Layout")]
         public static void Report()
         {
             foreach (string stem in new[]

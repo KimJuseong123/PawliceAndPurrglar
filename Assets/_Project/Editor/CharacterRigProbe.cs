@@ -23,7 +23,7 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Art/Characters/dog.fbx"
         };
 
-        [MenuItem("Paws & Loot/Setup/Probe Character Humanoid Rigs")]
+        [MenuItem("Pawlice and Purrglar/Setup/Probe Character Humanoid Rigs")]
         public static void Probe()
         {
             foreach (string path in HumanoidCandidates)

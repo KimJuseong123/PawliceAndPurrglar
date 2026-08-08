@@ -50,7 +50,7 @@ namespace PawsAndLoot.Tests.EditMode
                 _prefab,
                 Is.Not.Null,
                 $"The result prefab is missing: {PrefabPath}. Run "
-                + "'Paws & Loot/UI/Rebuild Result (Art, Prefab, Scene)'.");
+                + "'Pawlice and Purrglar/UI/Rebuild Result (Art, Prefab, Scene)'.");
         }
 
         [Test]

@@ -18,7 +18,7 @@ namespace PawsAndLoot.Editor
     /// </summary>
     internal static class InteriorFaceReport
     {
-        [MenuItem("Paws & Loot/Setup/Report Interior Faces")]
+        [MenuItem("Pawlice and Purrglar/Setup/Report Interior Faces")]
         public static void Report()
         {
             EditorSceneManager.OpenScene(

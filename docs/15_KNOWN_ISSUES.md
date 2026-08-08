@@ -1138,7 +1138,7 @@ NGO 씬 관리가 켜진 상태에서 서버가 Single 모드로 씬을 로드�
 - 심각도: Medium
 - 발견 날짜: 2026-07-27
 - 발생 환경: `Game` 씬 `Prototype Ladder Point`
-- 확인 절차: `Paws & Loot > Setup > Diagnose Interaction Targets`
+- 확인 절차: `Pawlice and Purrglar > Setup > Diagnose Interaction Targets`
 - 예상: `E`를 누르면 지붕으로 올라간다
 - 실제: 상호작용 자체는 **정상 연결돼 있었다.** 진단 결과 타입 `Traversal`,
   콜라이더 활성, 양쪽 역할 허용, 상호작용 범위 2m로 모두 정상이었고 `E`를

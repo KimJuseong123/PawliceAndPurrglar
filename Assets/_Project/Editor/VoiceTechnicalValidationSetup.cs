@@ -15,7 +15,7 @@ namespace PawsAndLoot.Editor
         public const string WindowsBuildPath =
             "Builds/TechnicalValidation/Windows/PawsAndLootVoiceTech.exe";
 
-        [MenuItem("Paws & Loot/Technical Validation/Create TECH-003 Scene")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Create TECH-003 Scene")]
         public static void CreateScene()
         {
             Scene scene = EditorSceneManager.NewScene(
@@ -45,7 +45,7 @@ namespace PawsAndLoot.Editor
             ValidateScene();
         }
 
-        [MenuItem("Paws & Loot/Technical Validation/Validate TECH-003 Scene")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Validate TECH-003 Scene")]
         public static void ValidateScene()
         {
             string scenePath =
@@ -68,7 +68,7 @@ namespace PawsAndLoot.Editor
             }
         }
 
-        [MenuItem("Paws & Loot/Technical Validation/Build Windows TECH-003")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Build Windows TECH-003")]
         public static void BuildWindows()
         {
             CreateScene();

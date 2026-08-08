@@ -31,8 +31,14 @@ Claude Code 전용 작업 지침서다.
 | 외부 유료 에셋 | **없다.** 2026-08-08에 TopDownEngine 잔재와 `Assets/CatCops/` 레거시를 전부 제거했다. `Assets/ThirdParty/`는 비어 있다 |
 | 빌드 씬 | `Bootstrap`, `Game`, `Result` 3개만 등록됨 |
 
-프로젝트 이름은 `CatCops`(폴더)와 `PawsAndLoot`(어셈블리·제품명)이 섞여 있다.
-새 코드는 `PawsAndLoot` 네임스페이스를 사용한다.
+제목은 **멍경찰과 냥도둑 / Pawlice and Purrglar**로 확정이다 (2026-08-08).
+표시되는 곳은 전부 바꿨다 — 제품명, 에디터 메뉴 루트, 문서.
+
+**바꾸지 않은 것은 식별자다**: 네임스페이스 `PawsAndLoot.*`, 어셈블리
+`PawsAndLoot.Runtime`, 저장소 폴더 `paws-and-loot`, 빌드 산출물
+`PawsAndLoot.exe`. 제목이 아니라 이름이고, 제출 직전에 어셈블리 참조와 클론
+URL을 함께 움직일 이유가 없다. `-executeMethod`에는 여전히
+`PawsAndLoot.Editor.*`를 쓴다.
 
 ## 3. 가장 중요한 함정: 씬 내용은 에디터 스크립트가 만든다
 
@@ -449,7 +455,7 @@ Assets/_Project/Editor/BasicSceneSetup.cs    (약 640줄)   → Bootstrap/Game/R
   `Scripts/UI/*Presenter.cs`와 Setup 스크립트가 런타임/에디터에서 조립한다.
 - 씬 수동 연결이 필요하면 Setup 스크립트에 넣을 수 있는지 먼저 검토한다.
 
-## 4. 에디터 메뉴 (`Paws & Loot`)
+## 4. 에디터 메뉴 (`Pawlice and Purrglar`)
 
 ### Setup
 
@@ -543,7 +549,7 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 결과와 스크린샷을 쓰고 `Application.Quit()`한다.
 
 ```text
-%USERPROFILE%\AppData\LocalLow\PawsAndLoot\PawsAndLoot\
+%USERPROFILE%\AppData\LocalLow\Pawlice and Purrglar\Pawlice and Purrglar\
   tech-001-result.json / tech-002-result.json / tech-003-result.json
   net-001-{host,client}-result.json / map-001-result.json
   net-lobby-{host,client}-result.json

@@ -23,7 +23,7 @@ namespace PawsAndLoot.Editor
             importer.alphaIsTransparency = true;
         }
 
-        [MenuItem("Paws & Loot/Setup/Ensure HUD Icon Sprites")]
+        [MenuItem("Pawlice and Purrglar/Setup/Ensure HUD Icon Sprites")]
         public static void EnsureHudIconSprites()
         {
             string[] guids = AssetDatabase.FindAssets(

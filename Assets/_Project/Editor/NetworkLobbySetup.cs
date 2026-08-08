@@ -116,7 +116,7 @@ namespace PawsAndLoot.Editor
             RecolourCamera();
         }
 
-        [MenuItem("Paws & Loot/Setup/Rebuild Bootstrap Lobby")]
+        [MenuItem("Pawlice and Purrglar/Setup/Rebuild Bootstrap Lobby")]
         public static void RebuildBootstrapLobby()
         {
             string path = GameSceneCatalog.GetPath(GameSceneId.Bootstrap);
@@ -271,7 +271,7 @@ namespace PawsAndLoot.Editor
             {
                 throw new System.InvalidOperationException(
                     "The lobby prefab has no NetworkLobbyPresenter. Rebuild it "
-                    + "with 'Paws & Loot/UI/Rebuild Lobby Canvas Prefab'.");
+                    + "with 'Pawlice and Purrglar/UI/Rebuild Lobby Canvas Prefab'.");
             }
 
             presenter.ConfigureSession(session, directory);

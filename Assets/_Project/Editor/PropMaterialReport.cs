@@ -13,7 +13,7 @@ namespace PawsAndLoot.Editor
     /// </summary>
     internal static class PropMaterialReport
     {
-        [MenuItem("Paws & Loot/Setup/Report Prop Materials")]
+        [MenuItem("Pawlice and Purrglar/Setup/Report Prop Materials")]
         public static void Report()
         {
             foreach (string path in AssetDatabase

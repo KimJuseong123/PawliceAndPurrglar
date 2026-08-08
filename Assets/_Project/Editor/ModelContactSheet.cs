@@ -44,7 +44,7 @@ namespace PawsAndLoot.Editor
         private const int Cell = 320;
         private const int Columns = 4;
 
-        [MenuItem("Paws & Loot/Setup/Capture Model Sheet")]
+        [MenuItem("Pawlice and Purrglar/Setup/Capture Model Sheet")]
         public static void Capture()
         {
             string[] paths = AssetDatabase

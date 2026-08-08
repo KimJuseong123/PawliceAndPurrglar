@@ -24,7 +24,7 @@ namespace PawsAndLoot.Editor
         private const string NetworkPrefabsListPath =
             "Assets/DefaultNetworkPrefabs.asset";
 
-        [MenuItem("Paws & Loot/Technical Validation/Create NET-001 Scene")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Create NET-001 Scene")]
         public static void CreateScene()
         {
             GameObject playerPrefab = CreatePlayerPrefab();
@@ -57,7 +57,7 @@ namespace PawsAndLoot.Editor
             ValidateScene();
         }
 
-        [MenuItem("Paws & Loot/Technical Validation/Validate NET-001 Scene")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Validate NET-001 Scene")]
         public static void ValidateScene()
         {
             string scenePath =
@@ -96,7 +96,7 @@ namespace PawsAndLoot.Editor
             }
         }
 
-        [MenuItem("Paws & Loot/Technical Validation/Build Windows NET-001")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Build Windows NET-001")]
         public static void BuildWindows()
         {
             CreateScene();
@@ -130,7 +130,7 @@ namespace PawsAndLoot.Editor
             }
         }
 
-        [MenuItem("Paws & Loot/Technical Validation/Build Windows NET-002")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Build Windows NET-002")]
         public static void BuildWindowsRoleValidation()
         {
             BuildWindows();

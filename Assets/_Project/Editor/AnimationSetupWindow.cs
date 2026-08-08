@@ -24,13 +24,13 @@ namespace PawsAndLoot.Editor
         private Vector2 _scroll;
         private bool _showDetails = true;
 
-        [MenuItem("Paws & Loot/Animation/Open Animation Setup")]
+        [MenuItem("Pawlice and Purrglar/Animation/Open Animation Setup")]
         public static void Open()
         {
             GetWindow<AnimationSetupWindow>("Animation Setup");
         }
 
-        [MenuItem("Paws & Loot/Animation/Validate Character Animation Profiles")]
+        [MenuItem("Pawlice and Purrglar/Animation/Validate Character Animation Profiles")]
         public static void ValidateProfiles()
         {
             List<CharacterAnimationProfile> profiles = LoadProfiles();
@@ -58,7 +58,7 @@ namespace PawsAndLoot.Editor
                 + $"Invalid={failures}; No production controller was created.");
         }
 
-        [MenuItem("Paws & Loot/Animation/Apply Valid Animation Profiles")]
+        [MenuItem("Pawlice and Purrglar/Animation/Apply Valid Animation Profiles")]
         public static void ApplyValidProfiles()
         {
             ApplyProfiles(null);

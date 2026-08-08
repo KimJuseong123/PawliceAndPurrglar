@@ -3,7 +3,7 @@ using UnityEngine;
 namespace PawsAndLoot.Integration.Voice
 {
     [CreateAssetMenu(
-        menuName = "Paws & Loot/Voice/Dog Behavior Profile",
+        menuName = "Pawlice and Purrglar/Voice/Dog Behavior Profile",
         fileName = "DogBehaviorProfile")]
     public sealed class DogBehaviorProfile : ScriptableObject
     {

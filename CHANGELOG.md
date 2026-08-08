@@ -4,6 +4,33 @@
 
 ## Unreleased
 
+### Changed
+- **영문 제목을 `Pawlice and Purrglar`로 확정했다.** 한글 제목 `멍경찰과 냥도둑`은
+  그대로다. 바꾼 것은 **사람이 제목으로 읽는 곳 전부**다:
+  - `productName`·`companyName` — 창 제목과 브라우저 탭에 나오는 이름.
+    저장 경로가 `%LOCALLOW%\PawsAndLoot\PawsAndLoot\`에서 `%LOCALLOW%\Pawlice and Purrglar\Pawlice and Purrglar\`로 **실제로 옮겨간 것을
+    빌드해서 확인했다** (`net-lobby-host-result.json`이 새 경로에 떨어진다).
+    `CLAUDE.md`·README의 프로브 경로를 전부 갱신했다. **기존 결과 JSON은 고아가 된다**
+  - 에디터 메뉴 루트 `Paws & Loot/...` → `Pawlice and Purrglar/...` (81파일, 121곳).
+    메뉴 이름을 적어둔 문서도 함께 갱신했다
+  - README·`docs/`·`AGENTS.md`·`CLAUDE.md`·`THIRD_PARTY_NOTICES.md`의 제목 표기
+  - "현재 제목은 임시 제목이며…" 문구 제거. 임시가 아니게 됐다
+- **바꾸지 않은 것은 식별자다**: 네임스페이스 `PawsAndLoot.*`, 어셈블리
+  `PawsAndLoot.Runtime`, 저장소 폴더 `paws-and-loot`, GitLab URL, 빌드 산출물
+  `PawsAndLoot.exe`. 제목이 아니라 이름이고, 545개 파일에 걸친 어셈블리 참조와
+  `-executeMethod` 경로를 제출 직전에 함께 움직일 이유가 없다.
+
+### Removed
+- **`Assets/CatCops/`가 아직 있다고 말하던 문서를 정리했다.** 폴더는 이번
+  `CLEAN-001`에서 지웠는데 README·`docs/07`·`docs/13`·`prompts/`가 여전히 그 경로를
+  현재형으로 가리키고 있었고, 저장소 루트를 `C:\Users\SSAFY\CatCops`로 적은 곳도
+  네 군데 남아 있었다.
+  - **이력 문서는 건드리지 않았다** — `CHANGELOG`·`11_AI_USAGE_LOG`·`14_DECISION_LOG`·
+    `15_KNOWN_ISSUES`는 그때 무슨 일이 있었는지의 기록이고, 지금 사실과 다르다고 해서
+    고쳐 쓰면 기록이 아니게 된다
+  - `docs/13`의 "레거시 실험물 처리" 절은 계획이 아니라 **완료 보고**로 바꿨다
+
+
 ### Removed
 - **TopDown Engine 의존을 전부 걷어냈다.** 확인부터 하면: 그 에셋은 저장소에 없고
   (`.gitignore`), git이 추적한 적도 없고, **이 개발 PC에도 설치돼 있지 않았다.**
@@ -323,7 +350,7 @@
   것이 없었다.
 
 ### Added
-- **전리품 아이콘 26종을 그 물건의 3D 모델에서 구웠다** (`Paws & Loot > UI > Bake Loot Icons`). 전리품은 29종인데 그림은 11장이라 나머지는 **가방 칸에 글자 한 자**로 그려지고 있었다 — 치즈가 "치"다. 개수만 구석에 찍힌 칸은 미완성이 아니라 고장으로 읽히고, 첫 글자가 같은 둘은 같은 물건으로 읽힌다. 모델은 이미 있고 이미 감면돼 있으므로, 렌더한 아이콘은 **방에서 못 찾을 물건을 보여줄 수가 없다.** 손으로 그린 그림이 있으면 그쪽이 먼저다 — 렌더는 대역이지 정답이 아니다. 그래픽 모드로 구워야 한다 (`-nographics`면 투명한 사각형 26장이 나오고, 그건 글자보다 나쁘다. 완성된 것처럼 보이기 때문이다).
+- **전리품 아이콘 26종을 그 물건의 3D 모델에서 구웠다** (`Pawlice and Purrglar > UI > Bake Loot Icons`). 전리품은 29종인데 그림은 11장이라 나머지는 **가방 칸에 글자 한 자**로 그려지고 있었다 — 치즈가 "치"다. 개수만 구석에 찍힌 칸은 미완성이 아니라 고장으로 읽히고, 첫 글자가 같은 둘은 같은 물건으로 읽힌다. 모델은 이미 있고 이미 감면돼 있으므로, 렌더한 아이콘은 **방에서 못 찾을 물건을 보여줄 수가 없다.** 손으로 그린 그림이 있으면 그쪽이 먼저다 — 렌더는 대역이지 정답이 아니다. 그래픽 모드로 구워야 한다 (`-nographics`면 투명한 사각형 26장이 나오고, 그건 글자보다 나쁘다. 완성된 것처럼 보이기 때문이다).
 
 ### Added
 - **도둑이 마을의 파란 쓰레기통에 `E`로 숨는다** (`PlayerHidingSpot`·`ThiefHidingState`). 숨은 동안 움직이지 않고, 그려지지 않고, 체포되지 않는다 — 셋 다여야 한다. 안 보이는데 체포되면 경찰이 허공에 손을 뻗는 그림이고, 체포만 안 되고 보이면 버그의 그림이다. 경찰이 사람 든 통에 `E`를 하면 끌어낸다. 이것이 없으면 통을 하나 찾은 도둑이 남은 경기를 그 안에서 보내고 경찰의 절반이 끝난다. 통 네 개, 각 구역에 하나씩. 골판지 상자에는 넣지 않았다 — 그쪽은 이미 보물 은닉처라 같은 키가 두 가지를 뜻하게 된다.
@@ -467,7 +494,7 @@
 - 수색 시스템 1단계. `LootTable` ScriptableObject(가중치·개수 범위·중복 상한),
   시드 기반 추첨 `LootRoller`, 수색 대상 `SearchableContainer`
   (`IPlayerInteractable` + `IHoldInteractable` 0.6초 + `IInteractionPriority`),
-  `Paws & Loot/Loot/Create Default Loot Tables`와 `Validate Loot Setup`
+  `Pawlice and Purrglar/Loot/Create Default Loot Tables`와 `Validate Loot Setup`
 - 컨테이너 이동 로직을 `ContainerTransfer` 한 곳으로 모았다. 클릭 두 방향과
   F키(전부 가져오기)가 같은 "꺼내고 → 넣고 → 실패하면 되돌리기"를 쓴다 — 대량
   이동을 따로 구현하면 같은 아이템이 두 곳에 생긴다

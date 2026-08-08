@@ -33,7 +33,7 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private const string ResultRootName = "ResultCanvas";
 
-        [MenuItem("Paws & Loot/Setup/Rebuild Basic Scenes")]
+        [MenuItem("Pawlice and Purrglar/Setup/Rebuild Basic Scenes")]
         public static void CreateBasicScenes()
         {
             EnsureSceneDirectory();
@@ -66,7 +66,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("BASE-003 basic scenes created and validated.");
         }
 
-        [MenuItem("Paws & Loot/Setup/Validate Basic Scenes")]
+        [MenuItem("Pawlice and Purrglar/Setup/Validate Basic Scenes")]
         public static void ValidateBasicScenes()
         {
             ValidateBuildSettings();
@@ -87,7 +87,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("BASE-003 scene validation passed.");
         }
 
-        [MenuItem("Paws & Loot/Setup/Rebuild Result UI")]
+        [MenuItem("Pawlice and Purrglar/Setup/Rebuild Result UI")]
         public static void RebuildResultUi()
         {
             EnsureSceneDirectory();
@@ -131,7 +131,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("Result UI rebuilt.");
         }
 
-        [MenuItem("Paws & Loot/Setup/Ensure Bootstrap Services")]
+        [MenuItem("Pawlice and Purrglar/Setup/Ensure Bootstrap Services")]
         public static void EnsureBootstrapServices()
         {
             EnsureSceneDirectory();
@@ -416,7 +416,7 @@ namespace PawsAndLoot.Editor
             {
                 throw new GameConfigurationException(
                     $"Required GameConfigSet is missing at '{GameConfigSetup.DefaultSetPath}'. " +
-                    "Run 'Paws & Loot/Setup/Create Default Config Assets' first.");
+                    "Run 'Pawlice and Purrglar/Setup/Create Default Config Assets' first.");
             }
 
             return configSet;
@@ -430,7 +430,7 @@ namespace PawsAndLoot.Editor
             {
                 throw new GameConfigurationException(
                     $"Required GameLogConfig is missing at '{GameLogSetup.DefaultConfigPath}'. " +
-                    "Run 'Paws & Loot/Setup/Create Default Log Config' first.");
+                    "Run 'Pawlice and Purrglar/Setup/Create Default Log Config' first.");
             }
 
             return logConfig;

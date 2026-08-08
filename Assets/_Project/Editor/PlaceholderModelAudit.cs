@@ -28,7 +28,7 @@ namespace PawsAndLoot.Editor
             + "building_house_1f_with_interior.fbx"
         };
 
-        [MenuItem("Paws & Loot/Setup/Audit Authored Models")]
+        [MenuItem("Pawlice and Purrglar/Setup/Audit Authored Models")]
         public static void AuditAuthored()
         {
             foreach (string path in AuthoredPaths)

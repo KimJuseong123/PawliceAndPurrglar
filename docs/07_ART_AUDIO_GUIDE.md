@@ -87,10 +87,10 @@
 ArtSource/Police/Police_LowPoly.blend
 ```
 
-현재 FBX:
+현재 FBX (`Assets/CatCops/`는 2026-08-08 삭제):
 
 ```text
-Assets/CatCops/Models/Police_LowPoly.fbx
+Assets/_Project/Art/Characters/police.fbx
 ```
 
 새 구조 적용 후 목표:

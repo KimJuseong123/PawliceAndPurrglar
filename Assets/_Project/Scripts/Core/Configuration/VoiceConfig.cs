@@ -32,7 +32,7 @@ namespace PawsAndLoot.Config
         LocalGateway = 1
     }
 
-    [CreateAssetMenu(menuName = "Paws & Loot/Config/Voice", fileName = "VoiceConfig")]
+    [CreateAssetMenu(menuName = "Pawlice and Purrglar/Config/Voice", fileName = "VoiceConfig")]
     public sealed class VoiceConfig : GameConfigAsset
     {
         [Header("Prototype Availability")]

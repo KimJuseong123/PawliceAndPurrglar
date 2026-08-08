@@ -21,7 +21,7 @@ namespace PawsAndLoot.Editor
         private const string PlayerConfigPath =
             "Assets/_Project/Settings/Configs/PlayerConfig.asset";
 
-        [MenuItem("Paws & Loot/Validation/Build Throw Interaction POC")]
+        [MenuItem("Pawlice and Purrglar/Validation/Build Throw Interaction POC")]
         public static void BuildScene()
         {
             EnsureValidationFolder();

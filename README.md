@@ -1,10 +1,12 @@
 # 멍경찰과 냥도둑
 
-**Paws & Loot**
+**Pawlice and Purrglar**
 
 경찰은 강아지에게 추적과 경계를 명령하고, 도둑은 고양이에게 정찰과 교란을 명령해 4분 동안 보물을 지키거나 훔치는 1대1 음성 명령 비대칭 추격 게임.
 
-> 현재 제목은 임시 제목이며, 프로젝트 방향을 고정하기 전까지 `멍경찰과 냥도둑`을 사용합니다.
+> 제목은 확정입니다 (2026-08-08). 한글 `멍경찰과 냥도둑`, 영문 `Pawlice and Purrglar`.
+> 저장소 폴더와 어셈블리 이름은 `paws-and-loot` / `PawsAndLoot`로 남아 있습니다 — 제목이
+> 아니라 식별자라, 제출 직전에 어셈블리 참조와 클론 URL을 함께 움직일 이유가 없습니다.
 
 ## 발표용 30초 소개
 
@@ -105,14 +107,14 @@ Blender 원본과 Unity 런타임 에셋을 분리해 관리합니다.
 ArtSource/Police/Police_LowPoly.blend
 ```
 
-현재 Unity 반입본:
+이 절은 초기 리깅 스파이크 시절의 기록입니다. **`Assets/CatCops/`는 2026-08-08에
+삭제했습니다** — 초기 방향 탐색용 실험물이었고 `Assets/_Project/`가 참조하는 것이
+하나도 없었습니다. 현재 경찰·도둑 모델은 다음에 있습니다.
 
 ```text
-Assets/CatCops/Models/Police_LowPoly.fbx
+Assets/_Project/Art/Characters/police.fbx
+Assets/_Project/Art/Characters/thief.fbx
 ```
-
-새 저장소 구조를 적용할 때 검증된 경찰 모델만 `Assets/_Project/` 아래로 이전합니다.
-기존 `Assets/CatCops/` 프로토타입의 나머지 코드와 에셋은 새 설계의 기준으로 사용하지 않습니다.
 
 ## 프로토타입 개발 순서
 
@@ -152,7 +154,7 @@ Unity Hub에서 저장소 루트를 열면 `Packages/manifest.json`과 `Packages
 Assets/_Project/Settings/Configs/
 ```
 
-`Paws & Loot > Setup > Create Default Config Assets`는 기본 설정을 생성하고
+`Pawlice and Purrglar > Setup > Create Default Config Assets`는 기본 설정을 생성하고
 Bootstrap 씬에 연결합니다. `Validate Default Config Assets`는 저장된 값과 필수
 참조를 검사합니다. 현재 목표 금액, 이동, 대시, 체포, 보물 가격과 동물 수치는
 플레이테스트 전 프로토타입 가설입니다.
@@ -317,7 +319,7 @@ git lfs install
 의존 경로는 2026-08-08에 제거했습니다.
 
 클립이 들어올 자리는 다음 폴더이고, 이름에 `Idle`/`Run`/`Walk`/`Command`/`Win`/`Lose`가
-들어가면 `Paws & Loot > Setup > Rebuild Character Locomotion Animator`가 컨트롤러를
+들어가면 `Pawlice and Purrglar > Setup > Rebuild Character Locomotion Animator`가 컨트롤러를
 만들어 붙입니다. 비어 있으면 컨트롤러를 만들지 않고 그 사실을 로그로 남깁니다.
 
 ```text
@@ -371,7 +373,7 @@ PowerShell 배치 실행 예시:
 
 ```powershell
 $unity = "C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe"
-$project = "C:\Users\SSAFY\CatCops"
+$project = "C:\Users\SSAFY\paws-and-loot"
 
 $editMode = Start-Process $unity -Wait -PassThru -ArgumentList @(
   "-batchmode", "-nographics",
@@ -403,7 +405,7 @@ Windows TECH-001 검증 씬:
 Assets/_Project/Scenes/TechnicalTest.unity
 ```
 
-Unity 메뉴 `Paws & Loot > Technical Validation > Build Windows TECH-001`로
+Unity 메뉴 `Pawlice and Purrglar > Technical Validation > Build Windows TECH-001`로
 WASD 이동 큐브가 포함된 Windows x86_64 개발 빌드를 생성합니다.
 
 ```text
@@ -413,7 +415,7 @@ Builds/TechnicalValidation/Windows/PawsAndLootTech.exe
 실행 결과는 다음 로컬 경로에 JSON과 스크린샷으로 기록됩니다.
 
 ```text
-%USERPROFILE%\AppData\LocalLow\PawsAndLoot\PawsAndLoot\
+%USERPROFILE%\AppData\LocalLow\Pawlice and Purrglar\Pawlice and Purrglar\
 ```
 
 Windows가 첫 목표 플랫폼이므로 WebGL 로컬 서버와 GitHub Pages 검증은 현재
@@ -429,10 +431,10 @@ TECH-002 테스트 모델은 최종 캐릭터가 아니라 단위, 축, 리그, 
 ```powershell
 & "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" `
   --background `
-  --python "C:\Users\SSAFY\CatCops\ArtSource\Blender\TechnicalValidation\create_tech_rig.py"
+  --python "C:\Users\SSAFY\paws-and-loot\ArtSource\Blender\TechnicalValidation\create_tech_rig.py"
 ```
 
-Unity 메뉴 `Paws & Loot > Technical Validation > Build Windows TECH-002`는
+Unity 메뉴 `Pawlice and Purrglar > Technical Validation > Build Windows TECH-002`는
 다음을 자동으로 검사하고 Windows 개발 빌드를 생성합니다.
 
 - 미터 단위, 발 중앙 원점, Unity 축과 회전
@@ -461,7 +463,7 @@ Assets/_Project/Scenes/VoiceTechnicalTest.unity
 Builds/TechnicalValidation/Windows/PawsAndLootVoiceTech.exe
 ```
 
-Unity 메뉴 `Paws & Loot > Technical Validation > Build Windows TECH-003`으로
+Unity 메뉴 `Pawlice and Purrglar > Technical Validation > Build Windows TECH-003`으로
 빌드합니다. 실행 후 `Start listening`을 누르고 짧은 한국어 문장을 말합니다.
 음성을 사용할 수 없을 때는 `Space` 또는 `Continue with keyboard`로 계속할 수
 있어야 합니다.
@@ -492,11 +494,11 @@ Assets/_Project/Scenes/NetworkTechnicalTest.unity
 Builds/TechnicalValidation/Windows/PawsAndLootNetworkTech.exe
 ```
 
-Unity 메뉴 `Paws & Loot > Technical Validation > Build Windows NET-001`로
+Unity 메뉴 `Pawlice and Purrglar > Technical Validation > Build Windows NET-001`로
 빌드한 뒤 PowerShell에서 두 프로세스를 실행합니다.
 
 ```powershell
-$exe = "C:\Users\SSAFY\CatCops\Builds\TechnicalValidation\Windows\PawsAndLootNetworkTech.exe"
+$exe = "C:\Users\SSAFY\paws-and-loot\Builds\TechnicalValidation\Windows\PawsAndLootNetworkTech.exe"
 $hostProcess = Start-Process $exe -PassThru -ArgumentList @(
   "-netMode", "host", "-netInstance", "host",
   "-netAddress", "127.0.0.1", "-netPort", "7979",
@@ -548,9 +550,9 @@ Windows 실행에서 양쪽 모두 경찰 1명·도둑 1명, 역할 중복 없�
 Unity 메뉴에서 맵을 다시 만들거나 검증할 수 있습니다.
 
 ```text
-Paws & Loot > Setup > Rebuild MAP-001 Greybox Village
-Paws & Loot > Setup > Validate MAP-001 Greybox Village
-Paws & Loot > Technical Validation > Build Windows MAP-001
+Pawlice and Purrglar > Setup > Rebuild MAP-001 Greybox Village
+Pawlice and Purrglar > Setup > Validate MAP-001 Greybox Village
+Pawlice and Purrglar > Technical Validation > Build Windows MAP-001
 ```
 
 Windows 개발 빌드:

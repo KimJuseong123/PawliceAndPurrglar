@@ -10,7 +10,7 @@ namespace PawsAndLoot.Editor
     /// <summary>Where every piece of loot actually stands, for a look at the map.</summary>
     internal static class LootCornerReport
     {
-        [MenuItem("Paws & Loot/Setup/Report Loot Placement")]
+        [MenuItem("Pawlice and Purrglar/Setup/Report Loot Placement")]
         public static void Report()
         {
             EditorSceneManager.OpenScene(

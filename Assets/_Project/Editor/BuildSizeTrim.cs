@@ -50,7 +50,7 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private const int TextureCap = 1024;
 
-        [MenuItem("Paws & Loot/Setup/Trim Build Size")]
+        [MenuItem("Pawlice and Purrglar/Setup/Trim Build Size")]
         public static void Trim()
         {
             int meshes = 0;
@@ -125,7 +125,7 @@ namespace PawsAndLoot.Editor
         /// Reports what has and has not been trimmed, so the state is
         /// checkable rather than assumed.
         /// </summary>
-        [MenuItem("Paws & Loot/Setup/Report Build Size Settings")]
+        [MenuItem("Pawlice and Purrglar/Setup/Report Build Size Settings")]
         public static void ReportSettings()
         {
             var loose = new List<string>();

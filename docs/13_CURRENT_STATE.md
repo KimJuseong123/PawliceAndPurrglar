@@ -16,8 +16,8 @@
 
 ## 확정된 제품 방향
 
-- 임시 제목: 멍경찰과 냥도둑
-- 영문명: Paws & Loot
+- 제목: 멍경찰과 냥도둑 (확정)
+- 영문명: Pawlice and Purrglar
 - 경찰 1명 대 도둑 1명
 - 경기 시간 4분
 - 원근감 있는 3D 기울어진 탑다운
@@ -41,7 +41,7 @@
 - `AGENTS.md` 존재
 - `README.md` 존재
 - 프로젝트 문서 패키지 작성
-- `C:\Users\SSAFY\CatCops`를 로컬 Git 저장소 루트로 초기화
+- `C:\Users\SSAFY\paws-and-loot`를 로컬 Git 저장소 루트로 초기화
 - 기본 브랜치 `main`과 로컬 Git LFS 설정
 - 프로젝트 전용 Unity 자산 경로 생성:
 
@@ -62,12 +62,8 @@ ArtSource/Blender/
 Submission/
 ```
 
-- 기존 `Assets/TopDownEngine/`은 이동하지 않고 별도 외부 에셋 루트로 유지
-- 기존 실험 씬 존재:
-
-```text
-Assets/CatCops/Scenes/CatCopsPrototype.unity
-```
+- 외부 유료 에셋 의존은 **없다**. TopDownEngine 잔재와 `Assets/CatCops/` 실험 씬은
+  2026-08-08에 삭제했다 (`CLEAN-001`)
 
 - 새 기본 씬 존재:
 
@@ -237,11 +233,8 @@ ArtSource/Reference/Characters/
 ArtSource/Police/Police_LowPoly.blend
 ```
 
-- 기존 경찰 FBX 존재:
-
-```text
-Assets/CatCops/Models/Police_LowPoly.fbx
-```
+- 기존 경찰 FBX는 `Assets/CatCops/`와 함께 삭제됐다. Blender 원본은
+  `ArtSource/Police/`에 남아 있다
 
 - 신규 캐릭터 원본 FBX 4종 추가:
 
@@ -252,9 +245,8 @@ ArtSource/Blender/Animals/dog/
 ArtSource/Blender/Animals/cat/
 ```
 
-- `Assets/CatCops/Models/*.fbx`는 현재 Git LFS 포인터 상태이며, 새 CHAR-001 검증은
-  위 `ArtSource/Blender/...` 원본을 `Assets/_Project/Art/Characters/`로 복사해
-  임포트하는 방식으로 진행
+- CHAR-001 검증은 위 `ArtSource/Blender/...` 원본을
+  `Assets/_Project/Art/Characters/`로 복사해 임포트하는 방식으로 진행했다
 
 - 신규 캐릭터 검증용 에디터 스크립트와 런타임 프리뷰 추가:
 
@@ -281,25 +273,20 @@ Assets/_Project/Scripts/TechnicalValidation/CharacterTechnicalValidationReporter
 - 도둑의 판매 승리를 가능하게 하는 보물 배치 또는 목표 금액
 - 신규 4종 캐릭터 FBX의 실제 애니메이션 클립 유무와 개수에 대한 런타임 검증 결과
 
-## 레거시 실험물 처리
+## 레거시 실험물 처리 — **완료 (2026-08-08)**
 
-`Assets/CatCops/`의 기존 코드와 씬은 초기 방향 탐색을 위한 실험물이다.
-새 MVP의 구조나 규칙 기준으로 사용하지 않는다.
+`Assets/CatCops/`(83파일)와 TopDownEngine 잔재를 전부 삭제했다 (`CLEAN-001`).
+지우기 전에 `Assets/_Project/`가 참조하는 것이 **0건**임을 GUID로 확인했다.
 
-승계 대상:
+승계한 것:
 
-- 경찰 Blender 원본과 FBX
+- 경찰 Blender 원본 (`ArtSource/Police/`)
 - 렌더 파이프라인 문제 해결 경험
-- 외부 TopDown Engine 자산
 
-승계하지 않는 대상:
+승계하지 않은 것 — 초기 방향 탐색용이라 새 MVP의 기준이 아니다:
 
-- 기존 자동 생성 마을
-- 기존 임시 UI
-- 기존 단순 이동과 동물 로직
-- 기존 수치와 승패 흐름
-
-기존 파일을 삭제하거나 이동하는 작업은 별도 요청과 백업 후 진행한다.
+- 기존 자동 생성 마을, 임시 UI, 단순 이동과 동물 로직, 수치와 승패 흐름
+- 외부 TopDown Engine 연동 (그 에셋은 이 PC에 설치된 적조차 없었다)
 
 ## Node.js (2026-08-07 설치)
 
@@ -350,7 +337,7 @@ Assets/_Project/Scripts/Animation/PlayerLocomotionAnimator.cs
 
 ## ART-002 규격 검사 결과
 
-`Paws & Loot > Setup > Validate Authored Models`가 확정 모델 5종을 검사해
+`Pawlice and Purrglar > Setup > Validate Authored Models`가 확정 모델 5종을 검사해
 **14건의 규격 위반**을 보고했다. 경고는 빌드를 막지 않는다.
 
 | 모델 | 위반 |
@@ -458,7 +445,7 @@ Static으로 구우면 줄지만 빠진 글자가 안 보인다), Unity 스플�
 
 ### (낡음) 2026-08-06 측정
 
-`Paws & Loot > Build > Measure WebGL Build Size`로 실제 빌드해 측정했다.
+`Pawlice and Purrglar > Build > Measure WebGL Build Size`로 실제 빌드해 측정했다.
 WebGL은 목표 플랫폼이 아니며(`ISSUE-008`) 측정 목적으로만 빌드한다.
 
 | 항목 | 값 |

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace PawsAndLoot.Config
 {
-    [CreateAssetMenu(menuName = "Paws & Loot/Config/Player", fileName = "PlayerConfig")]
+    [CreateAssetMenu(menuName = "Pawlice and Purrglar/Config/Player", fileName = "PlayerConfig")]
     public sealed class PlayerConfig : GameConfigAsset
     {
         [Header("Movement")]

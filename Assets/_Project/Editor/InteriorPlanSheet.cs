@@ -27,7 +27,7 @@ namespace PawsAndLoot.Editor
         private const int Cell = 420;
         private const int Columns = 3;
 
-        [MenuItem("Paws & Loot/Setup/Capture Interior Plans")]
+        [MenuItem("Pawlice and Purrglar/Setup/Capture Interior Plans")]
         public static void Capture()
         {
             string[] paths = AssetDatabase

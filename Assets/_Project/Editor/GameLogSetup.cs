@@ -11,7 +11,7 @@ namespace PawsAndLoot.Editor
         public const string LoggingRoot = "Assets/_Project/Settings/Logging";
         public const string DefaultConfigPath = LoggingRoot + "/DefaultGameLogConfig.asset";
 
-        [MenuItem("Paws & Loot/Setup/Create Default Log Config")]
+        [MenuItem("Pawlice and Purrglar/Setup/Create Default Log Config")]
         public static void CreateDefaultLogConfig()
         {
             EnsureLoggingFolder();
@@ -32,7 +32,7 @@ namespace PawsAndLoot.Editor
             Debug.Log("BASE-005 default log configuration created and validated.");
         }
 
-        [MenuItem("Paws & Loot/Setup/Validate Logging")]
+        [MenuItem("Pawlice and Purrglar/Setup/Validate Logging")]
         public static void ValidateLogging()
         {
             GameLogConfig config =

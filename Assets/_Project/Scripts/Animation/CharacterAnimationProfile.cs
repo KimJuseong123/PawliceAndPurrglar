@@ -32,7 +32,7 @@ namespace PawsAndLoot.Animation
     /// </summary>
     [CreateAssetMenu(
         fileName = "CharacterAnimationProfile",
-        menuName = "Paws & Loot/Animation/Character Animation Profile")]
+        menuName = "Pawlice and Purrglar/Animation/Character Animation Profile")]
     public sealed class CharacterAnimationProfile : ScriptableObject
     {
         [SerializeField]

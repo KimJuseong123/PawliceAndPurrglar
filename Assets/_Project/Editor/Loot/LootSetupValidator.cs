@@ -20,7 +20,7 @@ namespace PawsAndLoot.Editor
     /// </summary>
     public static class LootSetupValidator
     {
-        [MenuItem("Paws & Loot/Loot/Validate Loot Setup")]
+        [MenuItem("Pawlice and Purrglar/Loot/Validate Loot Setup")]
         public static void Validate()
         {
             var faults = new List<string>();

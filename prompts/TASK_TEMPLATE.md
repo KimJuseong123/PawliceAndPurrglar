@@ -63,5 +63,5 @@
 - 외부 패키지 임의 설치
 - 테스트 삭제 또는 약화
 - 오류 숨기기
-- 레거시 Assets/CatCops 구현을 새 기준으로 무단 복사
+- 삭제된 레거시(`Assets/CatCops/`, TopDownEngine)를 되살리거나 기준으로 삼기
 ```

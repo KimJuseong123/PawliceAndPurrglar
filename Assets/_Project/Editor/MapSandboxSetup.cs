@@ -479,7 +479,7 @@ namespace PawsAndLoot.Editor
             return order.Select(index => found[index]).ToArray();
         }
 
-        [MenuItem("Paws & Loot/Sandbox/Capture Sandbox Blueprint")]
+        [MenuItem("Pawlice and Purrglar/Sandbox/Capture Sandbox Blueprint")]
         public static void CaptureBlueprint()
         {
             var pieces = new List<MapBlueprint.Piece>();
@@ -550,7 +550,7 @@ namespace PawsAndLoot.Editor
                 labels.ToArray());
         }
 
-        [MenuItem("Paws & Loot/Sandbox/Rebuild Map Sandbox")]
+        [MenuItem("Pawlice and Purrglar/Sandbox/Rebuild Map Sandbox")]
         public static void RebuildSandbox()
         {
             // Before anything is placed, because a model that arrived without
@@ -743,7 +743,7 @@ namespace PawsAndLoot.Editor
         /// the pipeline directly rather than registered, so the shipping build's
         /// three-scene contract is left alone.
         /// </summary>
-        [MenuItem("Paws & Loot/Sandbox/Build Windows Map Sandbox")]
+        [MenuItem("Pawlice and Purrglar/Sandbox/Build Windows Map Sandbox")]
         public static void BuildSandboxPlayer()
         {
             const string output = "Builds/Sandbox/Windows/MapSandbox.exe";

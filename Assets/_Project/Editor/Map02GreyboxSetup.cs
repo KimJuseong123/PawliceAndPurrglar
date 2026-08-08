@@ -217,7 +217,7 @@ namespace PawsAndLoot.Editor
             BuildingSpec.House1F("Bottom Right One Storey House", 50f, 6f)
         };
 
-        [MenuItem("Paws & Loot/Setup/Create MAP-002 Greybox Layout")]
+        [MenuItem("Pawlice and Purrglar/Setup/Create MAP-002 Greybox Layout")]
         public static void CreateLayout()
         {
             PlaceholderModelLibrary.ResetMissingAssetLog();
@@ -341,7 +341,7 @@ namespace PawsAndLoot.Editor
                 + $"{PoliceStartGroundPosition.z}).");
         }
 
-        [MenuItem("Paws & Loot/Setup/Validate MAP-002 Greybox Layout")]
+        [MenuItem("Pawlice and Purrglar/Setup/Validate MAP-002 Greybox Layout")]
         public static void ValidateScene()
         {
             if (!File.Exists(ScenePath))
@@ -645,7 +645,7 @@ namespace PawsAndLoot.Editor
             (Mathf.RoundToInt(MapWidth) - 1) / 10
             * ((Mathf.RoundToInt(MapDepth) - 1) / 10);
 
-        [MenuItem("Paws & Loot/Technical Validation/Build Windows MAP-002")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Build Windows MAP-002")]
         public static void BuildWindows()
         {
             if (!File.Exists(ScenePath))

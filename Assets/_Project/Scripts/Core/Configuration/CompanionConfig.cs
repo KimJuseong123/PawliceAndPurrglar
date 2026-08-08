@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace PawsAndLoot.Config
 {
-    [CreateAssetMenu(menuName = "Paws & Loot/Config/Companion", fileName = "CompanionConfig")]
+    [CreateAssetMenu(menuName = "Pawlice and Purrglar/Config/Companion", fileName = "CompanionConfig")]
     public sealed class CompanionConfig : GameConfigAsset
     {
         [Header("Companion Movement")]

@@ -33,7 +33,7 @@ namespace PawsAndLoot.Editor
     /// </summary>
     public static class InteriorLootModelReport
     {
-        [MenuItem("Paws & Loot/Setup/Report Interior Loot Models")]
+        [MenuItem("Pawlice and Purrglar/Setup/Report Interior Loot Models")]
         public static void Report()
         {
             EditorSceneManager.OpenScene(

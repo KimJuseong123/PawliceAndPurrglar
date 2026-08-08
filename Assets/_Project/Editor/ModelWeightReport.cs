@@ -24,7 +24,7 @@ namespace PawsAndLoot.Editor
         private const string ScenePath =
             "Assets/_Project/Sandbox/MapSandbox.unity";
 
-        [MenuItem("Paws & Loot/Setup/Report Model Weights")]
+        [MenuItem("Pawlice and Purrglar/Setup/Report Model Weights")]
         public static void Report()
         {
             HashSet<string> used = UsedInScene();

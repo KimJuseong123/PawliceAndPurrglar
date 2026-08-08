@@ -17,7 +17,7 @@ namespace PawsAndLoot.Editor
     /// </summary>
     public static class InteractionDiagnostics
     {
-        [MenuItem("Paws & Loot/Setup/Diagnose Interaction Targets")]
+        [MenuItem("Pawlice and Purrglar/Setup/Diagnose Interaction Targets")]
         public static void Diagnose()
         {
             Scene scene = EditorSceneManager.OpenScene(

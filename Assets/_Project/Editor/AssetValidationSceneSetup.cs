@@ -21,7 +21,7 @@ namespace PawsAndLoot.Editor
         private const string ValidationRoot =
             RequiredAuthoredAssetValidator.GeneratedValidationRoot;
 
-        [MenuItem("Paws & Loot/Technical Validation/Create Asset Validation Scene")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Create Asset Validation Scene")]
         public static void CreateScene()
         {
             EnsureFolder("Assets/_Project/Art/Generated");

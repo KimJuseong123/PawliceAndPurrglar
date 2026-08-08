@@ -68,7 +68,7 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private const byte OpaqueThreshold = 250;
 
-        [MenuItem("Paws & Loot/UI/Import Lobby Pair Art")]
+        [MenuItem("Pawlice and Purrglar/UI/Import Lobby Pair Art")]
         public static void Import()
         {
             MockupCutter.EnsureFolder(OutputFolder);

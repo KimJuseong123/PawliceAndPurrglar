@@ -55,7 +55,7 @@ namespace PawsAndLoot.Editor
                 false)
         };
 
-        [MenuItem("Paws & Loot/Technical Validation/Create CHAR-001 Scene")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Create CHAR-001 Scene")]
         public static void CreateScene()
         {
             SyncCharacterAssets();
@@ -96,7 +96,7 @@ namespace PawsAndLoot.Editor
             ValidateScene();
         }
 
-        [MenuItem("Paws & Loot/Technical Validation/Validate CHAR-001 Scene")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Validate CHAR-001 Scene")]
         public static void ValidateScene()
         {
             if (!File.Exists(ScenePath))
@@ -141,7 +141,7 @@ namespace PawsAndLoot.Editor
             }
         }
 
-        [MenuItem("Paws & Loot/Technical Validation/Build Windows CHAR-001")]
+        [MenuItem("Pawlice and Purrglar/Technical Validation/Build Windows CHAR-001")]
         public static void BuildWindows()
         {
             CreateScene();

@@ -19,7 +19,7 @@ namespace PawsAndLoot.Editor
         private const string EnvironmentDirectory =
             "Assets/_Project/Art/Environment";
 
-        [MenuItem("Paws & Loot/Setup/Report Road Meshes")]
+        [MenuItem("Pawlice and Purrglar/Setup/Report Road Meshes")]
         public static void Report()
         {
             foreach (string path in AssetDatabase

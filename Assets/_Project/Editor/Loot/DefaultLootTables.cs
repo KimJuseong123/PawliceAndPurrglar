@@ -28,7 +28,7 @@ namespace PawsAndLoot.Editor
     {
         internal const string OutputFolder = "Assets/_Project/Data/LootTables";
 
-        [MenuItem("Paws & Loot/Loot/Create Default Loot Tables")]
+        [MenuItem("Pawlice and Purrglar/Loot/Create Default Loot Tables")]
         public static void Create()
         {
             Directory.CreateDirectory(Path.GetFullPath(OutputFolder));

@@ -98,7 +98,7 @@ namespace PawsAndLoot.Editor
             "env_road_end"
         };
 
-        [MenuItem("Paws & Loot/Setup/Bake Road Tile Textures")]
+        [MenuItem("Pawlice and Purrglar/Setup/Bake Road Tile Textures")]
         public static void Bake()
         {
             Directory.CreateDirectory(BakedDirectory);

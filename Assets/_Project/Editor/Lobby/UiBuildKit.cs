@@ -155,7 +155,7 @@ namespace PawsAndLoot.Editor
             {
                 throw new FileNotFoundException(
                     "The UI font asset is missing. Run "
-                    + "'Paws & Loot/UI/Create Role-Aware HUD Prefabs' first, "
+                    + "'Pawlice and Purrglar/UI/Create Role-Aware HUD Prefabs' first, "
                     + "which generates it from DNFBitBitv2.ttf.",
                     FontAssetPath);
             }

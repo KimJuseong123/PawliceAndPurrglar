@@ -10,7 +10,7 @@
 | 샌드박스 빌드 에셋 | 140 MB | **35 MB** |
 | 본 게임 빌드 에셋 | — | **41 MB** |
 
-측정일: 2026-08-02. 모든 수치는 `Paws & Loot / Setup / Report Model Weights`가
+측정일: 2026-08-02. 모든 수치는 `Pawlice and Purrglar / Setup / Report Model Weights`가
 실제 임포트된 메시를 세어 얻은 것이다. 파일 크기 짐작이 아니다.
 
 ## 왜 필요한가

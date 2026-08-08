@@ -31,7 +31,7 @@ namespace PawsAndLoot.Editor
             new(1440, 1080)
         };
 
-        [MenuItem("Paws & Loot/UI/Capture Lobby Layout")]
+        [MenuItem("Pawlice and Purrglar/UI/Capture Lobby Layout")]
         public static void CaptureLobby()
         {
             Capture(
@@ -40,7 +40,7 @@ namespace PawsAndLoot.Editor
                 "lobby");
         }
 
-        [MenuItem("Paws & Loot/UI/Capture Result Layout")]
+        [MenuItem("Pawlice and Purrglar/UI/Capture Result Layout")]
         public static void CaptureResult()
         {
             Capture(
@@ -176,7 +176,7 @@ namespace PawsAndLoot.Editor
 
             throw new System.InvalidOperationException(
                 $"'{scene.name}' has no '{canvasName}'. Rebuild the screen "
-                + "from the 'Paws & Loot/UI' menu first.");
+                + "from the 'Pawlice and Purrglar/UI' menu first.");
         }
     }
 }

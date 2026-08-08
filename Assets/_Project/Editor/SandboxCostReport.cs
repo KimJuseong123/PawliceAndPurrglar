@@ -19,7 +19,7 @@ namespace PawsAndLoot.Editor
         private const string ScenePath =
             "Assets/_Project/Sandbox/MapSandbox.unity";
 
-        [MenuItem("Paws & Loot/Setup/Report Sandbox Cost")]
+        [MenuItem("Pawlice and Purrglar/Setup/Report Sandbox Cost")]
         public static void Report()
         {
             var scene = EditorSceneManager.OpenScene(

@@ -172,7 +172,7 @@ namespace PawsAndLoot.Editor
                 MockupCutter.BlobFilter.CoreOverlap)
         };
 
-        [MenuItem("Paws & Loot/UI/Extract Result Art From Mockups")]
+        [MenuItem("Pawlice and Purrglar/UI/Extract Result Art From Mockups")]
         public static void Extract()
         {
             MockupCutter.Cut(ViewerWonMockup, OutputFolder, ViewerWonElements);

@@ -69,7 +69,7 @@ namespace PawsAndLoot.Editor
             + "\ud638\uc2a4\ud2b8 \uc2dc\uc791\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc811\uc18d \ub85c \uc911..."
             + "\uc0c1\ub300\uac00 \uc811\uc18d\uc744 \uc885\ub8cc\ud588\uc2b5\ub2c8\ub2e4. \ud655\uc778 \uc911";
 
-        [MenuItem("Paws & Loot/UI/Sync HUD Canvas To Resources")]
+        [MenuItem("Pawlice and Purrglar/UI/Sync HUD Canvas To Resources")]
         public static void SyncHudCanvasToResources()
         {
             EnsureFolder("Assets/Resources");
@@ -103,7 +103,7 @@ namespace PawsAndLoot.Editor
                 $"Synced configured HUD prefab to {HudCanvasResourcesPath}.");
         }
 
-        [MenuItem("Paws & Loot/UI/Create Role-Aware HUD Prefabs")]
+        [MenuItem("Pawlice and Purrglar/UI/Create Role-Aware HUD Prefabs")]
         public static void CreatePrefabs()
         {
             EnsureFolder("Assets/_Project/UI");

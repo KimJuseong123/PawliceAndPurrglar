@@ -28,7 +28,7 @@ The Editor resolves it relative to the repository root.
 
 ## Build
 
-After setup, use the Unity menu `Paws & Loot > Build > Build Windows Standalone
+After setup, use the Unity menu `Pawlice and Purrglar > Build > Build Windows Standalone
 with Local AI`, or invoke the corresponding Editor method in batch mode. The
 default output is `Build/Windows/`. The build fails when required runtime,
 model, configuration, or license files are missing. `-allowMissingLocalAi` is
