@@ -376,12 +376,18 @@ namespace PawsAndLoot.Editor
 
             if (collision)
             {
-                if (importer.importNormals != ModelImporterNormals.None)
-                {
-                    importer.importNormals = ModelImporterNormals.None;
-                    dirty = true;
-                }
-
+                // Normals stay, even though nothing renders these.
+                //
+                // `HouseInteriorSetup.MeasureFloorTop` reads the collision
+                // mesh's normals to find which vertices face up, and that is
+                // how every room's floor height — and therefore where a player
+                // lands when they walk through the door — is decided. Stripping
+                // them made `mesh.normals` empty, the measuring loop ran zero
+                // times, and the measurement silently returned its fallback:
+                // the underside of the model. Players arrived buried to the
+                // waist in the floor of every room.
+                //
+                // Nothing threw, nothing logged, and all 512 tests passed.
                 if (importer.materialImportMode
                     != ModelImporterMaterialImportMode.None)
                 {

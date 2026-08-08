@@ -1350,6 +1350,48 @@ namespace PawsAndLoot.Editor
         /// the bottom third rules those out without needing to know what a
         /// table is.
         /// </summary>
+        /// <summary>
+        /// The world bounds of a collision root's own meshes.
+        ///
+        /// Renderers are destroyed on these objects, so <c>Renderer.bounds</c>
+        /// is not available — the mesh bounds have to be transformed by hand.
+        /// </summary>
+        private static Bounds CollisionExtent(Transform collision, Bounds fallback)
+        {
+            bool any = false;
+            var total = new Bounds();
+            foreach (MeshFilter filter in
+                collision.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (filter.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                Bounds local = filter.sharedMesh.bounds;
+                Vector3 centre = filter.transform.TransformPoint(local.center);
+                Vector3 size = filter.transform.TransformVector(local.size);
+                var world = new Bounds(
+                    centre,
+                    new Vector3(
+                        Mathf.Abs(size.x),
+                        Mathf.Abs(size.y),
+                        Mathf.Abs(size.z)));
+
+                if (!any)
+                {
+                    total = world;
+                    any = true;
+                }
+                else
+                {
+                    total.Encapsulate(world);
+                }
+            }
+
+            return any ? total : fallback;
+        }
+
         private static float MeasureFloorTop(
             Transform collision,
             Bounds shell,
@@ -1360,8 +1402,27 @@ namespace PawsAndLoot.Editor
                 return fallback;
             }
 
-            float ceiling = shell.min.y + shell.size.y * 0.34f;
+            // The cutoff separates "floor" from "table top", and it needs a
+            // height to be a third of. The jail's shell arrives degenerate
+            // (size.y = 0), which put the cutoff at y = 0 and excluded every one
+            // of its 4,355 up-facing vertices — its floor sits at 1.63. With the
+            // fallback silent that read as the jail simply having no floor.
+            //
+            // Measured from the collision geometry itself when the shell cannot
+            // say. The collision mesh is the thing being asked about, so it is
+            // the better authority anyway; the shell is just usually cheaper.
+            Bounds extent = shell;
+            if (extent.size.y <= 0.01f)
+            {
+                extent = CollisionExtent(collision, shell);
+            }
+
+            float ceiling = extent.min.y + extent.size.y * 0.34f;
             float best = float.MinValue;
+            int meshesWithoutNormals = 0;
+            int meshesSeen = 0;
+            float highestUpFace = float.MinValue;
+            int upFacingSeen = 0;
 
             foreach (MeshFilter filter in
                 collision.GetComponentsInChildren<MeshFilter>(true))
@@ -1372,8 +1433,14 @@ namespace PawsAndLoot.Editor
                     continue;
                 }
 
+                meshesSeen++;
                 Vector3[] vertices = mesh.vertices;
                 Vector3[] normals = mesh.normals;
+                if (normals.Length == 0)
+                {
+                    meshesWithoutNormals++;
+                }
+
                 Transform space = filter.transform;
                 for (int index = 0;
                     index < vertices.Length && index < normals.Length;
@@ -1385,6 +1452,12 @@ namespace PawsAndLoot.Editor
                     }
 
                     float y = space.TransformPoint(vertices[index]).y;
+                    upFacingSeen++;
+                    if (y > highestUpFace)
+                    {
+                        highestUpFace = y;
+                    }
+
                     if (y <= ceiling && y > best)
                     {
                         best = y;
@@ -1392,7 +1465,37 @@ namespace PawsAndLoot.Editor
                 }
             }
 
-            return best > float.MinValue ? best : fallback;
+            if (best > float.MinValue)
+            {
+                return best;
+            }
+
+            // Falling back is not a neutral outcome, so it does not get to be
+            // quiet.
+            //
+            // The fallback is the *underside* of the model. Returning it puts
+            // every entry point roughly a floor-thickness below the floor, and
+            // the player walks through the door already buried to the waist.
+            // That is exactly what happened when the collision meshes were
+            // imported without normals: this loop ran zero times, the fallback
+            // was returned, the scene saved, the generator logged success and
+            // all the tests passed. The only way to find it was to walk into a
+            // building.
+            //
+            // An error rather than a warning because the scene it produces is
+            // not playable, and a warning in a two-thousand-line generator log
+            // is a warning nobody reads.
+            Debug.LogError(
+                $"[MAP-008] Could not measure a floor for '{collision.name}': "
+                + $"{meshesSeen} collision mesh(es), {meshesWithoutNormals} of "
+                + "them with no normals. Falling back to the model's underside, "
+                + "which will bury the player on arrival. Collision FBX must be "
+                + "imported with normals — MeasureFloorTop reads them to find "
+                + "which faces point up. "
+                + $"shell.min.y={shell.min.y:0.00} size.y={shell.size.y:0.00} "
+                + $"ceiling={ceiling:0.00} upFacingVerts={upFacingSeen} "
+                + $"highestUpFace={(upFacingSeen > 0 ? highestUpFace : 0f):0.00}");
+            return fallback;
         }
 
         /// <summary>
