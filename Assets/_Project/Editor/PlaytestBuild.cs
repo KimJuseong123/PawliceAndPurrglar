@@ -190,10 +190,24 @@ namespace PawsAndLoot.Editor
                     // additional. `+` is the build-metadata separator in semver
                     // and is what NetworkSceneFingerprint looks for.
                     string baseVersion = previous.Split('+')[0];
-                    PlayerSettings.bundleVersion = $"{baseVersion}+{commit}";
+                    string dirty = HasUncommittedGameFiles()
+                        ? "-dirty"
+                        : string.Empty;
+                    PlayerSettings.bundleVersion =
+                        $"{baseVersion}+{commit}{dirty}";
                     Debug.Log(
                         $"[BUILD] Stamped version '{PlayerSettings.bundleVersion}'. "
                         + "Both machines must run a build with the same stamp.");
+                    if (dirty.Length > 0)
+                    {
+                        Debug.LogWarning(
+                            "[BUILD] This build contains uncommitted changes to "
+                            + "Assets/ProjectSettings/Packages. Another machine "
+                            + "cloning the same commit will NOT get them, and a "
+                            + "regenerated Game.unity renumbers every in-scene "
+                            + "NetworkObject — which shows up as a player who "
+                            + "cannot move.");
+                    }
                 }
                 else
                 {
@@ -211,13 +225,48 @@ namespace PawsAndLoot.Editor
                 PlayerSettings.bundleVersion = _previous;
             }
 
+            /// <summary>
+            /// Whether anything that goes into the build is uncommitted.
+            ///
+            /// The commit alone is not the build. A machine with a regenerated
+            /// <c>Game.unity</c> sitting unstaged produces a player whose 130
+            /// in-scene <c>NetworkObject</c> hashes match nothing another machine
+            /// can clone — and both builds were stamped with the same commit, so
+            /// the connect-time check said they matched. It reported "same build"
+            /// for the one case it exists to catch.
+            ///
+            /// Scoped to <c>Assets</c>, <c>ProjectSettings</c> and
+            /// <c>Packages</c> on purpose. Marking a build dirty because a
+            /// document or a server file changed would put the warning on almost
+            /// every build, and a warning that is always there is one nobody
+            /// reads.
+            /// </summary>
+            private static bool HasUncommittedGameFiles()
+            {
+                string status = RunGit(
+                    "status --porcelain -- Assets ProjectSettings Packages");
+                return !string.IsNullOrWhiteSpace(status);
+            }
+
             private static string ReadCommit()
+            {
+                return RunGit("rev-parse --short HEAD");
+            }
+
+            /// <summary>
+            /// Runs git in the project folder and returns its output, or an empty
+            /// string if it could not be run at all.
+            ///
+            /// Empty means "could not ask", which both callers treat as "do not
+            /// claim anything" rather than as an answer.
+            /// </summary>
+            private static string RunGit(string arguments)
             {
                 try
                 {
                     var info = new System.Diagnostics.ProcessStartInfo(
                         "git",
-                        "rev-parse --short HEAD")
+                        arguments)
                     {
                         WorkingDirectory =
                             Path.GetDirectoryName(Application.dataPath),
@@ -240,7 +289,7 @@ namespace PawsAndLoot.Editor
                 catch (System.Exception error)
                 {
                     Debug.LogWarning(
-                        $"[BUILD] git rev-parse failed: {error.Message}");
+                        $"[BUILD] 'git {arguments}' failed: {error.Message}");
                     return string.Empty;
                 }
             }
