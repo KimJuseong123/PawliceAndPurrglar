@@ -51,10 +51,25 @@ export function buildApp() {
     timeWindow: "1 minute",
     hook: "onRequest"
   });
-  void app.register(websocket);
-
   app.get("/health", async () => ({ status: "ok" }));
-  app.get("/api/game/voice-events", { websocket: true }, (socket) => {
+
+  // The websocket route lives inside a plugin that awaits the websocket plugin
+  // first, and this is not a style choice.
+  //
+  // `app.register` is deferred: the plugin's `onRoute` hook is not installed
+  // until `ready()`, so a route declared beside it never gets wrapped. Fastify
+  // then treats it as an ordinary GET and calls the handler with
+  // `(request, reply)` — our first parameter is named `socket`, so the first
+  // thing it does is `socket.on(...)` on a Fastify Request, and every single
+  // connection dies with `TypeError: socket.on is not a function` and a 500.
+  //
+  // Nothing upstream says so. The voice command upload is a separate POST and
+  // keeps returning 200, so speech is transcribed and the answer is simply
+  // never delivered — on screen that is "음성이 자꾸 실패한다", which points at
+  // the microphone, the model, or the network, and never at route ordering.
+  void app.register(async (instance) => {
+    await instance.register(websocket);
+    instance.get("/api/game/voice-events", { websocket: true }, (socket) => {
     socket.on("message", (raw) => {
       try {
         const message = JSON.parse(raw.toString()) as {
@@ -81,6 +96,7 @@ export function buildApp() {
           })
         );
       }
+      });
     });
   });
 
