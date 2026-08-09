@@ -386,6 +386,17 @@ namespace PawsAndLoot.Integration.Network
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
 
+        /// <summary>
+        /// Whether the host says this character is off the ground.
+        ///
+        /// Exposed for the jump sound on a client, which has no other way to ask:
+        /// its own controller is not the thing moving the character, so
+        /// <c>isGrounded</c> there is meaningless. One round trip behind, which
+        /// is close enough for a sound and is the only honest answer available —
+        /// the alternative is playing it for presses the host refuses.
+        /// </summary>
+        public bool IsAirborneReplicated => _airborne.Value;
+
         private int _appliedStunCount;
 
         [SerializeField, Min(1f)]

@@ -236,6 +236,43 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         /// <summary>
+        /// Glue draws the stars too.
+        ///
+        /// When the causes were split, glue fell between them: the banana got
+        /// the spin, the rock kept the stars, and standing in glue got nothing
+        /// over the character at all. The screen-edge banner was the only sign,
+        /// and it is easy to miss while looking at your feet — which is where
+        /// you look when you have stopped moving (`ISSUE-073`).
+        ///
+        /// The banana stays the exception, because it has a drawing of its own.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheGlueTrapDrawsTheStarsAsWell()
+        {
+            GameObject player = Player(PlayerRole.Thief, out StunState stun);
+            StunStarsView stars = player.AddComponent<StunStarsView>();
+            stars.Configure(stun, null);
+            SlipSpinView spin = player.AddComponent<SlipSpinView>();
+            spin.Configure(stun, player.transform.Find("VisualRoot"));
+            yield return null;
+
+            Assert.That(
+                stun.TryApply(
+                    ThrowableCatalog.GetStunSeconds(ThrowableKind.GlueTrap),
+                    ThrowableCatalog.GetStunCause(ThrowableKind.GlueTrap)),
+                Is.True);
+            yield return null;
+
+            Assert.That(stun.Cause, Is.EqualTo(StunCause.Stuck));
+            Assert.That(stars.IsShowing, Is.True);
+            Assert.That(stars.StarCount, Is.EqualTo(4));
+
+            // Stuck, not spun. Two cartoons for one event would read as two
+            // things having happened.
+            Assert.That(spin.IsSpinning, Is.False);
+        }
+
+        /// <summary>
         /// Being stuck to the floor is a fact about you, and the only place it
         /// was written was four stars that mean something else.
         /// </summary>

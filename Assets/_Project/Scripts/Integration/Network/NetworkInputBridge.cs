@@ -489,12 +489,15 @@ namespace PawsAndLoot.Integration.Network
             {
                 link.SubmitJumpRpc();
 
-                // Locally, not on the host's answer. The host decides whether the
-                // jump happens, but the sound belongs to the press: waiting for a
-                // round trip would put it a whole latency behind the key, and the
-                // host cannot play it here anyway. The refusal case — pressing in
-                // mid-air — sounds too, which is the price of not asking.
-                Audio.GameSoundService.Request(Audio.GameSoundId.Jump);
+                // Played here rather than waiting for the host to answer, which
+                // would put the sound a whole latency behind the key. But the
+                // one refusal a player notices — pressing again while already in
+                // the air — is asked about first, using the airborne flag the
+                // host already replicates for the leg pose.
+                if (!link.IsAirborneReplicated)
+                {
+                    Audio.GameSoundService.Request(Audio.GameSoundId.Jump);
+                }
             }
             SubmitActions(link, keyboard);
         }

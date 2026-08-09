@@ -137,7 +137,45 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static readonly (GameSoundId Id, float Volume)[] Volumes =
         {
-            (GameSoundId.Jump, 0.6f)
+            (GameSoundId.Jump, 0.6f),
+
+            // The loud group, measured rather than guessed.
+            //
+            // `Report Sound Levels` decodes every clip in the bank and prints
+            // its RMS, which is roughly what a listener calls loudness. Peak is
+            // useless for this — nearly every file here peaks at 1.0, because
+            // that is what normalising does, and the ones that peak at 0.37 are
+            // among the loudest in the room.
+            //
+            // The measured list has a clear break: eleven entries sit between
+            // 0.47 and 0.21, then it drops to 0.16 and stays there. Those eleven
+            // are these, at 0.8.
+            //
+            //   0.47 sensor trip     0.38 raccoon       0.33 voice ready
+            //   0.29 voice start/stop (four ids, two files)
+            //   0.27 hit body        0.27 stunned       0.25 banana slip
+            //   0.21 arrest done
+            //
+            // The sensor trip is still the loudest thing in the game after this
+            // — it was three times the median — but turning one sound down to a
+            // third of the others is a mix decision, not a fix, and it should be
+            // made by ear against the rest.
+            (GameSoundId.SensorTripped, 0.8f),
+            (GameSoundId.RaccoonChitter, 0.8f),
+            (GameSoundId.VoiceModelReady, 0.8f),
+            (GameSoundId.VoiceRecordStart, 0.8f),
+            (GameSoundId.VoiceRecordStop, 0.8f),
+            (GameSoundId.PeerJoined, 0.8f),
+            (GameSoundId.PeerLeft, 0.8f),
+            (GameSoundId.ThrowHitBody, 0.8f),
+            (GameSoundId.Stunned, 0.8f),
+            (GameSoundId.TrapSlip, 0.8f),
+            (GameSoundId.ArrestCompleted, 0.8f),
+
+            // Not 0.8. This is the same recording as `CommandFailed`, which was
+            // already at 0.6, and one file playing at two volumes depending on
+            // which code path raised it is a mix that cannot be reasoned about.
+            (GameSoundId.VoiceRecognizeFail, 0.6f)
         };
 
         /// <summary>

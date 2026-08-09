@@ -30,7 +30,7 @@ MonoBehaviour:
     volume: 1
   - soundId: 6
     clip: {fileID: 8300000, guid: ec3ae2f395640754f941d0c92a7d0e00, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 7
     clip: {fileID: 8300000, guid: fe2e7cd3ca6d4a546b958cb4c36c5d82, type: 3}
     volume: 1
@@ -66,25 +66,25 @@ MonoBehaviour:
     volume: 1
   - soundId: 18
     clip: {fileID: 8300000, guid: 63f99bba122fc614ab9e1d0cd19adb84, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 19
     clip: {fileID: 8300000, guid: 6bb1f96612e02bf479e50b65fa4052f5, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 20
     clip: {fileID: 8300000, guid: 1405faf9288666d40b2b7a1d892f1ee2, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 21
     clip: {fileID: 8300000, guid: 63f99bba122fc614ab9e1d0cd19adb84, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 22
     clip: {fileID: 8300000, guid: 6bb1f96612e02bf479e50b65fa4052f5, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 23
     clip: {fileID: 8300000, guid: 23060b1d1fb743342aa501972e93d57a, type: 3}
-    volume: 1
+    volume: 0.6
   - soundId: 24
     clip: {fileID: 8300000, guid: d34241686c26f734681230757ac8f021, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 25
     clip: {fileID: 8300000, guid: 3e45bb5fdf3ff524084d8168747a2920, type: 3}
     volume: 1
@@ -111,10 +111,10 @@ MonoBehaviour:
     volume: 1
   - soundId: 33
     clip: {fileID: 8300000, guid: 67ebdf06360cd86419d84432af613f7e, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 34
     clip: {fileID: 8300000, guid: 0f93f62c453e7d44594c22634f97ecc9, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 35
     clip: {fileID: 8300000, guid: d7996bddcfbc4b044a223398a33d0ab3, type: 3}
     volume: 1
@@ -123,13 +123,13 @@ MonoBehaviour:
     volume: 1
   - soundId: 37
     clip: {fileID: 8300000, guid: 5710065a76535c143b2d6969d844ee1e, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 38
     clip: {fileID: 0}
     volume: 1
   - soundId: 39
     clip: {fileID: 8300000, guid: dc9c7990d6542eb459ee94976772ca2c, type: 3}
-    volume: 1
+    volume: 0.8
   - soundId: 40
     clip: {fileID: 8300000, guid: 3d452d7b8059ed64286366f6967ef14f, type: 3}
     volume: 1

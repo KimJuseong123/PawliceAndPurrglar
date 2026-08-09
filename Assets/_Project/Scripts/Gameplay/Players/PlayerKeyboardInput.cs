@@ -55,8 +55,15 @@ namespace PawsAndLoot.Gameplay.Players
                 // the host simulates both characters, so an officer heard the
                 // thief's kerbs across town. On the press it is once per press,
                 // on this machine only (`ISSUE-072`).
-                movementMotor.TryJump();
-                Audio.GameSoundService.Request(Audio.GameSoundId.Jump);
+                //
+                // On the answer, not the press: a press in mid-air does nothing,
+                // and a sound for it is the game claiming to have jumped when it
+                // refused. Which is exactly the complaint the move here was meant
+                // to fix, one press later.
+                if (movementMotor.TryJump())
+                {
+                    Audio.GameSoundService.Request(Audio.GameSoundId.Jump);
+                }
             }
 
             movementMotor.Move(input, Time.deltaTime);

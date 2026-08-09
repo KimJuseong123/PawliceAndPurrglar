@@ -1150,6 +1150,9 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-09 | 실내 경보 좌표 · 끈끈이 별 · 공중 점프 소리 · 음량 실측 이후 | Edit Mode **331/331**, Play Mode 222개 중 **220 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`. 신규 2건(`AtheftInsideAshopPointsAtTheShopInTheTown`, `TheGlueTrapDrawsTheStarsAsWell`)이 XML에서 `Passed`임을 이름으로 확인 |
+| 2026-08-09 | 효과음 40개 음량 실측 (`Report Sound Levels`) | RMS로 잰다. 0.47(센서등) ~ 0.007(투척 차지)이고 0.21과 0.16 사이에 뚜렷한 단절이 있다. **피크는 쓸모가 없다** — 40개 중 대부분이 1.0이고, 0.37로 피크가 낮은 파일이 가장 시끄러운 축에 있다. 이 PC에는 mp3·flac·ogg를 디코드할 도구가 없어 6개는 Python으로 잴 수 없었고, 그래서 Unity 안에서 `AudioClip.GetData`로 잰다 |
+| 2026-08-09 | 실내 출구 표식 실측 | `Game.unity`의 `frontExitPoint: {fileID: 0}` **0건** / 전체 14건. 즉 경보 번역의 오류 경로는 현재 씬에서 발생하지 않는다 |
 | 2026-08-09 | 암시장 구매 복구 · 너구리 인사 · 점프 소리 이후 | Edit Mode **331/331**, Play Mode 220개 중 **218 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 2건(`TheOfficerBuysWithNoCounterInTheScene`, `EveryListedPropHasAPrice`)이 XML에 이름으로 있는 것을 확인 |
 | 2026-08-09 | `LobbyInteractionPlayModeTests.HostButtonReachesTheSession` 실패 원인 | 코드가 아니라 **환경**이다. 방 만들기는 Relay에 할당을 요청하므로 네트워크가 없는 배치 실행에서는 비동기 오류 로그가 돌아오고, NUnit이 단정이 아니라 **예상 못 한 로그**로 테스트를 죽인다. 그 케이스에서만 `LogAssert.ignoreFailingMessages`를 켜고 `TearDown`에서 무조건 되돌린다 |
 | 2026-08-09 | `Rebuild Sound Bank` (점프 음량) | `Jump volume 0.60`, 40 클립 배정, 43개 중 3개가 아직 파일 없음(`sfx_dog_alert`·`sfx_cat_alert`·`sfx_glue_stick`). 에셋 diff는 한 줄 |

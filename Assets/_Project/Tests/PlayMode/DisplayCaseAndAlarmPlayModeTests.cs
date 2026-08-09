@@ -285,6 +285,77 @@ namespace PawsAndLoot.Tests.PlayMode
             Object.DestroyImmediate(floor);
         }
 
+        /// <summary>
+        /// A theft inside a shop points the officer at the shop's street door,
+        /// not at the room.
+        ///
+        /// Interiors are not separate scenes — they are rooms parked far away in
+        /// the same one, which is how the officer is stopped from arresting
+        /// through a wall. So the coordinates of the jeweller's shelves are
+        /// somewhere nobody outdoors can walk to, and the beacon pointed off the
+        /// bottom of the map at an empty field (`ISSUE-073`).
+        ///
+        /// Nothing logged. Every part worked: the alarm raised, the beacon ran
+        /// its ten seconds, the arrow scaled with distance. It pointed
+        /// confidently at nowhere.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator AtheftInsideAshopPointsAtTheShopInTheTown()
+        {
+            var boardObject = new GameObject("Noise Board");
+            NoiseBoard board = boardObject.AddComponent<NoiseBoard>();
+            var alarmObject = new GameObject("Loot Alarm");
+            LootAlarm alarm = alarmObject.AddComponent<LootAlarm>();
+            alarm.Configure(board);
+
+            // The room, out where the interiors live.
+            var roomObject = new GameObject("Jeweller Interior");
+            roomObject.transform.position = new Vector3(0f, -200f, 0f);
+            var entry = new GameObject("Entry").transform;
+            entry.SetParent(roomObject.transform, false);
+            var exit = new GameObject("Exit").transform;
+            exit.SetParent(null);
+
+            // The street address: the door of the shop, in the town.
+            var street = new Vector3(24f, 0f, -12f);
+            exit.position = street;
+
+            PawsAndLoot.Gameplay.Interiors.HouseInterior room =
+                roomObject.AddComponent<
+                    PawsAndLoot.Gameplay.Interiors.HouseInterior>();
+            room.Configure(7, entry, entry, exit, exit, new Vector2(7f, 7f), 0f);
+            yield return null;
+
+            // Lifted from a shelf against the wall, which is slightly outside
+            // the walkable floor the extents describe.
+            Vector3 shelf = roomObject.transform.position
+                + new Vector3(7.4f, 1f, 0f);
+            alarm.Raise(shelf, null);
+
+            Assert.That(alarm.IsBeaconActive, Is.True);
+            Assert.That(
+                alarm.BeaconSource,
+                Is.EqualTo(street),
+                "The beacon has to name a place the officer can run to.");
+            Assert.That(
+                alarm.LastRaisedAt,
+                Is.EqualTo(street),
+                "And the siren is heard from the shop, not from a field 200 "
+                + "metres underground.");
+
+            // A theft out in the open is untouched. Every alarm that is not in
+            // a room has to come through this unchanged, and the room test on
+            // its own would pass with a method that moved every alarm.
+            var outdoors = new Vector3(-18f, 0f, 26f);
+            alarm.Raise(outdoors, null);
+            Assert.That(alarm.BeaconSource, Is.EqualTo(outdoors));
+
+            Object.DestroyImmediate(exit.gameObject);
+            Object.DestroyImmediate(roomObject);
+            Object.DestroyImmediate(alarmObject);
+            Object.DestroyImmediate(boardObject);
+        }
+
         private static LootDisplayCase CreateCase(
             LootItem contents,
             NoiseBoard board)

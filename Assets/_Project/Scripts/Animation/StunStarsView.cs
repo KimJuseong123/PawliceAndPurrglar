@@ -197,15 +197,20 @@ namespace PawsAndLoot.Animation
         {
             Build();
 
-            // Stars mean "something hit you", so they are no longer the drawing
-            // for every stun. A banana spins the character (SlipSpinView) and
-            // the glue trap marks the screen edge; drawing stars on top of
-            // either would say the player had been struck by something they were
-            // never struck by. The stun itself is unchanged — only who draws it.
+            // Stars mean "you are held and it will pass", which covers being
+            // struck and being stuck. The banana is the one stun that does not
+            // draw them, because it has a drawing of its own: `SlipSpinView`
+            // spins the character, and stars on top of a spin would be two
+            // cartoons for one event.
+            //
+            // Glue was left out when the causes were split and had nothing at
+            // all over the character — the screen-edge banner was the only sign,
+            // and it is easy to miss while looking at your feet, which is where
+            // you look when you have stopped moving (`ISSUE-073`).
             StunState state = ResolveStun();
             bool showing = state != null
                 && state.IsStunned
-                && state.Cause == StunCause.Impact;
+                && state.Cause != StunCause.Slip;
             if (showing != IsShowing)
             {
                 IsShowing = showing;
