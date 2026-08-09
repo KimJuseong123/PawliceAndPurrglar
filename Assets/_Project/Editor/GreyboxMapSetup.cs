@@ -1708,7 +1708,7 @@ namespace PawsAndLoot.Editor
         }
 
         private const string SoundBankPath =
-            "Assets/_Project/Settings/Audio/GameSoundBank.asset";
+            "Assets/_Project/Resources/Audio/GameSoundBank.asset";
 
         /// <summary>
         /// Creates the bank on first run so every sound id shows up in the
@@ -3874,14 +3874,13 @@ namespace PawsAndLoot.Editor
                 new Vector3(20f, 0.5f, -8f) + new Vector3(-1.6f, 0f, 0f),
                 root,
                 matchRuntime);
-            CreatePrototypeInteractionTarget(
-                "Prototype Plaza Point",
-                locations[GreyboxLocationId.CentralPlaza].position
-                    + new Vector3(-3f, 0.5f, -3f),
-                PlayerInteractionType.Generic,
-                "Inspect plaza marker",
-                Color.white,
-                root);
+            // The white cube that used to float over the square is gone.
+            //
+            // It was a PrototypeInteractable — a marker that counted presses and
+            // did nothing else — left from before the square had anything real
+            // on it. From the game it read as a pane of glass hanging in the
+            // middle of town, which is the same reading the old ladder marker
+            // got before it was removed for the same reason.
         }
 
         private static void CreatePrototypeInteractionTarget(
@@ -4255,7 +4254,17 @@ namespace PawsAndLoot.Editor
 
             Debug.Log($"[THROW-005] {spots.Length} rock pickups placed.");
 
-            CreatePoliceSupplyCounters(parent, matchRuntime);
+            // The three greybox counters on the pavement are gone.
+            //
+            // They were the officer's shop before the raccoon sold to both
+            // sides, and after that they were three cubes standing in the road
+            // offering what the market already offers.
+            //
+            // Buying survives them: `MerchantTradePresenter.ResolveStock` reads
+            // its shelf off the `PoliceSupplyCounter`s in the scene and falls
+            // back to the same three kinds at the same prices (60 / 90 / 40)
+            // when it finds none. That fallback is the reason this is a deletion
+            // and not a rewrite — it was already written for this case.
 
             // Rocks in the air. One tracker for the scene, on the machine that
             // simulates: the throw is no longer settled at the moment it leaves
@@ -4280,62 +4289,9 @@ namespace PawsAndLoot.Editor
         /// because the interior is not walkable in the greybox and the shop being
         /// a detour is the whole cost of restocking.
         /// </summary>
-        private static void CreatePoliceSupplyCounters(
-            Transform parent,
-            MatchRuntimeState matchRuntime)
-        {
-            Vector3 shopFront = new Vector3(-14.5f, 0.5f, -9f);
-            (ThrowableKind kind, int price, Vector3 offset)[] counters =
-            {
-                (ThrowableKind.GlueTrap, 60, new Vector3(0f, 0f, 0f)),
-                (ThrowableKind.SensorLight, 90, new Vector3(2.2f, 0f, 0f)),
-                // Cheapest of the three. It buys a few seconds of the cat not
-                // scouting, which is worth less than holding the thief still.
-                (ThrowableKind.TunaCan, 40, new Vector3(4.4f, 0f, 0f))
-            };
-
-            foreach ((ThrowableKind kind, int price, Vector3 offset)
-                in counters)
-            {
-                Vector3 spot = shopFront + offset;
-                var counter = new GameObject($"{kind} Counter");
-                counter.transform.SetParent(parent);
-                counter.transform.position = spot;
-
-                var trigger = counter.AddComponent<SphereCollider>();
-                trigger.radius = 0.6f;
-                trigger.isTrigger = true;
-
-                Material counterMaterial = LoadOrCreateMaterial(
-                    $"Greybox_{kind}",
-                    kind switch
-                    {
-                        ThrowableKind.GlueTrap =>
-                            new Color(0.24f, 0.2f, 0.16f),
-                        ThrowableKind.TunaCan =>
-                            new Color(0.55f, 0.62f, 0.72f),
-                        _ => new Color(0.86f, 0.88f, 0.9f)
-                    });
-                GameObject marker = CreateCube(
-                    $"{kind} Counter Marker",
-                    spot + Vector3.up * 0.2f,
-                    new Vector3(0.7f, 0.9f, 0.7f),
-                    counterMaterial,
-                    counter.transform,
-                    false);
-                UnityEngine.Object.DestroyImmediate(
-                    marker.GetComponent<Collider>());
-
-                counter.AddComponent<PoliceSupplyCounter>()
-                    .Configure(kind, price, matchRuntime);
-
-                CheckSpotIsClear(counter.transform, spot);
-            }
-
-            Debug.Log(
-                $"[THROW-011] {counters.Length} police supply counters "
-                + "placed.");
-        }
+        // CreatePoliceSupplyCounters lived here and built three cubes at
+        // (-14.5, 0.5, -9) with a PoliceSupplyCounter each. Removed 2026-08-09;
+        // see the note at the call site for why buying still works.
 
         /// <summary>
         /// Complains loudly if something is placed inside solid geometry.
@@ -4805,20 +4761,22 @@ namespace PawsAndLoot.Editor
             reach.center = new Vector3(0f, 0.5f, 0f);
             reach.isTrigger = true;
 
-            GameObject pane = CreateCube(
-                "Glass",
-                contents.transform.position + Vector3.up * 0.45f,
-                new Vector3(1.1f, 1.3f, 1.1f),
-                LoadOrCreateMaterial(
-                    "Greybox_DisplayGlass",
-                    new Color(0.62f, 0.86f, 0.95f)),
-                caseObject.transform,
-                false);
-            UnityEngine.Object.DestroyImmediate(pane.GetComponent<Collider>());
-
+            // No pane.
+            //
+            // It used to be a 1.1 x 1.3 x 1.1 opaque-ish cube standing over the
+            // piece, which hid the thing the case exists to show off — the
+            // player stood at a jeweller's cabinet looking at a blue box and
+            // could not see the ring they were about to steal.
+            //
+            // The seal does not need a model to work. `LootDisplayCase` turns
+            // the contents' interaction off while sealed and on when broken, so
+            // what the case guards is the *prompt*: before, the only thing
+            // offered is "Break the glass"; after, the ring itself. That reads
+            // correctly with nothing drawn, and the break is 2 seconds of
+            // standing still, which is the part the player feels.
             caseObject.AddComponent<LootDisplayCase>().Configure(
                 contents,
-                pane.transform,
+                null,
                 matchRuntime);
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
+using PawsAndLoot.Audio;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -379,7 +380,24 @@ namespace PawsAndLoot.Integration.Voice
 
         private void SetState(LocalAiRuntimeState state)
         {
+            bool wasUsable = IsReady;
             State = state;
+
+            // Once, the first time the gateway can actually take a request.
+            //
+            // Asked of `IsReady` rather than of the enum because Degraded counts
+            // when the gateway itself came up — the model is the part that did
+            // not, and voice still works through the deterministic fallback. The
+            // player is being told the microphone is worth pressing, which is
+            // true in both cases.
+            //
+            // This runs in Bootstrap, where there is no `GameSoundService` in the
+            // scene; the request falls through to the persistent source.
+            if (!wasUsable && IsReady)
+            {
+                GameSoundService.Request(GameSoundId.VoiceModelReady);
+            }
+
             StateChanged?.Invoke(state);
         }
 

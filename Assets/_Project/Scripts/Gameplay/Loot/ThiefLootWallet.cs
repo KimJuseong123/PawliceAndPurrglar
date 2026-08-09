@@ -24,6 +24,21 @@ namespace PawsAndLoot.Gameplay.Loot
         public event Action VictoryCheckRequested;
 
         /// <summary>
+        /// Raised only by the shelf path, immediately before
+        /// <see cref="SaleAmountChanged"/>.
+        ///
+        /// The two ways money arrives are a sale at the merchant and a trinket
+        /// pocketed in somebody's house, and from the amount alone they are
+        /// indistinguishable — so both used to make the merchant's sound. A room
+        /// is meant to feel like picking something up, not like closing a deal.
+        ///
+        /// A separate event rather than an argument on the existing one: every
+        /// current subscriber cares about the running total and nothing else,
+        /// and widening their signature to say so would be noise in all of them.
+        /// </summary>
+        public event Action<int> CashPocketed;
+
+        /// <summary>
         /// Ids of the shelves already emptied, so one press pays once.
         /// </summary>
         private readonly HashSet<int> _creditedCashSources = new();
@@ -106,6 +121,10 @@ namespace PawsAndLoot.Gameplay.Loot
                 GameLogCategory.Loot,
                 $"Thief pocketed {amount}, now holding {SoldAmount}.",
                 this);
+
+            // Before the total changes, so a listener on both can tell which of
+            // the two paths this rise came from.
+            CashPocketed?.Invoke(amount);
             SaleAmountChanged?.Invoke(previousAmount, SoldAmount);
             VictoryCheckRequested?.Invoke();
             return true;

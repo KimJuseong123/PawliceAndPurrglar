@@ -149,6 +149,16 @@ namespace PawsAndLoot.Audio
         /// <see cref="PersistentOneShotAudio"/> instead so the whole clip is heard
         /// (`ISSUE-070`).
         ///
+        /// The two role stingers are here for the same reason at the other end of a
+        /// match: the lobby announces a role and then the host starts the game, so
+        /// Bootstrap unloads while a one-and-a-half second clip is a third of the
+        /// way through.
+        ///
+        /// <see cref="GameSoundId.PeerLeft"/> is here for the disconnect path,
+        /// which drops everyone back to Bootstrap in the same frame it raises the
+        /// sound. It is also raised in the lobby, where nothing is changing scene —
+        /// that costs nothing, since the persistent source is 2D either way.
+        ///
         /// Kept as code rather than a serialized flag on the entry: it is a fact
         /// about when the game raises the sound, not a mixing choice, and a field
         /// would default to false on every existing bank asset — silently
@@ -157,7 +167,10 @@ namespace PawsAndLoot.Audio
         public static bool OutlivesTheScene(GameSoundId soundId)
         {
             return soundId == GameSoundId.Victory
-                || soundId == GameSoundId.Defeat;
+                || soundId == GameSoundId.Defeat
+                || soundId == GameSoundId.RoleAssignedPolice
+                || soundId == GameSoundId.RoleAssignedThief
+                || soundId == GameSoundId.PeerLeft;
         }
 
         public int CountMissingClips()

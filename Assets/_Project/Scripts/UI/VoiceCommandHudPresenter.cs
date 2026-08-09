@@ -1,3 +1,4 @@
+using PawsAndLoot.Audio;
 using PawsAndLoot.Integration.Voice;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Integration.Network;
@@ -20,6 +21,12 @@ namespace PawsAndLoot.UI
         [SerializeField] private Button microphoneButton;
         private bool inputSubscribed;
         private bool buttonSubscribed;
+
+        /// <summary>
+        /// Whether the last state seen was Recording, so the stop beep is raised
+        /// on the way out of it rather than on every state that is not it.
+        /// </summary>
+        private bool _wasRecording;
 
         public void Configure(
             VoiceCommandInput configuredInput,
@@ -81,8 +88,35 @@ namespace PawsAndLoot.UI
             input?.StopListening();
         }
 
+        /// <summary>
+        /// The microphone opening, closing, and refusing.
+        ///
+        /// Here rather than in <see cref="VoiceCommandInput"/> because this
+        /// presenter binds to the local player's input only — one component per
+        /// role exists in the scene, and raising the sound in the input itself
+        /// would open both machines' microphones into one pair of ears.
+        ///
+        /// Recording is the only state that means "open". Everything after it
+        /// (encoding, transcribing, interpreting) is work, and a stop beep on
+        /// each of those would be four sounds for one command.
+        /// </summary>
         private void HandleStateChanged(VoiceCommandInputState state)
         {
+            if (state == VoiceCommandInputState.Recording)
+            {
+                GameSoundService.Request(GameSoundId.VoiceRecordStart);
+            }
+            else if (_wasRecording)
+            {
+                GameSoundService.Request(GameSoundId.VoiceRecordStop);
+            }
+
+            if (state == VoiceCommandInputState.Error)
+            {
+                GameSoundService.Request(GameSoundId.VoiceRecognizeFail);
+            }
+
+            _wasRecording = state == VoiceCommandInputState.Recording;
             Refresh();
         }
 

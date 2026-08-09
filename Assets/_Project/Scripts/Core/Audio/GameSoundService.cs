@@ -64,16 +64,92 @@ namespace PawsAndLoot.Audio
         }
 
         /// <summary>
+        /// Where the fallback bank is looked up, relative to a Resources folder.
+        ///
+        /// The real asset lives at
+        /// <c>Assets/_Project/Resources/Audio/GameSoundBank.asset</c>. It is the
+        /// same asset the Game scene holds a reference to, not a copy, so the two
+        /// paths cannot disagree about which clip a sound is.
+        /// </summary>
+        private const string FallbackBankResourcePath = "Audio/GameSoundBank";
+
+        /// <summary>
+        /// The bank found by name, for the scenes that have no service.
+        ///
+        /// Loaded once and kept. Null after a failed load is indistinguishable
+        /// from not having looked, so the attempt is recorded separately —
+        /// otherwise a missing asset means a Resources lookup on every button
+        /// press.
+        /// </summary>
+        private static GameSoundBank _fallbackBank;
+        private static bool _fallbackBankLoaded;
+
+        /// <summary>
         /// Static entry point so rules can raise a sound without holding a
-        /// reference. Silently does nothing when no service exists, which is the
-        /// case in most unit tests.
+        /// reference.
         /// </summary>
         public static void Request(GameSoundId soundId)
         {
             if (_instance != null)
             {
                 _instance.Play(soundId);
+                return;
             }
+
+            PlayWithoutAService(soundId);
+        }
+
+        /// <summary>
+        /// Plays in a scene that has no <see cref="GameSoundService"/> in it.
+        ///
+        /// This service is built into the Game scene by <c>GreyboxMapSetup</c>, so
+        /// until now every sound raised in Bootstrap or Result was dropped on the
+        /// floor — the lobby handing out a role, the other player connecting, the
+        /// voice model coming up. All of those happen where the service is not,
+        /// and nothing said so, because a sound with no clip and a sound with no
+        /// service both do exactly nothing.
+        ///
+        /// Goes through <see cref="PersistentOneShotAudio"/>, which already exists
+        /// for the clips that outlive the scene that raised them, and which holds
+        /// no scene references of its own.
+        ///
+        /// Public so a test can exercise it directly, the same way
+        /// <c>GameSoundObserver.ResolveMatchEndSound</c> is. Play mode tests share
+        /// one editor session and something earlier will have loaded the Game
+        /// scene, so a test that waited for <see cref="Instance"/> to be null
+        /// would be testing whatever ran before it.
+        /// </summary>
+        public static void PlayWithoutAService(GameSoundId soundId)
+        {
+            if (soundId == GameSoundId.None)
+            {
+                return;
+            }
+
+            if (!_fallbackBankLoaded)
+            {
+                _fallbackBankLoaded = true;
+                _fallbackBank =
+                    Resources.Load<GameSoundBank>(FallbackBankResourcePath);
+                if (_fallbackBank == null)
+                {
+                    // Said once. A bank that moved out of Resources takes every
+                    // sound outside the Game scene with it and leaves no trace.
+                    Debug.LogWarning(
+                        "[AUDIO-001] No sound bank at Resources/"
+                        + $"{FallbackBankResourcePath}. Scenes without a "
+                        + "GameSoundService stay silent.");
+                }
+            }
+
+            if (_fallbackBank == null)
+            {
+                return;
+            }
+
+            PersistentOneShotAudio.Play(
+                _fallbackBank.Resolve(soundId),
+                _fallbackBank.GetVolume(soundId));
         }
 
         public void Play(GameSoundId soundId)
@@ -171,6 +247,12 @@ namespace PawsAndLoot.Audio
         private static void ResetInstance()
         {
             _instance = null;
+
+            // The cached bank goes with it. With domain reloading switched off,
+            // a reference kept from the previous play session survives into one
+            // where Resources has already unloaded what it pointed at.
+            _fallbackBank = null;
+            _fallbackBankLoaded = false;
         }
     }
 }

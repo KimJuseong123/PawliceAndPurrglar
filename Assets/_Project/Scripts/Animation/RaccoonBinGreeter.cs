@@ -1,3 +1,4 @@
+using PawsAndLoot.Audio;
 using PawsAndLoot.Gameplay.Players;
 using UnityEngine;
 
@@ -218,7 +219,16 @@ namespace PawsAndLoot.Animation
             }
 
             float distance = DistanceToNearestPlayer();
+            bool wasGreeting = IsGreeting;
             IsGreeting = distance >= 0f && distance <= greetRadius;
+
+            // On the edge into the radius, not while inside it. Someone standing
+            // at the merchant to sell is inside this radius the whole time, and a
+            // chitter per frame there is the same clip a hundred times a second.
+            if (IsGreeting && !wasGreeting)
+            {
+                GameSoundService.Request(GameSoundId.RaccoonChitter);
+            }
 
             // Opening leads, closing follows: the lid may only shut once the
             // raccoon is back inside.

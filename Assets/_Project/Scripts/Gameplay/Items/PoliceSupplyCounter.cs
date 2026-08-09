@@ -35,6 +35,15 @@ namespace PawsAndLoot.Gameplay.Items
 
         private IMatchStateReader _matchState;
 
+        /// <summary>
+        /// A completed sale, after both the prop and the money have moved.
+        ///
+        /// Raised rather than polled because <see cref="SoldCount"/> only rises
+        /// on the machine that decided, and a watcher on the count would have to
+        /// hold every counter in the map to see it.
+        /// </summary>
+        public event System.Action<ThrowableKind> Purchased;
+
         public ThrowableKind Kind => kind;
         public int Price => price;
         public int SoldCount { get; private set; }
@@ -116,6 +125,7 @@ namespace PawsAndLoot.Gameplay.Items
                 GameLogCategory.Loot,
                 $"Police bought {kind} for {price}.",
                 this);
+            Purchased?.Invoke(kind);
             return true;
         }
 

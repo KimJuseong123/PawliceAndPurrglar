@@ -289,8 +289,9 @@ namespace PawsAndLoot.Tests.PlayMode
             Assert.That(
                 GameSoundBank.OutlivesTheScene(GameSoundId.LootAcquired),
                 Is.False,
-                "Only the match-end stingers outlive the scene; everything else "
-                + "belongs to the match that raised it.");
+                "Picking loot up belongs to the match that raised it. Only the "
+                + "sounds raised as a scene is going — the match-end stingers, "
+                + "the lobby's role stingers and the disconnect — outlive it.");
 
             Object.DestroyImmediate(audioObject);
             Object.DestroyImmediate(persistent);

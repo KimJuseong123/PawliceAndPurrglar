@@ -19,8 +19,20 @@ namespace PawsAndLoot.Editor
     /// </summary>
     internal static class SoundBankSetup
     {
+        /// <summary>
+        /// Under <c>Resources</c> since the lobby needed sound.
+        ///
+        /// The service that plays these is built into the Game scene, so every id
+        /// raised in Bootstrap or Result — a role being handed out, the other
+        /// player arriving, the voice model finishing — had nowhere to play. The
+        /// fallback in <see cref="GameSoundService"/> loads the bank by name
+        /// instead of by reference, and a name only resolves from here.
+        ///
+        /// Moved rather than copied. A second bank would drift from this one and
+        /// the drift would be silent.
+        /// </summary>
         private const string BankPath =
-            "Assets/_Project/Settings/Audio/GameSoundBank.asset";
+            "Assets/_Project/Resources/Audio/GameSoundBank.asset";
 
         private const string ClipDirectory = "Assets/_Project/Audio/SFX";
 
@@ -45,7 +57,37 @@ namespace PawsAndLoot.Editor
             (GameSoundId.DogBark, "sfx_dog_bark"),
             (GameSoundId.CatMeow, "sfx_cat_meow"),
             (GameSoundId.Victory, "sfx_victory"),
-            (GameSoundId.Defeat, "sfx_defeat")
+            (GameSoundId.Defeat, "sfx_defeat"),
+
+            // C-4 through C-11, 2026-08-09.
+            //
+            // The sheet listed 71 rows across these sections and 11 files were
+            // recorded. Everything else on those rows was struck out rather than
+            // left waiting: an id with no file is a warning on every run of this
+            // menu item, and 60 of them would have buried the ones that matter.
+            (GameSoundId.DoorOpen, "sfx_door_open"),
+            (GameSoundId.InventoryToggle, "sfx_inventory_toggle"),
+            (GameSoundId.Jump, "sfx_jump"),
+            (GameSoundId.PurchaseMade, "sfx_purchase_ok"),
+            (GameSoundId.CountdownTick, "sfx_countdown_tick"),
+            (GameSoundId.RoleAssignedPolice, "sfx_role_assigned_police"),
+            (GameSoundId.RoleAssignedThief, "sfx_role_assigned_thief"),
+            (GameSoundId.RaccoonChitter, "sfx_raccoon"),
+            (GameSoundId.VoiceRecordStart, "sfx_voice_start"),
+            (GameSoundId.VoiceRecordStop, "sfx_voice_stop"),
+            (GameSoundId.VoiceModelReady, "sfx_voice_ready"),
+
+            // Three ids that deliberately share a recording with one above.
+            //
+            // Asked for that way: a peer connecting is the same rising beep as
+            // the microphone opening, and a failed transcription is the same
+            // refusal as a rejected command. They stay separate ids because the
+            // call sites are separate and the mix may want to part them later —
+            // pointing two ids at one file costs nothing, and one id used from
+            // two places cannot be told apart afterwards.
+            (GameSoundId.PeerJoined, "sfx_voice_start"),
+            (GameSoundId.PeerLeft, "sfx_voice_stop"),
+            (GameSoundId.VoiceRecognizeFail, "sfx_command_fail")
         };
 
         /// <summary>
@@ -55,6 +97,52 @@ namespace PawsAndLoot.Editor
         {
             ".wav", ".mp3", ".ogg", ".flac", ".aiff", ".aif"
         };
+
+        /// <summary>
+        /// Ids whose clip is meant to run past the two-and-a-half second mark.
+        ///
+        /// Listed so the length warning below stays worth reading. The countdown
+        /// is the only one here that is not a match-end sting: the recording is a
+        /// whole three-second count rather than one beep, which is why it is
+        /// raised once at the start of the count instead of on every second.
+        /// </summary>
+        private static bool IsLongByDesign(GameSoundId id)
+        {
+            return GameSoundBank.OutlivesTheScene(id)
+                || id == GameSoundId.CountdownTick;
+        }
+
+        /// <summary>
+        /// Grows the bank to fit the enum, fills it in, and checks the result.
+        ///
+        /// The three steps have always had to happen in this order and were three
+        /// separate things to remember: a new id with no entry is silent for good,
+        /// and <c>Validate Sound Bank</c> throws on it. Adding one is the moment
+        /// that is easiest to get half-right, so the whole sequence is one call.
+        ///
+        /// Batch mode:
+        /// <code>
+        /// -executeMethod PawsAndLoot.Editor.SoundBankSetup.RebuildBank
+        /// </code>
+        /// </summary>
+        [MenuItem("PawliceAndPurrglar/Setup/Rebuild Sound Bank")]
+        public static void RebuildBank()
+        {
+            var bank = AssetDatabase.LoadAssetAtPath<GameSoundBank>(BankPath);
+            if (bank == null)
+            {
+                Debug.LogError(
+                    $"[AUDIO-001] No sound bank at '{BankPath}'.");
+                return;
+            }
+
+            bank.EnsureAllSoundIds();
+            EditorUtility.SetDirty(bank);
+            AssetDatabase.SaveAssets();
+
+            AssignClips();
+            ValidateBank();
+        }
 
         [MenuItem("PawliceAndPurrglar/Setup/Assign Sound Bank Clips")]
         public static void AssignClips()
@@ -106,7 +194,7 @@ namespace PawsAndLoot.Editor
                 // The match-end stingers are exempt — the sentence below always
                 // said "unless it is the end of a match" and then warned about
                 // them anyway, which trains you to ignore the warning.
-                if (clip.length > 2.5f && !GameSoundBank.OutlivesTheScene(id))
+                if (clip.length > 2.5f && !IsLongByDesign(id))
                 {
                     Debug.LogWarning(
                         $"[AUDIO-001] {id} is {clip.length:0.0}s long. Anything "

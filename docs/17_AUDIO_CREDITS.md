@@ -26,6 +26,31 @@
 | `sfx_victory.wav` | `Victory` | CC0 | 1.81초 | |
 | `sfx_defeat.wav` | `Defeat` | CC0 | 2.00초 | |
 
+### 2026-08-09에 들어온 11종 — **출처와 라이선스 미기재**
+
+C-4~C-11에서 받은 것들이다. 위의 열 개와 달리 **어디서 왔는지 기록이 없이**
+전달받았다. CC0라고 적지 않은 이유는 그것을 확인한 사람이 없기 때문이다 —
+`SUBMIT-005`가 P0이고 공모전 요강이 출처 명시를 요구하므로, **제출 전에 열한 줄을
+채워야 한다.**
+
+| 파일 | 이벤트 | 라이선스 | 길이 | 비고 |
+|---|---|---:|---:|---|
+| `sfx_door_open.wav` | `DoorOpen` | **미확인** | 1.79초 | 문 여닫기·실내 출입 공용 |
+| `sfx_inventory_toggle.mp3` | `InventoryToggle` | **미확인** | 0.70초 | |
+| `sfx_jump.wav` | `Jump` | **미확인** | 1.72초 | |
+| `sfx_purchase_ok.wav` | `PurchaseMade` | **미확인** | 2.20초 | |
+| `sfx_countdown_tick.wav` | `CountdownTick` | **미확인** | 2.99초 | 한 박자가 아니라 **카운트다운 전체**다. 3초 카운트 시작에 한 번만 낸다 |
+| `sfx_role_assigned_police.wav` | `RoleAssignedPolice` | **미확인** | 0.80초 | |
+| `sfx_role_assigned_thief.wav` | `RoleAssignedThief` | **미확인** | 1.87초 | |
+| `sfx_raccoon.wav` | `RaccoonChitter` | **미확인** | 0.79초 | |
+| `sfx_voice_start.wav` | `VoiceRecordStart` · `PeerJoined` | **미확인** | 0.25초 | 두 이벤트가 같은 녹음을 쓴다 |
+| `sfx_voice_stop.wav` | `VoiceRecordStop` · `PeerLeft` | **미확인** | 0.25초 | 같음 |
+| `sfx_voice_ready.wav` | `VoiceModelReady` | **미확인** | 0.09초 | |
+
+`VoiceRecognizeFail`은 새 파일이 아니라 기존 `sfx_command_fail.wav`를 그대로 쓴다.
+`ValuablePocketed`(실내 소품)도 마찬가지로 기존 `sfx_loot_pickup.wav`이고,
+고양이가 물건을 건네줄 때는 기존 `sfx_cat_meow.wav`다.
+
 ### 확장자를 고친 이력
 
 받은 파일은 전부 `.mp3`였지만 실제로 MP3인 것은 `sfx_arrest_done` 하나뿐이었다. 나머지

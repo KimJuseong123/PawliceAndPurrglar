@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using PawsAndLoot.Audio;
 using PawsAndLoot.Companions;
 using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Arrest;
@@ -413,6 +414,14 @@ namespace PawsAndLoot.UI
 
         public void SetInventoryOpen(bool open)
         {
+            // Only when it actually moves. The key toggles, but this is also
+            // called to force the bag shut on other paths, and a zip on every one
+            // of those is a sound with nothing on screen to match it.
+            if (inventoryOpen != open)
+            {
+                GameSoundService.Request(GameSoundId.InventoryToggle);
+            }
+
             inventoryOpen = open;
 
             // Closing the bag takes the cat's with it, and opening it leaves the
@@ -1102,11 +1111,14 @@ namespace PawsAndLoot.UI
                 return definition.GetPrice(lootConfig);
             }
 
+            // A mirror of LootConfig's defaults, reached only when the config is
+            // not up. It has to move whenever those move — see the same fallback
+            // in MerchantTradePresenter.UnitPrice.
             return definition.Rarity switch
             {
-                LootRarity.Uncommon => 350,
-                LootRarity.Rare => 500,
-                _ => 200
+                LootRarity.Uncommon => 70,
+                LootRarity.Rare => 100,
+                _ => 40
             };
         }
 

@@ -1145,6 +1145,7 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-09 | Edit Mode·Play Mode (효과음 C-4~C-11 배선 이후). **트리에 있던 무관한 미커밋 변경(보물 가격 조정)을 따로 치우고 실측했다** | Edit Mode **300/300**, Play Mode 216개 중 **214 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 새 테스트 3건(`SoundVocabularyPlayModeTests`)이 XML에 이름으로 있는 것을 확인했다 |
 | 2026-08-08 | TopDownEngine 의존 제거 후 Edit Mode·Play Mode | Edit Mode **299/299** (TDE 전용 테스트 5건이 함께 사라져 304 → 299), Play Mode 213개 중 **211 통과** + 1 실패 + 1 스킵. `error CS` 0. **중간에 회귀를 하나 만들었고 테스트가 잡았다** — 컨트롤러를 지우자 `AnimatorClipGuard`가 붙지 않아(컨트롤러를 찾은 분기 안에서만 붙고 있었다) 다리가 전부 멈췄다 |
 | 2026-08-08 | TDE 실재 여부 실측 | `Assets/TopDownEngine/` **존재하지 않음**, git 추적 0건, `CATCOPS_TOPDOWNENGINE` 미정의, `CharacterLocomotion.controller`의 클립 GUID **6개 전부 미해결**. 즉 이 저장소의 TDE 참조는 **한 번도 해석된 적이 없다** |
 | 2026-08-08 | Edit Mode·Play Mode (경보 노출 결함 · 배너 캐시 · 질주/은신 표시 이후) | Edit Mode **304/304**, Play Mode 213개 중 **211 통과** + 1 실패 + 1 스킵. `error CS` 0 |

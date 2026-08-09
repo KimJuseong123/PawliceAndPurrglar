@@ -158,6 +158,45 @@ PawliceAndPurrglar > Setup > Assign Sound Bank Clips
 > (`PlayerStatusBannerView`)와 짝이다. **소리가 붙는 순간이 그 연출이 뜨는 순간과
 > 같아야 한다.**
 
+---
+
+## 진행 상황 — C-4부터 C-11까지는 2026-08-09에 닫혔다
+
+**받은 11개를 넣고, 나머지 60행은 기다리게 두지 않고 지웠다.** 아래 C-4~C-11 표에서
+"상태" 칸이 없는 행은 전부 **필요 없는 것으로 확정**된 것이고, `GameSoundId`에도
+`SoundBankSetup.Mapping`에도 들어가지 않는다. 이유는 하나다 — 파일 없는 ID는
+`Assign Sound Bank Clips`이 돌 때마다 경고를 하나씩 낳고, 예순 개가 쌓이면 **정작
+봐야 할 경고가 묻힌다.**
+
+| 절 | 결정 |
+|---|---|
+| **C-4** | `DoorOpen` 하나로 문 여닫기와 실내 출입을 **전부** 낸다. 실내 소품 줍기는 기존 `sfx_loot_pickup`. `InventoryToggle` 추가. 나머지 7행 삭제 |
+| **C-5** | `Jump`만 추가. 발소리·대시·사다리·짐 11행 삭제 |
+| **C-6** | `PurchaseMade`만 추가. 손전등·야간투시·감옥·수갑 7행 삭제 |
+| **C-7** | `CountdownTick`만 추가. 나머지 4행 삭제 |
+| **C-8** | `RoleAssigned`를 **경찰·도둑 두 개로 나눴다** (녹음이 두 개다). `PeerJoined`=`sfx_voice_start`, `PeerLeft`=`sfx_voice_stop`. UI 클릭·호버·백·방 발견·재경기·결과 6행 삭제 |
+| **C-9** | `RaccoonChitter`만 새 파일. 성공/실패 아이콘은 기존 `CommandSucceeded`/`CommandFailed`가 **이미 같은 순간에 울고 있어** 아무것도 추가하지 않았다 (이 문서가 경고한 중복이다). 고양이 전달은 기존 `CatMeow`, 개 추적은 기존 `DogBark`. 나머지 삭제 |
+| **C-10** | **전부 삭제.** 배경음과 실내 소리는 따로 만든다 |
+| **C-11** | 넷 다 연결. `VoiceRecognizeFail`은 새 파일 없이 기존 `sfx_command_fail`을 쓴다 |
+
+### 이 작업에서 드러난 구조적 결함
+
+**`GameSoundService`는 `Game` 씬에만 있었다.** `GreyboxMapSetup`이 거기에 만들기
+때문이다. 그래서 로비에서 역할이 정해지는 소리, 상대가 들어오고 나가는 소리, 음성
+모델이 준비되는 소리는 **낼 곳이 없었다** — 요청은 조용히 버려지고 로그도 남지 않는다.
+소리가 안 나는 것과 서비스가 없는 것이 화면에서 똑같이 보인다.
+
+뱅크를 `Assets/_Project/Resources/Audio/`로 **옮기고**(복사가 아니다 — 두 개는 갈라진다)
+`GameSoundService.Request`가 서비스가 없을 때 이름으로 뱅크를 찾아
+`PersistentOneShotAudio`로 내도록 했다. `Game.unity`의 참조는 GUID라서 옮겨도 끊기지
+않았고, **씬을 재생성하지 않았다** — 재생성하면 in-scene `NetworkObject` 130개의
+해시가 전부 바뀐다.
+
+같은 이유로 `GameSoundObserver`에 `[SerializeField]`를 **추가하지 않았다.** 새로 듣는
+것들은 런타임에 스스로 찾는다.
+
+---
+
 ## C-4. 문과 실내 (P1, 11종)
 
 | ID | 파일 이름 | 사용처 | 검색어 |

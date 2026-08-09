@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using PawsAndLoot.Audio;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Integration.Network;
@@ -92,6 +93,22 @@ namespace PawsAndLoot.UI
         private NetworkRoleBoard _roleBoard;
         private float _nextPoll;
         private string _roomSignature = string.Empty;
+
+        /// <summary>
+        /// What the last refresh saw, so the three lobby sounds are raised on the
+        /// change rather than on the state.
+        ///
+        /// <see cref="Refresh"/> runs about seven times a second and none of the
+        /// things it reads are events — the role board and the session are both
+        /// polled — so without an edge here the connect beep would repeat for as
+        /// long as anybody sat in the lobby.
+        ///
+        /// The role is nullable rather than defaulted so that being handed
+        /// <see cref="PlayerRole.Police"/> is distinguishable from not having been
+        /// handed anything yet. Defaulted, the officer would never hear theirs.
+        /// </summary>
+        private bool _wasSessionReady;
+        private PlayerRole? _announcedRole;
 
         /// <summary>
         /// The session this lobby actually talks to.
@@ -490,6 +507,8 @@ namespace PawsAndLoot.UI
                 && board.IsAssigned;
             bool localIsPolice = ready && board.LocalRole == PlayerRole.Police;
 
+            AnnounceLobbyChanges(offline, ready, board);
+
             SetText(statusLabel, DescribeStatus(offline, ready, isHost));
             SetText(
                 roleLabel,
@@ -522,6 +541,58 @@ namespace PawsAndLoot.UI
             }
 
             RefreshRoomList(offline);
+        }
+
+        /// <summary>
+        /// The three things in the lobby worth hearing: the other player
+        /// arriving, the other player going, and which side you are on.
+        ///
+        /// Here rather than in the network layer because the lobby is the only
+        /// place that knows all three at once, and because the rest of this
+        /// screen is already driven by reading the same two objects. The role
+        /// pair repeats on a swap, which is the point — the swap button gives no
+        /// other confirmation that it worked.
+        ///
+        /// Nothing plays while offline. Leaving a session drops the ready flag
+        /// exactly the way losing the other player does, and a farewell beep for
+        /// your own decision to leave reads as an error.
+        /// </summary>
+        private void AnnounceLobbyChanges(
+            bool offline,
+            bool ready,
+            NetworkRoleBoard board)
+        {
+            bool sessionReady = !offline && session.IsSessionReady;
+            if (sessionReady && !_wasSessionReady)
+            {
+                GameSoundService.Request(GameSoundId.PeerJoined);
+            }
+            else if (!sessionReady && _wasSessionReady && !offline)
+            {
+                GameSoundService.Request(GameSoundId.PeerLeft);
+            }
+
+            _wasSessionReady = sessionReady;
+
+            if (!ready || board == null)
+            {
+                // Forgotten on the way out, so rejoining announces the role again
+                // instead of treating the old one as still current.
+                _announcedRole = null;
+                return;
+            }
+
+            PlayerRole role = board.LocalRole;
+            if (_announcedRole == role)
+            {
+                return;
+            }
+
+            _announcedRole = role;
+            GameSoundService.Request(
+                role == PlayerRole.Police
+                    ? GameSoundId.RoleAssignedPolice
+                    : GameSoundId.RoleAssignedThief);
         }
 
         /// <summary>

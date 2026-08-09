@@ -43,6 +43,48 @@ MonoBehaviour:
   - soundId: 10
     clip: {fileID: 8300000, guid: f1cc79636e4f49c4e984a0c367786e09, type: 3}
     volume: 1
+  - soundId: 11
+    clip: {fileID: 8300000, guid: 20842891e5cea1b428249f384e97aa69, type: 3}
+    volume: 1
+  - soundId: 12
+    clip: {fileID: 8300000, guid: 921139b43afc23c4198ea5802c56819b, type: 3}
+    volume: 1
+  - soundId: 13
+    clip: {fileID: 8300000, guid: 21b15fb2cf1aac84d8e720a0f56a8b89, type: 3}
+    volume: 1
+  - soundId: 14
+    clip: {fileID: 8300000, guid: ab383c293ab9ad94181d5e273a6d8f55, type: 3}
+    volume: 1
+  - soundId: 15
+    clip: {fileID: 8300000, guid: bcdb851f77300d340bfacb9ca4ec9e74, type: 3}
+    volume: 1
+  - soundId: 16
+    clip: {fileID: 8300000, guid: bd88aceb075c6a542ae459d6797e4e88, type: 3}
+    volume: 1
+  - soundId: 17
+    clip: {fileID: 8300000, guid: b6afedb059f555942a394975b4172296, type: 3}
+    volume: 1
+  - soundId: 18
+    clip: {fileID: 8300000, guid: 63f99bba122fc614ab9e1d0cd19adb84, type: 3}
+    volume: 1
+  - soundId: 19
+    clip: {fileID: 8300000, guid: 6bb1f96612e02bf479e50b65fa4052f5, type: 3}
+    volume: 1
+  - soundId: 20
+    clip: {fileID: 8300000, guid: 1405faf9288666d40b2b7a1d892f1ee2, type: 3}
+    volume: 1
+  - soundId: 21
+    clip: {fileID: 8300000, guid: 63f99bba122fc614ab9e1d0cd19adb84, type: 3}
+    volume: 1
+  - soundId: 22
+    clip: {fileID: 8300000, guid: 6bb1f96612e02bf479e50b65fa4052f5, type: 3}
+    volume: 1
+  - soundId: 23
+    clip: {fileID: 8300000, guid: 23060b1d1fb743342aa501972e93d57a, type: 3}
+    volume: 1
+  - soundId: 24
+    clip: {fileID: 8300000, guid: d34241686c26f734681230757ac8f021, type: 3}
+    volume: 1
   musicVolume: 0.35
   musicTrack: {fileID: 0}
   voiceDuckingMultiplier: 0.25

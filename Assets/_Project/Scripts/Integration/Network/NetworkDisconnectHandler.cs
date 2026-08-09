@@ -1,3 +1,4 @@
+using PawsAndLoot.Audio;
 using PawsAndLoot.Core;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Logging;
@@ -60,6 +61,12 @@ namespace PawsAndLoot.Integration.Network
             _handled = true;
             HandledCount++;
             LastReason = reason;
+
+            // Before the log and before the scene goes. The other machine is
+            // already gone, so this is the only notice the player gets that the
+            // lobby they are about to be dropped into is not a crash.
+            GameSoundService.Request(GameSoundId.PeerLeft);
+
             GameLogger.Warning(
                 GameLogCategory.Network,
                 $"Session ended: {reason}",
