@@ -3,6 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using PawsAndLoot.Audio;
 using PawsAndLoot.Gameplay.Interiors;
+using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -161,6 +162,79 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.EqualTo("DontDestroyOnLoad"),
                 "The role stingers are raised just before Bootstrap unloads, so "
                 + "the object playing them has to survive the load.");
+        }
+
+        /// <summary>
+        /// A character with a role and an arm to draw back.
+        ///
+        /// Built inactive and activated last, the way every fixture here does:
+        /// components that validate their dependencies in Awake throw when they
+        /// are added to a live object one at a time.
+        /// </summary>
+        private static GameObject ThrowingPlayer(
+            PlayerRole role,
+            out ThrowChargeController charger)
+        {
+            var player = new GameObject($"{role} Player");
+            player.SetActive(false);
+            player.AddComponent<PlayerRoleIdentity>().Configure(role);
+            charger = player.AddComponent<ThrowChargeController>();
+            player.SetActive(true);
+            return player;
+        }
+
+        /// <summary>
+        /// The opponent drawing back an arm is silent on this screen.
+        ///
+        /// Not one sound too many but a leak. The wind-up is the window a throw
+        /// can be dodged in, so hearing the opponent's is the whole of the
+        /// counterplay — and every sound here is 2D, so it carried from
+        /// anywhere on the map (`ISSUE-074`).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator OnlyThisPlayersThrowWindUpIsHeard()
+        {
+            GameObject mine = ThrowingPlayer(
+                PlayerRole.Thief,
+                out ThrowChargeController mineCharger);
+            GameObject theirs = ThrowingPlayer(
+                PlayerRole.Police,
+                out ThrowChargeController theirCharger);
+
+            LocalPlayerRoleSelector.OverrideRole(PlayerRole.Thief);
+
+            GameSoundService service = GameSoundService.Instance;
+            if (service == null)
+            {
+                _audioObject = new GameObject("Audio");
+                _audioObject.SetActive(false);
+                service = _audioObject.AddComponent<GameSoundService>();
+                service.Configure(null, null, null);
+                _audioObject.SetActive(true);
+            }
+
+            int before = service.GetRequestCount(GameSoundId.ThrowCharge);
+
+            _observerObject = new GameObject("Sound Observer");
+            _observerObject.AddComponent<GameSoundObserver>();
+            yield return null;
+
+            theirCharger.Begin();
+            yield return null;
+            Assert.That(
+                service.GetRequestCount(GameSoundId.ThrowCharge) - before,
+                Is.EqualTo(0),
+                "Hearing the opponent wind up hands over the dodge window.");
+
+            mineCharger.Begin();
+            yield return null;
+            Assert.That(
+                service.GetRequestCount(GameSoundId.ThrowCharge) - before,
+                Is.EqualTo(1));
+
+            Object.DestroyImmediate(mine);
+            Object.DestroyImmediate(theirs);
+            yield return null;
         }
 
         /// <summary>

@@ -670,6 +670,13 @@ namespace PawsAndLoot.Audio
 
         /// <summary>
         /// Winding up to throw. No event exists and one is not worth adding.
+        ///
+        /// This machine's own wind-up only. Both role objects exist on both
+        /// machines, so it used to sound for the opponent's too — and since
+        /// every sound here is 2D, that told a player their opponent was
+        /// drawing back an arm from anywhere on the map. Not merely one sound
+        /// too many: it is the wind-up that a throw can be dodged during, so
+        /// hearing it is the whole of the counterplay (`ISSUE-074`).
         /// </summary>
         private void UpdateThrowChargeSound()
         {
@@ -682,13 +689,43 @@ namespace PawsAndLoot.Audio
                 }
 
                 bool charging = charger.IsCharging;
-                if (charging && !_wasCharging[index])
+                if (charging
+                    && !_wasCharging[index]
+                    && BelongsToLocalPlayer(charger))
                 {
                     GameSoundService.Request(GameSoundId.ThrowCharge);
                 }
 
                 _wasCharging[index] = charging;
             }
+        }
+
+        /// <summary>
+        /// Whether a component sitting on a player belongs to the one at this
+        /// keyboard.
+        ///
+        /// A component with no identity above it, or a scene with no local role
+        /// yet, answers true: that is a focused test or a single-player scene,
+        /// where the only character there is is this one. The question being
+        /// asked is "is this somebody else's", and "there is nobody else" is a
+        /// no.
+        /// </summary>
+        private static bool BelongsToLocalPlayer(Component component)
+        {
+            if (component == null)
+            {
+                return false;
+            }
+
+            var identity = component.GetComponentInParent<PlayerRoleIdentity>();
+            if (identity == null)
+            {
+                return true;
+            }
+
+            return !LocalPlayerRoleSelector.TryResolveLocalRole(
+                    out PlayerRole local)
+                || identity.Role == local;
         }
 
         /// <summary>
@@ -745,15 +782,43 @@ namespace PawsAndLoot.Audio
                 {
                     CompanionAgent agent =
                         attention.GetComponent<CompanionAgent>();
-                    GameSoundService.Request(
-                        agent != null
-                            && agent.CompanionKind == CompanionKind.Dog
-                            ? GameSoundId.DogAlerted
-                            : GameSoundId.CatAlerted);
+
+                    // Only this player's animal. An animal that has noticed
+                    // something is reporting to its own owner, and hearing the
+                    // opponent's dog perk up says their dog found a trail —
+                    // which is a thing the game otherwise takes care to keep
+                    // on one screen (`ISSUE-074`).
+                    if (IsLocalPlayersCompanion(agent))
+                    {
+                        GameSoundService.Request(
+                            agent != null
+                                && agent.CompanionKind == CompanionKind.Dog
+                                ? GameSoundId.DogAlerted
+                                : GameSoundId.CatAlerted);
+                    }
                 }
 
                 _lastInvestigated[index] = investigated;
             }
+        }
+
+        /// <summary>
+        /// An animal belongs to whoever it follows.
+        ///
+        /// Asked of the owner transform rather than of the kind. Dog-is-police
+        /// and cat-is-thief is true today and is written down in several
+        /// places, but it is a fact about the current cast rather than a rule,
+        /// and an animal that changed hands would take its sound to the wrong
+        /// screen without anything saying so.
+        /// </summary>
+        private static bool IsLocalPlayersCompanion(CompanionAgent agent)
+        {
+            if (agent == null || agent.Owner == null)
+            {
+                return true;
+            }
+
+            return BelongsToLocalPlayer(agent.Owner);
         }
 
         private void UpdateArrestSound()

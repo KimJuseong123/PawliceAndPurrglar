@@ -75,3 +75,10 @@ __pycache__/
 # Map sandbox player output. A throwaway town for walking around in, rebuilt from
 # MapSandboxSetup whenever it is wanted.
 /Builds/Sandbox/
+
+# Scaffolding the Play Mode runner leaves in Assets/ when a batch run is
+# interrupted. It is a scene with a GUID in its name, so every stray one is a
+# new file rather than a modified one, and `git add -A` sweeps it into whatever
+# is being committed.
+/Assets/InitTestScene*.unity
+/Assets/InitTestScene*.unity.meta

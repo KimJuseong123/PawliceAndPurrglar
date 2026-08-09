@@ -1150,6 +1150,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-10 | 투척 당기기·동물 경계 소리를 로컬 전용으로 바꾼 뒤 | Edit Mode **331/331**, Play Mode 224개 중 **222 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`. 신규 `OnlyThisPlayersThrowWindUpIsHeard`가 XML에서 `Passed` |
+| 2026-08-10 | **직전 Play Mode 실행을 잘못 읽었다** | 결과 XML이 없는데 로그를 읽고 판단하려 했다. `rm`이 `Device or resource busy`를 낼 때까지 몰랐다 — Unity가 아직 로그 파일을 쥐고 있었다는 뜻이고, 즉 **실행이 끝나지 않았다.** `CLAUDE.md`가 적어 둔 그대로다: 배치 로그는 종료 통보 뒤에만 읽는다 |
 | 2026-08-10 | 문 소리 이중 재생 수정 + 로컬 역할 조회 통합 이후 | Edit Mode **331/331**, Play Mode 223개 중 **221 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`. 신규 `OnlyTheDoorOfThePlayerAtThisKeyboardIsHeard`가 XML에서 `Passed` |
 | 2026-08-10 | "상대의 사건이 내 화면에서 소리 난다" 계열 감사 | 남은 두 곳은 **정보 누출**이다 — `UpdateThrowChargeSound`(상대가 투척을 당기기 시작한 것)와 `UpdateCompanionAlertSound`(상대 동물이 발견한 것). `UpdateStunSound`는 맞힌 쪽 피드백이라 의도된 것으로 보이고, `LootPickupStart`·`TrapPlaced`·`Blinded`·`LureTaken`은 판단이 필요하다. **고치지 않았다** |
 | 2026-08-09 | 실내 경보 좌표 · 끈끈이 별 · 공중 점프 소리 · 음량 실측 이후 | Edit Mode **331/331**, Play Mode 222개 중 **220 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`. 신규 2건(`AtheftInsideAshopPointsAtTheShopInTheTown`, `TheGlueTrapDrawsTheStarsAsWell`)이 XML에서 `Passed`임을 이름으로 확인 |
