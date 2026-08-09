@@ -3857,7 +3857,6 @@ namespace PawsAndLoot.Editor
                 + "victory path now.");
 
             CreateRockPickups(root, matchRuntime);
-            CreateShopShelfPickups(root);
             CreateBlackMarketSaleZones(root, matchRuntime);
             // The old ladder marker was a PrototypeInteractable that only
             // counted presses, which read as a broken ladder. Real climbing now
@@ -4062,109 +4061,6 @@ namespace PawsAndLoot.Editor
         /// tool. Spots sit in road gaps that the loot placement already proved
         /// clear of the validated routes.
         /// </summary>
-        /// <summary>
-        /// The supermarket shelf the thief steals from.
-        ///
-        /// Until now the only thing anybody could throw was a rock off the
-        /// street, so both sides had the same one option and the thief's half of
-        /// the item layer existed in the enum and nowhere else. These are the
-        /// two props that are the thief's, and they come from a shop rather than
-        /// the ground because taking them is itself a thing a thief does.
-        ///
-        /// Role-restricted, unlike the rocks. A rock in the road is nobody's;
-        /// a shelf inside a shop is not something the officer helps themselves
-        /// to.
-        /// </summary>
-        private static void CreateShopShelfPickups(Transform parent)
-        {
-            // In front of the supermarket, taken from where the town put it
-            // rather than written down. The old coordinate ended up inside the
-            // lake garden when the town changed under it, and three of the four
-            // shelves were sealed in water.
-            // On the street south of the raccoon's yard.
-            //
-            // In front of the supermarket turned out to be inside a house's
-            // doorway trigger, so pressing there asked the game whether you
-            // meant to take a banana or go indoors. Inside the yard was worse —
-            // the shelves landed in its north fence. Outside it, on the
-            // pavement, has room and nothing competing for the key.
-            Vector3 shelf = RaccoonMarketCentre
-                + new Vector3(-3.3f, 0.5f, -11f);
-            (ThrowableKind Kind, Vector3 Offset, Color Tint,
-                PlayerRole? Owner)[] shelves =
-            {
-                (ThrowableKind.Banana, Vector3.zero,
-                    new Color(0.94f, 0.86f, 0.28f), PlayerRole.Thief),
-                (ThrowableKind.DogTreat, new Vector3(2.2f, 0f, 0f),
-                    new Color(0.66f, 0.5f, 0.32f), PlayerRole.Thief),
-                // The firework is the thief's, off the bookstore shelf in the
-                // design document; it sits here with the rest until that shop
-                // has an interior to take it from.
-                (ThrowableKind.Firework, new Vector3(4.4f, 0f, 0f),
-                    new Color(0.86f, 0.3f, 0.34f), PlayerRole.Thief),
-                // The chicken is nobody's. It makes a noise and does nothing
-                // else, so there is no advantage in it to hand to one side, and
-                // both players want it for opposite reasons.
-                (ThrowableKind.RubberChicken, new Vector3(6.6f, 0f, 0f),
-                    new Color(0.98f, 0.82f, 0.2f), null),
-                // One of them, and the thief's. It is the strongest thing they
-                // can do to somebody already looking at them, so it is rare.
-                (ThrowableKind.FrozenOctopus, new Vector3(8.8f, 0f, 0f),
-                    new Color(0.72f, 0.42f, 0.6f), PlayerRole.Thief)
-            };
-
-            int id = 101;
-            foreach ((ThrowableKind kind, Vector3 offset, Color tint,
-                PlayerRole? owner) in shelves)
-            {
-                Vector3 spot = shelf + offset;
-                var pickup = new GameObject($"{kind} Shelf");
-                pickup.transform.SetParent(parent);
-                pickup.transform.position = spot;
-
-                var trigger = pickup.AddComponent<SphereCollider>();
-                trigger.radius = 0.6f;
-                trigger.isTrigger = true;
-
-                Transform presentation = CreateChild(
-                    "PresentationRoot",
-                    pickup.transform);
-                presentation.localPosition = Vector3.zero;
-
-                // The prop itself where there is one. A tinted cube told the
-                // player a prop was there and nothing about which prop, and
-                // there are five of them on these shelves.
-                if (ThrowablePropResources.TryPlace(kind, presentation) == null)
-                {
-                    Material tinted = LoadOrCreateMaterial(
-                        $"Greybox_Shelf_{kind}",
-                        tint);
-                    GameObject marker = CreateCube(
-                        $"{kind} Marker",
-                        spot + Vector3.up * 0.15f,
-                        new Vector3(0.4f, 0.3f, 0.4f),
-                        tinted,
-                        presentation,
-                        false);
-                    UnityEngine.Object.DestroyImmediate(
-                        marker.GetComponent<Collider>());
-                }
-
-                pickup.AddComponent<ThrowablePickup>().Configure(
-                    kind,
-                    presentation,
-                    owner.HasValue,
-                    owner ?? PlayerRole.Thief,
-                    14f,
-                    id++);
-
-                CheckSpotIsClear(pickup.transform, spot);
-            }
-
-            Debug.Log(
-                $"[THROW-006] {shelves.Length} shop shelf pickups placed.");
-        }
-
         private static void CreateRockPickups(
             Transform parent,
             MatchRuntimeState matchRuntime)

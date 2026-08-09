@@ -166,19 +166,43 @@ namespace PawsAndLoot.Integration.Network
         {
             if (_mode != SessionMode.Offline)
             {
-                SetStatus("이미 세션이 실행 중입니다.");
+                RefuseHosting(
+                    "이미 세션이 실행 중입니다.",
+                    $"the session is still in mode {_mode}");
                 return false;
             }
 
             if (IsBusy)
             {
+                RefuseHosting(
+                    "아직 처리 중입니다. 잠시 후 다시 누르세요.",
+                    "a previous request has not finished");
                 return false;
             }
 
             UnityTransport transport = ResolveTransport();
             if (transport == null)
             {
-                SetStatus("UnityTransport 컴포넌트를 찾을 수 없습니다.");
+                RefuseHosting(
+                    "UnityTransport 컴포넌트를 찾을 수 없습니다.",
+                    networkManager == null
+                        ? "this controller has no NetworkManager"
+                        : "the NetworkManager has no UnityTransport");
+                return false;
+            }
+
+            // The manager has to be finished with the last match before it can
+            // host the next one. Shutdown is not instant, and StartHost on a
+            // manager that is still listening or still closing returns false
+            // with nothing said — which is indistinguishable, on screen, from
+            // the button not being wired.
+            if (networkManager.IsListening
+                || networkManager.ShutdownInProgress)
+            {
+                RefuseHosting(
+                    "이전 세션을 정리하는 중입니다. 잠시 후 다시 누르세요.",
+                    $"listening={networkManager.IsListening}, "
+                    + $"shuttingDown={networkManager.ShutdownInProgress}");
                 return false;
             }
 
@@ -209,6 +233,13 @@ namespace PawsAndLoot.Integration.Network
             {
                 Cleanup();
                 SetBusy(false, "호스트 시작에 실패했습니다.");
+                GameLogger.Error(
+                    GameLogCategory.Network,
+                    "StartHost refused after Relay handed us an allocation. "
+                    + $"singletonIsUs={NetworkManager.Singleton == networkManager}, "
+                    + $"listening={networkManager.IsListening}, "
+                    + $"shuttingDown={networkManager.ShutdownInProgress}.",
+                    this);
                 return false;
             }
 
@@ -601,6 +632,25 @@ namespace PawsAndLoot.Integration.Network
         {
             IsBusy = busy;
             SetStatus(status);
+        }
+
+        /// <summary>
+        /// Says no to hosting, on screen and in the log, with the reason.
+        ///
+        /// The screen gets a sentence the player can act on and the log gets the
+        /// state that produced it. Without the second half every one of these
+        /// looks the same from outside — the button was pressed and the lobby
+        /// did not open a room — and the first thing anybody suspects is the
+        /// wiring, which this project has had wrong before and would go looking
+        /// for again.
+        /// </summary>
+        private void RefuseHosting(string status, string reason)
+        {
+            SetStatus(status);
+            GameLogger.Warning(
+                GameLogCategory.Network,
+                $"방 만들기 refused: {reason}.",
+                this);
         }
 
         private bool TryApplyTransport(string address, ushort port)
