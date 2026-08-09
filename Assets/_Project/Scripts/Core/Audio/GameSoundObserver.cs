@@ -5,6 +5,7 @@ using PawsAndLoot.Gameplay.Interiors;
 using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
+using PawsAndLoot.Gameplay.Sensing;
 using PawsAndLoot.Match;
 using UnityEngine;
 
@@ -76,6 +77,25 @@ namespace PawsAndLoot.Audio
         private bool _foundSources;
         private float _nextSourceScan;
         private bool _wasCountingDown;
+
+        // C-1 to C-3. Found the same way and for the same reasons.
+        //
+        // The placed props are not here: they are made during a match, so a scan
+        // at load would never see them. Their sounds are raised by
+        // `NetworkItemCoordinator`, which is the one place that runs on both
+        // machines.
+        private readonly List<ToolUseAction> _toolUses = new();
+        private readonly List<ThrowChargeController> _chargers = new();
+        private readonly List<bool> _wasCharging = new();
+        private readonly List<ThrowFlightTracker> _flights = new();
+        private readonly List<StunState> _stuns = new();
+        private readonly List<bool> _wasStunned = new();
+        private readonly List<BlindedState> _blinds = new();
+        private readonly List<CompanionLure> _lures = new();
+        private readonly List<LootPickupProgress> _pickups = new();
+        private readonly List<LootDisplayCase> _cases = new();
+        private readonly List<CompanionNoiseAttention> _attentions = new();
+        private readonly List<int> _lastInvestigated = new();
 
         /// <summary>
         /// Set by the shelf path immediately before the total changes, so the
@@ -341,6 +361,77 @@ namespace PawsAndLoot.Audio
                 courier.LootDelivered += HandleLootDelivered;
             }
 
+            foreach (ToolUseAction tool in
+                FindObjectsByType<ToolUseAction>(FindObjectsSortMode.None))
+            {
+                _toolUses.Add(tool);
+                tool.Thrown += HandleThrown;
+            }
+
+            foreach (ThrowChargeController charger in
+                FindObjectsByType<ThrowChargeController>(
+                    FindObjectsSortMode.None))
+            {
+                _chargers.Add(charger);
+                _wasCharging.Add(charger.IsCharging);
+            }
+
+            foreach (ThrowFlightTracker flight in
+                FindObjectsByType<ThrowFlightTracker>(
+                    FindObjectsSortMode.None))
+            {
+                _flights.Add(flight);
+                flight.Hit += HandleThrowHit;
+            }
+
+            // Polled rather than subscribed. `StunState.Stunned` carries the
+            // duration and not the cause, and the cause is the whole question
+            // here — so the handler would have to close over which state raised
+            // it, and a closure cannot be unsubscribed.
+            foreach (StunState stun in
+                FindObjectsByType<StunState>(FindObjectsSortMode.None))
+            {
+                _stuns.Add(stun);
+                _wasStunned.Add(stun.IsStunned);
+            }
+
+            foreach (BlindedState blind in
+                FindObjectsByType<BlindedState>(FindObjectsSortMode.None))
+            {
+                _blinds.Add(blind);
+                blind.Blinded += HandleBlinded;
+            }
+
+            foreach (CompanionLure lure in
+                FindObjectsByType<CompanionLure>(FindObjectsSortMode.None))
+            {
+                _lures.Add(lure);
+                lure.LureStarted += HandleLureStarted;
+            }
+
+            foreach (LootPickupProgress pickup in
+                FindObjectsByType<LootPickupProgress>(
+                    FindObjectsSortMode.None))
+            {
+                _pickups.Add(pickup);
+                pickup.Started += HandlePickupStarted;
+            }
+
+            foreach (LootDisplayCase displayCase in
+                FindObjectsByType<LootDisplayCase>(FindObjectsSortMode.None))
+            {
+                _cases.Add(displayCase);
+                displayCase.Broken += HandleCaseOpened;
+            }
+
+            foreach (CompanionNoiseAttention attention in
+                FindObjectsByType<CompanionNoiseAttention>(
+                    FindObjectsSortMode.None))
+            {
+                _attentions.Add(attention);
+                _lastInvestigated.Add(attention.InvestigatedCount);
+            }
+
             _matchState = FindFirstObjectByType<MatchRuntimeState>();
             _wasCountingDown =
                 _matchState != null && _matchState.IsCountdownActive;
@@ -349,6 +440,8 @@ namespace PawsAndLoot.Audio
                 || _motors.Count > 0
                 || _counters.Count > 0
                 || _couriers.Count > 0
+                || _toolUses.Count > 0
+                || _cases.Count > 0
                 || _matchState != null;
         }
 
@@ -378,12 +471,122 @@ namespace PawsAndLoot.Audio
                 }
             }
 
+            foreach (ToolUseAction tool in _toolUses)
+            {
+                if (tool != null)
+                {
+                    tool.Thrown -= HandleThrown;
+                }
+            }
+
+            foreach (ThrowFlightTracker flight in _flights)
+            {
+                if (flight != null)
+                {
+                    flight.Hit -= HandleThrowHit;
+                }
+            }
+
+            foreach (BlindedState blind in _blinds)
+            {
+                if (blind != null)
+                {
+                    blind.Blinded -= HandleBlinded;
+                }
+            }
+
+            foreach (CompanionLure lure in _lures)
+            {
+                if (lure != null)
+                {
+                    lure.LureStarted -= HandleLureStarted;
+                }
+            }
+
+            foreach (LootPickupProgress pickup in _pickups)
+            {
+                if (pickup != null)
+                {
+                    pickup.Started -= HandlePickupStarted;
+                }
+            }
+
+            foreach (LootDisplayCase displayCase in _cases)
+            {
+                if (displayCase != null)
+                {
+                    displayCase.Broken -= HandleCaseOpened;
+                }
+            }
+
             _interiorStates.Clear();
             _motors.Clear();
             _wasAirborne.Clear();
             _counters.Clear();
             _couriers.Clear();
+            _toolUses.Clear();
+            _chargers.Clear();
+            _wasCharging.Clear();
+            _flights.Clear();
+            _stuns.Clear();
+            _wasStunned.Clear();
+            _blinds.Clear();
+            _lures.Clear();
+            _pickups.Clear();
+            _cases.Clear();
+            _attentions.Clear();
+            _lastInvestigated.Clear();
             _matchState = null;
+        }
+
+        private static void HandleThrown(
+            ThrowableKind kind,
+            ThrowResolver.Result _)
+        {
+            GameSoundService.Request(GameSoundId.ThrowReleased);
+        }
+
+        private static void HandleThrowHit(
+            ThrowableKind kind,
+            PlayerRoleIdentity thrower,
+            PlayerRoleIdentity victim)
+        {
+            GameSoundService.Request(GameSoundId.ThrowHitBody);
+        }
+
+        private static void HandleBlinded(float _)
+        {
+            GameSoundService.Request(GameSoundId.Blinded);
+        }
+
+        private static void HandleLureStarted(Vector3 _)
+        {
+            GameSoundService.Request(GameSoundId.LureTaken);
+        }
+
+        private static void HandlePickupStarted(LootItem _)
+        {
+            GameSoundService.Request(GameSoundId.LootPickupStart);
+        }
+
+        /// <summary>
+        /// A case opened, one way or the other.
+        ///
+        /// One event covers both routes, so the case is asked which it was.
+        /// <c>OpenedQuietly</c> is set before the event goes out, which is what
+        /// makes reading it here safe.
+        /// </summary>
+        private static void HandleCaseOpened(LootDisplayCase displayCase)
+        {
+            if (displayCase == null)
+            {
+                return;
+            }
+
+            GameSoundService.Request(
+                displayCase.OpenedQuietly
+                    ? GameSoundId.CaseKeyUnlock
+                    : GameSoundId.GlassBreak);
         }
 
         /// <summary>
@@ -435,6 +638,97 @@ namespace PawsAndLoot.Audio
             UpdateArrestSound();
             UpdateJumpSound();
             UpdateCountdownSound();
+            UpdateThrowChargeSound();
+            UpdateStunSound();
+            UpdateCompanionAlertSound();
+        }
+
+        /// <summary>
+        /// Winding up to throw. No event exists and one is not worth adding.
+        /// </summary>
+        private void UpdateThrowChargeSound()
+        {
+            for (int index = 0; index < _chargers.Count; index++)
+            {
+                ThrowChargeController charger = _chargers[index];
+                if (charger == null)
+                {
+                    continue;
+                }
+
+                bool charging = charger.IsCharging;
+                if (charging && !_wasCharging[index])
+                {
+                    GameSoundService.Request(GameSoundId.ThrowCharge);
+                }
+
+                _wasCharging[index] = charging;
+            }
+        }
+
+        /// <summary>
+        /// Seeing stars, and only for a rock.
+        ///
+        /// A banana and a glue trap are stuns too, and both already have a sound
+        /// of their own that says what happened. Playing this on top of them
+        /// would be two sounds for one event, where the first one has already
+        /// told the player everything — so the cause is checked rather than the
+        /// stun.
+        /// </summary>
+        private void UpdateStunSound()
+        {
+            for (int index = 0; index < _stuns.Count; index++)
+            {
+                StunState stun = _stuns[index];
+                if (stun == null)
+                {
+                    continue;
+                }
+
+                bool stunned = stun.IsStunned;
+                if (stunned
+                    && !_wasStunned[index]
+                    && stun.Cause == StunCause.Impact)
+                {
+                    GameSoundService.Request(GameSoundId.Stunned);
+                }
+
+                _wasStunned[index] = stunned;
+            }
+        }
+
+        /// <summary>
+        /// An animal noticing a noise, which is not an animal being given an
+        /// order — so this is deliberately not the bark and meow that answer a
+        /// command.
+        ///
+        /// Counted rather than subscribed: the attention component reports how
+        /// many noises it has gone to look at and raises nothing.
+        /// </summary>
+        private void UpdateCompanionAlertSound()
+        {
+            for (int index = 0; index < _attentions.Count; index++)
+            {
+                CompanionNoiseAttention attention = _attentions[index];
+                if (attention == null)
+                {
+                    continue;
+                }
+
+                int investigated = attention.InvestigatedCount;
+                if (investigated > _lastInvestigated[index])
+                {
+                    CompanionAgent agent =
+                        attention.GetComponent<CompanionAgent>();
+                    GameSoundService.Request(
+                        agent != null
+                            && agent.CompanionKind == CompanionKind.Dog
+                            ? GameSoundId.DogAlerted
+                            : GameSoundId.CatAlerted);
+                }
+
+                _lastInvestigated[index] = investigated;
+            }
         }
 
         private void UpdateArrestSound()

@@ -3,6 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using PawsAndLoot.Audio;
 using PawsAndLoot.Gameplay.Interiors;
+using PawsAndLoot.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -60,6 +61,24 @@ namespace PawsAndLoot.Tests.PlayMode
         /// and still have no file behind it, which is what "the sound does
         /// nothing" actually looks like.
         /// </summary>
+        /// <summary>
+        /// The ids that are wired but have no recording yet.
+        ///
+        /// Written down rather than tolerated by counting, so that adding an id
+        /// and forgetting the file fails here — and so that the day one of these
+        /// three arrives, the line that has to be deleted is obvious.
+        ///
+        /// The two alert sounds have to be distinct recordings from the bark and
+        /// the meow that answer a command: an animal noticing a bang must not
+        /// sound like an animal being given an order.
+        /// </summary>
+        private static readonly GameSoundId[] AwaitingARecording =
+        {
+            GameSoundId.DogAlerted,
+            GameSoundId.CatAlerted,
+            GameSoundId.TrapSticky
+        };
+
         [Test]
         public void TheShippedBankHasAClipForEverySoundId()
         {
@@ -76,6 +95,7 @@ namespace PawsAndLoot.Tests.PlayMode
                 .GetValues(typeof(GameSoundId))
                 .Cast<GameSoundId>()
                 .Where(id => id != GameSoundId.None
+                    && !AwaitingARecording.Contains(id)
                     && bank.Resolve(id) == null)
                 .ToArray();
 
@@ -84,6 +104,19 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.Empty,
                 "These ids resolve to no clip and are therefore silent for good: "
                 + string.Join(", ", silent));
+
+            // The other direction. Without this the list above could be padded
+            // with ids that do have a file, and the exemption would quietly grow
+            // into a way of not noticing missing sounds.
+            GameSoundId[] arrived = AwaitingARecording
+                .Where(id => bank.Resolve(id) != null)
+                .ToArray();
+
+            Assert.That(
+                arrived,
+                Is.Empty,
+                "These have a clip now and must come off the waiting list: "
+                + string.Join(", ", arrived));
         }
 
         /// <summary>
@@ -187,6 +220,73 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.EqualTo(2));
 
             Object.DestroyImmediate(interiorObject);
+            yield return null;
+        }
+
+        /// <summary>
+        /// Stars for a rock, and nothing on top of a banana or glue.
+        ///
+        /// A slip and a stick are stuns too, and each already has its own sound.
+        /// Playing the star sting over them would be two sounds for one event
+        /// where the first has already said what happened — so the rule is the
+        /// cause, not the stun.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator OnlyARockToTheHeadMakesTheStarsSound()
+        {
+            var victimObject = new GameObject("Victim");
+            StunState stun = victimObject.AddComponent<StunState>();
+
+            GameSoundService service = GameSoundService.Instance;
+            if (service == null)
+            {
+                _audioObject = new GameObject("Audio");
+                _audioObject.SetActive(false);
+                service = _audioObject.AddComponent<GameSoundService>();
+                service.Configure(null, null, null);
+                _audioObject.SetActive(true);
+            }
+
+            int before = service.GetRequestCount(GameSoundId.Stunned);
+
+            _observerObject = new GameObject("Sound Observer");
+            _observerObject.AddComponent<GameSoundObserver>();
+            yield return null;
+
+            Assert.That(
+                stun.TryApply(0.2f, StunCause.Slip),
+                Is.True,
+                "The banana still has to stun; only its sound is different.");
+            yield return null;
+            Assert.That(
+                service.GetRequestCount(GameSoundId.Stunned) - before,
+                Is.Zero,
+                "A slip already sounds like a slip.");
+
+            // Waited out rather than cleared, because a stun refuses to restart
+            // while the immunity gap is still running and the second apply would
+            // silently do nothing.
+            //
+            // A frame per step, not a tight loop. The observer watches the edge
+            // into a stun, so it has to be given a frame in which the first one
+            // is over — recovering and being hit again between two frames is a
+            // thing only a test can do.
+            while (stun.IsStunned || stun.IsImmune)
+            {
+                stun.Tick(0.1f);
+                yield return null;
+            }
+
+            Assert.That(
+                stun.TryApply(0.2f, StunCause.Impact),
+                Is.True);
+            yield return null;
+            Assert.That(
+                service.GetRequestCount(GameSoundId.Stunned) - before,
+                Is.EqualTo(1),
+                "A rock to the head is the one that makes stars.");
+
+            Object.DestroyImmediate(victimObject);
             yield return null;
         }
     }

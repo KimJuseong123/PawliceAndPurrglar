@@ -179,6 +179,54 @@ PawliceAndPurrglar > Setup > Assign Sound Bank Clips
 | **C-10** | **전부 삭제.** 배경음과 실내 소리는 따로 만든다 |
 | **C-11** | 넷 다 연결. `VoiceRecognizeFail`은 새 파일 없이 기존 `sfx_command_fail`을 쓴다 |
 
+## C-1~C-3도 2026-08-09에 닫혔다 — 19종만 남기고 나머지는 삭제
+
+받은 16개를 넣고 3개는 **코드만 완성해 두고 파일을 기다린다.**
+
+| 절 | 남긴 것 | 지운 것 |
+|---|---|---|
+| **C-1** | 6종 전부. `DogAlerted`·`CatAlerted`는 **파일 없음** | — |
+| **C-2** | 10종. `TrapSticky`는 **파일 없음** | `ThrowMissGround`, `BlindCleared`, `ArrestInterrupted` |
+| **C-3** | `LootPickupStart`, `GlassBreak`, `CaseKeyUnlock` | `LootPickupInterrupted`, `AlarmSiren`, `Drop` 3종, `LootHidden`, `LootRecovered`, `MarketRevealed` |
+
+세 개를 표에 남긴 것은 예순 개를 지운 것과 모순이 아니다. **코드가 완성돼 있어서 파일만
+넣으면 동작하고**, 세 줄짜리 경고는 남은 목록으로 읽히지만 예순 줄은 소음이다.
+
+### 놓인 자리 — 함정 소리는 옵저버가 아니라 `NetworkItemCoordinator`에 있다
+
+`PlacedTrap.Triggered`가 당연한 자리처럼 보이지만 틀렸다. `TickTraps`는 **설계상
+호스트 전용 스윕**이라, 거기에 걸면 클라이언트는 자기가 밟은 바나나 소리를 못 듣는다.
+양쪽 기계가 모두 지나가는 곳은 `Spawn`(설치)과 `Clear`(발동)뿐이다.
+
+폭죽의 굉음만 `ApplyBangLocally`에 있다. **거리를 아는 유일한 자리**라서다 — 같은
+폭발이 한쪽 화면에서는 가깝고 다른 쪽에서는 멀 수 있고, 그것이 클립을 둘로 나눈 이유
+전부다. `NoiseBoard.Heard`에 걸 수 없는 이유도 여기 있다: 유리 깨지는 소리도 그 게시판에
+보고되므로, **진열장을 깨면 폭죽 소리가 난다.**
+
+### 겹침을 피한 것 — `Stunned`는 돌 명중에만
+
+바나나와 끈끈이도 기절이고 **각자 소리가 있다.** 모든 기절에 별 소리를 얹으면 한 사건에
+소리가 둘이고, 앞의 것이 이미 무슨 일인지 다 말했다. 그래서 기절이 아니라
+`StunCause.Impact`를 본다 (`OnlyARockToTheHeadMakesTheStarsSound`가 고정한다).
+
+### 길이가 슬롯보다 긴 것들 — **자르지 않았다**
+
+받은 소리를 임의로 자르는 것은 되돌리기 어려워서 그대로 넣고 여기 적는다.
+`Assign Sound Bank Clips`이 실행마다 경고한다.
+
+| ID | 클립 | 게임에서 쓰는 시간 | 남는 시간 |
+|---|---:|---:|---:|
+| `CaseKeyUnlock` | 14.23초 | 2.8초 | **11.4초** |
+| `NoisePropFuse` | 8.10초 | 2.5초 | **5.6초** — 폭발 뒤까지 탄다 |
+| `ThrowCharge` | 2.59초 | 1.0초 | 1.6초 |
+| `Stunned` | 2.56초 | 1.2초 | 1.4초 |
+| `LureTaken` | 5.00초 | 4.0초 | 1.0초 |
+| `SensorTripped` | 3.40초 | 2.5초 | 0.9초 |
+
+`NoisePropBang`(7.06초)과 `NoiseHeardFar`(5.00초)는 폭발이라 긴 것이 이상하지 않다.
+자를 때는 `docs/17`에 적힌 방법을 쓴다 — data 청크를 바이트로 자르고 끝 25ms를
+페이드아웃한다. 그냥 끊으면 딸깍 소리가 난다.
+
 ### 이 작업에서 드러난 구조적 결함
 
 **`GameSoundService`는 `Game` 씬에만 있었다.** `GreyboxMapSetup`이 거기에 만들기

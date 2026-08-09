@@ -87,7 +87,41 @@ namespace PawsAndLoot.Editor
             // two places cannot be told apart afterwards.
             (GameSoundId.PeerJoined, "sfx_voice_start"),
             (GameSoundId.PeerLeft, "sfx_voice_stop"),
-            (GameSoundId.VoiceRecognizeFail, "sfx_command_fail")
+            (GameSoundId.VoiceRecognizeFail, "sfx_command_fail"),
+
+            // C-1 through C-3, 2026-08-09. Nineteen ids, sixteen recordings.
+            //
+            // `sfx_firework_bang` is built rather than received: it arrived as
+            // two files that have to sound in order, and `FireworkBangMerge`
+            // joins them so the order is a property of the file instead of a
+            // timing somebody has to keep right.
+            (GameSoundId.NoisePropSquawk, "sfx_chicken_squawk"),
+            (GameSoundId.NoisePropFuse, "sfx_fuse_burn"),
+            (GameSoundId.NoisePropBang, "sfx_firework_bang"),
+            (GameSoundId.NoiseHeardFar, "sfx_bang_far"),
+            (GameSoundId.ThrowCharge, "sfx_throw_charge"),
+            (GameSoundId.ThrowReleased, "sfx_throw_release"),
+            (GameSoundId.ThrowHitBody, "sfx_throw_hit_body"),
+            (GameSoundId.Stunned, "sfx_stunned"),
+            (GameSoundId.Blinded, "sfx_ink_splat"),
+            (GameSoundId.TrapPlaced, "sfx_trap_place"),
+            (GameSoundId.TrapSlip, "sfx_banana_slip"),
+            (GameSoundId.SensorTripped, "sfx_sensor_trip"),
+            (GameSoundId.LureTaken, "sfx_lure_eat"),
+            (GameSoundId.LootPickupStart, "sfx_loot_search"),
+            (GameSoundId.GlassBreak, "sfx_glass_break"),
+            (GameSoundId.CaseKeyUnlock, "sfx_case_unlock"),
+
+            // Three that are wired and waiting for a recording.
+            //
+            // Left in on purpose, unlike the sixty rows struck off the sheet: the
+            // warning each one prints on every run is the outstanding list, and
+            // three of those is a reminder rather than the noise sixty would be.
+            // The code that raises them is finished, so the day the files land
+            // they work without anybody touching this file.
+            (GameSoundId.DogAlerted, "sfx_dog_alert"),
+            (GameSoundId.CatAlerted, "sfx_cat_alert"),
+            (GameSoundId.TrapSticky, "sfx_glue_stick")
         };
 
         /// <summary>

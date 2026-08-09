@@ -1145,6 +1145,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-09 | Edit Mode·Play Mode (효과음 C-1~C-3 배선 이후) | Edit Mode **299/299**, Play Mode 217개 중 **215 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 뱅크는 43개 중 **40개 클립 배정**, 나머지 3개는 파일 대기 |
+| 2026-08-09 | Windows 빌드 + 호스트·클라이언트 2프로세스 (`-netJoinMode ui`, full 60초) | 예외 0, `[AUDIO]` 경고 0(= `Resources` 폴백이 뱅크를 찾았다), 체포 3회, 양쪽 `Result` 도달, 스폰 링크 2 / 보물 62 |
 | 2026-08-09 | Edit Mode·Play Mode (효과음 C-4~C-11 배선 이후). **트리에 있던 무관한 미커밋 변경(보물 가격 조정)을 따로 치우고 실측했다** | Edit Mode **300/300**, Play Mode 216개 중 **214 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 새 테스트 3건(`SoundVocabularyPlayModeTests`)이 XML에 이름으로 있는 것을 확인했다 |
 | 2026-08-09 | Edit Mode·Play Mode (보물 가격 1/5 조정 이후) | Edit Mode **300/300**, Play Mode 213개 중 **211 통과** + 1 실패 + 1 스킵 — 기준선과 동일하고 실패 1건은 `CompanionExpression`(`MODEL-002` 클립 부재). `error CS` 0. 값을 바꾼 테스트 4개 클래스(`LootSale` 3, `ThiefHud` 2, `PoliceHud` 2, `PlayerInteractionScene`)가 XML에서 `Passed`임을 이름으로 확인 |
 | 2026-08-09 | 커밋 직전 재실행 (다른 세션의 미커밋 씬 재생성이 트리에 섞인 상태) | Edit Mode 300개 중 **299 통과**, Play Mode 216개 중 **212 통과** + 3 실패 + 1 스킵. `error CS` 0. **실패 3건 모두 이 변경의 것이 아니고, 셋 다 커밋 범위 밖 파일에서 나온다** — `PlazaInteractionMarker`와 `TheSceneSellsPoliceProps`는 작업 트리의 `Game.unity`에서 `Prototype Plaza Point`와 `PoliceSupplyCounter` 3개가 사라져서고(`HEAD`의 씬에는 있다), `DisplayCaseAndAlarm`은 미커밋 `LootDisplayCase.cs`·`LootAlarm.cs`가 스매시 소음을 2번 보고해서다(그 테스트에는 가격 참조가 0건). `CompanionExpression`은 기준선 |

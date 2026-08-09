@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using PawsAndLoot.Audio;
 using PawsAndLoot.Companions;
 using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Gameplay.Players;
@@ -213,6 +214,14 @@ namespace PawsAndLoot.Integration.Network
                 .Configure(kind, ResolveTrapMaterial(kind), placedBy);
             _traps[id] = trap;
 
+            // Put down, on both screens. A firework announces itself with its
+            // fuse rather than the ordinary thump, because from here on it is
+            // burning down to something and the sound is the warning.
+            GameSoundService.Request(
+                kind == ThrowableKind.Firework
+                    ? GameSoundId.NoisePropFuse
+                    : GameSoundId.TrapPlaced);
+
             // Food works on being put down, not on being trodden on. Applied
             // where the trap is created so it happens on the host and on the
             // client alike — both machines draw the animal walking over, and
@@ -261,10 +270,47 @@ namespace PawsAndLoot.Integration.Network
             }
 
             _traps.Remove(id);
+            AnnounceTrapFired(trap);
             if (trap != null)
             {
                 Destroy(trap.gameObject);
             }
+        }
+
+        /// <summary>
+        /// The sound a prop makes when it goes off.
+        ///
+        /// Raised here, in the coordinator, because this is the only place that
+        /// runs on both machines. <c>PlacedTrap.Triggered</c> would have been the
+        /// obvious hook and is the wrong one: <see cref="TickTraps"/> is a
+        /// host-side sweep by design, so a client would never hear the banana it
+        /// just slipped on.
+        ///
+        /// Once per trap per machine. A trap is only ever cleared after it fires,
+        /// and the entry is gone by the time a repeat could arrive — including
+        /// the host receiving its own broadcast.
+        ///
+        /// The firework is absent on purpose. Its bang is announced from
+        /// <see cref="ApplyBangLocally"/> instead, which is the only place that
+        /// knows how far away the listener is.
+        /// </summary>
+        private static void AnnounceTrapFired(PlacedTrap trap)
+        {
+            if (trap == null)
+            {
+                return;
+            }
+
+            GameSoundId sound = trap.Kind switch
+            {
+                ThrowableKind.RubberChicken => GameSoundId.NoisePropSquawk,
+                ThrowableKind.Banana => GameSoundId.TrapSlip,
+                ThrowableKind.GlueTrap => GameSoundId.TrapSticky,
+                ThrowableKind.SensorLight => GameSoundId.SensorTripped,
+                _ => GameSoundId.None
+            };
+
+            GameSoundService.Request(sound);
         }
 
         /// <summary>
@@ -325,6 +371,12 @@ namespace PawsAndLoot.Integration.Network
                         == TrapEffect.Reveal)
                 {
                     _traps.Remove(id);
+
+                    // Announced here as well, because this branch is the one
+                    // case that does not go through `Clear` — a sensor lingers
+                    // so its lamp can be seen flashing. Without this the host
+                    // hears every prop except the one it set off itself.
+                    AnnounceTrapFired(spentTrap);
                     Destroy(
                         spentTrap.gameObject,
                         ThrowableCatalog.RevealSeconds);
@@ -468,6 +520,16 @@ namespace PawsAndLoot.Integration.Network
                 writer);
         }
 
+        /// <summary>
+        /// Past this, the bang is the distant recording rather than the near one.
+        ///
+        /// Two clips instead of one turned down: distance is mostly the loss of
+        /// the high end and the arrival of a room, and a quiet copy of a close
+        /// explosion just sounds like a close explosion somebody muted. Splitting
+        /// them is the entire reason the sheet asked for two files.
+        /// </summary>
+        private const float FarBangMetres = 8f;
+
         private void ApplyBangLocally(
             Vector3 at,
             float radius,
@@ -478,6 +540,46 @@ namespace PawsAndLoot.Integration.Network
             {
                 board.Report(at, radius, madeBy);
             }
+
+            // Both machines reach here — the host directly and the client
+            // through the noise message — and each asks the question about its
+            // own player. That is what makes the same explosion able to be near
+            // on one screen and far on the other.
+            //
+            // Only the props whose effect is Noise come through here. Breaking
+            // glass reports straight to the board instead, which is why this
+            // cannot be hung on `NoiseBoard.Heard`: a smashed case would make
+            // the sound of a firework.
+            GameSoundService.Request(
+                DistanceToLocalPlayer(at) > FarBangMetres
+                    ? GameSoundId.NoiseHeardFar
+                    : GameSoundId.NoisePropBang);
+        }
+
+        /// <summary>
+        /// How far the person at this machine is from a point.
+        ///
+        /// Returns zero when there is nobody to ask, so an unattended scene hears
+        /// the near version — the alternative is silence in the editor, which
+        /// reads as the sound being broken.
+        /// </summary>
+        private static float DistanceToLocalPlayer(Vector3 at)
+        {
+            PlayerRole role = LocalPlayerRoleSelector.OverriddenRole
+                ?? PlayerRole.Police;
+            foreach (PlayerRoleIdentity candidate in
+                FindObjectsByType<PlayerRoleIdentity>(
+                    FindObjectsSortMode.None))
+            {
+                if (candidate.Role == role)
+                {
+                    return Vector3.Distance(
+                        candidate.transform.position,
+                        at);
+                }
+            }
+
+            return 0f;
         }
 
         private void HandleNoise(

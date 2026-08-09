@@ -85,6 +85,63 @@ MonoBehaviour:
   - soundId: 24
     clip: {fileID: 8300000, guid: d34241686c26f734681230757ac8f021, type: 3}
     volume: 1
+  - soundId: 25
+    clip: {fileID: 8300000, guid: 3e45bb5fdf3ff524084d8168747a2920, type: 3}
+    volume: 1
+  - soundId: 26
+    clip: {fileID: 8300000, guid: 6b6d232c6b3da884aa8e4be1cbed0661, type: 3}
+    volume: 1
+  - soundId: 27
+    clip: {fileID: 8300000, guid: 3c592b5e8ef6f0145b1f575f8e168914, type: 3}
+    volume: 1
+  - soundId: 28
+    clip: {fileID: 8300000, guid: c9a510d709597bf48a1748b039ca0f30, type: 3}
+    volume: 1
+  - soundId: 29
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 30
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 31
+    clip: {fileID: 8300000, guid: 103fa5a03286be44487ab07487bbbff1, type: 3}
+    volume: 1
+  - soundId: 32
+    clip: {fileID: 8300000, guid: 5302ede5f10eec047a738ab74e677627, type: 3}
+    volume: 1
+  - soundId: 33
+    clip: {fileID: 8300000, guid: 67ebdf06360cd86419d84432af613f7e, type: 3}
+    volume: 1
+  - soundId: 34
+    clip: {fileID: 8300000, guid: 0f93f62c453e7d44594c22634f97ecc9, type: 3}
+    volume: 1
+  - soundId: 35
+    clip: {fileID: 8300000, guid: d7996bddcfbc4b044a223398a33d0ab3, type: 3}
+    volume: 1
+  - soundId: 36
+    clip: {fileID: 8300000, guid: e67eab8fa2b5b6b48a2270a7afc86910, type: 3}
+    volume: 1
+  - soundId: 37
+    clip: {fileID: 8300000, guid: 5710065a76535c143b2d6969d844ee1e, type: 3}
+    volume: 1
+  - soundId: 38
+    clip: {fileID: 0}
+    volume: 1
+  - soundId: 39
+    clip: {fileID: 8300000, guid: dc9c7990d6542eb459ee94976772ca2c, type: 3}
+    volume: 1
+  - soundId: 40
+    clip: {fileID: 8300000, guid: 3d452d7b8059ed64286366f6967ef14f, type: 3}
+    volume: 1
+  - soundId: 41
+    clip: {fileID: 8300000, guid: 5e8ce677c0fc103469b09dddc154a958, type: 3}
+    volume: 1
+  - soundId: 42
+    clip: {fileID: 8300000, guid: 28f9c29680ea9ea458da0ef563e6bdf1, type: 3}
+    volume: 1
+  - soundId: 43
+    clip: {fileID: 8300000, guid: 084a1792ef354564a8d39596c4b7f73d, type: 3}
+    volume: 1
   musicVolume: 0.35
   musicTrack: {fileID: 0}
   voiceDuckingMultiplier: 0.25
