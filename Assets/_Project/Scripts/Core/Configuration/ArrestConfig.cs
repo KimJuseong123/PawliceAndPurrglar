@@ -23,9 +23,23 @@ namespace PawsAndLoot.Config
         [SerializeField, Range(4f, 20f), Tooltip("Seconds an arrested thief is held before respawning.")]
         private float jailSeconds = 10f;
 
+        [SerializeField, Min(0), Tooltip("Gold paid to the officer for each completed arrest. Paid on top of any confiscation, which only happens when the thief has sold something.")]
+        private int arrestRewardGold = 200;
+
         public float ArrestDistance => arrestDistance;
         public float ArrestDurationSeconds => arrestDurationSeconds;
         public float JailSeconds => jailSeconds;
+
+        /// <summary>
+        /// What a catch is worth by itself.
+        ///
+        /// Confiscation already moves money on an arrest, but only from a thief
+        /// who has sold something — early in a match the officer catches
+        /// somebody with an empty wallet and gets nothing for it. A flat bounty
+        /// means the first catch buys tools for the second, which is the loop
+        /// the police economy is supposed to have.
+        /// </summary>
+        public int ArrestRewardGold => arrestRewardGold;
 
         public override void ValidateOrThrow()
         {

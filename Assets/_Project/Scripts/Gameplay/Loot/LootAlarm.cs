@@ -67,7 +67,6 @@ namespace PawsAndLoot.Gameplay.Loot
         /// slightly outside the walkable floor the extents describe. A metre is
         /// wider than any shelf and far narrower than the gap between rooms.
         /// </summary>
-        private const float RoomMarginMeters = 1f;
 
         /// <summary>
         /// How long the officer's screen keeps pointing at the shop.
@@ -133,7 +132,7 @@ namespace PawsAndLoot.Gameplay.Loot
         /// </summary>
         public void Raise(Vector3 at, PlayerRoleIdentity thief)
         {
-            at = TownPositionOf(at);
+            at = Interiors.InteriorAddress.TownPositionOf(at);
             RaisedCount++;
             LastRaisedAt = at;
             BeaconSource = at;
@@ -190,64 +189,6 @@ namespace PawsAndLoot.Gameplay.Loot
             Raised?.Invoke(at);
         }
 
-        /// <summary>
-        /// The same place, but somewhere the officer can run to.
-        ///
-        /// A position inside one of the interior rooms is answered with that
-        /// building's own front step in the town. Anywhere else is returned
-        /// unchanged, which is every alarm raised out in the street.
-        ///
-        /// Measured in the room's local space rather than against world axes,
-        /// because a room that has been turned would otherwise be tested with
-        /// its width and depth swapped.
-        ///
-        /// The jail is skipped. It is built from the same parts and so answers
-        /// every search for a room, but nothing is stolen there and it has no
-        /// door to point at.
-        /// </summary>
-        private static Vector3 TownPositionOf(Vector3 at)
-        {
-            foreach (Interiors.HouseInterior room in
-                FindObjectsByType<Interiors.HouseInterior>(
-                    FindObjectsSortMode.None))
-            {
-                if (room == null || room.IsJail)
-                {
-                    continue;
-                }
-
-                Vector3 local = room.transform.InverseTransformPoint(at);
-                Vector2 half = room.FloorHalfExtents;
-                if (Mathf.Abs(local.x) > half.x + RoomMarginMeters
-                    || Mathf.Abs(local.z) > half.y + RoomMarginMeters)
-                {
-                    continue;
-                }
-
-                Vector3 outside = room.ExitPosition;
-
-                // `ExitPosition` falls back to the room's own origin when the
-                // building has no exit marker, and the room's origin is the
-                // off-map coordinate this whole method exists to avoid. Said
-                // out loud: answering with it would put the beacon back where
-                // it was and look like the fix had simply not worked.
-                if ((outside - room.transform.position).sqrMagnitude < 0.01f)
-                {
-                    GameLogger.Error(
-                        GameLogCategory.Loot,
-                        $"Interior {room.InteriorId} has no exit marker, so an "
-                        + "alarm raised inside it cannot be pointed at a street "
-                        + "address. The beacon will sit on the shelf it was "
-                        + "taken from.",
-                        room);
-                    return at;
-                }
-
-                return outside;
-            }
-
-            return at;
-        }
 
         /// <summary>
         /// How many watchers the last alarm switched off. Zero means nobody was

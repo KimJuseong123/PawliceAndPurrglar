@@ -568,9 +568,38 @@ namespace PawsAndLoot.Audio
             GameSoundService.Request(GameSoundId.LureTaken);
         }
 
-        private static void HandlePickupStarted(LootItem _)
+        /// <summary>
+        /// A theft, heard from wherever this machine is standing.
+        ///
+        /// The officer is meant to know a robbery is happening without being
+        /// told which one. A flat sound says the same thing from anywhere on
+        /// the map, which makes that information free; volume is what the thief
+        /// pays for choosing a house across town.
+        ///
+        /// Addressed through <see cref="InteriorAddress"/> first, because most
+        /// of this game's loot is indoors and interiors are rooms parked off the
+        /// edge of the map. Measured raw, every indoor theft is a hundred metres
+        /// away and therefore silent — and silence is exactly what this sound
+        /// looked like before it existed, so nothing would say it had broken.
+        /// </summary>
+        private static void HandlePickupStarted(LootItem item)
         {
-            GameSoundService.Request(GameSoundId.LootPickupStart);
+            GameSoundService.RequestAt(
+                GameSoundId.LootPickupStart,
+                AddressOf(item));
+        }
+
+        /// <summary>
+        /// The town coordinate of a piece of loot, or the listener's own
+        /// position when there is no loot to ask — an unplaceable sound is
+        /// played at full volume rather than dropped.
+        /// </summary>
+        private static Vector3 AddressOf(Component source)
+        {
+            return source == null
+                ? Vector3.zero
+                : Gameplay.Interiors.InteriorAddress.TownPositionOf(
+                    source.transform.position);
         }
 
         /// <summary>
@@ -587,10 +616,11 @@ namespace PawsAndLoot.Audio
                 return;
             }
 
-            GameSoundService.Request(
+            GameSoundService.RequestAt(
                 displayCase.OpenedQuietly
                     ? GameSoundId.CaseKeyUnlock
-                    : GameSoundId.GlassBreak);
+                    : GameSoundId.GlassBreak,
+                AddressOf(displayCase));
         }
 
         /// <summary>

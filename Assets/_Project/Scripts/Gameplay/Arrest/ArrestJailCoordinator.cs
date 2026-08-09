@@ -48,6 +48,13 @@ namespace PawsAndLoot.Gameplay.Arrest
         private int jailInteriorId =
             PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside;
 
+        /// <summary>
+        /// Cached rather than searched on every arrest. There is one wallet and
+        /// it lives as long as the match does.
+        /// </summary>
+        [SerializeField]
+        private PawsAndLoot.Gameplay.Players.PoliceWallet policeWallet;
+
         private bool _subscribed;
 
         public void Configure(
@@ -88,6 +95,8 @@ namespace PawsAndLoot.Gameplay.Arrest
 
         private void HandleArrestCompleted()
         {
+            PayTheBounty();
+
             if (jail == null || cellPoint == null || releasePoint == null)
             {
                 return;
@@ -174,6 +183,66 @@ namespace PawsAndLoot.Gameplay.Arrest
         // controls on both. The interior camera is for rooms a player walks
         // into by choice.
 
+
+        /// <summary>
+        /// Pays the officer for the catch.
+        ///
+        /// Before this, an arrest paid only through confiscation — which takes a
+        /// share of what the thief has *sold*. Early in a match that is nothing,
+        /// so the first catch of every game was worth zero and the officer could
+        /// not afford the tools that make the second catch easier. A flat bounty
+        /// makes the first catch fund the next one.
+        ///
+        /// Paid here, before the jail term is set up, and unconditionally: the
+        /// guards below are about having somewhere to put the thief, and an
+        /// arrest with no cell is still an arrest.
+        ///
+        /// Host only. This handler runs where the arrest was decided, and the
+        /// officer's wallet is replicated from there — paying on both machines
+        /// would pay twice on the host's screen and once on the client's, which
+        /// is the shape of a desync nobody can explain from the numbers.
+        /// </summary>
+        private void PayTheBounty()
+        {
+            if (arrestConfig == null || arrestConfig.ArrestRewardGold <= 0)
+            {
+                return;
+            }
+
+            PawsAndLoot.Gameplay.Players.PoliceWallet wallet = ResolveWallet();
+            if (wallet == null)
+            {
+                GameLogger.Warning(
+                    GameLogCategory.Arrest,
+                    "An arrest completed and there is no PoliceWallet to pay, "
+                    + "so the bounty was dropped.",
+                    this);
+                return;
+            }
+
+            wallet.Recover(arrestConfig.ArrestRewardGold);
+            GameLogger.Info(
+                GameLogCategory.Arrest,
+                $"Arrest bounty paid: {arrestConfig.ArrestRewardGold} gold.",
+                this);
+        }
+
+        /// <summary>
+        /// The officer's wallet, found once and kept. There is exactly one, and
+        /// it is created with the match and never replaced — but the search is
+        /// retried while it is null, because this coordinator exists before the
+        /// players are spawned.
+        /// </summary>
+        private PawsAndLoot.Gameplay.Players.PoliceWallet ResolveWallet()
+        {
+            if (policeWallet == null)
+            {
+                policeWallet = FindFirstObjectByType<
+                    PawsAndLoot.Gameplay.Players.PoliceWallet>();
+            }
+
+            return policeWallet;
+        }
 
         private void HandleReleased()
         {

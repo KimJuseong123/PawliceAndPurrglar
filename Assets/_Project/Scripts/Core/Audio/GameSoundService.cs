@@ -85,6 +85,96 @@ namespace PawsAndLoot.Audio
         private static bool _fallbackBankLoaded;
 
         /// <summary>
+        /// How close something has to be to sound at full volume, and how far
+        /// away before it cannot be heard at all.
+        ///
+        /// The town is about 60m across, so 55m means a theft at the far corner
+        /// is inaudible and one on the next street is faint but there. The near
+        /// radius is a whole city block: standing anywhere near the house being
+        /// robbed should sound the same as standing in its doorway, because the
+        /// officer's question is "which building", not "which room".
+        /// </summary>
+        public const float AudibleNearMeters = 12f;
+        public const float AudibleFarMeters = 55f;
+
+        /// <summary>
+        /// Where the local player's ears are.
+        ///
+        /// The listener rather than the player: it is already attached to the
+        /// camera that follows whoever is playing on this machine, so it is
+        /// correct without asking which role this is, and it stays correct in
+        /// the scenes and tests that have no player at all.
+        /// </summary>
+        private static AudioListener _listener;
+
+        /// <summary>
+        /// Raises a sound that happened somewhere, quieter the further away it
+        /// was.
+        ///
+        /// For the thief's break-ins. The officer is meant to hear that a
+        /// robbery is happening without being told where — a flat sound tells
+        /// them the same thing wherever they stand, which makes the information
+        /// free and the map irrelevant. Volume is the only cue that costs the
+        /// thief something: rob the far side of town and the officer barely
+        /// hears it.
+        ///
+        /// The position must already be a town coordinate. Interiors are rooms
+        /// parked off the edge of the map, so a raw indoor position is tens of
+        /// metres from everything and every theft indoors would be silent —
+        /// call <c>InteriorAddress.TownPositionOf</c> first.
+        /// </summary>
+        public static void RequestAt(GameSoundId soundId, Vector3 townPosition)
+        {
+            float scale = DistanceScaleAt(townPosition);
+            if (scale <= 0f)
+            {
+                return;
+            }
+
+            if (_instance != null)
+            {
+                _instance.Play(soundId, scale);
+                return;
+            }
+
+            PlayWithoutAService(soundId);
+        }
+
+        /// <summary>
+        /// 1 at the near radius, 0 at the far one, linear between. Returns 1
+        /// when there is nobody listening yet, so a sound raised before the
+        /// scene has a listener is heard rather than silently dropped.
+        /// </summary>
+        public static float DistanceScaleAt(Vector3 townPosition)
+        {
+            if (_listener == null)
+            {
+                _listener = Object.FindFirstObjectByType<AudioListener>();
+            }
+
+            if (_listener == null)
+            {
+                return 1f;
+            }
+
+            float distance = Vector3.Distance(
+                _listener.transform.position,
+                townPosition);
+            if (distance <= AudibleNearMeters)
+            {
+                return 1f;
+            }
+
+            if (distance >= AudibleFarMeters)
+            {
+                return 0f;
+            }
+
+            return 1f - (distance - AudibleNearMeters)
+                / (AudibleFarMeters - AudibleNearMeters);
+        }
+
+        /// <summary>
         /// Static entry point so rules can raise a sound without holding a
         /// reference.
         /// </summary>
@@ -154,6 +244,16 @@ namespace PawsAndLoot.Audio
 
         public void Play(GameSoundId soundId)
         {
+            Play(soundId, 1f);
+        }
+
+        /// <summary>
+        /// <paramref name="volumeScale"/> multiplies the bank's volume for this
+        /// one play. The bank still decides how loud the sound is relative to
+        /// every other sound; this only says how far away it happened.
+        /// </summary>
+        public void Play(GameSoundId soundId, float volumeScale)
+        {
             if (soundId == GameSoundId.None)
             {
                 return;
@@ -189,11 +289,15 @@ namespace PawsAndLoot.Audio
             // a few frames into the clip (`ISSUE-070`).
             if (GameSoundBank.OutlivesTheScene(soundId))
             {
-                PersistentOneShotAudio.Play(clip, bank.GetVolume(soundId));
+                PersistentOneShotAudio.Play(
+                    clip,
+                    bank.GetVolume(soundId) * volumeScale);
                 return;
             }
 
-            oneShotSource.PlayOneShot(clip, bank.GetVolume(soundId));
+            oneShotSource.PlayOneShot(
+                clip,
+                bank.GetVolume(soundId) * volumeScale);
         }
 
         /// <summary>
