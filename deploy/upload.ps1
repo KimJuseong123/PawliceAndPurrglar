@@ -96,4 +96,4 @@ sudo systemctl restart pawlice-voice || true
 
 Write-Host ""
 Write-Host "Uploaded. Check it:"
-Write-Host "  ssh -i $KeyPath $HostName 'systemctl status caddy pawlice-voice --no-pager'"
+Write-Host "  ssh -i $KeyPath $HostName 'systemctl status nginx pawlice-voice --no-pager'"

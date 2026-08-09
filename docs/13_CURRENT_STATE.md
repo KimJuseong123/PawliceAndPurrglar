@@ -23,7 +23,7 @@
 - 원근감 있는 3D 기울어진 탑다운
 - 경찰과 강아지, 도둑과 고양이
 - 도둑의 판매 NPC는 너구리 상인
-- 동물 명령은 숫자키 `1`~`4`로 먼저 구현
+- 동물 명령은 음성이다 (`V`). 숫자키 대역은 2026-08-10에 제거
 - 실제 음성 입력과 자연어 분류는 핵심 루프 검증 후 적용
 - 대부분의 모델은 그레이박스 이후 Blender에서 제작
 - 기존 경찰 모델만 리깅과 애니메이션 테스트에 사용
@@ -1150,6 +1150,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-10 | 동물 명령 음성 표 추가 · `Ctrl+1~4` 제거 · 배포 nginx 이관 마무리 | 아래 참조. `server` 14/14 통과, `tsc` 통과, `bash -n setup-ec2.sh` 통과, 저장소에 남은 `caddy` 참조 **0건** |
+| 2026-08-10 | HUD 프리팹 재생성 (`Create Role-Aware HUD Prefabs` + `Sync HUD Canvas To Resources`) | `ANIMAL COMMANDS` 패널이 두 프리팹 모두에서 **0건**. 씬은 재생성하지 않았다 — 표는 런타임에 스스로 설치되므로 `GlobalObjectIdHash`를 건드릴 이유가 없다 |
 | 2026-08-10 | 투척 당기기·동물 경계 소리를 로컬 전용으로 바꾼 뒤 | Edit Mode **331/331**, Play Mode 224개 중 **222 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`. 신규 `OnlyThisPlayersThrowWindUpIsHeard`가 XML에서 `Passed` |
 | 2026-08-10 | **직전 Play Mode 실행을 잘못 읽었다** | 결과 XML이 없는데 로그를 읽고 판단하려 했다. `rm`이 `Device or resource busy`를 낼 때까지 몰랐다 — Unity가 아직 로그 파일을 쥐고 있었다는 뜻이고, 즉 **실행이 끝나지 않았다.** `CLAUDE.md`가 적어 둔 그대로다: 배치 로그는 종료 통보 뒤에만 읽는다 |
 | 2026-08-10 | 문 소리 이중 재생 수정 + 로컬 역할 조회 통합 이후 | Edit Mode **331/331**, Play Mode 223개 중 **221 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`. 신규 `OnlyTheDoorOfThePlayerAtThisKeyboardIsHeard`가 XML에서 `Passed` |

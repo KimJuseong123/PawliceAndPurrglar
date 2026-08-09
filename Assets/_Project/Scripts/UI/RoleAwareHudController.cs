@@ -1414,18 +1414,23 @@ namespace PawsAndLoot.UI
             return true;
         }
 
+        /// <summary>
+        /// Nothing, since the key bindings it labelled were removed.
+        ///
+        /// Left as an empty loop rather than deleted because `animalCommands` is
+        /// a serialised array on a prefab: a HUD built before 2026-08-10 still
+        /// has four rows in it, and this is what leaves them saying whatever
+        /// they last said instead of throwing.
+        /// </summary>
         private void BindBindingLabels()
         {
-            PlayerRole role = ResolveRole();
             for (int index = 0; index < animalCommands.Length; index++)
             {
-                CompanionCommandId command =
-                    CompanionCommandCatalog.FromDebugNumberKey(role, index + 1);
                 animalCommands[index]?.Bind(new AnimalCommandShortcutViewModel(
-                    "CTRL +",
-                    GameplayInputRouter.GetAnimalCommandLabel(index + 1).Replace("CTRL + ", string.Empty),
-                    CompanionCommandCatalog.GetDisplayName(command),
-                    false));
+                    string.Empty,
+                    string.Empty,
+                    string.Empty,
+                    true));
             }
         }
 
@@ -2278,8 +2283,19 @@ namespace PawsAndLoot.UI
                 new Vector2(-24f, -396f),
                 new Vector2(186f, 52f));
             QuickSlotView[] quickSlots = BuildQuickSlots(canvasObject.transform);
+
+            // The `ANIMAL COMMANDS` panel that listed `CTRL + 1..4` was built
+            // here until 2026-08-10. The keys were the stand-in for voice while
+            // there was no microphone; with them gone the panel described a
+            // control that does not exist. What replaced it is
+            // `CompanionVoiceCommandTableView`, which installs itself at runtime
+            // and prints the phrases to say — the top-left corner is now its.
+            //
+            // `Configure` still takes the array so the signature every test and
+            // the prefab builder calls does not move. Empty means the binding
+            // loop does nothing.
             AnimalCommandShortcutView[] animalCommands =
-                BuildAnimalCommands(canvasObject.transform);
+                System.Array.Empty<AnimalCommandShortcutView>();
             MicrophoneStatusView microphone = BuildMicrophone(
                 canvasObject.transform,
                 out Button voiceButton);
@@ -2385,59 +2401,6 @@ namespace PawsAndLoot.UI
             var view = slot.AddComponent<QuickSlotView>();
             view.Configure(key, quantity, icon, selected, disabled, cooldown, glyph);
             return view;
-        }
-
-        private static AnimalCommandShortcutView[] BuildAnimalCommands(Transform parent)
-        {
-            GameObject panel = CreatePanel(parent, "ANIMAL COMMANDS", new Vector2(292f, 214f));
-            RectTransform panelRect = panel.GetComponent<RectTransform>();
-            panelRect.pivot = new Vector2(0f, 1f);
-            Anchor(
-                panelRect,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(24f, -24f),
-                new Vector2(292f, 214f));
-
-            TMP_Text title = CreateText(
-                panel.transform,
-                "Title",
-                "ANIMAL COMMAND",
-                15f,
-                TextAlignmentOptions.Left);
-            title.color = new Color(0.05f, 0.95f, 1f, 1f);
-            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(18f, -14f), new Vector2(-36f, 26f));
-
-            var result = new AnimalCommandShortcutView[4];
-            for (int index = 0; index < result.Length; index++)
-            {
-                GameObject row = CreatePanel(
-                    panel.transform,
-                    $"Ctrl Command {index + 1}",
-                    new Vector2(252f, 32f));
-                Image rowImage = row.GetComponent<Image>();
-                rowImage.color = new Color(0.02f, 0.07f, 0.09f, 0.54f);
-                RectTransform rowRect = row.GetComponent<RectTransform>();
-                rowRect.pivot = new Vector2(0f, 1f);
-                Anchor(
-                    rowRect,
-                    new Vector2(0f, 1f),
-                    new Vector2(0f, 1f),
-                    new Vector2(20f, -54f - index * 38f),
-                    new Vector2(252f, 32f));
-
-                TMP_Text modifier = CreateText(row.transform, "Modifier", "CTRL +", 11f, TextAlignmentOptions.Left);
-                TMP_Text key = CreateText(row.transform, "Key", (index + 1).ToString(), 16f, TextAlignmentOptions.Left);
-                TMP_Text command = CreateText(row.transform, "Command", string.Empty, 12f, TextAlignmentOptions.Left);
-                modifier.color = new Color(0.05f, 0.95f, 1f, 1f);
-                key.color = new Color(0.85f, 1f, 1f, 1f);
-                Anchor(modifier.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 0f), new Vector2(52f, 24f));
-                Anchor(key.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(60f, 0f), new Vector2(24f, 24f));
-                Anchor(command.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(92f, 0f), new Vector2(-102f, 24f));
-                result[index] = row.AddComponent<AnimalCommandShortcutView>();
-                result[index].Configure(modifier, key, command, null);
-            }
-            return result;
         }
 
         private static MicrophoneStatusView BuildMicrophone(

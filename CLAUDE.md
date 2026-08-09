@@ -110,6 +110,18 @@ URL을 함께 움직일 이유가 없다. `-executeMethod`에는 여전히
 > 같은 계열로 **`GUIUtility.systemCopyBuffer`는 WebGL에서 아무 데도 닿지 않는다.**
 > 플레이어 내부 버퍼에 쓰고 페이지의 클립보드는 그대로다. `.jslib`로 가야 한다.
 
+> **`cloudProjectId`는 빌드에 구워진다. 에디터에서 되는 것이 배포본에서 되는
+> 것이 아니다.** 프로젝트를 연결하기 전에 만든 WebGL 빌드를 올리면 방 만들기가
+> `Unity 프로젝트 연결이 필요합니다.`로 끝나는데, **같은 커밋을 에디터에서 Play하면
+> 멀쩡히 코드가 나온다** — 에디터는 `ProjectSettings.asset`을 직접 읽기 때문이다.
+> 그래서 증상이 배포 문제가 아니라 로비나 Relay 문제로 보인다.
+> `ProjectSettings`를 건드렸으면 **다시 빌드해서 다시 올린다.**
+
+> **Unity 빌드를 서버에서 하지 않는다.** t4g.micro는 1.8GB이고 IL2CPP·emscripten
+> 링크는 수 GB를 쓴다. 게다가 인스턴스가 `aarch64`인데 Unity는 ARM64 리눅스
+> 에디터를 배포하지 않는다. **개발 PC에서 빌드하고 산출물만 올린다** — Node 음성
+> 서버도 로컬에서 `tsc`를 돌리고 서버는 `npm ci --omit=dev`만 한다.
+
 > **배치 실행의 로그는 종료 통보를 받은 뒤에만 판독한다.** 실행 중에
 > `grep -c "error CS"`를 하면 0이 나오고 그게 "통과"로 읽힌다. 실제로는 오류가
 > 있었고, 두 번 속았다 (`ISSUE-051`).
@@ -609,7 +621,7 @@ Build Windows Playtest         2프로세스 회귀용
 Build Linux Dedicated Server   **미사용.** Relay 채택으로 서버 빌드가 필요 없다
 ```
 
-배포는 `deploy/`에 있다 — `Caddyfile`, `pawlice-voice.service`, `setup-ec2.sh`,
+배포는 `deploy/`에 있다 — `pawlice.nginx.conf`, `pawlice-voice.service`, `setup-ec2.sh`,
 `upload.ps1`, `voice.env.example`. 절차는 `docs/21_REMOTE_PLAY_AND_DEPLOY.md` 2절.
 
 ### Technical Validation
@@ -807,7 +819,10 @@ blender --background --python Tools/decimate_fbx.py -- <in.fbx> <out.fbx> <목�
 
 ## 9. 프로토타입 단계 대체 수단
 
-- 동물 명령: 숫자키 `1`~`4`. 실제 STT·자연어 분류·LLM 호출은 구현하지 않는다.
+- 동물 명령: **음성이다.** `V`를 누른 채 말한다. 숫자키 `Ctrl+1`~`4`는 마이크가
+  없던 동안의 대역이었고 2026-08-10에 없앴다 — 두 방법을 다 두면 화면의 표가
+  둘 중 하나만 설명하거나 한쪽에 대해 틀리게 된다.
+  `CompanionVoiceCommandTableView`가 왼쪽 위에 할 말을 한글로 띄운다.
 - 3D 모델: 그레이박스 도형. 최종 모델은 별도로 제작 중이며
   `PlayerVisualRoot.ReplaceVisual`이 교체 지점이다.
 - 이 두 가지를 "AI 음성 기능 완료" 또는 "최종 아트 적용"으로 표현하지 않는다.

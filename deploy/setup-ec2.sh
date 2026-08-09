@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 #
-# One-time setup for the EC2 instance. Ubuntu 22.04 or 24.04, t3.micro is
-# enough: no Unity server runs here. Matches go through Unity Relay and this
-# machine only serves files and forwards voice requests.
+# One-time setup for the EC2 instance.
+#
+# Written for what this project actually runs on: Amazon Linux 2023 on
+# aarch64, with nginx already terminating TLS through a Certbot certificate.
+# t3/t4g.micro is enough — no Unity server runs here. Matches go through Unity
+# Relay and this machine only serves files and forwards voice requests.
 #
 #   sudo PAWLICE_DOMAIN=pawlice.duckdns.org bash setup-ec2.sh
 #
-# Run it again safely — every step checks before it acts.
+# Run it again safely. Every step checks before it acts, and the existing
+# certificate is read rather than reissued: Let's Encrypt rate-limits issuance,
+# and throwing away a working certificate to prove a script can get one is a
+# bad trade at any time and a terrible one near a deadline.
 
 set -euo pipefail
 
@@ -21,87 +27,117 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-echo "== 1/7  packages"
-apt-get update -qq
-apt-get install -y -qq curl ca-certificates gnupg debian-keyring debian-archive-keyring apt-transport-https
+HERE="$(cd "$(dirname "$0")" && pwd)"
+LIVE="/etc/letsencrypt/live/$DOMAIN"
 
-echo "== 2/7  Node.js 22"
-if ! command -v node >/dev/null || [[ "$(node -v | cut -c2-3)" -lt 20 ]]; then
-  curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-  apt-get install -y -qq nodejs
+echo "== 1/6  checking what is already here"
+command -v nginx >/dev/null || { echo "nginx is not installed." >&2; exit 1; }
+if [[ ! -s "$LIVE/fullchain.pem" ]]; then
+  echo "No certificate at $LIVE." >&2
+  echo "Issue one first:  sudo certbot --nginx -d $DOMAIN" >&2
+  exit 1
 fi
-node -v
+echo "   nginx: $(nginx -v 2>&1)"
+echo "   certificate: present"
 
-echo "== 3/7  make room on port 80"
-# Caddy and nginx both want :80, and the loser fails to start with nothing more
-# than "address already in use" in a journal nobody is reading. Whatever was
-# there first is stopped explicitly, so the reason is on screen.
-#
-# Only stopped and disabled, never removed. If this box turns out to be serving
-# something else, `systemctl enable --now nginx` puts it back.
-for other in nginx apache2 httpd; do
-  if systemctl is-active --quiet "$other" 2>/dev/null; then
-    echo "   stopping $other (it holds port 80)"
-    systemctl stop "$other"
-    systemctl disable "$other" 2>/dev/null || true
-  fi
-done
-
-echo "== 4/7  Caddy"
-if ! command -v caddy >/dev/null; then
-  curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/gpg.key \
-    | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-  curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt \
-    > /etc/apt/sources.list.d/caddy-stable.list
-  apt-get update -qq
-  apt-get install -y -qq caddy
+echo "== 2/6  Node.js 22"
+# Amazon Linux 2023 ships Node 18 and the voice server's Fastify 5 needs 20 or
+# newer. Installed from NodeSource rather than pinned to what dnf happens to
+# have, because "it starts but throws on an import" is a much worse failure
+# than "the package is missing".
+if ! command -v node >/dev/null || [[ "$(node -v | sed 's/v\([0-9]*\).*/\1/')" -lt 20 ]]; then
+  curl -fsSL https://rpm.nodesource.com/setup_22.x | bash -
+  dnf install -y -q nodejs
 fi
-caddy version
+echo "   node $(node -v)"
 
-echo "== 5/7  service account and folders"
-id -u pawlice >/dev/null 2>&1 || useradd --system --create-home --home-dir /srv/pawlice --shell /usr/sbin/nologin pawlice
+echo "== 3/6  service account and folders"
+id -u pawlice >/dev/null 2>&1 \
+  || useradd --system --create-home --home-dir /srv/pawlice --shell /sbin/nologin pawlice
 mkdir -p /srv/pawlice/web /srv/pawlice/server
 chown -R pawlice:pawlice /srv/pawlice
-
-# Caddy runs as its own user and has to be able to read what we upload.
+# nginx runs as its own user and has to be able to read what we upload.
 chmod 755 /srv/pawlice /srv/pawlice/web
 
-echo "== 6/7  Caddy site"
-install -d /etc/caddy
-install -m 0644 "$(dirname "$0")/Caddyfile" /etc/caddy/Caddyfile
+echo "== 4/6  nginx site"
+# The previous file is kept, once. It is Certbot's output and the only record
+# of what the TLS block looked like before this script touched it.
+if [[ -f /etc/nginx/conf.d/pawlice.conf && ! -f /etc/nginx/conf.d/pawlice.conf.pre-pawlice ]]; then
+  cp /etc/nginx/conf.d/pawlice.conf /etc/nginx/conf.d/pawlice.conf.pre-pawlice
+  echo "   kept the previous config as pawlice.conf.pre-pawlice"
+fi
 
-# The domain is passed in rather than written into the file, so the same
-# Caddyfile is committed once and works for whatever name this instance ends up
-# with. systemd's drop-in is the only place it is stored.
-install -d /etc/systemd/system/caddy.service.d
-cat >/etc/systemd/system/caddy.service.d/pawlice.conf <<EOF
+{
+  sed "s|__PAWLICE_DOMAIN__|$DOMAIN|g" "$HERE/pawlice.nginx.conf" | sed '$d'
+  cat <<EOF
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate $LIVE/fullchain.pem; # managed by Certbot
+    ssl_certificate_key $LIVE/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+
+server {
+    if (\$host = $DOMAIN) {
+        return 301 https://\$host\$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    server_name $DOMAIN;
+    return 404; # managed by Certbot
+}
+EOF
+} > /etc/nginx/conf.d/pawlice.conf
+
+# Checked before reloading. A bad config makes `nginx -s reload` fail and leaves
+# the old one running, which looks like the change did nothing.
+nginx -t
+systemctl reload nginx
+echo "   nginx reloaded"
+
+echo "== 5/6  voice service unit"
+install -m 0644 "$HERE/pawlice-voice.service" /etc/systemd/system/pawlice-voice.service
+systemctl daemon-reload
+
+echo "== 6/6  certificate renewal"
+# Certbot issued a certificate and left nothing to renew it. It expires in
+# ninety days, silently, and the failure is a game nobody can open — after the
+# person who deployed it has stopped watching.
+cat >/etc/systemd/system/certbot-renew.service <<'EOF'
+[Unit]
+Description=Renew Let's Encrypt certificates
 [Service]
-Environment=PAWLICE_DOMAIN=$DOMAIN
+Type=oneshot
+ExecStart=/usr/bin/certbot renew --quiet --deploy-hook "systemctl reload nginx"
 EOF
 
-echo "== 7/7  voice service unit"
-install -m 0644 "$(dirname "$0")/pawlice-voice.service" /etc/systemd/system/pawlice-voice.service
+cat >/etc/systemd/system/certbot-renew.timer <<'EOF'
+[Unit]
+Description=Renew Let's Encrypt certificates twice a day
+[Timer]
+OnCalendar=*-*-* 03,15:00:00
+RandomizedDelaySec=3600
+Persistent=true
+[Install]
+WantedBy=timers.target
+EOF
 
 systemctl daemon-reload
-systemctl enable caddy
-systemctl restart caddy
+systemctl enable --now certbot-renew.timer
+echo "   renewal timer armed"
 
 cat <<EOF
 
-Done. What is not done yet, in order:
+Done. What is left:
 
-  1. Point $DOMAIN at this machine's public IP (DuckDNS).
-     Caddy asks Let's Encrypt for a certificate on the next request and will
-     fail until the name resolves here.
+  1. Write /srv/pawlice/server/.env  — see deploy/voice.env.example
+     Then: sudo systemctl enable --now pawlice-voice
 
   2. Upload the WebGL build to /srv/pawlice/web
-     and the built voice server to /srv/pawlice/server
-     (deploy/upload.ps1 from the development machine does both).
+     (deploy/upload.ps1 from the development machine)
 
-  3. Write /srv/pawlice/server/.env  — see deploy/voice.env.example.
-     Then: systemctl enable --now pawlice-voice
-
-  4. Check:  curl -I https://$DOMAIN/        -> 200
-             curl    https://$DOMAIN/health  -> {"status":"ok"}
+  3. Check:  curl -I https://$DOMAIN/
+             curl    https://$DOMAIN/health
 
 EOF

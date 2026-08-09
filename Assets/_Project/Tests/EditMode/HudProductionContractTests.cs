@@ -90,7 +90,13 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(prefab.transform.Find("Cat Exchange/Grid/Cat Bag Slot 4"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Context Interaction/Hold Progress"), Is.Not.Null);
             Assert.That(prefab.transform.Find("Sensor Radar"), Is.Not.Null);
-            Assert.That(prefab.transform.Find("ANIMAL COMMANDS"), Is.Not.Null);
+
+            // "ANIMAL COMMANDS" was here. It listed `CTRL + 1..4`, and both the
+            // panel and the keys went on 2026-08-10 — the animals are told what
+            // to do out loud. Asserted absent rather than dropped, so a rebuilt
+            // prefab that still carries the old panel fails instead of quietly
+            // covering the table that replaced it in the same corner.
+            Assert.That(prefab.transform.Find("ANIMAL COMMANDS"), Is.Null);
 
             Assert.That(
                 prefab.GetComponentsInChildren<RoleAwareHudController>(true),
@@ -191,16 +197,6 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(catExchangeBackground, Is.Not.Null);
             Assert.That(catExchangeBackground.color.a, Is.GreaterThan(0.4f));
             Assert.That(catExchangeBackground.raycastTarget, Is.True);
-            AssertRect(
-                prefab.transform.Find("ANIMAL COMMANDS") as RectTransform,
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, 1f),
-                new Vector2(24f, -24f),
-                new Vector2(292f, 214f));
-            Assert.That(
-                prefab.transform.Find("ANIMAL COMMANDS/Ctrl Command 1"),
-                Is.Not.Null);
         }
 
         [Test]
@@ -253,17 +249,6 @@ namespace PawsAndLoot.Tests.EditMode
                 AssetDatabase.LoadAssetAtPath<Material>(
                     ThrowLandingMaterialPath),
                 ThrowLandingMaterialPath);
-        }
-
-        [Test]
-        public void AnimalCommandsAdvertiseCtrlNumberBindings()
-        {
-            Assert.That(
-                GameplayInputRouter.GetAnimalCommandLabel(1),
-                Is.EqualTo("CTRL + 1"));
-            Assert.That(
-                GameplayInputRouter.GetAnimalCommandLabel(4),
-                Is.EqualTo("CTRL + 4"));
         }
 
         [Test]

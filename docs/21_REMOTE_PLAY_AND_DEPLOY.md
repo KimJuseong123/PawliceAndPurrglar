@@ -137,17 +137,32 @@ nslookup pawlice.duckdns.org
 
 ### C. EC2 1회 셋업
 
-저장소를 인스턴스로 가져가거나 `deploy/` 세 파일만 올린 뒤:
+저장소를 인스턴스로 가져가거나 `deploy/`의 `setup-ec2.sh`·`pawlice.nginx.conf`·`pawlice-voice.service`를 올린 뒤:
 
 ```bash
 sudo PAWLICE_DOMAIN=pawlice.duckdns.org bash deploy/setup-ec2.sh
 ```
 
-하는 일: Node 22, Caddy, `pawlice` 서비스 계정, `/srv/pawlice/{web,server}`,
-`/etc/caddy/Caddyfile`, `pawlice-voice.service`. 여러 번 실행해도 안전하다.
+하는 일: Node 22, `pawlice` 서비스 계정, `/srv/pawlice/{web,server}`,
+`/etc/nginx/conf.d/pawlice.conf`, `pawlice-voice.service`, 인증서 갱신 타이머.
+여러 번 실행해도 안전하다.
 
-Caddy가 **Let's Encrypt 인증서를 자동으로 받고 자동으로 갱신한다.** B-1이 끝나
-있어야 성공한다 — 도메인이 이 기계를 가리키지 않으면 발급이 실패한다.
+**인증서는 스크립트가 발급하지 않는다.** 이미 있는 것을 읽어 쓰고, 없으면 멈추고
+발급 명령을 알려준다:
+
+```bash
+sudo certbot --nginx -d pawlice.duckdns.org
+```
+
+이렇게 나눈 이유는 Let's Encrypt에 **발급 횟수 제한**이 있어서다. 스크립트가 스스로
+받게 만들면 재실행할 때마다 멀쩡한 인증서를 버리고 다시 받는데, 그건 언제 해도 나쁜
+거래이고 마감 직전에는 최악이다.
+
+Certbot은 인증서를 발급하고 **갱신 장치는 남기지 않는다.** 90일 뒤 조용히 만료되고,
+증상은 "게임이 안 열린다"이며, 배포한 사람이 더 이상 보고 있지 않을 때 일어난다.
+스크립트가 하루 두 번 도는 `certbot-renew.timer`를 건다.
+
+B-1(도메인이 이 기계를 가리킴)이 끝나 있어야 발급이 성공한다.
 
 ---
 
@@ -166,6 +181,31 @@ sudo systemctl enable --now pawlice-voice
 ---
 
 ### E. WebGL 릴리스 빌드
+
+> **빌드는 개발 PC에서 한다. EC2에는 산출물만 올린다.**
+>
+> 소스를 서버에 올려 거기서 빌드하는 방식은 이 인스턴스에서 성립하지 않는다.
+> 이유가 넷이고 어느 하나만으로도 충분하다.
+>
+> 1. **메모리.** IL2CPP와 emscripten 링크가 수 GB를 쓴다. 이 기계는 1.8GB다
+> 2. **아키텍처.** 인스턴스가 `aarch64`인데 Unity는 **ARM64 리눅스 에디터를
+>    배포하지 않는다**
+> 3. **라이선스.** 에디터는 활성화가 필요하다
+> 4. **시간.** 이 PC에서 20분인 빌드가 2 vCPU에서는 몇 시간이고, 그동안 같은
+>    기계가 게임도 서빙해야 한다
+>
+> Node 음성 서버도 마찬가지로 **로컬에서 `tsc`를 돌린다.** 서버는 이미 만들어진
+> `dist/`를 받고 `npm ci --omit=dev`로 의존성만 설치한다. 1.8GB 기계가 게임을
+>서빙하면서 컴파일하는 것이 곧 장애다.
+
+> **`ProjectSettings`를 고쳤으면 반드시 다시 빌드한다.** `cloudProjectId`는
+> **빌드에 구워지는 값**이다. 프로젝트를 연결하기 전에 만든 빌드를 올리면, 로비에서
+> 방 만들기가 `Unity 프로젝트 연결이 필요합니다.`로 끝난다 — 그런데 **에디터에서는
+> 잘 된다.** 에디터는 `ProjectSettings.asset`을 직접 읽기 때문이다.
+>
+> 2026-08-09에 정확히 이 순서로 당했다: 17:00 빌드 → 00:30 연결 → 그 사이에 배포.
+> 증상이 배포본에서만 나타나므로 로비 코드나 Relay를 의심하게 된다. **서버에 있는
+> 것은 그 시점의 스냅샷이고, 소스를 고쳐도 저절로 따라가지 않는다.**
 
 Unity 에디터에서:
 
@@ -271,7 +311,7 @@ Relay만 빼고 싶다면 `Packages/manifest.json`에서 세 패키지를 지우
 | `TASK-DEPLOY-001` 전송 WebSocket | DONE (2026-08-05) |
 | `TASK-DEPLOY-002` 전용 서버 모드 | DONE (2026-08-05). Relay 채택으로 **미사용** |
 | `TASK-DEPLOY-003` 리눅스 헤드리스 빌드 | **불필요해짐.** Relay가 대신한다 |
-| `TASK-DEPLOY-004` TLS 종료 | Caddy + DuckDNS. 위 B·C |
+| `TASK-DEPLOY-004` TLS 종료 | nginx + Certbot + DuckDNS. 위 B·C |
 | `TASK-DEPLOY-005` 자기 도메인 자동 접속 | DONE. `VoiceBackendAddress`가 페이지 오리진을 쓴다 |
 | `TASK-DEPLOY-006` 보안 그룹 | 위 B-2. 게임 포트를 열지 않는다 |
 

@@ -151,10 +151,11 @@ namespace PawsAndLoot.Input
         public static string GetQuickSlotLabel(int slot) =>
             slot >= 0 && slot < quickSlotLabels.Length ? quickSlotLabels[slot] : string.Empty;
 
-        public static string GetAnimalCommandLabel(int command) =>
-            command > 0 && command <= animalCommandLabels.Length
-                ? $"CTRL + {animalCommandLabels[command - 1]}"
-                : string.Empty;
+        // `GetAnimalCommandLabel` was here. It formatted "CTRL + 1" for the
+        // HUD panel that listed the animal keys, and both went on 2026-08-10 —
+        // the animals are told what to do out loud. `animalCommandLabels` stays
+        // because `SetBindingDisplayLabels` takes it, and that method is the one
+        // place a rebind would arrive.
 
         public static void SetBindingDisplayLabels(
             string[] configuredQuickSlotLabels,

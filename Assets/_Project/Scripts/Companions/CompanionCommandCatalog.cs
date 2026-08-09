@@ -144,6 +144,104 @@ namespace PawsAndLoot.Companions
             PlayerRole role,
             int numberKey) => FromNumberKey(role, numberKey);
 
+        /// <summary>
+        /// The commands one role can give, in the order they belong on screen:
+        /// the four that are this animal's own, then the five either animal
+        /// obeys.
+        ///
+        /// Ordered rather than a set, because the table this fills is read while
+        /// somebody is being chased and a list that reshuffles is a list nobody
+        /// learns.
+        /// </summary>
+        public static CompanionCommandId[] GetCommandsFor(PlayerRole role)
+        {
+            return role == PlayerRole.Police
+                ? new[]
+                {
+                    CompanionCommandId.Track,
+                    CompanionCommandId.Search,
+                    CompanionCommandId.Guard,
+                    CompanionCommandId.Bark,
+                    CompanionCommandId.Stop,
+                    CompanionCommandId.FollowOwner,
+                    CompanionCommandId.Stay,
+                    CompanionCommandId.ReturnOwner,
+                    CompanionCommandId.Cancel
+                }
+                : new[]
+                {
+                    CompanionCommandId.Scout,
+                    CompanionCommandId.Distract,
+                    CompanionCommandId.Steal,
+                    CompanionCommandId.Hide,
+                    CompanionCommandId.Stop,
+                    CompanionCommandId.FollowOwner,
+                    CompanionCommandId.Stay,
+                    CompanionCommandId.ReturnOwner,
+                    CompanionCommandId.Cancel
+                };
+        }
+
+        /// <summary>
+        /// What the command is called in Korean, for the player rather than for
+        /// a log.
+        /// </summary>
+        public static string GetKoreanName(CompanionCommandId commandId)
+        {
+            return commandId switch
+            {
+                CompanionCommandId.Track => "추적",
+                CompanionCommandId.Search => "수색",
+                CompanionCommandId.Guard => "경계",
+                CompanionCommandId.Bark => "짖기",
+                CompanionCommandId.Scout => "정찰",
+                CompanionCommandId.Distract => "유인",
+                CompanionCommandId.Steal => "지붕/훔치기",
+                CompanionCommandId.Hide => "숨기",
+                CompanionCommandId.Stop => "멈추기",
+                CompanionCommandId.FollowOwner => "따라오기",
+                CompanionCommandId.Stay => "기다리기",
+                CompanionCommandId.ReturnOwner => "돌아오기",
+                CompanionCommandId.Cancel => "취소",
+                _ => "없음"
+            };
+        }
+
+        /// <summary>
+        /// What to actually say.
+        ///
+        /// These are the stems the server's `exact-command-matcher` compares
+        /// against, written out as something a person would say. They are not
+        /// the only sentences that work — the matcher compares stems at the jamo
+        /// level and a model handles the rest — but they are the ones guaranteed
+        /// to resolve with the model unreachable, which is what a player needs
+        /// printed on their screen.
+        ///
+        /// Kept next to the ids rather than in the view, so a command that gains
+        /// or loses a phrase changes in one place. The five shared ones are the
+        /// absolute commands and are matched without a model at all.
+        /// </summary>
+        public static string GetSpokenExamples(CompanionCommandId commandId)
+        {
+            return commandId switch
+            {
+                CompanionCommandId.Track => "\"냄새 맡아\" · \"쫓아가\" · \"추적\"",
+                CompanionCommandId.Search => "\"찾아봐\" · \"수색해\" · \"뒤져봐\"",
+                CompanionCommandId.Guard => "\"지켜\" · \"경계해\" · \"감시해\"",
+                CompanionCommandId.Bark => "\"짖어\" · \"소리질러\"",
+                CompanionCommandId.Scout => "\"정찰해\" · \"확인해\" · \"살펴봐\"",
+                CompanionCommandId.Distract => "\"유인해\" · \"할퀴어\" · \"야옹\"",
+                CompanionCommandId.Steal => "\"훔쳐와\" · \"가져와\" · \"지붕으로\"",
+                CompanionCommandId.Hide => "\"숨어\" · \"은신해\"",
+                CompanionCommandId.Stop => "\"멈춰\" · \"그만\"",
+                CompanionCommandId.FollowOwner => "\"따라와\" · \"이리와\"",
+                CompanionCommandId.Stay => "\"기다려\" · \"가만히 있어\"",
+                CompanionCommandId.ReturnOwner => "\"돌아와\"",
+                CompanionCommandId.Cancel => "\"취소\" · \"하지마\"",
+                _ => string.Empty
+            };
+        }
+
         public static string GetDisplayName(CompanionCommandId commandId)
         {
             return commandId switch

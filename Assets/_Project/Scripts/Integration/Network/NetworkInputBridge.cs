@@ -578,13 +578,21 @@ namespace PawsAndLoot.Integration.Network
                 link.SubmitSelectToolSlotRpc(quickSlot);
             }
 
-            int command = ReadCompanionCommandKey(keyboard);
-            if (command > 0)
-            {
-                link.SubmitCompanionCommandRpc(command);
-            }
+            // Ctrl+1..4 used to be read here and sent on. The animals are
+            // commanded by voice now (`COMP-002`); the number keys were the
+            // stand-in for it while there was no microphone, and leaving both
+            // in meant the table on screen described one of two ways to do the
+            // same thing. `SubmitCompanionCommandRpc` is untouched — voice
+            // still goes through it.
         }
 
+        /// <summary>
+        /// The quick slots still ignore a held Ctrl.
+        ///
+        /// Nothing reads Ctrl+digit any more, so this could go — but Ctrl+1 is
+        /// a browser tab switch and a WebGL player that swapped a tool on the
+        /// way past would be a bug nobody could explain.
+        /// </summary>
         private static int ReadQuickSlotKey(Keyboard keyboard)
         {
             bool ctrl = keyboard.leftCtrlKey.isPressed
@@ -599,33 +607,6 @@ namespace PawsAndLoot.Integration.Network
             if (keyboard.digit3Key.wasPressedThisFrame) return 2;
             if (keyboard.digit4Key.wasPressedThisFrame) return 3;
             return -1;
-        }
-
-        private static int ReadCompanionCommandKey(Keyboard keyboard)
-        {
-            bool ctrl = keyboard.leftCtrlKey.isPressed
-                || keyboard.rightCtrlKey.isPressed;
-            if (!ctrl)
-            {
-                return 0;
-            }
-
-            if (keyboard.digit1Key.wasPressedThisFrame)
-            {
-                return 1;
-            }
-
-            if (keyboard.digit2Key.wasPressedThisFrame)
-            {
-                return 2;
-            }
-
-            if (keyboard.digit3Key.wasPressedThisFrame)
-            {
-                return 3;
-            }
-
-            return keyboard.digit4Key.wasPressedThisFrame ? 4 : 0;
         }
 
         private static float ReadAxis(

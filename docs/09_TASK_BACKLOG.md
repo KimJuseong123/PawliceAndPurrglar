@@ -490,7 +490,7 @@ NET-001과 NET-002는 본격 멀티플레이가 아니라 패키지와 권한 �
 | VOICE-013 | P0 | TODO | **받아쓰기 정확도 — 남은 것은 STT 쪽.** `lexiconFor()`를 STT `prompt`로 넘겨 어휘 편향, 그다음 클라우드 STT 전환. `faster-whisper-small`이 "짖으라고"를 "지지라고"로, "숨어"를 "스모"로 받는다. 세 가지를 순서대로: ① 명령 어휘를 `initial_prompt`로 주기(모델 교체 없이 즉시), ② 클라우드 STT로 전환, ③ 그래도 틀린 글자를 LLM이 의도로 되돌리기 |
 | VOICE-014 | P0 | **DONE** | **의도 해석은 항상 성공한다** (2026-08-07). 후보가 비거나 `UNKNOWN`이면 결정적 매처가 마지막 말을 한다. 닫힌 명령 목록 + 게임 상태를 주고 LLM이 **반드시 하나를 고르게** 한다 — "못 알아들었어요"는 없다. 받아쓰기가 조금 틀려도 여기서 복구된다 |
 | VOICE-015 | P0 | **DONE** (저장소 몫) | **엉뚱한 행동은 게임이 굴린다, LLM이 아니다.** `PetCognitionResolver`가 이미 굴리고 시드는 서버 `commandId` 기반이라 두 기계가 같다. 실기 확인은 `VOICE-010`. 불복종 확률은 `03_GAME_RULES.md`의 밸런스 수치이고 **호스트가 굴려야** 양쪽 화면이 같다. 자리는 이미 있다 (`PetCognitionResolver`) |
-| VOICE-011 | P1 | **코드 완료 / 서버 미실행** | **WebGL을 LAN·인터넷에서 테스트하려면 https가 필요하다.** `navigator.mediaDevices`가 비보안 컨텍스트에 아예 없으므로 localhost 외에서는 마이크가 열리지 않는다. Caddy가 TLS를 끝내고 음성 API가 같은 오리진의 `/api`로 간다 (`TASK-DEPLOY-004`) |
+| VOICE-011 | P1 | **코드 완료 / 서버 미실행** | **WebGL을 LAN·인터넷에서 테스트하려면 https가 필요하다.** `navigator.mediaDevices`가 비보안 컨텍스트에 아예 없으므로 localhost 외에서는 마이크가 열리지 않는다. nginx가 TLS를 끝내고 음성 API가 같은 오리진의 `/api`로 간다 (`TASK-DEPLOY-004`) |
 
 ## Epic 12. Blender 최종 모델 제작과 적용
 
@@ -653,7 +653,7 @@ persistent analytics, and multi-instance server deployment remain later work.
 | `TASK-DEPLOY-001` | DONE | 전송을 WebSocket으로 바꾸고 호스트명 접속을 허용한다 (2026-08-05) |
 | `TASK-DEPLOY-002` | DONE | `StartServer()` 전용 서버 모드와 `-dedicatedServer` 인자 (2026-08-05). **Relay 채택으로 미사용** |
 | `TASK-DEPLOY-003` | **취소** | 리눅스 헤드리스 빌드. **불필요해졌다** — 경기 연결이 Unity Relay를 지나가므로 EC2에 게임 서버가 없다 |
-| `TASK-DEPLOY-004` | **코드 완료 / 서버 미실행** | Caddy + DuckDNS. `deploy/Caddyfile`·`setup-ec2.sh` 커밋됨. **EC2에서 아직 실행하지 않았다** |
+| `TASK-DEPLOY-004` | **코드 완료 / 서버 미실행** | nginx + Certbot + DuckDNS. `deploy/pawlice.nginx.conf`·`setup-ec2.sh` 커밋됨. **EC2에서 아직 실행하지 않았다** |
 | `TASK-DEPLOY-005` | **DONE** | `VoiceBackendAddress`가 `Application.absoluteURL`의 오리진을 쓴다 (2026-08-09). 경기 주소는 Relay가 정하므로 입력칸 자체가 없어졌다 |
 | `TASK-DEPLOY-006` | **코드 완료 / 서버 미실행** | 열어야 하는 것은 **80·443·22 뿐**이다. 게임 포트는 열지 않는다 — Relay가 처리한다 |
 | `TASK-DEPLOY-007` | **TODO (사람만 할 수 있음)** | **Unity Cloud 프로젝트 연결.** `cloudProjectId`가 비어 있으면 방 만들기가 즉시 거절된다. `docs/21` 2절 A |

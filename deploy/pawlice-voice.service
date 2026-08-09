@@ -1,6 +1,5 @@
 [Unit]
 Description=Pawlice and Purrglar voice API
-Documentation=https://github.com/  # replace with the repository URL
 After=network-online.target
 Wants=network-online.target
 
@@ -10,7 +9,7 @@ User=pawlice
 Group=pawlice
 WorkingDirectory=/srv/pawlice/server
 
-# Bound to loopback on purpose. Caddy is the only thing that should reach it,
+# Bound to loopback on purpose. nginx is the only thing that should reach it,
 # and a service listening on 0.0.0.0 is one security-group edit away from being
 # an open transcription endpoint with somebody's API key behind it.
 Environment=HOST=127.0.0.1

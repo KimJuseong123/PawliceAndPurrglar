@@ -2,19 +2,24 @@ using PawsAndLoot.Companions;
 using PawsAndLoot.Gameplay.Players;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace PawsAndLoot.Input
 {
     /// <summary>
-    /// COMP-002 input half. Turns the number keys 1..4 into
-    /// <see cref="CompanionCommandRequest"/> values and hands them to the
-    /// dispatcher.
+    /// COMP-002 input half. Turns a command number into a
+    /// <see cref="CompanionCommandRequest"/> and hands it to the dispatcher.
     ///
-    /// This is the temporary stand-in for voice, not a voice feature. It knows
-    /// nothing about companion state and cannot change it; everything goes
-    /// through the dispatcher, which is what lets voice replace this class
-    /// later without touching the rules.
+    /// It knows nothing about companion state and cannot change it; everything
+    /// goes through the dispatcher, which is what let voice replace the keys
+    /// without touching a rule.
+    ///
+    /// The keys are gone. `Ctrl+1..4` was the stand-in while there was no
+    /// microphone, and it was removed on 2026-08-10 — the animals are told what
+    /// to do out loud now, and `CompanionCommandTableView` puts the phrases on
+    /// screen. The class keeps its name because the whole scene and every test
+    /// refers to it, and renaming a serialised component detaches it from
+    /// `Game.unity`, which costs a scene regeneration and the
+    /// `GlobalObjectIdHash` of all 130 in-scene NetworkObjects with it.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CompanionCommandKeyboardInput : MonoBehaviour
@@ -97,38 +102,14 @@ namespace PawsAndLoot.Input
             return ahead;
         }
 
-        private void Update()
-        {
-            if (!CanReadLocalInput() || Keyboard.current == null)
-            {
-                return;
-            }
-
-            Keyboard keyboard = Keyboard.current;
-            bool ctrl = keyboard.leftCtrlKey.isPressed
-                || keyboard.rightCtrlKey.isPressed;
-            if (!ctrl)
-            {
-                return;
-            }
-
-            if (keyboard.digit1Key.wasPressedThisFrame)
-            {
-                TryIssue(1, Time.time);
-            }
-            else if (keyboard.digit2Key.wasPressedThisFrame)
-            {
-                TryIssue(2, Time.time);
-            }
-            else if (keyboard.digit3Key.wasPressedThisFrame)
-            {
-                TryIssue(3, Time.time);
-            }
-            else if (keyboard.digit4Key.wasPressedThisFrame)
-            {
-                TryIssue(4, Time.time);
-            }
-        }
+        // `Update` read Ctrl+1..4 here until 2026-08-10. The keys were the
+        // stand-in for voice while there was no microphone, and keeping both
+        // meant the on-screen table had to describe one of two ways to give the
+        // same order — or describe only one and be wrong about the other.
+        //
+        // `TryIssue` stays. It is what the voice pipeline and the tests call,
+        // and it was always the part that did the work; the key reading was a
+        // caller.
 
         private bool CanReadLocalInput()
         {
