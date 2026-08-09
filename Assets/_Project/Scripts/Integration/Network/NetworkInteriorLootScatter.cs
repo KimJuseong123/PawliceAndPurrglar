@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using PawsAndLoot.Gameplay.Interiors;
+using PawsAndLoot.Gameplay.Items;
 using PawsAndLoot.Logging;
 using PawsAndLoot.Match;
 using Unity.Collections;
@@ -67,6 +68,7 @@ namespace PawsAndLoot.Integration.Network
             return FastBufferWriter.GetWriteSize<int>()
                 + count * (
                     FastBufferWriter.GetWriteSize<int>()
+                    + FastBufferWriter.GetWriteSize<int>()
                     + FastBufferWriter.GetWriteSize<Vector3>());
         }
 
@@ -79,6 +81,35 @@ namespace PawsAndLoot.Integration.Network
         /// </summary>
         [SerializeField, Min(1)]
         private int piecesPerInterior = 2;
+
+        /// <summary>
+        /// Marks a scattered piece as an ordinary valuable rather than a
+        /// throwable. Anything else is a <c>ThrowableKind</c>.
+        /// </summary>
+        private const int ValuableKind = -1;
+
+        /// <summary>
+        /// Throwables that turn up indoors, and the share of pieces that are one.
+        ///
+        /// The thief's props used to sit in a row on the pavement, which is both
+        /// where nobody looks and where the officer can stand. Putting them in
+        /// the houses means the same trip that earns money is the trip that arms
+        /// you — and it means the thief does not know which house has the
+        /// octopus, which is the point of scattering anything at all.
+        ///
+        /// One in three, so a house is usually money and sometimes a tool. Every
+        /// piece being a tool would make the interiors stop paying.
+        /// </summary>
+        private static readonly ThrowableKind[] IndoorThrowables =
+        {
+            ThrowableKind.FrozenOctopus,
+            ThrowableKind.RubberChicken,
+            ThrowableKind.Firework,
+            ThrowableKind.Banana,
+            ThrowableKind.DogTreat
+        };
+
+        private const int ThrowableOneIn = 3;
 
         [SerializeField, Min(0.2f)]
         private float clearanceMargin = 1.2f;
@@ -124,6 +155,7 @@ namespace PawsAndLoot.Integration.Network
                 (int)(Time.realtimeSinceStartup * 1000f) ^ 0x5f3a);
             var ids = new List<int>();
             var spots = new List<Vector3>();
+            var kinds = new List<int>();
 
             foreach (HouseInterior interior in interiors)
             {
@@ -132,12 +164,17 @@ namespace PawsAndLoot.Integration.Network
                     Vector3 spot = FindClearSpot(interior, random);
                     ids.Add(interior.InteriorId);
                     spots.Add(spot);
+                    kinds.Add(
+                        random.Next(ThrowableOneIn) == 0
+                            ? (int)IndoorThrowables[
+                                random.Next(IndoorThrowables.Length)]
+                            : ValuableKind);
                 }
             }
 
             for (int index = 0; index < ids.Count; index++)
             {
-                Spawn(ids[index], spots[index]);
+                Spawn(ids[index], spots[index], kinds[index]);
             }
 
             NetworkManager manager = ResolveManager();
@@ -155,6 +192,7 @@ namespace PawsAndLoot.Integration.Network
             for (int index = 0; index < ids.Count; index++)
             {
                 writer.WriteValueSafe(ids[index]);
+                writer.WriteValueSafe(kinds[index]);
                 writer.WriteValueSafe(spots[index]);
             }
 
@@ -203,9 +241,26 @@ namespace PawsAndLoot.Integration.Network
         /// Builds the visible piece. Runs on every machine so both draw the same
         /// loot in the same place.
         /// </summary>
-        private void Spawn(int interiorId, Vector3 position)
+        private void Spawn(int interiorId, Vector3 position, int kind)
         {
             int sourceId = _spawned.Count + 1;
+
+            // A tool instead of money. Built through the same factory a missed
+            // throw uses, so an indoor octopus and one lying in the street are
+            // the same object and behave the same way when picked up.
+            if (kind != ValuableKind)
+            {
+                Gameplay.Items.ThrowablePickup thrown =
+                    Gameplay.Items.ThrownPickupFactory.Create(
+                        // Offset so these ids cannot collide with the ones the
+                        // throw tracker hands out for items already in flight.
+                        9000 + sourceId,
+                        (Gameplay.Items.ThrowableKind)kind,
+                        position);
+                _spawned.Add(thrown.gameObject);
+                return;
+            }
+
             var piece = new GameObject(
                 $"Interior Loot {interiorId}.{sourceId}");
             piece.transform.position = position + Vector3.up * 0.3f;
@@ -255,8 +310,9 @@ namespace PawsAndLoot.Integration.Network
             for (int index = 0; index < count; index++)
             {
                 reader.ReadValueSafe(out int interiorId);
+                reader.ReadValueSafe(out int kind);
                 reader.ReadValueSafe(out Vector3 spot);
-                Spawn(interiorId, spot);
+                Spawn(interiorId, spot, kind);
             }
 
             _scattered = true;

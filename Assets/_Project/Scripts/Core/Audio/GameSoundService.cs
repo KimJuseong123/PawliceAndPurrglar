@@ -98,6 +98,18 @@ namespace PawsAndLoot.Audio
         public const float AudibleFarMeters = 55f;
 
         /// <summary>
+        /// How loud a theft is from the far side of the map.
+        ///
+        /// Not zero. Silence and "no theft happened" are the same thing to the
+        /// officer, so a thief who simply walks far enough away turns the whole
+        /// mechanic off — and the officer cannot tell that from the sound being
+        /// broken. A fifth of full volume is audible in a quiet moment and easy
+        /// to miss in a chase, which is the trade the distance is supposed to
+        /// buy.
+        /// </summary>
+        public const float AudibleFarScale = 0.2f;
+
+        /// <summary>
         /// Where the local player's ears are.
         ///
         /// The listener rather than the player: it is already attached to the
@@ -126,10 +138,6 @@ namespace PawsAndLoot.Audio
         public static void RequestAt(GameSoundId soundId, Vector3 townPosition)
         {
             float scale = DistanceScaleAt(townPosition);
-            if (scale <= 0f)
-            {
-                return;
-            }
 
             if (_instance != null)
             {
@@ -167,11 +175,13 @@ namespace PawsAndLoot.Audio
 
             if (distance >= AudibleFarMeters)
             {
-                return 0f;
+                return AudibleFarScale;
             }
 
-            return 1f - (distance - AudibleNearMeters)
+            // Falls to the floor rather than to nothing.
+            float travelled = (distance - AudibleNearMeters)
                 / (AudibleFarMeters - AudibleNearMeters);
+            return Mathf.Lerp(1f, AudibleFarScale, travelled);
         }
 
         /// <summary>
