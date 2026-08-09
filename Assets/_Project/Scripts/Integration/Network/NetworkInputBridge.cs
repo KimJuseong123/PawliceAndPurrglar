@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Input;
+using PawsAndLoot.Logging;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -31,6 +32,26 @@ namespace PawsAndLoot.Integration.Network
         private NetworkRoleBoard roleBoard;
 
         private bool _configuredLocalControl;
+
+        // One line each, not one per frame. This runs in Update.
+        private bool _warnedNoRole;
+        private bool _warnedNoLink;
+
+        /// <summary>
+        /// How long "cannot send input" has been true without a break.
+        ///
+        /// Both of the conditions below are legitimate for a moment: leaving a
+        /// session clears the local role while the manager is still listening,
+        /// and the links take a beat to spawn after the match scene loads.
+        /// Saying so on the first frame turned a normal transition into an error
+        /// — it failed `LobbyReentryPlayModeTests` on the way in.
+        ///
+        /// Three seconds is far longer than either transition and far shorter
+        /// than a player's patience with a character that will not walk.
+        /// </summary>
+        private float _blockedSeconds;
+
+        private const float ComplainAfterSeconds = 3f;
 
         /// <summary>
         /// One pending slot swap from the bag screen's drag.
@@ -380,6 +401,29 @@ namespace PawsAndLoot.Integration.Network
                 LocalPlayerRoleSelector.OverriddenRole;
             if (!assigned.HasValue)
             {
+                // Said once. Both of the early returns in this method mean "this
+                // machine sends no input at all", which the player experiences as
+                // a character that will not move while the bag still opens — and
+                // neither of them used to write a line anywhere.
+                //
+                // No role means `CommitRolesRpc` never arrived. It is sent to
+                // everyone in the lobby before the scene load and stored in a
+                // plain static, so its absence is a lobby problem, not a
+                // movement one.
+                _blockedSeconds += Time.unscaledDeltaTime;
+                if (!_warnedNoRole
+                    && _blockedSeconds >= ComplainAfterSeconds)
+                {
+                    _warnedNoRole = true;
+                    GameLogger.Error(
+                        GameLogCategory.Network,
+                        "이 기계에 역할이 배정되지 않아 입력을 보내지 않습니다. "
+                        + "로비에서 역할 확정(CommitRolesRpc)이 도착하지 "
+                        + "않았습니다 — 로그에 'Committed local role'이 있는지 "
+                        + "확인하세요.",
+                        this);
+                }
+
                 return;
             }
 
@@ -390,8 +434,33 @@ namespace PawsAndLoot.Integration.Network
             NetworkPlayerLink link = FindLink(LocalRole);
             if (link == null || !link.IsSpawned)
             {
+                // The other silent way to be unable to move, and the more common
+                // one: the link exists in the scene but never spawned, because
+                // the two machines are running builds whose in-scene
+                // `GlobalObjectIdHash` values disagree. NGO reports that as a
+                // wall of "soft synchronization failure" with nothing saying
+                // "different build".
+                _blockedSeconds += Time.unscaledDeltaTime;
+                if (!_warnedNoLink
+                    && _blockedSeconds >= ComplainAfterSeconds)
+                {
+                    _warnedNoLink = true;
+                    GameLogger.Error(
+                        GameLogCategory.Network,
+                        $"역할 {LocalRole}의 NetworkPlayerLink가 "
+                        + (link == null ? "없어서" : "스폰되지 않아서")
+                        + " 입력을 보내지 않습니다. 두 기계의 빌드가 다르면 "
+                        + "경기 씬의 오브젝트가 스폰되지 않습니다 — 같은 커밋에서, "
+                        + "그리고 커밋되지 않은 변경 없이 양쪽을 다시 빌드하세요.",
+                        this);
+                }
+
                 return;
             }
+
+            // Got this far, so input is flowing. The clock only measures an
+            // unbroken run of being unable to send.
+            _blockedSeconds = 0f;
 
             Keyboard keyboard = Keyboard.current;
             Vector2 move = keyboard == null
