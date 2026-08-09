@@ -1518,7 +1518,14 @@ namespace PawsAndLoot.Editor
                         footprint,
                         label,
                         sizes,
-                        walkThrough))
+                        walkThrough,
+                        // Landmarks are landscape, never buildings, so there are
+                        // only two things one can be: ground you run into, or
+                        // ground you walk on. The lake garden was getting the
+                        // building treatment — a solid box the height of its
+                        // trees — so the park read as an invisible wall exactly
+                        // the way the square did.
+                        walkOn: !walkThrough))
                 {
                     built++;
                 }

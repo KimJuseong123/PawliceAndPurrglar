@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using PawsAndLoot.Logging;
 using PawsAndLoot.Config;
 using PawsAndLoot.Core;
@@ -10,12 +11,21 @@ using UnityEngine;
 namespace PawsAndLoot.Integration.Network
 {
     /// <summary>
-    /// Hosts or joins a two-player session over direct IP.
+    /// Hosts or joins a two-player session, by invite code or by address.
     ///
-    /// Host authority with direct IP is the adopted model (DEC-027): the host
-    /// is the server, no Relay and no dedicated build. This lives in the
-    /// Integration layer so no rule depends on it; the match itself still runs
-    /// on the same local systems whether or not a session was ever started.
+    /// Host authority is still the model: one of the two players is the server.
+    /// What changed is how the other one reaches them. Direct IP (DEC-027) was
+    /// right while this was a desktop build on one wifi, and is unreachable
+    /// from a browser — Unity Transport refuses a WebGL server outright unless
+    /// the protocol is Relay, and no home connection behind CGNAT has an
+    /// address to type anyway. So the browser path is
+    /// <see cref="TryCreateRoomAsync"/> and <see cref="TryJoinRoomAsync"/>, and
+    /// the address pair stays for the desktop two-process regression, which is
+    /// the one place a real listening socket still exists.
+    ///
+    /// This lives in the Integration layer so no rule depends on it; the match
+    /// itself still runs on the same local systems whether or not a session was
+    /// ever started.
     ///
     /// Exactly two players are allowed. A third is refused during approval
     /// rather than after spawning, so it never briefly appears in the world.
@@ -58,6 +68,27 @@ namespace PawsAndLoot.Integration.Network
         public ushort Port { get; private set; } = DefaultPort;
         public string JoinAddress { get; private set; } =
             LocalAddressProvider.LoopbackAddress;
+
+        /// <summary>
+        /// The code this machine is showing or used, empty when there is none.
+        ///
+        /// Held here rather than in the lobby because it outlives the screen
+        /// that shows it: a player who alt-tabs away and comes back needs to
+        /// read it out again, and the lobby is rebuilt from this on every
+        /// refresh.
+        /// </summary>
+        public string InviteCode { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// True while a Relay call is in flight.
+        ///
+        /// Relay is a round trip to a server, so unlike every other entry point
+        /// here there is a window in which the session is neither offline nor
+        /// started. Without a name for it, the buttons stay enabled through the
+        /// wait and a second press starts a second allocation — two rooms, one
+        /// of which nobody will ever join.
+        /// </summary>
+        public bool IsBusy { get; private set; }
 
         /// <summary>
         /// Number of connected players. Only the server can know this:
@@ -106,6 +137,165 @@ namespace PawsAndLoot.Integration.Network
                     $"NetworkSessionController '{name}' requires a "
                     + "NetworkManager.");
             }
+        }
+
+        /// <summary>
+        /// Does the part of hosting that does not depend on the player, before
+        /// they ask for it.
+        ///
+        /// Safe to call repeatedly and safe to ignore: it signs in and stops,
+        /// and if that fails nothing is reported, because nobody has asked for
+        /// anything yet.
+        /// </summary>
+        public void Prewarm()
+        {
+            _ = RelaySessionService.PrewarmAsync();
+        }
+
+        /// <summary>
+        /// Opens a room on Relay and starts hosting it, returning the invite
+        /// code through <see cref="InviteCode"/>.
+        ///
+        /// This is the browser's only way to host. Unity Transport refuses a
+        /// WebGL server outright unless the protocol is Relay, so the direct-IP
+        /// pair below cannot be reached from a browser at all — they stay for
+        /// the desktop two-process regression, which is the one place a real
+        /// listening socket still exists.
+        /// </summary>
+        public async Task<bool> TryCreateRoomAsync()
+        {
+            if (_mode != SessionMode.Offline)
+            {
+                SetStatus("이미 세션이 실행 중입니다.");
+                return false;
+            }
+
+            if (IsBusy)
+            {
+                return false;
+            }
+
+            UnityTransport transport = ResolveTransport();
+            if (transport == null)
+            {
+                SetStatus("UnityTransport 컴포넌트를 찾을 수 없습니다.");
+                return false;
+            }
+
+            SetBusy(true, "방을 만드는 중입니다...");
+            RelayOutcome outcome =
+                await RelaySessionService.CreateRoomAsync(transport);
+
+            // The await outlives the object when a player leaves the lobby mid
+            // request. Touching networkManager after that throws inside a Task,
+            // where nothing surfaces it.
+            if (this == null)
+            {
+                return false;
+            }
+
+            if (!outcome.Ok)
+            {
+                SetBusy(false, outcome.Error);
+                return false;
+            }
+
+            networkManager.ConnectionApprovalCallback = ApproveConnection;
+            networkManager.OnClientConnectedCallback += HandleClientConnected;
+            networkManager.OnClientDisconnectCallback +=
+                HandleClientDisconnected;
+
+            if (!networkManager.StartHost())
+            {
+                Cleanup();
+                SetBusy(false, "호스트 시작에 실패했습니다.");
+                return false;
+            }
+
+            InviteCode = outcome.InviteCode;
+            SpawnRoleBoard();
+            ConfigureVoiceCapability();
+            SetMode(SessionMode.Host);
+            SetBusy(
+                false,
+                $"초대코드 {InviteCode} · 상대에게 알려주세요.");
+            GameLogger.Info(
+                GameLogCategory.Network,
+                $"Hosting a Relay room with invite code {InviteCode}.",
+                this);
+            return true;
+        }
+
+        /// <summary>
+        /// Joins the room an invite code names.
+        /// </summary>
+        public async Task<bool> TryJoinRoomAsync(string rawInviteCode)
+        {
+            if (_mode != SessionMode.Offline)
+            {
+                SetStatus("이미 세션이 실행 중입니다.");
+                return false;
+            }
+
+            if (IsBusy)
+            {
+                return false;
+            }
+
+            UnityTransport transport = ResolveTransport();
+            if (transport == null)
+            {
+                SetStatus("UnityTransport 컴포넌트를 찾을 수 없습니다.");
+                return false;
+            }
+
+            // Validated before the spinner rather than after the round trip: a
+            // five-character code is answerable here, and sending it would buy
+            // the player a wait to be told what was already knowable.
+            // Fully qualified: inside this class the bare name is the property
+            // holding this session's code, not the type that validates one.
+            string problem =
+                PawsAndLoot.Integration.Network.InviteCode.DescribeProblem(
+                    rawInviteCode);
+            if (problem != null)
+            {
+                SetStatus(problem);
+                return false;
+            }
+
+            SetBusy(true, "방을 찾는 중입니다...");
+            RelayOutcome outcome =
+                await RelaySessionService.JoinRoomAsync(transport, rawInviteCode);
+
+            if (this == null)
+            {
+                return false;
+            }
+
+            if (!outcome.Ok)
+            {
+                SetBusy(false, outcome.Error);
+                return false;
+            }
+
+            networkManager.OnClientDisconnectCallback +=
+                HandleClientDisconnected;
+
+            if (!networkManager.StartClient())
+            {
+                Cleanup();
+                SetBusy(false, "접속 시작에 실패했습니다.");
+                return false;
+            }
+
+            InviteCode = outcome.InviteCode;
+            SetMode(SessionMode.Client);
+            SetBusy(false, $"초대코드 {InviteCode} 방에 접속 중...");
+            GameLogger.Info(
+                GameLogCategory.Network,
+                $"Joining a Relay room with invite code {InviteCode}.",
+                this);
+            return true;
         }
 
         /// <summary>
@@ -198,17 +388,7 @@ namespace PawsAndLoot.Integration.Network
             }
 
             SpawnRoleBoard();
-            VoiceSessionCapabilityClient voiceClient =
-                GetComponent<VoiceSessionCapabilityClient>();
-            if (voiceClient == null)
-            {
-                voiceClient = gameObject.AddComponent<
-                    VoiceSessionCapabilityClient>();
-            }
-            voiceClient.Configure(
-                GameConfigService.IsInitialized
-                    ? GameConfigService.Current.Voice
-                    : null);
+            ConfigureVoiceCapability();
             SetMode(SessionMode.Host);
             SetStatus(
                 $"호스트 대기 중 · 포트 {parsed} · 상대에게 내 IP를 알려주세요.");
@@ -293,6 +473,8 @@ namespace PawsAndLoot.Integration.Network
             // and holding the reference would make SpawnRoleBoard skip the new
             // one and leave the roles unassigned.
             _spawnedRoleBoard = null;
+            InviteCode = string.Empty;
+            IsBusy = false;
             SetMode(SessionMode.Offline);
             LastStatus = string.Empty;
             StatusChanged?.Invoke(LastStatus);
@@ -312,6 +494,8 @@ namespace PawsAndLoot.Integration.Network
             }
 
             Cleanup();
+            InviteCode = string.Empty;
+            IsBusy = false;
             SetMode(SessionMode.Offline);
             SetStatus("세션을 종료했습니다.");
         }
@@ -387,10 +571,41 @@ namespace PawsAndLoot.Integration.Network
             _spawnedRoleBoard = null;
         }
 
+        private UnityTransport ResolveTransport() =>
+            networkManager != null
+                ? networkManager.GetComponent<UnityTransport>()
+                : null;
+
+        /// <summary>
+        /// Gives the host the voice capability component the session needs.
+        /// Host only: the component answers for the machine that owns the
+        /// match, and a client asking itself would answer for nobody.
+        /// </summary>
+        private void ConfigureVoiceCapability()
+        {
+            VoiceSessionCapabilityClient voiceClient =
+                GetComponent<VoiceSessionCapabilityClient>();
+            if (voiceClient == null)
+            {
+                voiceClient = gameObject.AddComponent<
+                    VoiceSessionCapabilityClient>();
+            }
+
+            voiceClient.Configure(
+                GameConfigService.IsInitialized
+                    ? GameConfigService.Current.Voice
+                    : null);
+        }
+
+        private void SetBusy(bool busy, string status)
+        {
+            IsBusy = busy;
+            SetStatus(status);
+        }
+
         private bool TryApplyTransport(string address, ushort port)
         {
-            var transport =
-                networkManager.GetComponent<UnityTransport>();
+            var transport = ResolveTransport();
             if (transport == null)
             {
                 SetStatus("UnityTransport 컴포넌트를 찾을 수 없습니다.");
@@ -463,6 +678,10 @@ namespace PawsAndLoot.Integration.Network
             if (_mode == SessionMode.Client)
             {
                 Cleanup();
+                // The room may well still be open — this machine simply is not
+                // in it any more, and a code shown next to "연결이 끊어졌습니다"
+                // reads as though it were.
+                InviteCode = string.Empty;
                 SetMode(SessionMode.Offline);
                 SetStatus("호스트와 연결이 끊어졌습니다.");
                 return;

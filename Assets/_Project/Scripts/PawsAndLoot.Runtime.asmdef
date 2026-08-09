@@ -6,7 +6,10 @@
     "Unity.Networking.Transport",
     "Unity.InputSystem",
     "Unity.ugui",
-    "Unity.TextMeshPro"
+    "Unity.TextMeshPro",
+    "Unity.Services.Core",
+    "Unity.Services.Authentication",
+    "Unity.Services.Relay"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
@@ -15,6 +18,12 @@
   "precompiledReferences": [],
   "autoReferenced": true,
   "defineConstraints": [],
-  "versionDefines": [],
+  "versionDefines": [
+    {
+      "name": "com.unity.services.relay",
+      "expression": "1.0.0",
+      "define": "PAWS_RELAY"
+    }
+  ],
   "noEngineReferences": false
 }

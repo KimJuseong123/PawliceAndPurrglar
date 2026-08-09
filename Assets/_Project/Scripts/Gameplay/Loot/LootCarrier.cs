@@ -307,9 +307,34 @@ namespace PawsAndLoot.Gameplay.Loot
         /// pointing it at the thief would make the alarm a tracker, and there
         /// is a separate, shorter reveal for that.
         /// </summary>
+        /// <summary>
+        /// How the jeweller's stock is named. The shop's pieces are authored as
+        /// `jewel-ring`, `jewel-ruby` and so on, and the prefix is what
+        /// `HouseInteriorSetup` already uses to stock the room.
+        /// </summary>
+        private const string JewellerPrefix = "jewel-";
+
         private void RaiseAlarmIfWatched(LootItem loot, Vector3 liftedFrom)
         {
-            if (loot.Definition == null || !loot.Definition.RaisesAlarm)
+            if (loot.Definition == null)
+            {
+                return;
+            }
+
+            // The flagship piece, or anything at all off the jeweller's shelves.
+            //
+            // The alarm used to be the crown jewel's alone, which made the rest
+            // of the shop the safest room in town: five pieces worth more than
+            // anything in a house, taken in silence. A jeweller alarms the shop,
+            // not one cushion in it.
+            //
+            // By the shop's own id prefix rather than by asking which room the
+            // thief is standing in. The piece is what was taken, and it carries
+            // where it came from even after it has been carried out of the door.
+            bool fromJeweller = loot.Definition.StableId != null
+                && loot.Definition.StableId.StartsWith(JewellerPrefix);
+
+            if (!loot.Definition.RaisesAlarm && !fromJeweller)
             {
                 return;
             }

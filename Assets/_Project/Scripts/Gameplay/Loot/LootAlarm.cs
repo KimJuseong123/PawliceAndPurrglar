@@ -60,8 +60,38 @@ namespace PawsAndLoot.Gameplay.Loot
         /// </summary>
         public const float SirenRadiusMeters = 120f;
 
+        /// <summary>
+        /// How long the officer's screen keeps pointing at the shop.
+        ///
+        /// Longer than the four seconds the thief stays lit, and deliberately so
+        /// — those two answer different questions. The reveal says "there they
+        /// are", and it is short because being seen for a whole escape would
+        /// mean there was no escape to play. The beacon says "it happened
+        /// *here*", and that stays true after the thief has run off; ten seconds
+        /// is about how long it takes to cross two blocks and look.
+        /// </summary>
+        public const float BeaconSeconds = 10f;
+
         [SerializeField]
         private NoiseBoard noiseBoard;
+
+        private float _beaconUntil;
+
+        /// <summary>
+        /// Whether the officer should still be shown which shop went off.
+        /// </summary>
+        public bool IsBeaconActive => Time.time < _beaconUntil;
+
+        /// <summary>
+        /// Where it went off. Meaningful only while the beacon is active.
+        /// </summary>
+        public Vector3 BeaconSource { get; private set; }
+
+        /// <summary>
+        /// How much of the beacon is left, for anything that wants to fade.
+        /// </summary>
+        public float BeaconRemainingSeconds =>
+            Mathf.Max(0f, _beaconUntil - Time.time);
 
         public event Action<Vector3> Raised;
 
@@ -90,6 +120,8 @@ namespace PawsAndLoot.Gameplay.Loot
         {
             RaisedCount++;
             LastRaisedAt = at;
+            BeaconSource = at;
+            _beaconUntil = Time.time + BeaconSeconds;
 
             ResolveNoiseBoard()?.Report(
                 at,

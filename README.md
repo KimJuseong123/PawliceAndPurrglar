@@ -637,3 +637,24 @@ continues to work when the voice server or OpenAI is unavailable.
 The launcher requires Unity `6000.5.4f1` and Node.js. If `server/node_modules`
 does not exist, run `npm install` inside `server` before using voice. Close the
 two service console windows to stop the local servers.
+
+The static host forwards `/api` and `/health` to the voice server on port
+`3000`, so the local page has the same shape as the deployed one: one origin,
+game at the root, API underneath. The build resolves its backend from its own
+URL, so without that forwarding a local playtest would look for the API on
+`8080` and the failure would read as a voice bug.
+
+## 온라인 대전 — 초대코드
+
+한 사람이 로비에서 **방 만들기**를 누르면 6글자 초대코드가 나옵니다. **코드 복사**로
+클립보드에 담아 상대에게 보내면, 상대는 코드칸에 붙여넣고 **방 입장**을 누릅니다.
+같은 공유기가 아니어도 되고 공인 IP도 포트 포워딩도 필요 없습니다.
+
+경기 연결은 Unity Relay를 지나갑니다. 브라우저는 듣는 소켓을 열 수 없어서 다른
+선택지가 없습니다 — 자세한 이유와 배포 절차는
+[`docs/21_REMOTE_PLAY_AND_DEPLOY.md`](docs/21_REMOTE_PLAY_AND_DEPLOY.md)에
+있습니다.
+
+**한 번은 해야 하는 설정이 있습니다.** Unity 에디터에서
+`Edit > Project Settings > Services`로 Unity Cloud 프로젝트를 연결해야 Relay가
+켜집니다. 연결되지 않은 빌드는 방 만들기를 누르면 그 사실을 그대로 말합니다.

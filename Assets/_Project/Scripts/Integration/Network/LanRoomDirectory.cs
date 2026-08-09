@@ -1,21 +1,27 @@
 using System;
 using System.Collections.Generic;
+#if !UNITY_WEBGL || UNITY_EDITOR
 using System.Net;
 using System.Net.Sockets;
+#endif
 using PawsAndLoot.Logging;
 using UnityEngine;
 
 namespace PawsAndLoot.Integration.Network
 {
     /// <summary>
-    /// Finds and announces games on the local network so the two players do not
-    /// have to read an IP address to each other.
+    /// Finds and announces games on the local network so two players on one
+    /// wifi do not have to read an address to each other.
     ///
-    /// Direct IP has no matchmaking server (DEC-027), so the only way to build a
-    /// room list without one is for the host to shout on the LAN broadcast
-    /// address and for everyone else to listen. It is an aid, not a replacement:
-    /// typing an IP still works, and has to, because some networks drop
-    /// broadcast traffic entirely.
+    /// A shortcut, not the way in. Rooms are reached by invite code now, and
+    /// this is what is left of the direct-IP model (DEC-027) — useful when two
+    /// desktop builds are on one router and the room was opened with
+    /// <c>TryStartHost</c>, useless everywhere else.
+    ///
+    /// Off entirely in the browser. WebGL has no UDP socket to broadcast from,
+    /// and touching <c>UdpClient</c> there throws at the first call rather than
+    /// failing to compile — so the whole mechanism is compiled out instead of
+    /// left to discover its own absence at runtime.
     ///
     /// Both sockets are non-blocking. Receiving is polled from Update rather
     /// than run on a thread, because a background thread would need locking
@@ -27,10 +33,12 @@ namespace PawsAndLoot.Integration.Network
         private readonly Dictionary<LanRoom, LanRoom> _rooms = new();
         private readonly List<LanRoom> _snapshot = new();
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         private UdpClient _listener;
         private UdpClient _announcer;
         private float _nextBroadcast;
         private bool _listenFailed;
+#endif
 
         [SerializeField]
         private NetworkSessionController session;
@@ -42,8 +50,13 @@ namespace PawsAndLoot.Integration.Network
         [SerializeField]
         private string roomLabel = string.Empty;
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         public bool IsListening => _listener != null;
         public bool IsAnnouncing => _announcer != null;
+#else
+        public bool IsListening => false;
+        public bool IsAnnouncing => false;
+#endif
         public string LastError { get; private set; } = string.Empty;
 
         /// <summary>
@@ -57,6 +70,7 @@ namespace PawsAndLoot.Integration.Network
             session = configuredSession;
         }
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         private string ResolveLabel()
         {
             if (!string.IsNullOrWhiteSpace(roomLabel))
@@ -153,8 +167,13 @@ namespace PawsAndLoot.Integration.Network
 
         private void Announce()
         {
+            // A Relay room has no address on this network. Announcing one would
+            // put a room in the other player's list that points at a port
+            // nothing is listening on — a click that times out with no
+            // explanation, which is worse than an empty list.
             bool shouldAnnounce = session != null
-                && session.Mode == NetworkSessionController.SessionMode.Host;
+                && session.Mode == NetworkSessionController.SessionMode.Host
+                && string.IsNullOrEmpty(session.InviteCode);
             if (!shouldAnnounce)
             {
                 StopAnnouncing();
@@ -194,6 +213,14 @@ namespace PawsAndLoot.Integration.Network
             }
         }
 
+#endif
+
+        /// <summary>
+        /// Drops rooms nobody has heard from lately. Outside the socket guard
+        /// on purpose: it only walks a dictionary, and the browser still needs
+        /// it to leave <see cref="Rooms"/> as a well-formed empty list rather
+        /// than whatever the last platform left in it.
+        /// </summary>
         private void Expire()
         {
             float cutoff = Time.realtimeSinceStartup
@@ -226,6 +253,7 @@ namespace PawsAndLoot.Integration.Network
                         left.LastSeenRealtime));
         }
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         private void StopAnnouncing()
         {
             if (_announcer == null)
@@ -236,17 +264,21 @@ namespace PawsAndLoot.Integration.Network
             _announcer.Close();
             _announcer = null;
         }
+#endif
 
         private void Update()
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             StartListening();
             Poll();
             Announce();
+#endif
             Expire();
         }
 
         private void OnDestroy()
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             StopAnnouncing();
             if (_listener == null)
             {
@@ -255,6 +287,7 @@ namespace PawsAndLoot.Integration.Network
 
             _listener.Close();
             _listener = null;
+#endif
         }
     }
 }

@@ -410,7 +410,7 @@ namespace PawsAndLoot.Integration.Voice
 
             VoiceCommandResponse response = null;
             yield return backendClient.Submit(
-                config != null ? config.BackendBaseUrl : string.Empty,
+                VoiceBackendAddress.Resolve(config),
                 gameSessionId,
                 petId,
                 clientCommandId,

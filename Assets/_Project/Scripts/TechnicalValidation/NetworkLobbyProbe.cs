@@ -31,6 +31,23 @@ namespace PawsAndLoot.TechnicalValidation
         private const string AddressArgument = "-netAddress";
         private const string PortArgument = "-netPort";
         private const string SwapArgument = "-netSwapRoles";
+        private const string InviteCodeArgument = "-netInviteCode";
+
+        /// <summary>
+        /// Where the host leaves the code it was given, so the client process
+        /// can pick it up.
+        ///
+        /// Two processes on one machine share <c>persistentDataPath</c>, and a
+        /// Relay code is not knowable in advance the way a port was — the
+        /// launcher cannot pass it to both sides because it does not exist
+        /// until the host has asked for it. A file is the whole handshake, and
+        /// it is deleted by the host on the way in so a code from the previous
+        /// run cannot be mistaken for this one.
+        /// </summary>
+        private static string InviteCodePath =>
+            Path.Combine(
+                Application.persistentDataPath,
+                "net-invite-code.txt");
         private const string MatchArgument = "-netMatchSeconds";
 
         /// <summary>
@@ -72,6 +89,8 @@ namespace PawsAndLoot.TechnicalValidation
         private string _joinMode = "api";
         private string _pressedControl = string.Empty;
         private bool _sawRoomEntry;
+        private string _inviteCode = string.Empty;
+        private bool _publishedInviteCode;
 
         private void Awake()
         {
@@ -97,6 +116,88 @@ namespace PawsAndLoot.TechnicalValidation
             _joinMode =
                 ReadValue(args, JoinModeArgument)?.ToLowerInvariant()
                 ?? "api";
+            _inviteCode = ReadValue(args, InviteCodeArgument) ?? string.Empty;
+
+            if (_mode == "host")
+            {
+                ClearPublishedInviteCode();
+            }
+        }
+
+        /// <summary>
+        /// Removes a code left by an earlier run. Without this a client that
+        /// starts before the host finishes its allocation reads the previous
+        /// match's code, is told the room does not exist, and the failure
+        /// points at Relay rather than at the file.
+        /// </summary>
+        private static void ClearPublishedInviteCode()
+        {
+            try
+            {
+                if (File.Exists(InviteCodePath))
+                {
+                    File.Delete(InviteCodePath);
+                }
+            }
+            catch (IOException)
+            {
+                // The other process may be reading it. It is about to be
+                // overwritten either way.
+            }
+        }
+
+        private void PublishInviteCode()
+        {
+            if (_publishedInviteCode
+                || session == null
+                || string.IsNullOrEmpty(session.InviteCode))
+            {
+                return;
+            }
+
+            try
+            {
+                File.WriteAllText(InviteCodePath, session.InviteCode);
+                _publishedInviteCode = true;
+                GameLogger.Info(
+                    GameLogCategory.Network,
+                    $"Lobby probe published invite code "
+                    + $"{session.InviteCode}.",
+                    this);
+            }
+            catch (IOException exception)
+            {
+                GameLogger.Warning(
+                    GameLogCategory.Network,
+                    "Could not publish the invite code: " + exception.Message,
+                    this);
+            }
+        }
+
+        /// <summary>
+        /// The code this client should type, or empty while there is none yet.
+        /// An explicit argument wins; otherwise it is whatever the host left.
+        /// </summary>
+        private string ResolveInviteCode()
+        {
+            if (!string.IsNullOrEmpty(_inviteCode))
+            {
+                return _inviteCode;
+            }
+
+            try
+            {
+                if (File.Exists(InviteCodePath))
+                {
+                    _inviteCode = File.ReadAllText(InviteCodePath).Trim();
+                }
+            }
+            catch (IOException)
+            {
+                // Being written right now. Try again next frame.
+            }
+
+            return _inviteCode;
         }
 
         /// <summary>
@@ -154,17 +255,22 @@ namespace PawsAndLoot.TechnicalValidation
                 return false;
             }
 
-            TMP_InputField addressField = FindField("Join Address");
-            TMP_InputField portField = FindField("Port");
-            if (addressField != null)
+            string code = ResolveInviteCode();
+            if (string.IsNullOrEmpty(code))
             {
-                addressField.text = _address;
+                // Not an error: the host has not finished its allocation yet.
+                // The caller retries until the timeout.
+                return false;
             }
 
-            if (portField != null)
+            TMP_InputField codeField = FindField("Invite Code Field");
+            if (codeField == null)
             {
-                portField.text = _port;
+                Write(false, "Lobby has no reachable invite code field.");
+                return false;
             }
+
+            codeField.text = code;
 
             Button joinButton = FindButton("Join Button");
             if (joinButton == null)
@@ -271,6 +377,11 @@ namespace PawsAndLoot.TechnicalValidation
             }
 
             _elapsed += Time.unscaledDeltaTime;
+
+            if (_mode == "host" && _joinMode != "api")
+            {
+                PublishInviteCode();
+            }
 
             if (!_startRequested)
             {

@@ -48,7 +48,15 @@ namespace PawsAndLoot.Gameplay.Players
 
             if (keyboard?.spaceKey.wasPressedThisFrame == true)
             {
+                // The sound is raised here, on the press, rather than by the
+                // observer watching `IsAirborne` go true. Leaving the ground is
+                // not the same event as jumping: stepping off a kerb, walking
+                // down the park steps and crossing any slope all raise it, and
+                // the host simulates both characters, so an officer heard the
+                // thief's kerbs across town. On the press it is once per press,
+                // on this machine only (`ISSUE-072`).
                 movementMotor.TryJump();
+                Audio.GameSoundService.Request(Audio.GameSoundId.Jump);
             }
 
             movementMotor.Move(input, Time.deltaTime);

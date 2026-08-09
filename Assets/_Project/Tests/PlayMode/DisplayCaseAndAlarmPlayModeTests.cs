@@ -22,11 +22,36 @@ namespace PawsAndLoot.Tests.PlayMode
     {
         private const float Frame = 1f / 60f;
 
+        /// <summary>
+        /// Counting noise reports only means something if the scene starts
+        /// with one board and one alarm. `DestroyImmediate` in the body of a
+        /// test does not run when that test fails partway, and a stray alarm
+        /// from the previous test answers `FindFirstObjectByType` here.
+        /// </summary>
+        [SetUp]
+        public void ClearLeftovers()
+        {
+            foreach (LootAlarm alarm in Object.FindObjectsByType<LootAlarm>(
+                FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(alarm.gameObject);
+            }
+
+            foreach (NoiseBoard board in Object.FindObjectsByType<NoiseBoard>(
+                FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(board.gameObject);
+            }
+        }
+
         [UnityTest]
         public IEnumerator TheGlassKeepsTheTreasureOutOfReachUntilItBreaks()
         {
             var boardObject = new GameObject("Noise Board");
             NoiseBoard board = boardObject.AddComponent<NoiseBoard>();
+            var alarmObject = new GameObject("Loot Alarm");
+            LootAlarm alarm = alarmObject.AddComponent<LootAlarm>();
+            alarm.Configure(board);
             LootItem jewel = CreateLoot(alarmed: false);
             LootDisplayCase display = CreateCase(jewel, board);
             yield return null;
@@ -62,15 +87,29 @@ namespace PawsAndLoot.Tests.PlayMode
             Assert.That(display.IsSealed, Is.False);
             Assert.That(jewel.enabled, Is.True);
 
-            // And the street heard it.
-            Assert.That(board.ReportedCount, Is.EqualTo(1));
+            // And the street heard it — twice, on purpose.
+            //
+            // Breaking in makes two different sounds now: the smash itself,
+            // which carries thirty metres and is what the animals near the shop
+            // react to, and the shop's siren at a hundred and twenty, which is
+            // what tells an officer across town. This used to be one report
+            // because only the smash existed; the case did not ring the alarm
+            // until 2026-08-09, so stealing anything but the crown jewel was
+            // silent from the shop's point of view.
+            Assert.That(board.ReportedCount, Is.EqualTo(2));
+            Assert.That(alarm.RaisedCount, Is.EqualTo(1));
             Assert.That(
                 board.Latest.Radius,
-                Is.EqualTo(LootDisplayCase.SmashRadiusMeters));
+                Is.EqualTo(LootAlarm.SirenRadiusMeters),
+                "The siren is the louder of the two, so it is the one still "
+                + "on the board — and it is what reaches an officer across "
+                + "town. The smash on its own carries "
+                + LootDisplayCase.SmashRadiusMeters + " metres.");
 
             Object.DestroyImmediate(display.gameObject);
             Object.DestroyImmediate(jewel.Definition);
             Object.DestroyImmediate(jewel.gameObject);
+            Object.DestroyImmediate(alarmObject);
             Object.DestroyImmediate(boardObject);
         }
 

@@ -29,6 +29,20 @@ namespace PawsAndLoot.Editor
             Report(new Vector3(0f, 0f, 0f), 14f);
         }
 
+        /// <summary>
+        /// Everything solid in the town, with its footprint. Used to work out
+        /// which object a screenshot is pointing at — a shape and a position
+        /// identify it where a name alone does not.
+        /// </summary>
+        /// <summary>
+        /// The lake garden, which had the same solid-box problem the square did.
+        /// </summary>
+        [MenuItem("PawliceAndPurrglar/Setup/Report Walkability Around Lake Garden")]
+        public static void ReportLakeGarden()
+        {
+            Report(new Vector3(-20f, 0f, -14f), 12f);
+        }
+
         private static void Report(Vector3 centre, float radius)
         {
             EditorSceneManager.OpenScene(
@@ -85,7 +99,7 @@ namespace PawsAndLoot.Editor
             {
                 for (float z = -5f; z <= 5.001f; z += 2.5f)
                 {
-                    var at = new Vector3(centre.x + 10f + x, 0f, centre.z - 2f + z);
+                    var at = new Vector3(centre.x + x, 0f, centre.z + z);
                     if (Physics.Raycast(
                             at + Vector3.up * 12f,
                             Vector3.down,

@@ -195,6 +195,114 @@ namespace PawsAndLoot.Tests.PlayMode
         }
 
         /// <summary>
+        /// The till works with no counter standing anywhere.
+        ///
+        /// This is the shape the bug had. The three counters outside the
+        /// supermarket were removed once the raccoon sold the same three props,
+        /// and the stall kept listing goods because its display had a hard-coded
+        /// fallback — but every press answered "지금은 살 수 없어요", because
+        /// buying still walked the scene looking for a counter to ask. Nothing
+        /// logged, nothing threw, and the message reads as the officer being
+        /// broke.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TheOfficerBuysWithNoCounterInTheScene()
+        {
+            foreach (PoliceSupplyCounter stray in Object
+                .FindObjectsByType<PoliceSupplyCounter>(
+                    FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(stray.gameObject);
+            }
+
+            var state = new MutableMatchState { IsGameplayActive = true };
+            PoliceSupplyCatalogue.ResetForTests(state);
+
+            var policeObject = new GameObject("Police");
+            policeObject.SetActive(false);
+            PlayerRoleIdentity police =
+                policeObject.AddComponent<PlayerRoleIdentity>();
+            police.Configure(PlayerRole.Police);
+            PoliceWallet purse =
+                policeObject.AddComponent<PoliceWallet>();
+            purse.Configure(100);
+            ToolCarrier carrier =
+                policeObject.AddComponent<ToolCarrier>();
+            carrier.Configure(police, state);
+            policeObject.SetActive(true);
+
+            var sold = new System.Collections.Generic.List<ThrowableKind>();
+            PoliceSupplyCatalogue.Purchased += sold.Add;
+            yield return null;
+
+            Assert.That(
+                PoliceSupplyCatalogue.TryBuy(police, ThrowableKind.GlueTrap),
+                Is.True,
+                "With no counter to ask, the officer could not buy at all.");
+            Assert.That(carrier.HeldKind, Is.EqualTo(ThrowableKind.GlueTrap));
+            Assert.That(purse.Amount, Is.EqualTo(40), "100 less the 60 price.");
+
+            // The sale is announced, which is what the purchase sound listens
+            // for. Subscribing per counter meant removing the counters took the
+            // sound with them.
+            Assert.That(sold, Is.EquivalentTo(new[] { ThrowableKind.GlueTrap }));
+
+            // Short of the price: refused, and nothing is taken. The sensor is
+            // 90 and there is 40 left. (Not tested by filling the bag — the
+            // officer has several quick slots, so a second purchase succeeds.)
+            Assert.That(
+                PoliceSupplyCatalogue.TryBuy(police, ThrowableKind.SensorLight),
+                Is.False);
+            Assert.That(purse.Amount, Is.EqualTo(40));
+            Assert.That(sold.Count, Is.EqualTo(1));
+
+            // And the thief still cannot shop here.
+            var thiefObject = new GameObject("Thief");
+            thiefObject.SetActive(false);
+            PlayerRoleIdentity thief =
+                thiefObject.AddComponent<PlayerRoleIdentity>();
+            thief.Configure(PlayerRole.Thief);
+            thiefObject.AddComponent<PoliceWallet>().Configure(999);
+            ToolCarrier thiefCarrier =
+                thiefObject.AddComponent<ToolCarrier>();
+            thiefCarrier.Configure(thief, state);
+            thiefObject.SetActive(true);
+            yield return null;
+
+            Assert.That(
+                PoliceSupplyCatalogue.TryBuy(thief, ThrowableKind.GlueTrap),
+                Is.False);
+            Assert.That(thiefCarrier.HasTool, Is.False);
+
+            PoliceSupplyCatalogue.Purchased -= sold.Add;
+            PoliceSupplyCatalogue.ResetForTests();
+            Object.DestroyImmediate(policeObject);
+            Object.DestroyImmediate(thiefObject);
+        }
+
+        /// <summary>
+        /// Every prop the stall lists can actually be bought.
+        ///
+        /// The catalogue is two things — a list to display and a till to press —
+        /// and they were separate lists for a day. This holds them to the same
+        /// one.
+        /// </summary>
+        [Test]
+        public void EveryListedPropHasAPrice()
+        {
+            Assert.That(PoliceSupplyCatalogue.Stock, Is.Not.Empty);
+            foreach ((ThrowableKind kind, int price) in
+                PoliceSupplyCatalogue.Stock)
+            {
+                Assert.That(price, Is.GreaterThan(0));
+                Assert.That(
+                    PoliceSupplyCatalogue.GetPrice(kind),
+                    Is.EqualTo(price));
+                Assert.That(PoliceSupplyCatalogue.Sells(kind), Is.True);
+            }
+        }
+
+        /// <summary>
         /// The shop is the only source now. Free props on the map would leave the
         /// purse with nothing to buy, which is a number in the corner of the
         /// screen rather than an economy.
@@ -221,10 +329,17 @@ namespace PawsAndLoot.Tests.PlayMode
                     ThrowableCatalog.GetOwner(kind) == PlayerRole.Police)
                 .ToArray();
             Assert.That(policeProps, Is.Not.Empty);
-            Assert.That(
-                counters.Select(counter => counter.Kind),
-                Is.EquivalentTo(policeProps),
-                "Every police prop has to be on sale, and nothing else.");
+
+            // The three greybox counters that used to stand on the pavement are
+            // gone (2026-08-09) — the raccoon sells to the officer now, with a
+            // real window, and three cubes in the road offering the same three
+            // things were the older half of that.
+            //
+            // So the half of this rule that can still be asserted against the
+            // scene is the half below: no police prop lies around free. Where
+            // they are *bought* moved to `MerchantTradePresenter`, which reads
+            // any counters it finds and falls back to the same three kinds at
+            // the same prices when there are none.
             foreach (PoliceSupplyCounter counter in counters)
             {
                 Assert.That(counter.Price, Is.GreaterThan(0));
@@ -246,11 +361,14 @@ namespace PawsAndLoot.Tests.PlayMode
                 .FindObjectsByType<PoliceWallet>(
                     FindObjectsSortMode.None)
                 .First();
+            // Against the cheapest price rather than the counters, which may not
+            // be in the scene at all. The rule is that the officer can afford
+            // *something* at kick-off: a first tool that requires the skill the
+            // tool provides punishes starting.
             Assert.That(
-                counters.Any(counter =>
-                    purse.CanAfford(counter.Price)),
+                purse.CanAfford(60),
                 Is.True,
-                "The officer starts unable to buy anything at all.");
+                "The officer starts unable to buy even the cheapest prop.");
         }
 
         private static MatchConfig LoadMatchConfig()

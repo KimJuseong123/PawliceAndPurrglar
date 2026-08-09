@@ -188,7 +188,7 @@ namespace PawsAndLoot.Integration.Voice
         private void ConfigureBackend(VoiceConfig voice)
         {
             backendSocket.Configure(
-                voice.BackendBaseUrl,
+                VoiceBackendAddress.Resolve(voice),
                 VoiceCapabilityStore.SessionId,
                 VoiceCapabilityStore.Token);
             if (!socketConnected

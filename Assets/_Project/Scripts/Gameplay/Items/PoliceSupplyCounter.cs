@@ -1,5 +1,4 @@
 using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Logging;
 using PawsAndLoot.Match;
 using UnityEngine;
 
@@ -121,10 +120,10 @@ namespace PawsAndLoot.Gameplay.Items
             }
 
             SoldCount++;
-            GameLogger.Info(
-                GameLogCategory.Loot,
-                $"Police bought {kind} for {price}.",
-                this);
+            // Announced through the catalogue as well, which is where the sound
+            // observer listens now. Subscribing per counter meant that removing
+            // the counters took the purchase sound with them.
+            PoliceSupplyCatalogue.ReportCounterSale(kind, price);
             Purchased?.Invoke(kind);
             return true;
         }

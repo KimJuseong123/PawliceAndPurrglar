@@ -79,6 +79,37 @@ URL을 함께 움직일 이유가 없다. `-executeMethod`에는 여전히
 > (`NetworkManagerOwner` 필드는 `internal`이라 직접 못 넣는다). 그리고 씬을 나갈
 > 때 세션을 끝낸다 — 씬 로더만 부르면 세션이 살아서 따라온다.
 
+> **`#if UNITY_WEBGL`로 감싼 코드는 WebGL 빌드를 돌려야 컴파일된다.** Edit Mode
+> 331건과 Play Mode 218건이 전부 통과한 트리에서 WebGL 빌드가 `error CS0103`으로
+> 죽었다 — `LanRoomDirectory`의 `Expire()`가 내가 친 `#endif` 안쪽에 들어가 있었고,
+> 에디터 어셈블리에서는 그 분기가 아예 컴파일되지 않으므로 **어떤 테스트도 그
+> 코드를 본 적이 없다.** 반대 방향도 같다: WebGL에서만 도는 분기는 데스크톱 테스트가
+> 검증하지 못한다.
+>
+> 플랫폼 분기를 넣거나 옮겼으면 **그 자리에서 WebGL 빌드를 한 번 돌린다.**
+>
+> ```bash
+> "C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -quit -projectPath "C:/Users/SSAFY/paws-and-loot" -executeMethod PawsAndLoot.Editor.PlaytestBuild.BuildWebGlRelease -logFile Logs/webgl-release.log
+> ```
+
+> **브라우저는 서버가 될 수 없다. Relay일 때만 예외다.** `UnityTransport.cs`가 그
+> 자리에서 던진다 — `IsServer && m_ProtocolType != ProtocolType.RelayUnityTransport`.
+> 그래서 "한 명이 호스트하고 IP를 불러준다"는 모델은 WebGL에서 성립 자체를 못 하고,
+> 초대코드는 편의가 아니라 **유일하게 가능한 모양**이다 (`DEC-WEBGL-001`).
+>
+> 그리고 **`RelayServerData`는 `isSecure`만으로 wss가 되지 않는다.** 8인자 생성자의
+> `isWebSocket`까지 켜야 `IsWebSocket`이 서고, `UseWebSockets`와 어긋나면 전송이
+> `LogError`를 남기고 아무 데도 붙지 않는다. 둘 다 켠다.
+
+> **`UnityEngine.Microphone`은 WebGL에 구현이 없다.** 컴파일은 되고 예외도 없다 —
+> `Microphone.devices`가 **늘 빈 배열**이다. 로비의 마이크 확인이 그걸 보고 "사용
+> 가능한 마이크를 찾지 못했습니다"를 띄우고 있었는데, 정작 녹음은
+> `BrowserVoiceCaptureProvider`로 멀쩡히 됐다. 브라우저에서 마이크가 있는지는
+> `getUserMedia`만 알고, 물어보기 전에는 대답하지 않는다.
+>
+> 같은 계열로 **`GUIUtility.systemCopyBuffer`는 WebGL에서 아무 데도 닿지 않는다.**
+> 플레이어 내부 버퍼에 쓰고 페이지의 클립보드는 그대로다. `.jslib`로 가야 한다.
+
 > **배치 실행의 로그는 종료 통보를 받은 뒤에만 판독한다.** 실행 중에
 > `grep -c "error CS"`를 하면 0이 나오고 그게 "통과"로 읽힌다. 실제로는 오류가
 > 있었고, 두 번 속았다 (`ISSUE-051`).
@@ -547,6 +578,19 @@ UI 스프라이트는 순서 의존이다 — 컷아웃과 크롬이 없으면 �
 컷아웃 코어는 `MockupCutter`, 빌더 헬퍼는 `UiBuildKit`에 공용으로 있다. 두 화면
 중 하나만 고치면 다른 하나도 같이 재생성한다.
 
+### Build
+
+```text
+Build WebGL Release            제출본. Builds/Release/WebGL
+Build WebGL Playtest           개발 빌드. Builds/Playtest/WebGL (play-webgl.bat이 쓴다)
+Measure WebGL Build Size       용량 측정 (ART-005)
+Build Windows Playtest         2프로세스 회귀용
+Build Linux Dedicated Server   **미사용.** Relay 채택으로 서버 빌드가 필요 없다
+```
+
+배포는 `deploy/`에 있다 — `Caddyfile`, `pawlice-voice.service`, `setup-ec2.sh`,
+`upload.ps1`, `voice.env.example`. 절차는 `docs/21_REMOTE_PLAY_AND_DEPLOY.md` 2절.
+
 ### Technical Validation
 
 ```text
@@ -572,8 +616,8 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 - 결과 XML의 실제 테스트 수와 실패 목록
 - **테스트 0개 발견은 성공이 아니다**
 
-현재 기준선: **Edit Mode 299개 전부 통과, Play Mode 213개 중 211 통과 + 1 실패 +
-1 스킵 (2026-08-08).** Play Mode의 실패 1건은
+현재 기준선: **Edit Mode 331개 전부 통과, Play Mode 218개 중 216 통과 + 1 실패 +
+1 스킵 (2026-08-09).** Play Mode의 실패 1건은
 `CompanionExpressionPlayModeTests.ShowingAFacePutsExactlyOneIconOnScreen`이며
 음성 스택이 아니라 **애니메이션 클립 부재**(`MODEL-002` 미완)에 딸린 것이다.
 테스트를 추가하면 `13_CURRENT_STATE.md`의 `최근 검증` 표에 실제 수치를 기록한다.
@@ -673,6 +717,8 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 | 파일 | 역할 |
 |---|---|
 | `NetworkSessionController` | 호스트/접속 시작, 2인 제한, 역할 보드 스폰 |
+| `RelaySessionService` | UGS 익명 로그인 → 할당 생성 → **초대코드**. `wss` 고정 |
+| `InviteCode` | 붙여넣은 코드 정리(공백·하이픈·제로폭)와 거절 사유 |
 | `NetworkRoleBoard` | 역할 배정. 씬 전환 전에 **1회 통보**로 넘긴다 |
 | `NetworkSceneCoordinator` | 세션 중 씬 로드를 서버만 실행 |
 | `NetworkMatchMirror` | 경기 상태·타이머 복제 (NET-004) |
@@ -682,7 +728,12 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 | `NetworkRematchCoordinator` | 재경기 명명 메시지 (NET-008) |
 | `NetworkDisconnectHandler` | 상대 이탈 시 1회 정리 (NET-009) |
 
-세 가지 함정을 기억한다.
+접속 방식은 **초대코드**다 (`DEC-WEBGL-001`). 브라우저가 듣는 소켓을 열 수 없어서
+Relay 외에 선택지가 없고, 코드는 Relay의 join code 그 자체다. 직접 IP
+(`TryStartHost`/`TryJoin`)는 인터넷 없이 도는 회귀 경로로만 남아 있다 —
+`-netJoinMode api`가 쓴다.
+
+네 가지 함정을 기억한다.
 
 1. **씬에 배치된 `NetworkObject`는 씬 전환을 넘기지 못한다** (`ISSUE-016`).
    씬을 넘겨야 하는 값은 1회 RPC + 로컬 정적 값으로, 씬을 넘겨야 하는 요청은
@@ -690,6 +741,9 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 2. **`ConnectedClientsIds`는 서버 전용이다.** 클라이언트에서 항상 비어 있다.
 3. **`NetworkConfig`는 양쪽이 같아야 한다.** 런타임에 한쪽만 플래그를 바꾸면
    해시 불일치로 접속이 끊긴다. 씬 설정에서 양쪽 동일하게 켠다.
+4. **`cloudProjectId`가 비어 있으면 방을 열 수 없다.** 코드가 아니라 설정이고,
+   `RelaySessionService.IsProjectLinked`가 요청을 보내기 전에 잡아 한 문장으로
+   말한다 — 서버까지 갔다가 인증 오류로 돌아오면 네트워크 문제처럼 보인다.
 
 `Assets/_Project/Scripts/Integration/`의 외부 에셋 어댑터 자리는 아직 비어
 있다. `Assets/_Project/UI/`도 비어 있고 HUD는 전부 코드로 조립한다.

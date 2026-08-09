@@ -12,8 +12,14 @@ using UnityEngine.UI;
 namespace PawsAndLoot.UI
 {
     /// <summary>
-    /// The direct-IP lobby: shows this machine's address, takes the address to
-    /// join, and once two players are present lets them split the roles.
+    /// The invite-code lobby: one player makes a room and reads out the six
+    /// characters it produces, the other types them in, and once both are
+    /// present they split the roles.
+    ///
+    /// It used to show this machine's IP address and take one to join. That
+    /// works on one wifi and nowhere else — the browser this game now ships in
+    /// cannot open a listening socket at all, and a home connection behind
+    /// CGNAT has no address worth reading out even on the desktop build.
     ///
     /// Read only with respect to rules. It starts a session and reads the role
     /// board; it never assigns a role itself, because only the server may do
@@ -36,7 +42,7 @@ namespace PawsAndLoot.UI
         private NetworkSessionController session;
 
         [SerializeField]
-        private TMP_Text myAddressLabel;
+        private TMP_Text inviteNoteLabel;
 
         [SerializeField]
         private TMP_Text statusLabel;
@@ -44,11 +50,19 @@ namespace PawsAndLoot.UI
         [SerializeField]
         private TMP_Text roleLabel;
 
+        /// <summary>
+        /// Shows the code when hosting, takes one when joining.
+        ///
+        /// One field for both because there is no state in which a player holds
+        /// two codes, and two fields side by side invite the one mistake this
+        /// screen can make — typing the other player's code into your own box
+        /// and waiting for somebody who was never told where to go.
+        /// </summary>
         [SerializeField]
-        private TMP_InputField joinAddressField;
+        private TMP_InputField inviteCodeField;
 
         [SerializeField]
-        private TMP_InputField portField;
+        private Button copyCodeButton;
 
         [SerializeField]
         private Button hostButton;
@@ -74,9 +88,6 @@ namespace PawsAndLoot.UI
         [SerializeField]
         private LobbyCharacterView characterView;
 
-        [SerializeField]
-        private bool fillEndpointFields = true;
-
         /// <summary>
         /// Fixed slots rather than instantiated rows: the match is two players,
         /// so a handful of rooms is all a LAN will ever usefully show, and a
@@ -93,6 +104,29 @@ namespace PawsAndLoot.UI
         private NetworkRoleBoard _roleBoard;
         private float _nextPoll;
         private string _roomSignature = string.Empty;
+
+        /// <summary>
+        /// How long "복사했습니다" stays up.
+        ///
+        /// A copy leaves no trace anywhere on screen, so without a line saying
+        /// it happened the button is indistinguishable from a dead one — which
+        /// this lobby has shipped before. It expires because the message
+        /// describes an event, and a permanent one would still be claiming a
+        /// copy long after the player moved on.
+        /// </summary>
+        private const float CopyNoticeSeconds = 2.5f;
+
+        private string _copyNotice = string.Empty;
+        private float _copyNoticeUntil;
+
+        /// <summary>
+        /// Set while the presenter is rewriting the code box itself.
+        ///
+        /// Assigning <c>text</c> raises <c>onValueChanged</c> again, and the
+        /// handler that folds the case assigns <c>text</c> — which is an
+        /// infinite loop inside one keystroke, not a slow one.
+        /// </summary>
+        private bool _foldingCode;
 
         /// <summary>
         /// What the last refresh saw, so the three lobby sounds are raised on the
@@ -120,12 +154,19 @@ namespace PawsAndLoot.UI
         /// </summary>
         public NetworkSessionController Session => session;
 
-        public string MyAddressText =>
-            myAddressLabel != null ? myAddressLabel.text : string.Empty;
+        public string InviteNoteText =>
+            inviteNoteLabel != null ? inviteNoteLabel.text : string.Empty;
         public string StatusText =>
             statusLabel != null ? statusLabel.text : string.Empty;
         public string RoleText =>
             roleLabel != null ? roleLabel.text : string.Empty;
+
+        /// <summary>
+        /// What is in the code box right now — the code this machine is showing
+        /// when hosting, or what the player has typed when joining.
+        /// </summary>
+        public string InviteCodeText =>
+            inviteCodeField != null ? inviteCodeField.text : string.Empty;
 
         /// <summary>
         /// Wires everything that lives inside the lobby prefab. Called once when
@@ -133,22 +174,22 @@ namespace PawsAndLoot.UI
         /// rather than reconstructed in the scene.
         /// </summary>
         public void ConfigureView(
-            TMP_Text configuredMyAddress,
+            TMP_Text configuredInviteNote,
             TMP_Text configuredStatus,
             TMP_Text configuredRole,
-            TMP_InputField configuredJoinAddress,
-            TMP_InputField configuredPort,
+            TMP_InputField configuredInviteCode,
+            Button configuredCopyCode,
             Button configuredHost,
             Button configuredJoin,
             Button configuredSwap,
             Button configuredStart,
             Button configuredLeave)
         {
-            myAddressLabel = configuredMyAddress;
+            inviteNoteLabel = configuredInviteNote;
             statusLabel = configuredStatus;
             roleLabel = configuredRole;
-            joinAddressField = configuredJoinAddress;
-            portField = configuredPort;
+            inviteCodeField = configuredInviteCode;
+            copyCodeButton = configuredCopyCode;
             hostButton = configuredHost;
             joinButton = configuredJoin;
             swapRoleButton = configuredSwap;
@@ -178,13 +219,10 @@ namespace PawsAndLoot.UI
         /// </summary>
         public void ConfigureSession(
             NetworkSessionController configuredSession,
-            LanRoomDirectory configuredDirectory,
-            bool configuredFillEndpointFields = true)
+            LanRoomDirectory configuredDirectory)
         {
             session = configuredSession;
             roomDirectory = configuredDirectory;
-            fillEndpointFields = configuredFillEndpointFields;
-            RefreshAddresses();
             Refresh();
         }
 
@@ -199,18 +237,6 @@ namespace PawsAndLoot.UI
                    != NetworkSessionController.SessionMode.Offline)
             {
                 return;
-            }
-
-            if (joinAddressField != null)
-            {
-                // Mirrored into the field so the player can see what was used,
-                // and can retry by hand if the join fails.
-                joinAddressField.text = room.Address;
-            }
-
-            if (portField != null)
-            {
-                portField.text = room.Port.ToString();
             }
 
             session.TryJoin(room.Address, room.Port.ToString());
@@ -300,19 +326,20 @@ namespace PawsAndLoot.UI
                 return;
             }
 
-            if (roomDirectory != null && !roomDirectory.IsListening)
+            // The empty case says nothing about the LAN on purpose. Discovery is
+            // a shortcut for two desktops on one wifi and it is off entirely in
+            // a browser; telling a player who is about to type a code that no
+            // rooms were found on their network describes a mechanism they are
+            // not using and reads as a failure.
+            if (_boundRooms.Count == 0)
             {
-                SetText(
-                    roomListLabel,
-                    "같은 네트워크 방 찾기를 쓸 수 없습니다. 아래에 IP를 직접 입력하세요.");
+                SetText(roomListLabel, "초대코드로 만나세요.");
                 return;
             }
 
             SetText(
                 roomListLabel,
-                _boundRooms.Count == 0
-                    ? "같은 네트워크에서 방을 찾는 중입니다. 한 명이 먼저 호스트를 눌러야 합니다."
-                    : $"같은 네트워크에서 방 {_boundRooms.Count}개를 찾았습니다. 눌러서 참가하세요.");
+                $"같은 네트워크에서 방 {_boundRooms.Count}개를 찾았습니다. 눌러서 참가하세요.");
         }
 
         private string BuildRoomSignature(bool offline)
@@ -334,104 +361,96 @@ namespace PawsAndLoot.UI
         }
 
         /// <summary>
-        /// Shows the addresses another player on this network could actually
-        /// reach: the private ones and loopback.
+        /// Opens a room and shows the code it produced.
         ///
-        /// Any routable address the machine also holds is deliberately left off
-        /// the screen. It cannot help a player on the same LAN and it is exactly
-        /// the kind of value that should not be sitting in a screenshot. The
-        /// full list still goes to the log.
+        /// Fire-and-forget rather than awaited, because a Unity button hands
+        /// back nothing to await with. The work is still awaited inside
+        /// <see cref="CreateRoomAsync"/>, where an exception can be caught —
+        /// an <c>async void</c> that faults takes the exception somewhere
+        /// nothing is listening, and the player sees a button that did nothing.
         /// </summary>
-        public void RefreshAddresses()
-        {
-            if (myAddressLabel == null)
-            {
-                return;
-            }
-
-            var text = new StringBuilder("내 주소: ");
-            var logged = new StringBuilder();
-            bool first = true;
-            foreach (string address in
-                LocalAddressProvider.GetIPv4Addresses())
-            {
-                if (logged.Length > 0)
-                {
-                    logged.Append(", ");
-                }
-
-                logged.Append(address);
-
-                bool loopback = address == LocalAddressProvider.LoopbackAddress;
-                if (!loopback && !LocalAddressProvider.IsPrivateLan(address))
-                {
-                    continue;
-                }
-
-                if (!first)
-                {
-                    text.Append("   ");
-                }
-
-                first = false;
-                text.Append(address);
-                if (loopback)
-                {
-                    text.Append(" (같은 PC)");
-                }
-            }
-
-            if (first)
-            {
-                text.Append("찾지 못했습니다");
-            }
-
-            SetText(myAddressLabel, text.ToString());
-            GameLogger.DebugOnce(
-                GameLogCategory.Network,
-                "lobby-local-addresses",
-                $"Local IPv4 addresses: {logged}");
-
-            if (fillEndpointFields
-                && joinAddressField != null
-                && string.IsNullOrWhiteSpace(joinAddressField.text))
-            {
-                joinAddressField.text =
-                    LocalAddressProvider.LoopbackAddress;
-            }
-
-            if (fillEndpointFields
-                && portField != null
-                && string.IsNullOrWhiteSpace(portField.text))
-            {
-                portField.text =
-                    NetworkSessionController.DefaultPort.ToString();
-            }
-        }
-
         public void OnHostPressed()
         {
-            if (session == null)
+            if (session == null || session.IsBusy)
             {
                 return;
             }
 
-            session.TryStartHost(
-                GetPortText());
-            Refresh();
+            _ = CreateRoomAsync();
         }
 
         public void OnJoinPressed()
         {
-            if (session == null)
+            if (session == null || session.IsBusy)
             {
                 return;
             }
 
-            session.TryJoin(
-                GetJoinAddressText(),
-                GetPortText());
+            _ = JoinRoomAsync();
+        }
+
+        /// <summary>
+        /// Puts the code on the clipboard so it can be pasted into whatever the
+        /// two players are talking through.
+        ///
+        /// Runs inside the click on purpose: a browser refuses a clipboard
+        /// write it cannot attribute to a user gesture, and refuses it without
+        /// raising anything, so deferring this by even one frame would leave
+        /// the lobby claiming a copy that never happened.
+        /// </summary>
+        public void OnCopyCodePressed()
+        {
+            string code = session != null ? session.InviteCode : string.Empty;
+            if (string.IsNullOrEmpty(code))
+            {
+                return;
+            }
+
+            _copyNotice = ClipboardBridge.Copy(code)
+                ? "코드를 복사했습니다."
+                : "복사 실패 · 직접 읽으세요";
+            _copyNoticeUntil = Time.unscaledTime + CopyNoticeSeconds;
             Refresh();
+        }
+
+        private async System.Threading.Tasks.Task CreateRoomAsync()
+        {
+            try
+            {
+                await session.TryCreateRoomAsync();
+            }
+            catch (System.Exception exception)
+            {
+                GameLogger.Exception(
+                    GameLogCategory.Network,
+                    exception,
+                    "Creating a room threw.");
+            }
+
+            if (this != null)
+            {
+                Refresh();
+            }
+        }
+
+        private async System.Threading.Tasks.Task JoinRoomAsync()
+        {
+            try
+            {
+                await session.TryJoinRoomAsync(InviteCodeText);
+            }
+            catch (System.Exception exception)
+            {
+                GameLogger.Exception(
+                    GameLogCategory.Network,
+                    exception,
+                    "Joining a room threw.");
+            }
+
+            if (this != null)
+            {
+                Refresh();
+            }
         }
 
         /// <summary>
@@ -521,26 +540,68 @@ namespace PawsAndLoot.UI
                 characterView.Apply(ready, localIsPolice);
             }
 
-            SetInteractable(hostButton, offline);
-            SetInteractable(joinButton, offline);
+            bool busy = session.IsBusy;
+            SetInteractable(hostButton, offline && !busy);
+            SetInteractable(joinButton, offline && !busy);
             SetInteractable(leaveButton, !offline);
             SetInteractable(swapRoleButton, ready);
             // Only the host may start, so a client cannot pull the other player
             // into a match they have not agreed to.
             SetInteractable(startMatchButton, ready && isHost);
 
-            if (joinAddressField != null
-                && joinAddressField.interactable != offline)
-            {
-                joinAddressField.interactable = offline;
-            }
-
-            if (portField != null && portField.interactable != offline)
-            {
-                portField.interactable = offline;
-            }
-
+            RefreshInviteCode(offline, isHost, busy);
             RefreshRoomList(offline);
+        }
+
+        /// <summary>
+        /// Keeps the code box and the line above it agreeing with the session.
+        ///
+        /// The box is the same control in both directions, so which way it is
+        /// pointing has to be visible without reading the label: hosting fills
+        /// it and locks it, joining leaves it open and empty, and only a host
+        /// with a code has anything to copy.
+        /// </summary>
+        private void RefreshInviteCode(bool offline, bool isHost, bool busy)
+        {
+            string sessionCode = session.InviteCode ?? string.Empty;
+            bool showsOwnCode = !offline && sessionCode.Length > 0;
+
+            if (inviteCodeField != null)
+            {
+                if (showsOwnCode && inviteCodeField.text != sessionCode)
+                {
+                    inviteCodeField.text = sessionCode;
+                }
+
+                bool editable = offline && !busy;
+                if (inviteCodeField.interactable != editable)
+                {
+                    inviteCodeField.interactable = editable;
+                }
+            }
+
+            SetInteractable(copyCodeButton, showsOwnCode && isHost);
+
+            if (inviteNoteLabel == null)
+            {
+                return;
+            }
+
+            if (Time.unscaledTime < _copyNoticeUntil
+                && _copyNotice.Length > 0)
+            {
+                SetText(inviteNoteLabel, _copyNotice);
+                return;
+            }
+
+            _copyNotice = string.Empty;
+            SetText(
+                inviteNoteLabel,
+                showsOwnCode && isHost
+                    ? $"내 초대코드: {sessionCode}"
+                    : showsOwnCode
+                        ? $"{sessionCode} 방에 참가"
+                        : "받은 코드를 입력하세요.");
         }
 
         /// <summary>
@@ -607,7 +668,7 @@ namespace PawsAndLoot.UI
             if (offline)
             {
                 return string.IsNullOrEmpty(session.LastStatus)
-                    ? "호스트로 시작하거나 상대의 IP로 참가하세요."
+                    ? "방을 만들거나 받은 코드로 입장하세요."
                     : session.LastStatus;
             }
 
@@ -621,24 +682,6 @@ namespace PawsAndLoot.UI
             return isHost
                 ? "상대 플레이어와 연결되었습니다. 게임 시작을 누르세요."
                 : "상대 플레이어와 연결되었습니다. 호스트가 시작하기를 기다립니다.";
-        }
-
-        private string GetJoinAddressText()
-        {
-            string value = joinAddressField != null
-                ? joinAddressField.text
-                : string.Empty;
-            return string.IsNullOrWhiteSpace(value)
-                ? LocalAddressProvider.LoopbackAddress
-                : value;
-        }
-
-        private string GetPortText()
-        {
-            string value = portField != null ? portField.text : string.Empty;
-            return string.IsNullOrWhiteSpace(value)
-                ? NetworkSessionController.DefaultPort.ToString()
-                : value;
         }
 
         private NetworkRoleBoard ResolveRoleBoard()
@@ -683,7 +726,25 @@ namespace PawsAndLoot.UI
         {
             Bind(hostButton, OnHostPressed, add);
             Bind(joinButton, OnJoinPressed, add);
+            Bind(copyCodeButton, OnCopyCodePressed, add);
             Bind(swapRoleButton, OnSwapRolePressed, add);
+
+            // On the change rather than on the poll. The refresh runs about
+            // seven times a second, so folding the case there means a lower
+            // case letter is visible for up to 150ms after it is typed and,
+            // worse, a player who presses 방 입장 inside that window sends the
+            // unfolded text. Bound here so what is on screen and what is sent
+            // are the same string at every instant.
+            if (inviteCodeField != null)
+            {
+                inviteCodeField.onValueChanged.RemoveListener(
+                    OnInviteCodeChanged);
+                if (add)
+                {
+                    inviteCodeField.onValueChanged.AddListener(
+                        OnInviteCodeChanged);
+                }
+            }
             Bind(startMatchButton, OnStartMatchPressed, add);
             Bind(leaveButton, OnLeavePressed, add);
 
@@ -712,6 +773,40 @@ namespace PawsAndLoot.UI
 
                 int slot = index;
                 button.onClick.AddListener(() => JoinRoomSlot(slot));
+            }
+        }
+
+        /// <summary>
+        /// Folds what was typed to upper case, in place.
+        ///
+        /// Relay issues upper case; a phone keyboard offers lower, and a code
+        /// that is right but rejected for its case is a failure the player has
+        /// no way to see. Done here rather than only when 방 입장 is pressed so
+        /// the box shows the player the exact string that will be sent.
+        /// </summary>
+        private void OnInviteCodeChanged(string value)
+        {
+            if (_foldingCode || inviteCodeField == null)
+            {
+                return;
+            }
+
+            string raised = value.ToUpperInvariant();
+            if (raised == value)
+            {
+                return;
+            }
+
+            _foldingCode = true;
+            try
+            {
+                int caret = inviteCodeField.caretPosition;
+                inviteCodeField.text = raised;
+                inviteCodeField.caretPosition = caret;
+            }
+            finally
+            {
+                _foldingCode = false;
             }
         }
 
@@ -781,7 +876,16 @@ namespace PawsAndLoot.UI
 
             WireButtons(true);
             _roomSignature = string.Empty;
-            RefreshAddresses();
+
+            // Started as the lobby opens, not when 방 만들기 is pressed. Signing
+            // in is two round trips that do not depend on which button the
+            // player chooses, and doing them while they are still reading the
+            // screen is time nobody spends waiting.
+            if (session != null)
+            {
+                session.Prewarm();
+            }
+
             Refresh();
         }
 

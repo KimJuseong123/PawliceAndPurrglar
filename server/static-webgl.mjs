@@ -1,6 +1,6 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
-import { createServer } from "node:http";
+import { createServer, request as httpRequest } from "node:http";
 import { extname, join, normalize, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,6 +9,51 @@ const webglRoot = resolve(
   process.env.WEBGL_ROOT ?? join(projectRoot, "Builds", "Playtest", "WebGL")
 );
 const port = Number(process.env.PORT ?? 8080);
+
+// Where the voice API is. Everything under /api and /health is forwarded there
+// so the local page and the deployed page have the same shape: one origin,
+// game at the root, API underneath. The WebGL build resolves its backend from
+// its own URL, so without this forwarding a local playtest would look for the
+// API on 8080 and find a 404 — and the failure would look like a voice bug.
+const voicePort = Number(process.env.VOICE_PORT ?? 3000);
+
+function isApiPath(urlPath) {
+  return urlPath === "/health"
+    || urlPath === "/api"
+    || urlPath.startsWith("/api/");
+}
+
+function forwardToVoiceApi(request, response) {
+  const upstream = httpRequest(
+    {
+      host: "127.0.0.1",
+      port: voicePort,
+      method: request.method,
+      path: request.url,
+      headers: { ...request.headers, host: `127.0.0.1:${voicePort}` }
+    },
+    (upstreamResponse) => {
+      response.writeHead(
+        upstreamResponse.statusCode ?? 502,
+        upstreamResponse.headers
+      );
+      upstreamResponse.pipe(response);
+    }
+  );
+
+  // A refused connection means the voice server is not running, which is a
+  // normal way to play — say so rather than letting the request hang.
+  upstream.on("error", () => {
+    response.writeHead(502, { "Content-Type": "application/json" });
+    response.end(
+      JSON.stringify({
+        error: `voice API is not running on ${voicePort}`
+      })
+    );
+  });
+
+  request.pipe(upstream);
+}
 
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",
@@ -35,6 +80,12 @@ function safePath(urlPath) {
 
 const server = createServer(async (request, response) => {
   try {
+    const urlPath = (request.url ?? "/").split("?", 1)[0];
+    if (isApiPath(urlPath)) {
+      forwardToVoiceApi(request, response);
+      return;
+    }
+
     const requested = safePath(request.url ?? "/");
     if (!requested) {
       response.writeHead(400);
@@ -72,4 +123,5 @@ const server = createServer(async (request, response) => {
 server.listen(port, "127.0.0.1", () => {
   console.log(`Paws & Loot WebGL: http://localhost:${port}`);
   console.log(`Serving: ${webglRoot}`);
+  console.log(`Forwarding /api and /health to 127.0.0.1:${voicePort}`);
 });

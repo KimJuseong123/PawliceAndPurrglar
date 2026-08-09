@@ -381,11 +381,37 @@ export class ExactCommandMatcher {
   }
 
   /**
-   * Every word the matcher knows, for biasing the transcriber.
+   * What to hand the transcriber as expected style.
    *
-   * The speech model is far more likely to return `짖` if it has been told the
-   * word is expected — vocabulary biasing is the cheapest accuracy win available
-   * and it needs exactly this list.
+   * **A sentence, not a word list.** Measured on the two commands that were
+   * actually failing, with `gpt-4o-transcribe`:
+   *
+   * | said | no prompt | keyword list | this |
+   * |---|---|---|---|
+   * | 짖으라고 | 치즈라고 | 지지라고 | **짖으라고** |
+   * | 숨어 | 相撲 | 주먹 | **숨어** |
+   *
+   * A comma-separated list was not merely useless, it was *harmful*: it pulled
+   * short audio onto whichever listed word was nearest, and an earlier run turned
+   * "숨어" into "그만" — a **valid but different command**, which nothing
+   * downstream can catch. Garbage the jamo matcher rejects; a confident wrong
+   * command it cannot.
+   *
+   * The prompt is read as a sample of the expected transcript, so it has to look
+   * like one. Examples only, kept few — the full vocabulary is what turned it
+   * back into a list.
+   */
+  transcriptionPromptFor(petType: PetType): string {
+    const animal = petType === "DOG" ? "강아지" : "고양이";
+    const examples = petType === "DOG"
+      ? ["짖어", "냄새 추적해", "경계해", "따라와", "기다려", "멈춰"]
+      : ["숨어", "훔쳐와", "할퀴어", "따라와", "기다려", "멈춰"];
+    return `${animal}에게 짧게 명령하는 상황이다. 예: ${examples.join(". ")}.`;
+  }
+
+  /**
+   * Every word the matcher knows. Kept for callers that want the raw vocabulary
+   * — biasing should go through {@link transcriptionPromptFor} instead.
    */
   lexiconFor(petType: PetType): string[] {
     const words = new Set<string>();

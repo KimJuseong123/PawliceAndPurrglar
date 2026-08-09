@@ -125,6 +125,22 @@ namespace PawsAndLoot.Editor
         };
 
         /// <summary>
+        /// Sounds that play quieter than the clip was recorded at.
+        ///
+        /// Written here rather than typed into the asset so the number has a
+        /// reason next to it and survives a rebuild of the bank.
+        ///
+        /// The jump is at 0.6 because it is the most frequent sound in the game
+        /// by a wide margin — it is the only one tied to a key a player holds
+        /// down a route with — and at full volume it sat on top of everything
+        /// else. Anything not listed plays at 1.
+        /// </summary>
+        private static readonly (GameSoundId Id, float Volume)[] Volumes =
+        {
+            (GameSoundId.Jump, 0.6f)
+        };
+
+        /// <summary>
         /// The audio formats Unity imports, in the order they are tried.
         /// </summary>
         private static readonly string[] Extensions =
@@ -249,6 +265,20 @@ namespace PawsAndLoot.Editor
                 // and until now nothing reported it.
                 Debug.Log(
                     $"[AUDIO-001] {id} ← {stem} ({clip.length:0.00}s)");
+            }
+
+            foreach ((GameSoundId id, float volume) in Volumes)
+            {
+                if (bank.TrySetVolume(id, volume))
+                {
+                    Debug.Log($"[AUDIO-001] {id} volume {volume:0.00}.");
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"[AUDIO-001] The bank has no entry for {id}, so its "
+                        + "volume was not set.");
+                }
             }
 
             EditorUtility.SetDirty(bank);

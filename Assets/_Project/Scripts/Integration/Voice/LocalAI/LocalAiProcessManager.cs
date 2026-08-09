@@ -332,7 +332,7 @@ namespace PawsAndLoot.Integration.Voice
 
             try
             {
-                using var request = UnityWebRequest.Post(
+                using var request = UnityWebRequest.PostWwwForm(
                     GatewayBaseUrl + "/shutdown",
                     string.Empty);
                 request.SetRequestHeader("X-Local-AI-Token", gatewayToken ?? string.Empty);

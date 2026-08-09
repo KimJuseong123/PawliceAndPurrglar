@@ -218,9 +218,7 @@ namespace PawsAndLoot.UI
 
             if (_stock.Count == 0)
             {
-                _stock.Add((ThrowableKind.GlueTrap, 60));
-                _stock.Add((ThrowableKind.SensorLight, 90));
-                _stock.Add((ThrowableKind.TunaCan, 40));
+                _stock.AddRange(PoliceSupplyCatalogue.Stock);
             }
 
             _stock.Sort((left, right) => left.Price.CompareTo(right.Price));
@@ -541,8 +539,18 @@ namespace PawsAndLoot.UI
                 }
             }
 
-            // No counter for this kind on this machine. Said out loud rather than
-            // swallowed: the stall listed it, so silence would be the stall lying.
+            // No counter for this kind — which since 2026-08-09 is every kind,
+            // because the three that stood outside the supermarket were removed
+            // once the raccoon sold the same goods. The rule moved to the
+            // catalogue rather than the counters; without this the stall listed
+            // three props and refused all three.
+            if (PoliceSupplyCatalogue.TryBuy(identity, kind))
+            {
+                return;
+            }
+
+            // Said out loud rather than swallowed: the stall listed it, so
+            // silence would be the stall lying.
             ShowNotice("지금은 살 수 없어요.");
         }
 

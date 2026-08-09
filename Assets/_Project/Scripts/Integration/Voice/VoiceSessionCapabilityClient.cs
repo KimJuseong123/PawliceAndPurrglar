@@ -126,7 +126,8 @@ namespace PawsAndLoot.Integration.Voice
             };
             string json = JsonUtility.ToJson(requestData);
             using var request = new UnityWebRequest(
-                voiceConfig.BackendBaseUrl.TrimEnd('/') + "/api/game/sessions",
+                VoiceBackendAddress.Resolve(voiceConfig)
+                    + "/api/game/sessions",
                 UnityWebRequest.kHttpVerbPOST);
             request.uploadHandler = new UploadHandlerRaw(
                 System.Text.Encoding.UTF8.GetBytes(json));

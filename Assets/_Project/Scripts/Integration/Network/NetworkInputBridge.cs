@@ -488,6 +488,13 @@ namespace PawsAndLoot.Integration.Network
                 && keyboard.spaceKey.wasPressedThisFrame)
             {
                 link.SubmitJumpRpc();
+
+                // Locally, not on the host's answer. The host decides whether the
+                // jump happens, but the sound belongs to the press: waiting for a
+                // round trip would put it a whole latency behind the key, and the
+                // host cannot play it here anyway. The refusal case — pressing in
+                // mid-air — sounds too, which is the price of not asking.
+                Audio.GameSoundService.Request(Audio.GameSoundId.Jump);
             }
             SubmitActions(link, keyboard);
         }

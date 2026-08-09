@@ -141,6 +141,30 @@ namespace PawsAndLoot.Audio
         }
 
         /// <summary>
+        /// Sets how loud one sound plays, 0 to 1.
+        ///
+        /// Exists so the mix is written down in <c>SoundBankSetup</c> next to the
+        /// file names rather than typed into the asset by hand. A number that only
+        /// lives in the asset has no reason attached to it and is the first thing
+        /// lost on a merge.
+        /// </summary>
+        public bool TrySetVolume(GameSoundId soundId, float volume)
+        {
+            for (int index = 0; index < entries.Length; index++)
+            {
+                if (entries[index].soundId != soundId)
+                {
+                    continue;
+                }
+
+                entries[index].volume = Mathf.Clamp01(volume);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// True for the sounds raised at the moment the scene is about to change.
         ///
         /// The match-end stingers are raised by `MatchEndController` and the Result

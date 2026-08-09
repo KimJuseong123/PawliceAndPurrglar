@@ -45,38 +45,13 @@ namespace PawsAndLoot.Tests.EditMode
                 Is.GreaterThanOrEqualTo(2));
         }
 
-        [Test]
-        public void PlazaInteractionMarkerDoesNotBlockCrossingRoute()
-        {
-            GreyboxMapDefinition map = LoadMap();
-            GreyboxRouteReference route = map.GetRoute(
-                GreyboxMapDefinition.CrossingRouteId);
-            PrototypeInteractable marker = Object
-                .FindObjectsByType<PrototypeInteractable>(
-                    FindObjectsInactive.Include)
-                .Single(candidate =>
-                    candidate.name == "Prototype Plaza Point");
-            Vector2 markerPosition = ToPlanar(
-                marker.transform.position);
-            float closestDistance = float.PositiveInfinity;
+        // PlazaInteractionMarkerDoesNotBlockCrossingRoute lived here. It
+        // checked that the white "Prototype Plaza Point" cube stood clear of the
+        // crossing route. That cube was a prototype marker which counted presses
+        // and did nothing else, and it was removed on 2026-08-09 — from the game
+        // it read as a pane of glass hanging over the square. With no marker
+        // there is no clearance to defend.
 
-            for (int index = 1;
-                 index < route.Waypoints.Count;
-                 index++)
-            {
-                closestDistance = Mathf.Min(
-                    closestDistance,
-                    DistanceToSegment(
-                        markerPosition,
-                        ToPlanar(route.Waypoints[index - 1].position),
-                        ToPlanar(route.Waypoints[index].position)));
-            }
-
-            Assert.That(
-                closestDistance,
-                Is.GreaterThan(1f),
-                "Prototype Plaza Point blocks the MAP-001 traversal probe.");
-        }
 
         private static GreyboxMapDefinition LoadMap()
         {

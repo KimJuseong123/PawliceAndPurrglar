@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>멍경찰과 냥도둑</title>
+  <style>
+    /* The canvas fills the window instead of sitting in a fixed 960x600 box.
+       A judge opening a link gets whatever window they already had open, and
+       a letterboxed rectangle in the middle of it reads as a broken page. */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #f2e5da;
+      font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+      color: #38271f;
+    }
+
+    #unity-container {
+      position: absolute;
+      inset: 0;
+    }
+
+    #unity-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #f2e5da;
+    }
+
+    #unity-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      background: #f2e5da;
+      transition: opacity 0.4s ease;
+    }
+
+    #unity-loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #unity-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    #unity-progress-track {
+      width: 320px;
+      height: 14px;
+      border: 3px solid #38271f;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff9f2;
+    }
+
+    #unity-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: #f5b53b;
+      transition: width 0.2s ease;
+    }
+
+    #unity-hint {
+      font-size: 15px;
+      color: #7d6b5f;
+    }
+
+    /* Errors have to be visible. A WebGL build that fails to start otherwise
+       leaves a blank coloured page and no way to tell whether the file is
+       missing, the browser refused, or the download is simply slow. */
+    #unity-error {
+      display: none;
+      max-width: 640px;
+      padding: 16px 20px;
+      border: 3px solid #e63c35;
+      border-radius: 10px;
+      background: #fff9f2;
+      font-size: 15px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <div id="unity-container">
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+  </div>
+
+  <div id="unity-loading">
+    <div id="unity-title">멍경찰과 냥도둑</div>
+    <div id="unity-progress-track"><div id="unity-progress-fill"></div></div>
+    <div id="unity-hint">불러오는 중입니다. 처음 실행은 30초 정도 걸릴 수 있습니다.</div>
+    <div id="unity-error"></div>
+  </div>
+
+  <script>
+    var canvas = document.querySelector("#unity-canvas");
+    var loading = document.querySelector("#unity-loading");
+    var fill = document.querySelector("#unity-progress-fill");
+    var errorBox = document.querySelector("#unity-error");
+
+    function showError(message) {
+      errorBox.style.display = "block";
+      errorBox.textContent = message;
+      loading.classList.remove("hidden");
+    }
+
+    var config = {
+      dataUrl: "Build/{{{ DATA_FILENAME }}}",
+      frameworkUrl: "Build/{{{ FRAMEWORK_FILENAME }}}",
+      codeUrl: "Build/{{{ CODE_FILENAME }}}",
+#if MEMORY_FILENAME
+      memoryUrl: "Build/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl: "Build/{{{ SYMBOLS_FILENAME }}}",
+#endif
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      showBanner: function (message, type) {
+        if (type === "error") {
+          showError(message);
+        }
+      }
+    };
+
+    // The backing store has to follow the CSS size or the game renders at the
+    // template's default resolution and is scaled up, which on a 3D scene is
+    // the difference between readable HUD text and a smear.
+    function resize() {
+      var ratio = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(canvas.clientWidth * ratio);
+      canvas.height = Math.floor(canvas.clientHeight * ratio);
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    var script = document.createElement("script");
+    script.src = "Build/{{{ LOADER_FILENAME }}}";
+    script.onerror = function () {
+      showError(
+        "게임 파일을 불러오지 못했습니다.\n"
+        + "Build/{{{ LOADER_FILENAME }}} 를 찾을 수 없습니다.");
+    };
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (progress) {
+        fill.style.width = (100 * progress) + "%";
+      }).then(function (instance) {
+        window.unityInstance = instance;
+        loading.classList.add("hidden");
+        resize();
+      }).catch(function (message) {
+        showError(String(message));
+      });
+    };
+
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

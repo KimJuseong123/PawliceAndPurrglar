@@ -36,7 +36,7 @@ namespace PawsAndLoot.Gameplay.Loot
         /// noise costs them nothing. Being heard should be the price, and a
         /// price you can arrange to avoid is not one.
         /// </summary>
-        public const float BreakSeconds = 1.1f;
+        public const float BreakSeconds = 2f;
 
         /// <summary>
         /// Whether the last opening was silent. Read by tests and by anything
@@ -236,6 +236,14 @@ namespace PawsAndLoot.Gameplay.Loot
                     transform.position,
                     SmashRadiusMeters,
                     by);
+
+                // And the shop's own alarm, because breaking in is the thing a
+                // jeweller's alarm is for. The noise board is heard by animals
+                // and drawn as a ring; the alarm is what tells the officer which
+                // shop, for long enough to run there.
+                FindFirstObjectByType<LootAlarm>()?.Raise(
+                    transform.position,
+                    ResolveIdentity(by));
             }
 
             GameLogger.Info(
@@ -281,6 +289,27 @@ namespace PawsAndLoot.Gameplay.Loot
             {
                 glass.gameObject.SetActive(IsSealed);
             }
+        }
+
+        /// <summary>
+        /// The character of a role, for the alarm to name whoever set it off.
+        /// Null is fine — the alarm falls back to revealing the thief.
+        /// </summary>
+        private static PawsAndLoot.Gameplay.Players.PlayerRoleIdentity
+            ResolveIdentity(PlayerRole role)
+        {
+            foreach (PawsAndLoot.Gameplay.Players.PlayerRoleIdentity candidate in
+                FindObjectsByType<
+                    PawsAndLoot.Gameplay.Players.PlayerRoleIdentity>(
+                    FindObjectsSortMode.None))
+            {
+                if (candidate.Role == role)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         private IMatchStateReader ResolveMatchState()

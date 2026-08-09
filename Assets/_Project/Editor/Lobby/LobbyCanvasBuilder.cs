@@ -98,6 +98,14 @@ namespace PawsAndLoot.Editor
         private const float PanelNoteSize = 24f;
         private const float StatusRowHeight = 44f;
         private const float StatusSize = 28f;
+        /// <summary>
+        /// The invite code is read out loud over a call, so it is the largest
+        /// text on the screen after the title. Bounded by the field it sits in:
+        /// TMP draws nothing at all when a line does not fit, and the field is
+        /// 68 tall with a 2px inset either side.
+        /// </summary>
+        private const float InviteCodeSize = 40f;
+
         private const float RoomRowHeight = 40f;
         private const float RoomTextSize = 25f;
 
@@ -214,11 +222,11 @@ namespace PawsAndLoot.Editor
 
             var presenter = canvasObject.AddComponent<NetworkLobbyPresenter>();
             presenter.ConfigureView(
-                controls.MyAddress,
+                controls.InviteNote,
                 controls.ConnectionStatus,
                 controls.RoleStatus,
-                controls.JoinAddress,
-                controls.Port,
+                controls.InviteCode,
+                controls.CopyCode,
                 controls.Host,
                 controls.Join,
                 actions.SwapRole,
@@ -464,24 +472,24 @@ namespace PawsAndLoot.Editor
         private readonly struct LobbyControls
         {
             public LobbyControls(
-                TMP_Text myAddress,
+                TMP_Text inviteNote,
                 TMP_Text roleStatus,
                 TMP_Text connectionStatus,
                 TMP_Text microphoneStatus,
-                TMP_InputField joinAddress,
-                TMP_InputField port,
+                TMP_InputField inviteCode,
+                Button copyCode,
                 Button host,
                 Button join,
                 TMP_Text roomListLabel,
                 Button[] roomButtons,
                 TMP_Text[] roomLabels)
             {
-                MyAddress = myAddress;
+                InviteNote = inviteNote;
                 RoleStatus = roleStatus;
                 ConnectionStatus = connectionStatus;
                 MicrophoneStatus = microphoneStatus;
-                JoinAddress = joinAddress;
-                Port = port;
+                InviteCode = inviteCode;
+                CopyCode = copyCode;
                 Host = host;
                 Join = join;
                 RoomListLabel = roomListLabel;
@@ -489,12 +497,12 @@ namespace PawsAndLoot.Editor
                 RoomLabels = roomLabels;
             }
 
-            public TMP_Text MyAddress { get; }
+            public TMP_Text InviteNote { get; }
             public TMP_Text RoleStatus { get; }
             public TMP_Text ConnectionStatus { get; }
             public TMP_Text MicrophoneStatus { get; }
-            public TMP_InputField JoinAddress { get; }
-            public TMP_InputField Port { get; }
+            public TMP_InputField InviteCode { get; }
+            public Button CopyCode { get; }
             public Button Host { get; }
             public Button Join { get; }
             public TMP_Text RoomListLabel { get; }
@@ -539,23 +547,23 @@ namespace PawsAndLoot.Editor
             (TMP_Text roomListLabel, Button[] roomButtons, TMP_Text[] roomLabels) =
                 BuildRoomList(parent);
 
-            (TMP_Text myAddress,
+            (TMP_Text inviteNote,
                 TMP_Text roleStatus,
-                TMP_InputField joinAddress,
-                TMP_InputField port,
+                TMP_InputField inviteCode,
+                Button copyCode,
                 Button host,
-                Button join) = BuildNetworkRow(area);
+                Button join) = BuildRoomRow(area);
 
             (TMP_Text connectionStatus, TMP_Text microphoneStatus) =
                 BuildStatusRow(area);
 
             return new LobbyControls(
-                myAddress,
+                inviteNote,
                 roleStatus,
                 connectionStatus,
                 microphoneStatus,
-                joinAddress,
-                port,
+                inviteCode,
+                copyCode,
                 host,
                 join,
                 roomListLabel,
@@ -599,8 +607,7 @@ namespace PawsAndLoot.Editor
                 RoomTextSize,
                 TextAlignmentOptions.Center);
             label.color = Muted;
-            label.text =
-                "같은 네트워크에서 방을 찾는 중입니다. 한 명이 먼저 호스트를 눌러야 합니다.";
+            label.text = "초대코드로 만나세요.";
             Fixed(
                 (RectTransform)label.transform,
                 RoomRowWidth + 60f,
@@ -634,10 +641,23 @@ namespace PawsAndLoot.Editor
             return (label, buttons, labels);
         }
 
-        private static (TMP_Text, TMP_Text, TMP_InputField, TMP_InputField, Button,
-            Button) BuildNetworkRow(RectTransform parent)
+        /// <summary>
+        /// One field, one code.
+        ///
+        /// The same box shows the code you were given and takes the code you
+        /// were sent, because a lobby with a "your code" box and a "their code"
+        /// box next to it invites exactly one mistake — typing theirs into
+        /// yours — and there is no state in which both are filled. Hosting
+        /// fills it and locks it; joining leaves it empty and open.
+        ///
+        /// It replaces the address and port pair, which a browser cannot use:
+        /// there is no listening socket to name, and a player behind CGNAT has
+        /// no address to read out even on the desktop build.
+        /// </summary>
+        private static (TMP_Text, TMP_Text, TMP_InputField, Button, Button,
+            Button) BuildRoomRow(RectTransform parent)
         {
-            RectTransform row = Node("NetworkRow", parent);
+            RectTransform row = Node("RoomRow", parent);
             var horizontal = row.gameObject.AddComponent<HorizontalLayoutGroup>();
             horizontal.childAlignment = TextAnchor.MiddleCenter;
             horizontal.spacing = 18f;
@@ -647,7 +667,7 @@ namespace PawsAndLoot.Editor
             horizontal.childForceExpandHeight = false;
             Fixed(row, ControlAreaWidth, NetworkRowHeight, flexibleWidth: 1f);
 
-            RectTransform panel = Node("AddressPanel", parent: row);
+            RectTransform panel = Node("RoomPanel", parent: row);
             Image panelImage = panel.gameObject.AddComponent<Image>();
             Sliced(panelImage, "ui_panel", 1f);
             panelImage.color = Color.white;
@@ -656,13 +676,13 @@ namespace PawsAndLoot.Editor
             // Top row of the panel: what to tell the other player, and which
             // side this machine ended up on. Both are short, so they share one
             // line and cost the layout nothing.
-            TMP_Text myAddress = TopNote(
+            TMP_Text inviteNote = TopNote(
                 panel,
-                "My Address",
+                "Invite Note",
                 TextAlignmentOptions.Left,
                 0f,
                 0.62f);
-            myAddress.text = "내 주소: 확인 중";
+            inviteNote.text = "방을 만들면 초대코드가 나옵니다.";
 
             TMP_Text roleStatus = TopNote(
                 panel,
@@ -674,45 +694,64 @@ namespace PawsAndLoot.Editor
 
             const float FieldRow = 40f;
 
-            TMP_Text ipLabel = Text("IpLabel", panel, 40f, TextAlignmentOptions.Center);
+            TMP_Text codeLabel = Text(
+                "CodeLabel",
+                panel,
+                34f,
+                TextAlignmentOptions.Center);
             Anchor(
-                (RectTransform)ipLabel.transform,
+                (RectTransform)codeLabel.transform,
                 Vector2.zero,
                 Vector2.zero,
                 Vector2.zero,
                 new Vector2(24f, FieldRow),
-                new Vector2(88f, FieldHeight));
-            ipLabel.text = "IP";
-            ipLabel.color = Ink;
+                new Vector2(180f, FieldHeight));
+            codeLabel.text = "초대코드";
+            codeLabel.color = Ink;
 
-            TMP_InputField joinAddress = Field(
-                "Join Address",
+            // Larger than the other fields ever were. Six characters read out
+            // over a call is the one string in this game that has to survive
+            // being misheard, and the size is the only defence against that
+            // which costs nothing.
+            TMP_InputField inviteCode = Field(
+                "Invite Code Field",
                 panel,
-                "예) 127.0.0.1",
-                TextAlignmentOptions.Left);
+                "예) ABC123",
+                TextAlignmentOptions.Center,
+                InviteCodeSize,
+                verticalInset: 2f);
             Anchor(
-                (RectTransform)joinAddress.transform,
+                (RectTransform)inviteCode.transform,
                 Vector2.zero,
                 Vector2.zero,
                 Vector2.zero,
-                new Vector2(120f, FieldRow),
-                new Vector2(600f, FieldHeight));
+                new Vector2(216f, FieldRow),
+                new Vector2(430f, FieldHeight));
+            // Six is the length Relay issues, so a seventh keystroke is a typo
+            // and the field simply refuses it.
+            inviteCode.characterLimit = 6;
+            inviteCode.characterValidation =
+                TMP_InputField.CharacterValidation.Alphanumeric;
 
-            TMP_InputField port = Field(
-                "Port",
+            Button copyCode = Plate(
+                "Copy Code Button",
                 panel,
-                "7979",
-                TextAlignmentOptions.Center);
+                PanelCream,
+                Ink,
+                "코드 복사",
+                28f,
+                1.6f,
+                null,
+                FieldHeight);
             Anchor(
-                (RectTransform)port.transform,
+                copyCode.GetComponent<RectTransform>(),
                 Vector2.zero,
                 Vector2.zero,
                 Vector2.zero,
-                new Vector2(736f, FieldRow),
-                new Vector2(170f, FieldHeight));
+                new Vector2(676f, FieldRow),
+                new Vector2(230f, FieldHeight));
 
-            Caption(panel, "호스트 주소", 124f, 600f);
-            Caption(panel, "포트", 736f, 170f);
+            Caption(panel, "받은 코드를 입력하세요", 220f, 430f);
 
             RectTransform column = Node("ConnectionButtonColumn", row);
             var vertical = column.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -724,12 +763,16 @@ namespace PawsAndLoot.Editor
             vertical.childForceExpandHeight = false;
             Fixed(column, 216f, NetworkRowHeight);
 
+            // The object names stay. NetworkLobbyProbe looks both of these up by
+            // name to prove the buttons are wired at all, and a rename would
+            // leave it passing every scenario it could still reach while
+            // silently skipping this one.
             Button host = Plate(
                 "Host Button",
                 column,
-                PanelCream,
+                StartAmber,
                 Ink,
-                "호스트",
+                "방 만들기",
                 30f,
                 1.5f,
                 null,
@@ -741,14 +784,14 @@ namespace PawsAndLoot.Editor
                 column,
                 PanelCream,
                 Ink,
-                "참가",
+                "방 입장",
                 30f,
                 1.5f,
                 null,
                 62f);
             Fixed(join.GetComponent<RectTransform>(), 216f, 62f);
 
-            return (myAddress, roleStatus, joinAddress, port, host, join);
+            return (inviteNote, roleStatus, inviteCode, copyCode, host, join);
         }
 
         /// <summary>
@@ -814,7 +857,11 @@ namespace PawsAndLoot.Editor
                 StatusSize,
                 TextAlignmentOptions.Left);
             connection.color = Ink;
-            connection.text = "호스트로 시작하거나 상대의 IP로 참가하세요.";
+            // The same sentence the presenter writes on its first refresh. An
+            // authored default that says something else is a string nobody ever
+            // sees and nobody ever updates — this one still offered to take an
+            // IP address months after the field for one was removed.
+            connection.text = "방을 만들거나 받은 코드로 입장하세요.";
             // Overflow, like every other label here. Ellipsis blanked this line
             // twice: TMP refuses to draw at all when the rect is under one line
             // box, and the row is only a couple of pixels short of one. The
@@ -992,7 +1039,9 @@ namespace PawsAndLoot.Editor
             string name,
             Transform parent,
             string placeholder,
-            TextAlignmentOptions alignment)
+            TextAlignmentOptions alignment,
+            float fontSize = 30f,
+            float verticalInset = 6f)
         {
             RectTransform root = Node(name, parent);
             var background = root.gameObject.AddComponent<Image>();
@@ -1000,13 +1049,17 @@ namespace PawsAndLoot.Editor
             background.color = Color.white;
 
             RectTransform viewport = Node("Text Area", root);
-            Stretch(viewport, 20f, 6f, 20f, 6f);
+            // The inset is what is left for the glyphs. A 40pt line needs
+            // about 58px and the field is 68 tall, so six pixels top and bottom
+            // would leave 56 — under one line box, which is where TMP stops
+            // drawing altogether rather than clipping.
+            Stretch(viewport, 20f, verticalInset, 20f, verticalInset);
             viewport.gameObject.AddComponent<RectMask2D>();
 
             TMP_Text placeholderText = Text(
                 "Placeholder",
                 viewport,
-                30f,
+                fontSize,
                 alignment);
             Stretch((RectTransform)placeholderText.transform);
             placeholderText.text = placeholder;
@@ -1016,7 +1069,7 @@ namespace PawsAndLoot.Editor
                 Muted.b,
                 0.75f);
 
-            TMP_Text text = Text("Text", viewport, 30f, alignment);
+            TMP_Text text = Text("Text", viewport, fontSize, alignment);
             Stretch((RectTransform)text.transform);
             text.color = Ink;
             text.richText = false;

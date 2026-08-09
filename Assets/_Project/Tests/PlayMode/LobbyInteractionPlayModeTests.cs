@@ -30,10 +30,20 @@ namespace PawsAndLoot.Tests.PlayMode
     public sealed class LobbyInteractionPlayModeTests
     {
         private const string SceneName = "Bootstrap";
-        private const string RejectedPort = "80";
-        private const string PortRejection = "포트는 1024 이상의 숫자여야 합니다.";
-        private const string AddressRejection =
-            "주소 형식이 올바르지 않습니다. 예: 192.168.0.10 또는 0.tcp.ngrok.io";
+
+        /// <summary>
+        /// Three characters, so the session rejects it before it can reach the
+        /// network. Every case here has to give the same answer on a machine
+        /// with no internet as on one with it, and a code that could be looked
+        /// up would leave the result depending on whether the project happens
+        /// to be linked today.
+        /// </summary>
+        private const string ShortCode = "ABC";
+
+        private const string ShortCodeRejection =
+            "초대코드는 6글자입니다. (지금 3글자)";
+
+        private const string CreatingRoom = "방을 만드는 중입니다...";
 
         private Scene _scene;
         private GameObject _lobby;
@@ -79,6 +89,10 @@ namespace PawsAndLoot.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            // Reset unconditionally. It is a static on the test framework, and a
+            // case that left it set would hide the next case's error logs.
+            LogAssert.ignoreFailingMessages = false;
+
             if (_session != null)
             {
                 _session.Leave();
@@ -112,34 +126,73 @@ namespace PawsAndLoot.Tests.PlayMode
             _session = null;
         }
 
+        /// <summary>
+        /// Asserted on the first status rather than the whole list, because how
+        /// the rest of it goes depends on the machine: with the project linked
+        /// this really does open a Relay allocation, and without it the refusal
+        /// arrives in the same frame. What is the same either way is that the
+        /// press reached the session, once, and said so before waiting.
+        /// </summary>
         [UnityTest]
         public IEnumerator HostButtonReachesTheSession()
         {
-            Field("Port").text = RejectedPort;
+            // 방 만들기 is the one control here that genuinely leaves the
+            // machine: it asks Relay for an allocation. On a batch run with no
+            // network — or with the project not linked today — that comes back
+            // as an error log a moment later, from an async continuation, and
+            // NUnit fails the test on the unexpected message rather than on any
+            // assertion. What is being checked is that the press reaches the
+            // session and says so; whether the room is then actually created is
+            // not this test's business and cannot be made to answer the same way
+            // on every machine.
+            LogAssert.ignoreFailingMessages = true;
+            yield return null;
+
+            List<string> seen = Press("Host Button");
+            Assert.That(
+                seen,
+                Is.Not.Empty,
+                "Pressing 방 만들기 did not reach NetworkSessionController.");
+            Assert.That(
+                seen[0],
+                Is.EqualTo(CreatingRoom),
+                "방 만들기 did not start by saying it was working.");
+            Assert.That(
+                seen.Count(status => status == CreatingRoom),
+                Is.EqualTo(1),
+                "방 만들기 is bound more than once.");
+        }
+
+        [UnityTest]
+        public IEnumerator JoinButtonReachesTheSession()
+        {
+            Field("Invite Code Field").text = ShortCode;
             yield return null;
 
             Assert.That(
-                Press("Host Button"),
-                Is.EqualTo(new[] { PortRejection }),
-                "Pressing 호스트 did not reach NetworkSessionController "
+                Press("Join Button"),
+                Is.EqualTo(new[] { ShortCodeRejection }),
+                "Pressing 방 입장 did not reach NetworkSessionController "
                 + "exactly once.");
             Assert.That(
                 _session.Mode,
                 Is.EqualTo(NetworkSessionController.SessionMode.Offline));
         }
 
+        /// <summary>
+        /// The code box takes what is typed and hands the same characters to
+        /// the session. Relay issues upper case; a phone keyboard offers lower,
+        /// and a code that is right but rejected for its case is the kind of
+        /// failure a player has no way to see.
+        /// </summary>
         [UnityTest]
-        public IEnumerator JoinButtonReachesTheSession()
+        public IEnumerator TypedCodeIsFoldedToUpperCase()
         {
-            Field("Join Address").text = "not-an-address";
-            Field("Port").text = "7979";
+            Field("Invite Code Field").text = "abc";
+            yield return null;
             yield return null;
 
-            Assert.That(
-                Press("Join Button"),
-                Is.EqualTo(new[] { AddressRejection }),
-                "Pressing 참가 did not reach NetworkSessionController "
-                + "exactly once.");
+            Assert.That(Field("Invite Code Field").text, Is.EqualTo("ABC"));
         }
 
         /// <summary>
@@ -155,12 +208,12 @@ namespace PawsAndLoot.Tests.PlayMode
             _lobby.SetActive(true);
             yield return null;
 
-            Field("Port").text = RejectedPort;
+            Field("Invite Code Field").text = ShortCode;
             yield return null;
 
             Assert.That(
-                Press("Host Button"),
-                Is.EqualTo(new[] { PortRejection }));
+                Press("Join Button"),
+                Is.EqualTo(new[] { ShortCodeRejection }));
         }
 
         /// <summary>
@@ -270,6 +323,10 @@ namespace PawsAndLoot.Tests.PlayMode
                 Button("Leave Button").interactable,
                 Is.False,
                 "나가기 is pressable with nothing to leave.");
+            Assert.That(
+                Button("Copy Code Button").interactable,
+                Is.False,
+                "코드 복사 is pressable with no code to copy.");
         }
 
         /// <summary>
@@ -282,7 +339,7 @@ namespace PawsAndLoot.Tests.PlayMode
 
             Assert.That(
                 Label("ConnectionStatusText").text,
-                Is.EqualTo("호스트로 시작하거나 상대의 IP로 참가하세요."));
+                Is.EqualTo("방을 만들거나 받은 코드로 입장하세요."));
         }
 
         [UnityTest]

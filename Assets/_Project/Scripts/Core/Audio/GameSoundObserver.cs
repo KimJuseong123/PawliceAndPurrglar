@@ -69,12 +69,10 @@ namespace PawsAndLoot.Audio
         /// cost this codebase has been bitten by before.
         /// </summary>
         private readonly List<PlayerInteriorState> _interiorStates = new();
-        private readonly List<PlayerMovementMotor> _motors = new();
-        private readonly List<bool> _wasAirborne = new();
-        private readonly List<PoliceSupplyCounter> _counters = new();
         private readonly List<CompanionLootCourier> _couriers = new();
         private MatchRuntimeState _matchState;
         private bool _foundSources;
+        private bool _subscribedToPurchases;
         private float _nextSourceScan;
         private bool _wasCountingDown;
 
@@ -337,20 +335,20 @@ namespace PawsAndLoot.Audio
                 state.InteriorChanged += HandleInteriorChanged;
             }
 
-            foreach (PlayerMovementMotor motor in
-                FindObjectsByType<PlayerMovementMotor>(
-                    FindObjectsSortMode.None))
+            // Not per counter any more. The three supermarket counters were
+            // removed on 2026-08-09 and the loop that was here then found
+            // nothing, which took the purchase sound with them without a word —
+            // the raccoon's stall rings up the sale through
+            // `PoliceSupplyCatalogue` instead.
+            //
+            // Guarded because this scan retries while it comes up empty, and a
+            // static event does not forget a duplicate subscription the way a
+            // list of found counters did: without the flag a slow scene start
+            // would play the purchase sound once per retry.
+            if (!_subscribedToPurchases)
             {
-                _motors.Add(motor);
-                _wasAirborne.Add(motor.IsAirborne);
-            }
-
-            foreach (PoliceSupplyCounter counter in
-                FindObjectsByType<PoliceSupplyCounter>(
-                    FindObjectsSortMode.None))
-            {
-                _counters.Add(counter);
-                counter.Purchased += HandlePurchased;
+                _subscribedToPurchases = true;
+                PoliceSupplyCatalogue.Purchased += HandlePurchased;
             }
 
             foreach (CompanionLootCourier courier in
@@ -437,8 +435,6 @@ namespace PawsAndLoot.Audio
                 _matchState != null && _matchState.IsCountdownActive;
 
             return _interiorStates.Count > 0
-                || _motors.Count > 0
-                || _counters.Count > 0
                 || _couriers.Count > 0
                 || _toolUses.Count > 0
                 || _cases.Count > 0
@@ -455,12 +451,10 @@ namespace PawsAndLoot.Audio
                 }
             }
 
-            foreach (PoliceSupplyCounter counter in _counters)
+            if (_subscribedToPurchases)
             {
-                if (counter != null)
-                {
-                    counter.Purchased -= HandlePurchased;
-                }
+                _subscribedToPurchases = false;
+                PoliceSupplyCatalogue.Purchased -= HandlePurchased;
             }
 
             foreach (CompanionLootCourier courier in _couriers)
@@ -520,9 +514,6 @@ namespace PawsAndLoot.Audio
             }
 
             _interiorStates.Clear();
-            _motors.Clear();
-            _wasAirborne.Clear();
-            _counters.Clear();
             _couriers.Clear();
             _toolUses.Clear();
             _chargers.Clear();
@@ -636,7 +627,6 @@ namespace PawsAndLoot.Audio
             }
 
             UpdateArrestSound();
-            UpdateJumpSound();
             UpdateCountdownSound();
             UpdateThrowChargeSound();
             UpdateStunSound();
@@ -748,32 +738,14 @@ namespace PawsAndLoot.Audio
             _wasProgressing = progressing;
         }
 
-        /// <summary>
-        /// Leaving the ground, per character.
-        ///
-        /// The edge is kept per motor rather than as one flag: both characters
-        /// are simulated on the host, and a single flag would swallow the second
-        /// jump whenever the other player was already in the air.
-        /// </summary>
-        private void UpdateJumpSound()
-        {
-            for (int index = 0; index < _motors.Count; index++)
-            {
-                PlayerMovementMotor motor = _motors[index];
-                if (motor == null)
-                {
-                    continue;
-                }
-
-                bool airborne = motor.IsAirborne;
-                if (airborne && !_wasAirborne[index])
-                {
-                    GameSoundService.Request(GameSoundId.Jump);
-                }
-
-                _wasAirborne[index] = airborne;
-            }
-        }
+        // The jump sound used to be raised here, on the frame `IsAirborne`
+        // went true for any motor. Two things were wrong with that and both
+        // made it fire far more often than anybody jumped: leaving the ground
+        // is not jumping (a kerb, the park steps, any slope), and the host
+        // simulates both characters, so the officer heard the thief's kerbs
+        // from anywhere on the map. It moved to the two places this machine's
+        // space bar is read — `PlayerKeyboardInput` and `NetworkInputBridge`
+        // (`ISSUE-072`).
 
         /// <summary>
         /// Once, when the count starts — not once per second.

@@ -81,6 +81,10 @@ describe("ExactCommandMatcher.suggest", () => {
     // Korean words are the point; the English aliases would only add noise.
     const lexicon = matcher.lexiconFor("DOG");
     expect(lexicon).toContain("짖");
+    expect(matcher.transcriptionPromptFor("DOG")).toContain("짖어");
+    expect(matcher.transcriptionPromptFor("CAT")).toContain("숨어");
+    // A sentence, not a list — a comma-separated list measurably hurt accuracy.
+    expect(matcher.transcriptionPromptFor("DOG")).toContain("상황이다");
     expect(lexicon).toContain("멈춰");
     expect(lexicon).not.toContain("bark");
     expect(matcher.lexiconFor("CAT")).toContain("숨");

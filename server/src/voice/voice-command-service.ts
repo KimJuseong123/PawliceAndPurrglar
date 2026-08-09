@@ -108,6 +108,18 @@ export class VoiceCommandService {
       env.sttTimeoutMs + env.intentTimeoutMs + 1000
     );
     try {
+      // Taken before transcription, not after. The animal decides which words to
+      // bias the speech model toward, and a lexicon fetched afterwards is a
+      // lexicon that arrived too late to be worth having.
+      const context = this.events.takeContext(input.clientCommandId) ?? {
+        allowedIntents: [],
+        visibleTargets: [],
+        petType: "DOG" as const,
+        ownerRole: "POLICE" as const,
+        commandSequence: 0,
+        gameSessionSeed: "unregistered"
+      };
+
       const transcription = input.transcriptOverride
         ? {
             text: input.transcriptOverride,
@@ -120,7 +132,8 @@ export class VoiceCommandService {
                 input.audio,
                 input.mimeType,
                 input.filename,
-                controller.signal
+                controller.signal,
+                this.matcher.transcriptionPromptFor(context.petType)
               ),
             controller.signal
           );
@@ -133,14 +146,6 @@ export class VoiceCommandService {
         model: transcription.model
       });
 
-      const context = this.events.takeContext(record.clientCommandId) ?? {
-        allowedIntents: [],
-        visibleTargets: [],
-        petType: "DOG" as const,
-        ownerRole: "POLICE" as const,
-        commandSequence: 0,
-        gameSessionSeed: "unregistered"
-      };
       const exact = this.matcher.match(transcription.text);
       const classification: IntentClassificationResult = exact
         ? {

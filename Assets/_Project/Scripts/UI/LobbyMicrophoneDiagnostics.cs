@@ -34,6 +34,13 @@ namespace PawsAndLoot.UI
         /// </summary>
         private const float DetectionLevel = 0.035f;
 
+        /// <summary>
+        /// Shorter than the desktop check. The browser gives nothing back until
+        /// the recording stops, so this is dead time on screen rather than a
+        /// meter the player can watch, and five seconds of it reads as a hang.
+        /// </summary>
+        private const float BrowserListenSeconds = 2.5f;
+
         [SerializeField]
         private TMP_Text statusLabel;
 
@@ -48,6 +55,17 @@ namespace PawsAndLoot.UI
 
         private AudioClip _clip;
         private string _deviceName;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        /// <summary>
+        /// The browser recorder, kept between Begin and End.
+        ///
+        /// It calls back by object name through <c>SendMessage</c>, so the
+        /// instance that started the recording has to be the one still holding
+        /// the state when the bytes arrive.
+        /// </summary>
+        private BrowserVoiceCaptureProvider _browserCapture;
+#endif
         private bool _testing;
         private bool _detected;
         private float _peak;
@@ -83,10 +101,19 @@ namespace PawsAndLoot.UI
         private void OnEnable()
         {
             BindControls();
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // Deliberately not a guess. UnityEngine.Microphone is not
+            // implemented on WebGL, so its device list is always empty — asking
+            // it here reported "no microphone" on a machine whose browser
+            // recording works perfectly. Only getUserMedia knows, and it will
+            // not say until the player presses the button.
+            SetStatus("마이크 확인 대기");
+#else
             SetStatus(
                 Microphone.devices.Length > 0
                     ? "마이크 확인 대기"
                     : "사용 가능한 마이크를 찾지 못했습니다.");
+#endif
             SetButtonCaption(false);
         }
 
@@ -132,6 +159,10 @@ namespace PawsAndLoot.UI
             SetStatus("마이크 권한을 확인하는 중입니다.");
             SetButtonCaption(true);
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+            yield return RunBrowserTest();
+            yield break;
+#else
 #if UNITY_2020_1_OR_NEWER
             if (!Application.HasUserAuthorization(UserAuthorization.Microphone))
             {
@@ -203,10 +234,102 @@ namespace PawsAndLoot.UI
                 _detected
                     ? $"마이크 입력이 정상적으로 감지되었습니다. (최대 {Percent(_peak)}%)"
                     : "입력이 감지되지 않았습니다. 마이크 볼륨을 확인하세요.");
+#endif
         }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        /// <summary>
+        /// Records a short clip through the browser and reports what came back.
+        ///
+        /// No level meter: the bytes arrive encoded, after the recording ends,
+        /// so there is nothing to sample while it runs. What this proves is the
+        /// part that actually breaks in a browser — that the page is on https,
+        /// that permission was granted, and that the recorder produced audio.
+        /// </summary>
+        private IEnumerator RunBrowserTest()
+        {
+            _browserCapture ??= new BrowserVoiceCaptureProvider(
+                gameObject.name,
+                nameof(OnBrowserCaptureResult));
+
+            string failure = null;
+            yield return _browserCapture.Begin(
+                BrowserListenSeconds,
+                null,
+                () => SetStatus("마이크 입력을 듣고 있습니다. 말해 보세요."),
+                code => failure = code);
+
+            if (failure != null)
+            {
+                StopTest(DescribeBrowserFailure(failure));
+                yield break;
+            }
+
+            _testing = true;
+            float finish = Time.realtimeSinceStartup + BrowserListenSeconds;
+            while (_testing && Time.realtimeSinceStartup < finish)
+            {
+                yield return null;
+            }
+
+            if (!_testing)
+            {
+                yield break;
+            }
+
+            VoiceCaptureData captured = null;
+            yield return _browserCapture.End(
+                data => captured = data,
+                code => failure = code);
+
+            StopTest(
+                failure != null
+                    ? DescribeBrowserFailure(failure)
+                    : captured != null && captured.AudioBytes != null
+                        && captured.AudioBytes.Length > 0
+                        ? "마이크 입력이 정상적으로 녹음되었습니다."
+                        : "입력이 감지되지 않았습니다. 마이크 볼륨을 확인하세요.");
+        }
+
+        /// <summary>
+        /// Where the browser hands the recording back. The name is what
+        /// <c>SendMessage</c> looks for, so it must stay public.
+        /// </summary>
+        public void OnBrowserCaptureResult(string json)
+        {
+            _browserCapture?.SubmitCallbackPayload(json);
+        }
+
+        /// <summary>
+        /// Each of these has a different fix, and a single "마이크 오류" would
+        /// send the player to the wrong one.
+        /// </summary>
+        private static string DescribeBrowserFailure(string code)
+        {
+            return code switch
+            {
+                "MIC_REQUIRES_HTTPS" => "https 주소로 열어야 마이크가 켜집니다.",
+                "MICROPHONE_UNSUPPORTED" => "이 브라우저는 녹음을 지원하지 않습니다.",
+                "MIC_PERMISSION_DENIED" => "마이크 권한이 거부되었습니다.",
+                // The browser gave us a recording with nothing in it, which is
+                // a working microphone at zero volume — a different problem
+                // from not being able to open one, and a different fix.
+                "VOICE_AUDIO_EMPTY" =>
+                    "입력이 감지되지 않았습니다. 마이크 볼륨을 확인하세요.",
+                "VOICE_CAPTURE_NO_RESPONSE" =>
+                    "녹음이 끝나지 않았습니다. 페이지를 새로 고쳐 보세요.",
+                _ => "마이크를 열 수 없습니다."
+            };
+        }
+#endif
 
         private void Update()
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // The browser hands back encoded bytes when the recording ends,
+            // so there is nothing to sample while it is running.
+            return;
+#else
             if (!_testing || _clip == null || string.IsNullOrEmpty(_deviceName))
             {
                 return;
@@ -240,10 +363,14 @@ namespace PawsAndLoot.UI
 
             SetStatus(
                 $"마이크 입력을 듣고 있습니다. (입력 {Percent(_level)}%)");
+#endif
         }
 
         private void StopTest(string status)
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            _browserCapture?.Cancel();
+#else
             if (!string.IsNullOrEmpty(_deviceName)
                 && Microphone.IsRecording(_deviceName))
             {
@@ -251,6 +378,7 @@ namespace PawsAndLoot.UI
                 // opens the same device, and Windows hands it to one client.
                 Microphone.End(_deviceName);
             }
+#endif
 
             _testing = false;
             _clip = null;

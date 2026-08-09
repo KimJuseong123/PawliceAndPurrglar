@@ -43,8 +43,8 @@ namespace PawsAndLoot.Tests.EditMode
         {
             "Host Button",
             "Join Button",
-            "Join Address",
-            "Port",
+            "Invite Code Field",
+            "Copy Code Button",
             "Room Slot 0",
             "Room Slot 1",
             "Room Slot 2",
@@ -102,7 +102,7 @@ namespace PawsAndLoot.Tests.EditMode
             // the asset.
             var sceneSupplied = new HashSet<string>
             {
-                "session", "roomDirectory", "fillEndpointFields"
+                "session", "roomDirectory"
             };
 
             foreach (FieldInfo field in SerializedFields(presenter, sceneSupplied))
@@ -218,10 +218,10 @@ namespace PawsAndLoot.Tests.EditMode
             Assert.That(PreferredHeight("Host Button"), Is.GreaterThanOrEqualTo(58f));
             Assert.That(PreferredHeight("Join Button"), Is.GreaterThanOrEqualTo(58f));
             Assert.That(
-                PreferredHeight("AddressPanel"),
+                PreferredHeight("RoomPanel"),
                 Is.GreaterThanOrEqualTo(125f));
 
-            foreach (string field in new[] { "Join Address", "Port" })
+            foreach (string field in new[] { "Invite Code Field" })
             {
                 Assert.That(
                     Rect(field).sizeDelta.y,

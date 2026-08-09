@@ -846,6 +846,14 @@ namespace PawsAndLoot.Integration.Network
                     return;
                 }
             }
+
+            // No counter sells it. That is the normal case since the three
+            // supermarket counters were removed on 2026-08-09 — the till lives in
+            // `PoliceSupplyCatalogue` now, and without this line the client's
+            // officer could open the stall, press Buy and never receive anything.
+            PawsAndLoot.Gameplay.Items.PoliceSupplyCatalogue.TryBuy(
+                identity,
+                kind);
         }
 
         /// <summary>

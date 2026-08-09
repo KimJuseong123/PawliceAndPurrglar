@@ -22,12 +22,31 @@ namespace PawsAndLoot.Editor
         private const string WebGlBuildPath = "Builds/Playtest/WebGL";
 
         /// <summary>
+        /// What gets uploaded. Kept apart from the playtest folder so a
+        /// development build — which carries the profiler, readable stack
+        /// traces and a much larger payload — can never be the thing that ends
+        /// up on the server by being the newest WebGL folder on disk.
+        /// </summary>
+        private const string WebGlReleasePath = "Builds/Release/WebGL";
+
+        /// <summary>
         /// ART-005 measures the WebGL payload without development metadata.
         /// </summary>
         [MenuItem("PawliceAndPurrglar/Build/Measure WebGL Build Size")]
         public static void BuildWebGl()
         {
             BuildWebGl(BuildOptions.None, true);
+        }
+
+        /// <summary>
+        /// The submitted build: no development flag, its own output folder, and
+        /// the size printed because the payload is the first loading screen a
+        /// judge sits through.
+        /// </summary>
+        [MenuItem("PawliceAndPurrglar/Build/Build WebGL Release")]
+        public static void BuildWebGlRelease()
+        {
+            BuildWebGl(BuildOptions.None, true, WebGlReleasePath);
         }
 
         /// <summary>
@@ -43,10 +62,11 @@ namespace PawsAndLoot.Editor
 
         private static void BuildWebGl(
             BuildOptions buildOptions,
-            bool measurePayload)
+            bool measurePayload,
+            string outputPath = WebGlBuildPath)
         {
             string[] scenePaths = ResolveScenePaths();
-            string absolute = Path.GetFullPath(WebGlBuildPath);
+            string absolute = Path.GetFullPath(outputPath);
             Directory.CreateDirectory(absolute);
 
             using BuildStamp stamp = BuildStamp.Apply();
@@ -223,6 +243,18 @@ namespace PawsAndLoot.Editor
             public void Dispose()
             {
                 PlayerSettings.bundleVersion = _previous;
+
+                // Flushed, not just assigned.
+                //
+                // In batch mode Unity writes ProjectSettings during the build
+                // and then quits; the restored value sat in memory and never
+                // reached disk, so every batch build left
+                // `bundleVersion: 1.0+<commit>-dirty` in the working tree —
+                // the exact opposite of "the stamp does not dirty the
+                // repository". It went unnoticed because a person building
+                // from the editor menu keeps the process alive long enough for
+                // a later save to carry it.
+                AssetDatabase.SaveAssets();
             }
 
             /// <summary>

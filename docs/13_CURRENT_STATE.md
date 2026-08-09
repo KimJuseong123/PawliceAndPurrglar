@@ -1105,10 +1105,13 @@ VSync 상한에 붙어 있다. `ART-012` 머티리얼 통합과 정적 배칭을
 요강이 **다섯 항목 중 하나라도 빠지면 심사 제외**라고 못박았으므로 순서가 바뀌었다.
 `docs/18_SUBMISSION_GAPS.md` 0-c 참고.
 
-1. **`SUBMIT-005` 라이선스 정리.** 가장 싸고 **제외 사유**다 — 효과음 10종의
-   freesound URL, BGM 출처, 폰트. 지금 `docs/17`에 URL이 없다
-2. **`SUBMIT-001` WebGL 배포 + 서버 https.** 1·2번 제출물이 3번 문서 안에 링크로
-   들어가므로 이것이 먼저다 (`TASK-DEPLOY-004~006`)
+1. **`TASK-DEPLOY-007` Unity Cloud 프로젝트 연결.** 5분이고 **사람만 할 수 있다.**
+   `cloudProjectId`가 비어 있으면 방 만들기가 즉시 거절되므로, 이것 없이는 초대코드
+   경로를 한 번도 실행해 볼 수 없다. `docs/21` 2절 A
+2. **`SUBMIT-005` 라이선스 정리.** 가장 싸고 **제외 사유**다 — 효과음은 끝났고
+   BGM 출처와 Tripo 증빙이 남았다
+3. **`SUBMIT-001` = `TASK-DEPLOY-008` EC2 배포.** `deploy/`에 스크립트가 다 있다.
+   `setup-ec2.sh` → `.env` → `upload.ps1` → **다른 네트워크 2인 실측**
 3. **관문 B 2인 실기 플레이테스트.** 밸런싱은 이것의 결과다
 4. **`SUBMIT-002` 30~60초 실플레이 영상.** **편집 영상 불가** — 실제 플레이 화면
    그대로여야 하므로, 게임이 그 길이 안에 읽히는지가 곧 3번의 결과다
@@ -1122,7 +1125,9 @@ VSync 상한에 붙어 있다. `ART-012` 머티리얼 통합과 정적 배칭을
 
 - (해소) 도둑 판매 승리 경로는 보물 6개 배치로 열렸다 (`ISSUE-011`).
   `NET-010`의 남은 두 시나리오는 이제 측정 가능하며 아직 실행하지 않았다
-- 최종 접속 방식 미정: 현재는 직접 IP만이며 Relay·전용 서버는 보류 (`DEC-027`)
+- (해소) 최종 접속 방식이 정해졌다: **Unity Relay + 초대코드** (`DEC-WEBGL-001`,
+  2026-08-09). 직접 IP는 회귀 경로로만 남는다. 새 차단 요소가 하나 생겼는데
+  **코드로 우회할 수 없다** — Unity Cloud 프로젝트 연결 (`TASK-DEPLOY-007`)
 - 현재 개발 PC에서 Unity 내장 Windows 받아쓰기 생성 실패
 - 실제 음성 입력 기술 미정
 - Unity `6000.5.4f1` 실행 파일 경로 미확인으로 CHAR-001 자동 실행 미검증
@@ -1145,9 +1150,22 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-09 | 암시장 구매 복구 · 너구리 인사 · 점프 소리 이후 | Edit Mode **331/331**, Play Mode 220개 중 **218 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 2건(`TheOfficerBuysWithNoCounterInTheScene`, `EveryListedPropHasAPrice`)이 XML에 이름으로 있는 것을 확인 |
+| 2026-08-09 | `LobbyInteractionPlayModeTests.HostButtonReachesTheSession` 실패 원인 | 코드가 아니라 **환경**이다. 방 만들기는 Relay에 할당을 요청하므로 네트워크가 없는 배치 실행에서는 비동기 오류 로그가 돌아오고, NUnit이 단정이 아니라 **예상 못 한 로그**로 테스트를 죽인다. 그 케이스에서만 `LogAssert.ignoreFailingMessages`를 켜고 `TearDown`에서 무조건 되돌린다 |
+| 2026-08-09 | `Rebuild Sound Bank` (점프 음량) | `Jump volume 0.60`, 40 클립 배정, 43개 중 3개가 아직 파일 없음(`sfx_dog_alert`·`sfx_cat_alert`·`sfx_glue_stick`). 에셋 diff는 한 줄 |
+| 2026-08-09 | Edit Mode·Play Mode (Relay 초대코드 로비 + WebGL 정리 이후) | Edit Mode **331/331**, Play Mode 218개 중 **216 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 테스트가 XML에 이름으로 있는 것을 확인했다 — `InviteCodeTests` 18건, `VoiceBackendAddressTests` 13건, `TypedCodeIsFoldedToUpperCase` 1건 |
+| 2026-08-09 | 그 새 Play Mode 테스트가 결함을 하나 잡았다 | `TypedCodeIsFoldedToUpperCase`가 처음에 실패했다. 대소문자 접기를 **0.15초 폴링**에 얹어 놓아서, 소문자로 친 뒤 그 창 안에 방 입장을 누르면 접히기 전 문자열이 나갔다. `onValueChanged`로 옮겼다 |
+| 2026-08-09 | **WebGL 릴리스 빌드** (`#if UNITY_WEBGL` 분기를 실제로 컴파일) | 처음 실행이 `error CS0103: Expire`로 **실패했다** — `#endif` 위치 때문에 메서드 하나가 WebGL 분기 안에 갇혔고, **Edit·Play Mode 549건은 그 코드를 본 적이 없다.** 고친 뒤 재빌드 성공, `error CS` 0. 이 함정을 `CLAUDE.md`에 적었다 |
+| 2026-08-09 | WebGL 릴리스 용량 재실측 | **총 61.44MB** (`WebGL.data.unityweb` 47.9MB + `WebGL.wasm.unityweb` 16.3MB). 2026-08-08의 33.9MB에서 그만큼 커졌다 — 모델·오디오·보물 62개가 그 사이에 들어갔다. **압축은 정상이다**(세 파일 모두 gzip 매직바이트 `1f8b` 확인). 첫 로딩 시간이 곧 이 값이므로 `ART-005`를 다시 볼 근거가 생겼다 |
+| 2026-08-09 | 배치 빌드가 남기던 도장 (`BuildStamp`) | `Dispose()`에 `AssetDatabase.SaveAssets()`를 넣기 전에는 배치 빌드마다 `bundleVersion: 1.0+3a3f989-dirty`가 트리에 남았다. 고친 뒤 빌드하고 `1.0`으로 되돌아온 것을 확인했다. `ProjectSettings/`의 남은 diff는 **의도한 두 줄뿐**(`webGLTemplate`, `webGLDecompressionFallback`) |
 | 2026-08-09 | `sfx_case_unlock`·`sfx_fuse_burn` 자른 뒤 재검증 | Edit Mode **299/299**, Play Mode 217개 중 **215 통과** + 1 실패 + 1 스킵 (`CompanionExpression`, `MODEL-002`). 뱅크 40/43 배정 유지. 길이 경고가 9건에서 **7건**으로 줄었고 `NoisePropFuse`는 목록에서 빠졌다 |
 | 2026-08-09 | Edit Mode·Play Mode (효과음 C-1~C-3 배선 이후) | Edit Mode **299/299**, Play Mode 217개 중 **215 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 뱅크는 43개 중 **40개 클립 배정**, 나머지 3개는 파일 대기 |
 | 2026-08-09 | Windows 빌드 + 호스트·클라이언트 2프로세스 (`-netJoinMode ui`, full 60초) | 예외 0, `[AUDIO]` 경고 0(= `Resources` 폴백이 뱅크를 찾았다), 체포 3회, 양쪽 `Result` 도달, 스폰 링크 2 / 보물 62 |
+| 2026-08-09 | 보석상 사이렌 · 유리 2초 · 호수 공원 진입 · 프로토타입 큐브와 보급 카운터 제거 이후 | Edit Mode **299/299**, Play Mode 216개 중 **214 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). **직전 실행의 실패 3건은 전부 이 변경이 낡은 테스트를 남겨 둔 것이었고 셋 다 테스트 쪽을 고쳤다** — 사라진 큐브를 찾던 테스트는 지웠고, 보급 카운터를 세던 테스트는 "경찰 소품이 맵에 굴러다니지 않는다"는 남은 규칙만 단정하게 바꿨고, 소음 보고 1건을 단정하던 테스트는 2건(스매시 + 사이렌)으로 고쳤다 |
+| 2026-08-09 | 소음 보고 수를 세는 테스트의 격리 | `DisplayCaseAndAlarm`에 `[SetUp]`을 넣어 씬에 남은 `LootAlarm`·`NoiseBoard`를 지운다. 앞 테스트가 중간에 실패하면 `DestroyImmediate`가 실행되지 않고, 남은 경보가 `FindFirstObjectByType`에 잡혀 **개수 단정이 옆 테스트의 상태를 세게 된다** |
+| 2026-08-09 | 호수 공원 표면 실측 (`WalkabilityProbe.ReportLakeGarden`) | 포장면 **0.24~0.25m** (`stepOffset` 0.35 아래 — 올라간다), 화단·바위 0.43~0.98m (막힌다). 광장과 같은 값 |
+| 2026-08-09 | `Rebuild MAP-001` + `Validate MAP-001` (커밋 직전) | `error CS` 0, 검증기 실패 0. `Counter Marker` 0개, `Prototype Plaza Point` 0개, `Lake Garden` 1개 |
+| 2026-08-09 | Windows 플레이테스트 빌드 + 2클라 실행 | `build succeeded` 3 씬, `PawsAndLoot.Runtime.dll` 갱신 확인(실행 파일 날짜가 아니라 `Managed/` 날짜로 본다), `ProjectSettings/` 깨끗(빌드 도장 원복됨). 창 모드 1280×720 2개 기동 |
 | 2026-08-09 | Edit Mode·Play Mode (효과음 C-4~C-11 배선 이후). **트리에 있던 무관한 미커밋 변경(보물 가격 조정)을 따로 치우고 실측했다** | Edit Mode **300/300**, Play Mode 216개 중 **214 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 새 테스트 3건(`SoundVocabularyPlayModeTests`)이 XML에 이름으로 있는 것을 확인했다 |
 | 2026-08-09 | Edit Mode·Play Mode (보물 가격 1/5 조정 이후) | Edit Mode **300/300**, Play Mode 213개 중 **211 통과** + 1 실패 + 1 스킵 — 기준선과 동일하고 실패 1건은 `CompanionExpression`(`MODEL-002` 클립 부재). `error CS` 0. 값을 바꾼 테스트 4개 클래스(`LootSale` 3, `ThiefHud` 2, `PoliceHud` 2, `PlayerInteractionScene`)가 XML에서 `Passed`임을 이름으로 확인 |
 | 2026-08-09 | 커밋 직전 재실행 (다른 세션의 미커밋 씬 재생성이 트리에 섞인 상태) | Edit Mode 300개 중 **299 통과**, Play Mode 216개 중 **212 통과** + 3 실패 + 1 스킵. `error CS` 0. **실패 3건 모두 이 변경의 것이 아니고, 셋 다 커밋 범위 밖 파일에서 나온다** — `PlazaInteractionMarker`와 `TheSceneSellsPoliceProps`는 작업 트리의 `Game.unity`에서 `Prototype Plaza Point`와 `PoliceSupplyCounter` 3개가 사라져서고(`HEAD`의 씬에는 있다), `DisplayCaseAndAlarm`은 미커밋 `LootDisplayCase.cs`·`LootAlarm.cs`가 스매시 소음을 2번 보고해서다(그 테스트에는 가격 참조가 0건). `CompanionExpression`은 기준선 |

@@ -144,6 +144,24 @@ namespace PawsAndLoot.UI
             return _officer;
         }
 
+        private PawsAndLoot.Gameplay.Loot.LootAlarm _alarm;
+
+        /// <summary>
+        /// The town's one alarm, remembered. There is exactly one, so finding it
+        /// by type is safe here in a way it would not be for anything the map
+        /// has several of.
+        /// </summary>
+        private PawsAndLoot.Gameplay.Loot.LootAlarm ResolveAlarm()
+        {
+            if (_alarm == null)
+            {
+                _alarm = FindFirstObjectByType<
+                    PawsAndLoot.Gameplay.Loot.LootAlarm>();
+            }
+
+            return _alarm;
+        }
+
         public void Refresh(float deltaTime)
         {
             if (root == null)
@@ -154,10 +172,21 @@ namespace PawsAndLoot.UI
             CollectBars();
             FlashlightVisibility visibility = ResolveVisibility();
             PlayerRoleIdentity officer = ResolveOfficer();
+
+            // Two things can point this: a sensor that tripped, and a shop whose
+            // alarm went off. They are the same question to the officer — "where
+            // do I run" — so they share one indicator rather than competing for
+            // the corner of the screen.
+            //
+            // The alarm wins when both are live. It is rarer, it is louder, and
+            // it names a place that stays worth going to after the thief has
+            // moved; a sensor only ever meant "somebody passed here".
+            PawsAndLoot.Gameplay.Loot.LootAlarm alarm = ResolveAlarm();
+            bool beacon = alarm != null && alarm.IsBeaconActive;
+
             bool showing = ViewerIsPolice()
                 && officer != null
-                && visibility != null
-                && visibility.IsRevealed;
+                && (beacon || (visibility != null && visibility.IsRevealed));
 
             if (showing != IsShowing)
             {
@@ -176,7 +205,8 @@ namespace PawsAndLoot.UI
             // flashing found nothing and the officer got no direction at all —
             // which is what "the sensor does not detect" actually was.
             Vector3 delta =
-                visibility.RevealSource - officer.transform.position;
+                (beacon ? alarm.BeaconSource : visibility.RevealSource)
+                - officer.transform.position;
             delta.y = 0f;
             float distance = delta.magnitude;
 

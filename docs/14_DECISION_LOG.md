@@ -556,3 +556,42 @@
 - Still open: 실측은 산수와 테스트까지다. **경기 길이가 실제로 어떻게 변하는지는
   2인 플레이테스트로만 알 수 있다.** 240초가 두 상점 + 한 번의 왕복에 충분한지가
   다음에 확인할 것이다.
+
+### DEC-WEBGL-001: 경기 연결을 Unity Relay로 옮기고 초대코드로 만난다 (2026-08-09)
+
+- Context: 제출물은 **링크 하나로 브라우저에서 도는 WebGL**이어야 하고
+  (`SUBMIT-001`), 같은 공유기가 아닌 두 사람이 만날 수 있어야 한다.
+- Finding: **브라우저는 듣는 소켓을 열 수 없다.** UDP만의 문제가 아니라 TCP로도
+  서버가 될 수 없고, Unity Transport가 그 자리에서 거부한다 —
+  `UnityTransport.cs`가 `m_ProtocolType != ProtocolType.RelayUnityTransport`인
+  WebGL 서버에 대해 예외를 던진다. 즉 "한 명이 호스트하고 IP를 불러준다"는
+  `DEC-027`의 모델은 브라우저로 가는 순간 **성립 자체를 못 한다.**
+- Decision: 경기 연결을 **Unity Relay**로 보내고, Relay의 join code 6글자를 그대로
+  **초대코드**로 쓴다. EC2는 정적 파일과 음성 API만 맡는다.
+- Alternative rejected: **EC2에 Unity 전용 서버 풀 + 방 브로커.** 완전한 자체
+  호스팅이고 `-dedicatedServer`도 이미 있었다. 거절한 이유는 셋이다 —
+  (1) t3.micro는 1GB이고 Unity 헤드리스 서버는 인스턴스당 수백 MB를 먹는다,
+  (2) 이 PC에 Linux Build Support가 없어 새 빌드 경로를 제출 직전에 검증해야
+  한다 (`TASK-DEPLOY-003`), (3) **초대코드를 우리가 발급하고 포트에 묶어 관리하는
+  코드를 새로 써야 한다** — Relay에서는 그것이 이미 답이다.
+- Alternative rejected: Node로 WebSocket 릴레이를 직접 짜고 NGO 커스텀 Transport를
+  구현하는 안. 자체 호스팅이면서 리눅스 빌드가 필요 없다. 검증되지 않은 코드가
+  네트워크 최하단에 들어가고, 제출 기한이 그 위험을 감당할 만큼 넉넉하지 않다.
+- Constraint: **전송 종류는 어디서나 `wss` 하나다.** 브라우저에 다른 선택지가 없고,
+  데스크톱만 `dtls`로 두면 플레이테스트가 검증한 전송과 제출본의 전송이 갈린다 —
+  이 프로젝트가 UDP를 버릴 때 이미 한 번 없앤 분기다.
+- Constraint: **직접 IP 경로는 코드에 남긴다.** `TryStartHost`/`TryJoin`은 인터넷도
+  Unity 계정도 없이 도는 유일한 회귀 경로이고 `-netJoinMode api`가 그대로 쓴다.
+  사라진 것은 로비의 주소·포트 칸뿐이다.
+- Consequence: **열어야 하는 포트가 80·443·22로 줄었다.** 경기 트래픽이 EC2를
+  지나가지 않으므로 게임 포트를 열 이유가 없다 (`TASK-DEPLOY-006`).
+- Consequence: **새 의존이 하나 생겼다** — Unity Cloud 프로젝트 연결. `cloudProjectId`가
+  비어 있으면 방을 열 수 없고, 이건 코드로 우회할 수 없는 설정이다
+  (`TASK-DEPLOY-007`). 요청을 보내기 전에 로컬에서 잡아 한 문장으로 말하도록 했다 —
+  서버까지 갔다가 인증 오류로 돌아오면 네트워크 문제처럼 보인다.
+- Consequence: LAN 방 발견은 브라우저에서 통째로 컴파일에서 빠지고, 데스크톱에서도
+  **Relay 방은 광고하지 않는다.** 광고하면 아무것도 듣고 있지 않은 포트를 가리키는
+  방이 상대 목록에 뜬다.
+- Still open: **실측은 테스트와 빌드까지다.** 다른 네트워크의 두 사람이 실제로
+  초대코드로 만나 한 판을 끝내는 것은 EC2 배포 후에만 확인할 수 있다
+  (`TASK-DEPLOY-008`).

@@ -28,6 +28,13 @@ namespace PawsAndLoot.Integration.Network
             var lan = new List<string>();
             var other = new List<string>();
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // A page has no local addresses to enumerate, and asking throws
+            // rather than returning nothing. There is also nothing this would
+            // be used for: a browser cannot listen, so no address of its own
+            // could ever be handed to another player.
+            return new List<string> { LoopbackAddress };
+#else
             try
             {
                 foreach (IPAddress address in Dns.GetHostAddresses(
@@ -50,10 +57,16 @@ namespace PawsAndLoot.Integration.Network
                     }
                 }
             }
-            catch (SocketException)
+            catch (Exception exception) when (
+                exception is SocketException
+                || exception is NotSupportedException
+                || exception is PlatformNotSupportedException)
             {
                 // A machine with no resolvable host name still needs to be able
-                // to host for a second process on the same PC.
+                // to host for a second process on the same PC. The two
+                // platform exceptions are for the players Unity does not give
+                // a name lookup to at all — there the list is simply empty,
+                // which is a state this already handles.
             }
 
             var ordered = new List<string>();
@@ -61,6 +74,7 @@ namespace PawsAndLoot.Integration.Network
             ordered.AddRange(other);
             ordered.Add(LoopbackAddress);
             return ordered;
+#endif
         }
 
         /// <summary>

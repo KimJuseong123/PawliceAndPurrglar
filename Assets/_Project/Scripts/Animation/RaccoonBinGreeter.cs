@@ -86,6 +86,18 @@ namespace PawsAndLoot.Animation
         private float _lidOpen;
         private float _wavePhase;
         private bool _capturedRest;
+        private bool _localIsNear;
+        private LocalPlayerRoleSelector _localRoleSelector;
+        private PlayerRoleIdentity[] _players =
+            System.Array.Empty<PlayerRoleIdentity>();
+        private float _nextPlayerScan;
+
+        /// <summary>
+        /// How long between sweeps for the players while fewer than two have
+        /// been found. Twice a second: they arrive a moment after the scene
+        /// does, and the raccoon is not urgent.
+        /// </summary>
+        private const float PlayerScanInterval = 0.5f;
 
         public bool IsGreeting { get; private set; }
         public float RisenFraction => _risen;
@@ -121,6 +133,29 @@ namespace PawsAndLoot.Animation
         }
 
         /// <summary>
+        /// The two players, refreshed at most twice a second.
+        ///
+        /// There are exactly two and they are made once per match, so sweeping
+        /// the scene for them every frame — which both distance checks below used
+        /// to do, and now would do twice — is the cost this codebase keeps paying
+        /// by accident. Rescanned while the list is short rather than never, since
+        /// the characters are spawned a moment after the scene loads.
+        /// </summary>
+        private void RefreshPlayers()
+        {
+            if (_players != null
+                && _players.Length >= 2
+                && Time.time < _nextPlayerScan)
+            {
+                return;
+            }
+
+            _nextPlayerScan = Time.time + PlayerScanInterval;
+            _players = FindObjectsByType<PlayerRoleIdentity>(
+                FindObjectsSortMode.None);
+        }
+
+        /// <summary>
         /// Nearest player, or -1 when there is none. Distance is measured on the
         /// ground plane so standing on a rooftop directly above still counts as
         /// being at the bin.
@@ -128,19 +163,14 @@ namespace PawsAndLoot.Animation
         private float DistanceToNearestPlayer()
         {
             float nearest = -1f;
-            foreach (PlayerRoleIdentity player in
-                FindObjectsByType<PlayerRoleIdentity>(
-                    FindObjectsSortMode.None))
+            foreach (PlayerRoleIdentity player in _players)
             {
-                if (!player.isActiveAndEnabled)
+                if (player == null || !player.isActiveAndEnabled)
                 {
                     continue;
                 }
 
-                Vector3 delta = player.transform.position
-                    - transform.position;
-                delta.y = 0f;
-                float distance = delta.magnitude;
+                float distance = GroundDistanceTo(player);
                 if (nearest < 0f || distance < nearest)
                 {
                     nearest = distance;
@@ -148,6 +178,56 @@ namespace PawsAndLoot.Animation
             }
 
             return nearest;
+        }
+
+        /// <summary>
+        /// How far the player at this keyboard is, or -1 when there is not one
+        /// yet — during the first frames of a match, or in a scene with no local
+        /// role at all.
+        ///
+        /// The lobby's assignment is asked first, for the same reason the status
+        /// banner asks it first: the scene selector may not have caught up, and
+        /// during those frames every identity would answer to the wrong role.
+        /// </summary>
+        private float DistanceToLocalPlayer()
+        {
+            PlayerRole? assigned = LocalPlayerRoleSelector.OverriddenRole;
+            if (!assigned.HasValue)
+            {
+                if (_localRoleSelector == null)
+                {
+                    _localRoleSelector =
+                        FindFirstObjectByType<LocalPlayerRoleSelector>();
+                }
+
+                if (_localRoleSelector == null)
+                {
+                    return -1f;
+                }
+
+                assigned = _localRoleSelector.ActiveRole;
+            }
+
+            foreach (PlayerRoleIdentity player in _players)
+            {
+                if (player == null
+                    || !player.isActiveAndEnabled
+                    || player.Role != assigned.Value)
+                {
+                    continue;
+                }
+
+                return GroundDistanceTo(player);
+            }
+
+            return -1f;
+        }
+
+        private float GroundDistanceTo(PlayerRoleIdentity player)
+        {
+            Vector3 delta = player.transform.position - transform.position;
+            delta.y = 0f;
+            return delta.magnitude;
         }
 
         private void CaptureRest()
@@ -218,14 +298,27 @@ namespace PawsAndLoot.Animation
                 return;
             }
 
+            RefreshPlayers();
             float distance = DistanceToNearestPlayer();
-            bool wasGreeting = IsGreeting;
             IsGreeting = distance >= 0f && distance <= greetRadius;
+
+            // The lid and the wave answer whoever walks up. The chitter answers
+            // only the player at this keyboard.
+            //
+            // Every sound in this game is 2D — one `AudioSource`, no falloff — so
+            // a sound raised because the *other* player reached the bin is heard
+            // here at full volume from anywhere on the map. With both windows open
+            // on one machine that is the same greeting twice, a moment apart, and
+            // the thief walking to the black market greets the officer too
+            // (`ISSUE-072`).
+            bool localWasNear = _localIsNear;
+            float localDistance = DistanceToLocalPlayer();
+            _localIsNear = localDistance >= 0f && localDistance <= greetRadius;
 
             // On the edge into the radius, not while inside it. Someone standing
             // at the merchant to sell is inside this radius the whole time, and a
             // chitter per frame there is the same clip a hundred times a second.
-            if (IsGreeting && !wasGreeting)
+            if (_localIsNear && !localWasNear)
             {
                 GameSoundService.Request(GameSoundId.RaccoonChitter);
             }
