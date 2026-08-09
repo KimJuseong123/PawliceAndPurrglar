@@ -144,7 +144,8 @@ namespace PawsAndLoot.Integration.Network
             {
                 Allocation allocation =
                     await RelayService.Instance.CreateAllocationAsync(
-                        PeerCount);
+                        PeerCount,
+                        await ResolveRegionAsync());
                 string joinCode =
                     await RelayService.Instance.GetJoinCodeAsync(
                         allocation.AllocationId);
@@ -393,6 +394,87 @@ namespace PawsAndLoot.Integration.Network
                 "The Relay allocation carries no 'wss' endpoint. A browser "
                 + "cannot connect over any of the others.");
             return false;
+        }
+
+        /// <summary>
+        /// Regions to prefer, nearest first, for a game played in Korea.
+        ///
+        /// Matched as substrings against whatever ids Relay actually offers, so
+        /// a renamed or retired region degrades to the next choice instead of
+        /// throwing. Unity has published these under several naming schemes.
+        /// </summary>
+        private static readonly string[] PreferredRegions =
+        {
+            "seoul", "asia-northeast3", "tokyo", "asia-northeast",
+            "asia-south", "asia"
+        };
+
+        /// <summary>
+        /// Which Relay region to allocate in, or null to let Relay decide.
+        ///
+        /// Chosen explicitly because the automatic choice cannot work here.
+        /// Relay picks a region from QoS measurements, and QoS measures with UDP
+        /// pings — which a browser cannot send. So a WebGL host gets whatever
+        /// the fallback is, and the fallback is not necessarily on this
+        /// continent.
+        ///
+        /// That is paid entirely by the guest. The host is the server and sees
+        /// its own actions immediately; the client's every keypress makes the
+        /// round trip client → Relay → host → Relay → client, because this game
+        /// does not predict client movement (`NetworkPlayerLink`: "client input
+        /// -> RPC -> host simulates -> position replicates"). A relay on the
+        /// wrong continent turns that into a third of a second, on the client
+        /// only — which is exactly the shape of "호스트는 멀쩡한데 클라이언트만
+        /// 렉이 심하다".
+        ///
+        /// Returns null on any failure. A room in a far region is worse than a
+        /// near one and much better than no room at all.
+        /// </summary>
+        private static async Task<string> ResolveRegionAsync()
+        {
+            try
+            {
+                System.Collections.Generic.List<Region> regions =
+                    await RelayService.Instance.ListRegionsAsync();
+                if (regions == null || regions.Count == 0)
+                {
+                    return null;
+                }
+
+                foreach (string wanted in PreferredRegions)
+                {
+                    foreach (Region region in regions)
+                    {
+                        if (region?.Id != null
+                            && region.Id.ToLowerInvariant().Contains(wanted))
+                        {
+                            GameLogger.InfoOnce(
+                                GameLogCategory.Network,
+                                "relay-region",
+                                $"Relay region '{region.Id}' chosen from "
+                                + $"{regions.Count} offered.");
+                            return region.Id;
+                        }
+                    }
+                }
+
+                GameLogger.WarningOnce(
+                    GameLogCategory.Network,
+                    "relay-region-missing",
+                    "No preferred Relay region is on offer; letting Relay "
+                    + "choose. Offered: "
+                    + string.Join(", ", regions.ConvertAll(r => r.Id)));
+                return null;
+            }
+            catch (Exception exception)
+            {
+                GameLogger.WarningOnce(
+                    GameLogCategory.Network,
+                    "relay-region-failed",
+                    "Could not list Relay regions; letting Relay choose. "
+                    + exception.Message);
+                return null;
+            }
         }
 
         private static void Apply(

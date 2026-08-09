@@ -85,6 +85,12 @@ namespace PawsAndLoot.Editor
                 .AddComponent<NetworkDisconnectHandler>()
                 .Configure(manager, session);
 
+            // Writes the round trip to the host into the log, on the guest's
+            // machine only. "The client lags and the host does not" has two
+            // causes with opposite fixes, and nobody can tell them apart by
+            // playing.
+            manager.gameObject.AddComponent<NetworkLatencyReport>();
+
             // Announces this host on the LAN and lists the ones it hears, so the
             // two players can meet without reading an IP to each other.
             LanRoomDirectory directory =
