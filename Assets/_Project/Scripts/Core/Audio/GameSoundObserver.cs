@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using PawsAndLoot.Companions;
 using PawsAndLoot.Gameplay.Arrest;
@@ -69,6 +70,7 @@ namespace PawsAndLoot.Audio
         /// cost this codebase has been bitten by before.
         /// </summary>
         private readonly List<PlayerInteriorState> _interiorStates = new();
+        private readonly List<Action<int>> _interiorHandlers = new();
         private readonly List<CompanionLootCourier> _couriers = new();
         private MatchRuntimeState _matchState;
         private bool _foundSources;
@@ -331,8 +333,15 @@ namespace PawsAndLoot.Audio
                 FindObjectsByType<PlayerInteriorState>(
                     FindObjectsSortMode.None))
             {
+                // Per state, so the handler knows *whose* door it was. The
+                // event carries the room id and nothing else, and subscribing
+                // one shared method to both players meant a door anywhere on
+                // the map sounded here.
+                PlayerInteriorState captured = state;
+                Action<int> handler = _ => HandleInteriorChanged(captured);
                 _interiorStates.Add(state);
-                state.InteriorChanged += HandleInteriorChanged;
+                _interiorHandlers.Add(handler);
+                state.InteriorChanged += handler;
             }
 
             // Not per counter any more. The three supermarket counters were
@@ -443,13 +452,16 @@ namespace PawsAndLoot.Audio
 
         private void ReleaseSources()
         {
-            foreach (PlayerInteriorState state in _interiorStates)
+            for (int index = 0; index < _interiorStates.Count; index++)
             {
-                if (state != null)
+                PlayerInteriorState state = _interiorStates[index];
+                if (state != null && index < _interiorHandlers.Count)
                 {
-                    state.InteriorChanged -= HandleInteriorChanged;
+                    state.InteriorChanged -= _interiorHandlers[index];
                 }
             }
+
+            _interiorHandlers.Clear();
 
             if (_subscribedToPurchases)
             {
@@ -514,6 +526,7 @@ namespace PawsAndLoot.Audio
             }
 
             _interiorStates.Clear();
+            _interiorHandlers.Clear();
             _couriers.Clear();
             _toolUses.Clear();
             _chargers.Clear();
@@ -587,10 +600,32 @@ namespace PawsAndLoot.Audio
         /// doorway only runs on the host: a client's own character is moved by
         /// replication, and hanging the sound off the decision would have left
         /// one of the two players opening silent doors.
+        ///
+        /// Only for the character at this keyboard. Both role objects exist on
+        /// both machines, so this used to sound for the other player's doors as
+        /// well — and since every sound in this game is 2D, at full volume from
+        /// anywhere on the map. With two windows open on one machine that is one
+        /// door heard twice, a moment apart (`ISSUE-074`).
         /// </summary>
-        private static void HandleInteriorChanged(int _)
+        private static void HandleInteriorChanged(PlayerInteriorState state)
         {
-            GameSoundService.Request(GameSoundId.DoorOpen);
+            if (state == null
+                || !LocalPlayerRoleSelector.TryResolveLocalRole(
+                    out PlayerRole local))
+            {
+                // No local role yet means no session — a focused test, or the
+                // first frames of a match. Sounding it is the old behaviour and
+                // is right for the single-player case, where the only character
+                // with a door is this one.
+                GameSoundService.Request(GameSoundId.DoorOpen);
+                return;
+            }
+
+            var identity = state.GetComponent<PlayerRoleIdentity>();
+            if (identity == null || identity.Role == local)
+            {
+                GameSoundService.Request(GameSoundId.DoorOpen);
+            }
         }
 
         private static void HandlePurchased(ThrowableKind _)

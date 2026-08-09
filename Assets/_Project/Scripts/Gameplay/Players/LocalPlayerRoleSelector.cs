@@ -122,13 +122,65 @@ namespace PawsAndLoot.Gameplay.Players
         public static void ClearOverriddenRole()
         {
             _overrideRole = null;
+            _cachedSelector = null;
         }
+
+        /// <summary>
+        /// Which of the two characters belongs to the player at this keyboard.
+        ///
+        /// Asked wherever something is drawn or sounded for one player and not
+        /// the other. Both role objects exist on both machines — that is how a
+        /// host simulates the pair — so "it happened" and "it happened to me"
+        /// are different questions, and answering the first when you meant the
+        /// second is why the raccoon greeted the officer across town, why the
+        /// officer heard the thief's kerbs, and why a door made two sounds.
+        ///
+        /// The lobby's assignment comes first. A scene selector that has not
+        /// caught up would answer for the wrong role during exactly the frames
+        /// a match is starting.
+        ///
+        /// Returns false when there is no answer yet — during the first frames
+        /// of a match, or in a focused test with no selector in the scene. The
+        /// caller decides what to do with that; there is no sensible default,
+        /// and `Police` was the old one and it was wrong half the time.
+        /// </summary>
+        public static bool TryResolveLocalRole(out PlayerRole role)
+        {
+            if (_overrideRole.HasValue)
+            {
+                role = _overrideRole.Value;
+                return true;
+            }
+
+            if (_cachedSelector == null)
+            {
+                _cachedSelector =
+                    FindFirstObjectByType<LocalPlayerRoleSelector>();
+            }
+
+            if (_cachedSelector == null)
+            {
+                role = PlayerRole.Police;
+                return false;
+            }
+
+            role = _cachedSelector.ActiveRole;
+            return true;
+        }
+
+        /// <summary>
+        /// Held so the lookup is not a scene sweep per call. A Unity null check,
+        /// so a selector destroyed with its scene reads as gone rather than as
+        /// a live reference to nothing.
+        /// </summary>
+        private static LocalPlayerRoleSelector _cachedSelector;
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetOverride()
         {
             _overrideRole = null;
+            _cachedSelector = null;
         }
 
         public static PlayerRole ResolveRole(

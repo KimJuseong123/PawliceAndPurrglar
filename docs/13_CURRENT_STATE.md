@@ -1150,6 +1150,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-10 | 문 소리 이중 재생 수정 + 로컬 역할 조회 통합 이후 | Edit Mode **331/331**, Play Mode 223개 중 **221 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`. 신규 `OnlyTheDoorOfThePlayerAtThisKeyboardIsHeard`가 XML에서 `Passed` |
+| 2026-08-10 | "상대의 사건이 내 화면에서 소리 난다" 계열 감사 | 남은 두 곳은 **정보 누출**이다 — `UpdateThrowChargeSound`(상대가 투척을 당기기 시작한 것)와 `UpdateCompanionAlertSound`(상대 동물이 발견한 것). `UpdateStunSound`는 맞힌 쪽 피드백이라 의도된 것으로 보이고, `LootPickupStart`·`TrapPlaced`·`Blinded`·`LureTaken`은 판단이 필요하다. **고치지 않았다** |
 | 2026-08-09 | 실내 경보 좌표 · 끈끈이 별 · 공중 점프 소리 · 음량 실측 이후 | Edit Mode **331/331**, Play Mode 222개 중 **220 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`. 신규 2건(`AtheftInsideAshopPointsAtTheShopInTheTown`, `TheGlueTrapDrawsTheStarsAsWell`)이 XML에서 `Passed`임을 이름으로 확인 |
 | 2026-08-09 | 효과음 40개 음량 실측 (`Report Sound Levels`) | RMS로 잰다. 0.47(센서등) ~ 0.007(투척 차지)이고 0.21과 0.16 사이에 뚜렷한 단절이 있다. **피크는 쓸모가 없다** — 40개 중 대부분이 1.0이고, 0.37로 피크가 낮은 파일이 가장 시끄러운 축에 있다. 이 PC에는 mp3·flac·ogg를 디코드할 도구가 없어 6개는 Python으로 잴 수 없었고, 그래서 Unity 안에서 `AudioClip.GetData`로 잰다 |
 | 2026-08-09 | 실내 출구 표식 실측 | `Game.unity`의 `frontExitPoint: {fileID: 0}` **0건** / 전체 14건. 즉 경보 번역의 오류 경로는 현재 씬에서 발생하지 않는다 |

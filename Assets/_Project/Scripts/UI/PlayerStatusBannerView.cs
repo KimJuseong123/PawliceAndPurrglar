@@ -88,8 +88,6 @@ namespace PawsAndLoot.UI
         private Image _edge;
         private TMP_Text _label;
 
-        private LocalPlayerRoleSelector _selector;
-
         private bool _hasCache;
         private PlayerRole _cachedRole;
         private float _nextRescan;
@@ -372,28 +370,9 @@ namespace PawsAndLoot.UI
         /// wrong screen for the first frames of a match — which is exactly when
         /// a trap is most likely to go off.
         /// </summary>
-        private bool TryResolveLocalRole(out PlayerRole role)
+        private static bool TryResolveLocalRole(out PlayerRole role)
         {
-            PlayerRole? assigned = LocalPlayerRoleSelector.OverriddenRole;
-            if (assigned.HasValue)
-            {
-                role = assigned.Value;
-                return true;
-            }
-
-            if (_selector == null)
-            {
-                _selector = FindFirstObjectByType<LocalPlayerRoleSelector>();
-            }
-
-            if (_selector == null)
-            {
-                role = PlayerRole.Police;
-                return false;
-            }
-
-            role = _selector.ActiveRole;
-            return true;
+            return LocalPlayerRoleSelector.TryResolveLocalRole(out role);
         }
 
         /// <summary>

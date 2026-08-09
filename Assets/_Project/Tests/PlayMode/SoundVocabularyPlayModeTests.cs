@@ -50,6 +50,12 @@ namespace PawsAndLoot.Tests.PlayMode
             {
                 Object.DestroyImmediate(_persistentObject);
             }
+
+            // The overridden role is static and outlives the scene, so a test
+            // that set one and did not clear it decides the role for whatever
+            // runs next. That has already cost six unrelated failures once
+            // (`ISSUE-054`).
+            LocalPlayerRoleSelector.ClearOverriddenRole();
         }
 
         /// <summary>
@@ -155,6 +161,79 @@ namespace PawsAndLoot.Tests.PlayMode
                 Is.EqualTo("DontDestroyOnLoad"),
                 "The role stingers are raised just before Bootstrap unloads, so "
                 + "the object playing them has to survive the load.");
+        }
+
+        /// <summary>
+        /// The other player's door is silent on this screen.
+        ///
+        /// Both role objects exist on both machines, so the observer finds two
+        /// interior states and used to sound the door for either — and since
+        /// every sound in this game is 2D, at full volume from anywhere on the
+        /// map. With two windows open on one machine that is one door heard
+        /// twice, a moment apart (`ISSUE-074`).
+        ///
+        /// The same shape as the raccoon greeting and the jump: "it happened"
+        /// answered where "it happened to me" was meant.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator OnlyTheDoorOfThePlayerAtThisKeyboardIsHeard()
+        {
+            var mine = new GameObject("Thief");
+            mine.SetActive(false);
+            mine.AddComponent<PlayerRoleIdentity>()
+                .Configure(PlayerRole.Thief);
+            PlayerInteriorState mineInterior =
+                mine.AddComponent<PlayerInteriorState>();
+            mine.SetActive(true);
+
+            var theirs = new GameObject("Police");
+            theirs.SetActive(false);
+            theirs.AddComponent<PlayerRoleIdentity>()
+                .Configure(PlayerRole.Police);
+            PlayerInteriorState theirInterior =
+                theirs.AddComponent<PlayerInteriorState>();
+            theirs.SetActive(true);
+
+            LocalPlayerRoleSelector.OverrideRole(PlayerRole.Thief);
+
+            GameSoundService service = GameSoundService.Instance;
+            if (service == null)
+            {
+                _audioObject = new GameObject("Audio");
+                _audioObject.SetActive(false);
+                service = _audioObject.AddComponent<GameSoundService>();
+                service.Configure(null, null, null);
+                _audioObject.SetActive(true);
+            }
+
+            int before = service.GetRequestCount(GameSoundId.DoorOpen);
+
+            _observerObject = new GameObject("Sound Observer");
+            _observerObject.AddComponent<GameSoundObserver>();
+            yield return null;
+
+            // The officer, on the other side of town, walks into a house.
+            theirInterior.SetInterior(3);
+            Assert.That(
+                service.GetRequestCount(GameSoundId.DoorOpen) - before,
+                Is.EqualTo(0),
+                "A door across the map is not a door on this screen.");
+
+            // Now the thief, whose screen this is.
+            mineInterior.SetInterior(3);
+            Assert.That(
+                service.GetRequestCount(GameSoundId.DoorOpen) - before,
+                Is.EqualTo(1));
+
+            mineInterior.SetInterior(PlayerInteriorState.Outside);
+            Assert.That(
+                service.GetRequestCount(GameSoundId.DoorOpen) - before,
+                Is.EqualTo(2),
+                "Coming back out is the same door and the same sound.");
+
+            Object.DestroyImmediate(mine);
+            Object.DestroyImmediate(theirs);
+            yield return null;
         }
 
         /// <summary>

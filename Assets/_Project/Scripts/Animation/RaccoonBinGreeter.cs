@@ -87,7 +87,6 @@ namespace PawsAndLoot.Animation
         private float _wavePhase;
         private bool _capturedRest;
         private bool _localIsNear;
-        private LocalPlayerRoleSelector _localRoleSelector;
         private PlayerRoleIdentity[] _players =
             System.Array.Empty<PlayerRoleIdentity>();
         private float _nextPlayerScan;
@@ -191,28 +190,17 @@ namespace PawsAndLoot.Animation
         /// </summary>
         private float DistanceToLocalPlayer()
         {
-            PlayerRole? assigned = LocalPlayerRoleSelector.OverriddenRole;
-            if (!assigned.HasValue)
+            if (!LocalPlayerRoleSelector.TryResolveLocalRole(
+                out PlayerRole assigned))
             {
-                if (_localRoleSelector == null)
-                {
-                    _localRoleSelector =
-                        FindFirstObjectByType<LocalPlayerRoleSelector>();
-                }
-
-                if (_localRoleSelector == null)
-                {
-                    return -1f;
-                }
-
-                assigned = _localRoleSelector.ActiveRole;
+                return -1f;
             }
 
             foreach (PlayerRoleIdentity player in _players)
             {
                 if (player == null
                     || !player.isActiveAndEnabled
-                    || player.Role != assigned.Value)
+                    || player.Role != assigned)
                 {
                     continue;
                 }
