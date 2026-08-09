@@ -279,6 +279,49 @@ namespace PawsAndLoot.Tests.EditMode
                 + $"{matchConfig.TargetSaleAmount}. Without a margin the thief "
                 + "has to sell every single piece to win.");
 
+            // And the other end of the same arithmetic, which had no test at
+            // all: a floor on the map's total says the thief can win, and
+            // nothing said the thief could not win instantly. At 200/350/500
+            // two Rare pieces were the whole target, so a match could be over
+            // after two presses of the pick-up key and one walk to the
+            // merchant, and the officer's three arrests never got a chance to
+            // happen.
+            //
+            // Stated per room rather than per piece, because the room is the
+            // unit the thief actually takes. A room is one entry, one sweep and
+            // one exit; if that comes to a win then the town is a single
+            // errand and everything the map has — the distance, the second
+            // trip, the officer standing between — stops mattering.
+            //
+            // A room's stock is its kinds, found by the stable-id prefix that
+            // HouseInteriorSetup.RoomStockPrefix deals from. Distinct kinds
+            // rather than placed objects: four houses hold copies of the same
+            // four things and that is one room's worth, not four.
+            foreach (System.Linq.IGrouping<string, LootDefinition> room in loot
+                .Select(item => item.Definition)
+                .Where(definition => definition != null
+                    && definition.StableId.Contains('-'))
+                .GroupBy(definition => definition.StableId.Split('-')[0]))
+            {
+                LootDefinition[] kinds = room
+                    .GroupBy(definition => definition.StableId)
+                    .Select(same => same.First())
+                    .ToArray();
+                int held = kinds.Sum(
+                    definition => lootConfig.GetPrice(definition.Rarity));
+                Assert.That(
+                    held,
+                    Is.LessThan(matchConfig.TargetSaleAmount),
+                    $"The '{room.Key}' room holds {held} gold against a target "
+                    + $"of {matchConfig.TargetSaleAmount}, so clearing it once "
+                    + "wins the match outright. A room has to be a step, not "
+                    + "the whole game: "
+                    + string.Join(
+                        ", ",
+                        kinds.Select(d =>
+                            $"{d.StableId}={lootConfig.GetPrice(d.Rarity)}")));
+            }
+
             LadderTraversal[] ladders = scene
                 .GetRootGameObjects()
                 .SelectMany(root =>

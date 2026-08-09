@@ -33,8 +33,13 @@ namespace PawsAndLoot.Gameplay.Interiors
         /// treasure to win, so the rooms are a supplement rather than a way to skip
         /// the game.
         /// </summary>
+        /// The scatter always calls <see cref="Configure"/>, so this is only the
+        /// value an inspector shows before a match rolls. Kept equal to
+        /// <c>NetworkInteriorLootScatter.ValuePerPiece</c> by hand rather than by
+        /// reference: the rules layer does not get to look into
+        /// <c>Integration/Network</c>.
         [SerializeField, Min(1)]
-        private int value = 50;
+        private int value = 5;
 
         [SerializeField, Min(0.1f)]
         private float holdDurationSeconds = 1.15f;

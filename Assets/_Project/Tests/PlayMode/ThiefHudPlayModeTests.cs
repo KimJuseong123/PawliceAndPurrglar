@@ -66,7 +66,7 @@ namespace PawsAndLoot.Tests.PlayMode
             Assert.That(
                 held.text,
                 Is.EqualTo("LOOT  HUD Test Loot"));
-            Assert.That(price.text, Is.EqualTo("VALUE  200"));
+            Assert.That(price.text, Is.EqualTo("VALUE  40"));
             Assert.That(penalty.text, Is.EqualTo("MOVE  -10%"));
             Assert.That(sale.text, Is.EqualTo("SALE  READY"));
 
@@ -77,7 +77,7 @@ namespace PawsAndLoot.Tests.PlayMode
             int amountBeforeRefresh = thief.Wallet.SoldAmount;
             presenter.Refresh();
             Assert.That(thief.Wallet.SoldAmount, Is.EqualTo(amountBeforeRefresh));
-            Assert.That(amount.text, Is.EqualTo("GOLD  200 / 1000"));
+            Assert.That(amount.text, Is.EqualTo("GOLD  40 / 1000"));
             Assert.That(held.text, Is.EqualTo("LOOT  EMPTY"));
             Assert.That(price.text, Is.EqualTo("VALUE  -"));
             Assert.That(penalty.text, Is.EqualTo("MOVE  NORMAL"));

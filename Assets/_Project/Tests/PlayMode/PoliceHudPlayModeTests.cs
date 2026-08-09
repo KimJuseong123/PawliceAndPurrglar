@@ -57,10 +57,10 @@ namespace PawsAndLoot.Tests.PlayMode
             fixture.Presenter.Refresh();
             Assert.That(
                 fixture.ThiefGold.text,
-                Is.EqualTo("THIEF GOLD  200 / 1000"));
+                Is.EqualTo("THIEF GOLD  40 / 1000"));
             Assert.That(
                 fixture.TheftAlert.text,
-                Is.EqualTo("THEFT ALERT  SALE +200"));
+                Is.EqualTo("THEFT ALERT  SALE +40"));
 
             float timeBeforeRefresh =
                 fixture.MatchRuntime.RemainingMatchSeconds;

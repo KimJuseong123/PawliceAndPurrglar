@@ -881,11 +881,16 @@ namespace PawsAndLoot.UI
                 return definition.GetPrice(config);
             }
 
+            // A mirror of LootConfig's defaults, reached only when the config is
+            // not up. It has to move whenever those move: a shop window is where
+            // the player reads what a thing is worth, and a stale copy here
+            // quotes one price while the purse credits another. It sat at
+            // 200/350/500 through the cut to a fifth before anyone looked.
             return definition.Rarity switch
             {
-                LootRarity.Uncommon => 350,
-                LootRarity.Rare => 500,
-                _ => 200
+                LootRarity.Uncommon => 70,
+                LootRarity.Rare => 100,
+                _ => 40
             };
         }
 

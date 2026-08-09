@@ -38,16 +38,24 @@ namespace PawsAndLoot.Integration.Network
         /// Money per piece, and the reason it is small.
         ///
         /// It has to hold one property: a thief who empties every room in the town
-        /// still cannot win on rooms alone. Thirty-eight pieces across nineteen
-        /// houses comes to 760 against a 1,000 target, so real treasure still has to
+        /// still cannot win on rooms alone. Twenty-eight pieces across fourteen
+        /// rooms comes to 140 against a 1,000 target, so real treasure still has to
         /// cross the town.
         ///
         /// It was 50 while eight houses had insides, which was 800 and fine. Opening
         /// every house took the same figure to 1,900 and quietly made the rooms a
         /// way around the game — caught by the test that asserts the property rather
         /// than the number.
+        ///
+        /// It became 5 when treasure prices were cut to a fifth. This figure has to
+        /// move with them, and not because the total drifts: pocketing costs no
+        /// carry penalty, no merchant trip and no risk of being robbed on the way,
+        /// so it has to pay clearly less than the cheapest thing that does. Left at
+        /// 20 against a 40-gold Common it would have paid half as much for none of
+        /// the work, and nobody would ever have carried anything again — which is
+        /// the sentence this constant was written to prevent.
         /// </summary>
-        public const int ValuePerPiece = 20;
+        public const int ValuePerPiece = 5;
 
         /// <summary>
         /// One int for the count, then an interior id and a position each.

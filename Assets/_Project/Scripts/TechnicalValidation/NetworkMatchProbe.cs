@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Arrest;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Players;
@@ -96,10 +97,26 @@ namespace PawsAndLoot.TechnicalValidation
         private const float SellCycle = 2.5f;
 
         /// <summary>
-        /// What the least valuable piece fetches. Used only to decide when the
+        /// What the least valuable piece fetches, used only to decide when the
         /// purse is close enough to the target for one more sale to finish it.
+        ///
+        /// Asked of the config rather than written down. It was a literal 200,
+        /// which is what a Common piece was worth until prices were cut to a
+        /// fifth — after which the officer would have joined the clash at 800
+        /// gold instead of 960, five sales early, and the collision the
+        /// scenario exists to produce would have been staged against the wrong
+        /// moment. Nothing would have failed; the scenario would just have
+        /// stopped testing what it says it tests.
+        ///
+        /// Falls back to the target itself if the config is not up yet, which
+        /// makes <c>OneSaleShort</c> answer false rather than true — a probe
+        /// that waits is visible in the result, a probe that fires early looks
+        /// like a real collision.
         /// </summary>
-        private const int CheapestLoot = 200;
+        private static int CheapestLoot =>
+            GameConfigService.IsInitialized
+                ? GameConfigService.Current.Loot.CommonPrice
+                : 0;
 
         [SerializeField, Min(1f)]
         private float sampleSeconds = 14f;

@@ -69,7 +69,7 @@ namespace PawsAndLoot.Tests.PlayMode
                 zone.TryInteract(
                     new PlayerInteractionContext(player.Identity)),
                 Is.False);
-            Assert.That(player.Wallet.SoldAmount, Is.EqualTo(200));
+            Assert.That(player.Wallet.SoldAmount, Is.EqualTo(40));
 
             Assert.That(player.Carrier.TryAcquire(second), Is.True);
             var networkRequest = new LootRequestId(900);
@@ -94,7 +94,7 @@ namespace PawsAndLoot.Tests.PlayMode
 
             Assert.That(first.CurrentState, Is.EqualTo(LootState.Sold));
             Assert.That(second.CurrentState, Is.EqualTo(LootState.Sold));
-            Assert.That(player.Wallet.SoldAmount, Is.EqualTo(400));
+            Assert.That(player.Wallet.SoldAmount, Is.EqualTo(80));
             Assert.That(player.Wallet.CreditedSaleCount, Is.EqualTo(2));
             Assert.That(victoryRequests, Is.EqualTo(2));
 

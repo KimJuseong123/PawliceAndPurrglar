@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca941082e49af1842be321a3c940344e, type: 3}
   m_Name: LootConfig
   m_EditorClassIdentifier: Assembly-CSharp::PawsAndLoot.Config.LootConfig
-  commonPrice: 200
-  uncommonPrice: 350
-  rarePrice: 500
+  commonPrice: 40
+  uncommonPrice: 70
+  rarePrice: 100

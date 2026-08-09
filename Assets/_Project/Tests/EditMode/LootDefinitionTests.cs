@@ -48,9 +48,9 @@ namespace PawsAndLoot.Tests.EditMode
             {
                 int expected = tier.Key switch
                 {
-                    LootRarity.Common => 200,
-                    LootRarity.Uncommon => 350,
-                    _ => 500
+                    LootRarity.Common => 40,
+                    LootRarity.Uncommon => 70,
+                    _ => 100
                 };
 
                 Assert.That(
@@ -87,7 +87,7 @@ namespace PawsAndLoot.Tests.EditMode
                 "Price-looking name 9999",
                 LootRarity.Common);
 
-            Assert.That(definition.GetPrice(config), Is.EqualTo(200));
+            Assert.That(definition.GetPrice(config), Is.EqualTo(40));
 
             Object.DestroyImmediate(definition);
             Object.DestroyImmediate(config);

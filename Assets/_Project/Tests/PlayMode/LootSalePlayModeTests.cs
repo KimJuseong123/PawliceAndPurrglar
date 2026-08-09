@@ -32,10 +32,10 @@ namespace PawsAndLoot.Tests.PlayMode
                 new PlayerInteractionContext(player.Identity));
 
             Assert.That(sold, Is.True);
-            Assert.That(player.Wallet.SoldAmount, Is.EqualTo(200));
+            Assert.That(player.Wallet.SoldAmount, Is.EqualTo(40));
             Assert.That(player.Wallet.TargetAmount, Is.EqualTo(1000));
             Assert.That(player.Wallet.LastSoldLoot, Is.SameAs(loot));
-            Assert.That(player.Wallet.LastSalePrice, Is.EqualTo(200));
+            Assert.That(player.Wallet.LastSalePrice, Is.EqualTo(40));
             Assert.That(victoryRequests, Is.EqualTo(1));
             Assert.That(loot.CurrentState, Is.EqualTo(LootState.Sold));
             Assert.That(loot.CurrentCarrier, Is.Null);
