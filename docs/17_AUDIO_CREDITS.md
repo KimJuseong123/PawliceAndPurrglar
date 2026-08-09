@@ -9,9 +9,12 @@
 
 ## 효과음
 
-**전부 CC0.** freesound에서 CC0 필터로만 받았다. CC0는 표기 의무가 없으므로 URL은
-기록하지 않았다 — 다만 같은 소리를 다시 찾거나 더 나은 것으로 교체할 때는 URL이 있는
-편이 편하다. 다음에 받는 것은 URL도 함께 적는다.
+**37개 전부 CC0.** freesound에서 CC0 필터로만 받았다. 아래 세 묶음(최초 10종,
+C-4~C-11의 11종, C-1~C-3의 16종)이 모두 같은 경로다.
+
+CC0는 표기 의무가 없으므로 **URL은 어느 묶음도 남아 있지 않다.** 라이선스상 문제는
+없지만, 같은 소리를 다시 찾거나 더 나은 것으로 교체할 때 URL이 없으면 처음부터 다시
+찾아야 한다 — 실제로 세 번 다 그랬다. 다음에 받는 것은 URL도 함께 적는다.
 
 | 파일 | 이벤트 | 라이선스 | 길이 | 비고 |
 |---|---|---:|---:|---|
@@ -26,49 +29,47 @@
 | `sfx_victory.wav` | `Victory` | CC0 | 1.81초 | |
 | `sfx_defeat.wav` | `Defeat` | CC0 | 2.00초 | |
 
-### 2026-08-09에 들어온 11종 — **출처와 라이선스 미기재**
+### 2026-08-09에 들어온 11종 (C-4~C-11)
 
-C-4~C-11에서 받은 것들이다. 위의 열 개와 달리 **어디서 왔는지 기록이 없이**
-전달받았다. CC0라고 적지 않은 이유는 그것을 확인한 사람이 없기 때문이다 —
-`SUBMIT-005`가 P0이고 공모전 요강이 출처 명시를 요구하므로, **제출 전에 열한 줄을
-채워야 한다.**
+**전부 CC0.** 위의 열 개와 같은 경로다 — freesound에서 CC0 필터로만 받았다.
+URL은 남아 있지 않다.
 
 | 파일 | 이벤트 | 라이선스 | 길이 | 비고 |
 |---|---|---:|---:|---|
-| `sfx_door_open.wav` | `DoorOpen` | **미확인** | 1.79초 | 문 여닫기·실내 출입 공용 |
-| `sfx_inventory_toggle.mp3` | `InventoryToggle` | **미확인** | 0.70초 | |
-| `sfx_jump.wav` | `Jump` | **미확인** | 1.72초 | |
-| `sfx_purchase_ok.wav` | `PurchaseMade` | **미확인** | 2.20초 | |
-| `sfx_countdown_tick.wav` | `CountdownTick` | **미확인** | 2.99초 | 한 박자가 아니라 **카운트다운 전체**다. 3초 카운트 시작에 한 번만 낸다 |
-| `sfx_role_assigned_police.wav` | `RoleAssignedPolice` | **미확인** | 0.80초 | |
-| `sfx_role_assigned_thief.wav` | `RoleAssignedThief` | **미확인** | 1.87초 | |
-| `sfx_raccoon.wav` | `RaccoonChitter` | **미확인** | 0.79초 | |
-| `sfx_voice_start.wav` | `VoiceRecordStart` · `PeerJoined` | **미확인** | 0.25초 | 두 이벤트가 같은 녹음을 쓴다 |
-| `sfx_voice_stop.wav` | `VoiceRecordStop` · `PeerLeft` | **미확인** | 0.25초 | 같음 |
-| `sfx_voice_ready.wav` | `VoiceModelReady` | **미확인** | 0.09초 | |
+| `sfx_door_open.wav` | `DoorOpen` | CC0 | 1.79초 | 문 여닫기·실내 출입 공용 |
+| `sfx_inventory_toggle.mp3` | `InventoryToggle` | CC0 | 0.70초 | |
+| `sfx_jump.wav` | `Jump` | CC0 | 1.72초 | |
+| `sfx_purchase_ok.wav` | `PurchaseMade` | CC0 | 2.20초 | |
+| `sfx_countdown_tick.wav` | `CountdownTick` | CC0 | 2.99초 | 한 박자가 아니라 **카운트다운 전체**다. 3초 카운트 시작에 한 번만 낸다 |
+| `sfx_role_assigned_police.wav` | `RoleAssignedPolice` | CC0 | 0.80초 | |
+| `sfx_role_assigned_thief.wav` | `RoleAssignedThief` | CC0 | 1.87초 | |
+| `sfx_raccoon.wav` | `RaccoonChitter` | CC0 | 0.79초 | |
+| `sfx_voice_start.wav` | `VoiceRecordStart` · `PeerJoined` | CC0 | 0.25초 | 두 이벤트가 같은 녹음을 쓴다 |
+| `sfx_voice_stop.wav` | `VoiceRecordStop` · `PeerLeft` | CC0 | 0.25초 | 같음 |
+| `sfx_voice_ready.wav` | `VoiceModelReady` | CC0 | 0.09초 | |
 
-### 2026-08-09에 들어온 16종 (C-1~C-3) — **출처와 라이선스 미기재**
+### 2026-08-09에 들어온 16종 (C-1~C-3)
 
-위와 같다. 어디서 왔는지 기록 없이 전달받았으므로 CC0라고 적지 않았다.
+**전부 CC0.** 같은 경로이고 URL은 남아 있지 않다.
 
 | 파일 | 이벤트 | 라이선스 | 길이 | 비고 |
 |---|---|---:|---:|---|
-| `sfx_chicken_squawk.flac` | `NoisePropSquawk` | **미확인** | 2.00초 | |
-| `sfx_fuse_burn.wav` | `NoisePropFuse` | **미확인** | 2.50초 | 8.10초에서 **잘랐다** (아래 참고) |
-| `sfx_firework_bang.wav` | `NoisePropBang` | **미확인** | 7.06초 | **받은 파일이 아니라 만든 파일이다** (아래 참고) |
-| `sfx_bang_far.wav` | `NoiseHeardFar` | **미확인** | 5.00초 | 8m 밖에서 들리는 같은 폭발 |
-| `sfx_throw_charge.ogg` | `ThrowCharge` | **미확인** | 2.59초 | 완충이 1.0초다 |
-| `sfx_throw_release.wav` | `ThrowReleased` | **미확인** | 2.08초 | |
-| `sfx_throw_hit_body.wav` | `ThrowHitBody` | **미확인** | 0.33초 | |
-| `sfx_stunned.wav` | `Stunned` | **미확인** | 2.56초 | 돌 기절이 1.2초다. **돌 명중에만 울린다** |
-| `sfx_ink_splat.wav` | `Blinded` | **미확인** | 0.46초 | |
-| `sfx_trap_place.wav` | `TrapPlaced` | **미확인** | 3.08초 | |
-| `sfx_banana_slip.wav` | `TrapSlip` | **미확인** | 2.28초 | |
-| `sfx_sensor_trip.wav` | `SensorTripped` | **미확인** | 3.40초 | 노출이 2.5초다 |
-| `sfx_lure_eat.wav` | `LureTaken` | **미확인** | 5.00초 | 미끼가 4초다 |
-| `sfx_loot_search.wav` | `LootPickupStart` | **미확인** | 2.28초 | |
-| `sfx_glass_break.mp3` | `GlassBreak` | **미확인** | 0.84초 | |
-| `sfx_case_unlock.wav` | `CaseKeyUnlock` | **미확인** | 2.80초 | 14.23초에서 **잘랐다** (아래 참고) |
+| `sfx_chicken_squawk.flac` | `NoisePropSquawk` | CC0 | 2.00초 | |
+| `sfx_fuse_burn.wav` | `NoisePropFuse` | CC0 | 2.50초 | 8.10초에서 **잘랐다** (아래 참고) |
+| `sfx_firework_bang.wav` | `NoisePropBang` | CC0 | 7.06초 | **받은 파일이 아니라 만든 파일이다** (아래 참고) |
+| `sfx_bang_far.wav` | `NoiseHeardFar` | CC0 | 5.00초 | 8m 밖에서 들리는 같은 폭발 |
+| `sfx_throw_charge.ogg` | `ThrowCharge` | CC0 | 2.59초 | 완충이 1.0초다 |
+| `sfx_throw_release.wav` | `ThrowReleased` | CC0 | 2.08초 | |
+| `sfx_throw_hit_body.wav` | `ThrowHitBody` | CC0 | 0.33초 | |
+| `sfx_stunned.wav` | `Stunned` | CC0 | 2.56초 | 돌 기절이 1.2초다. **돌 명중에만 울린다** |
+| `sfx_ink_splat.wav` | `Blinded` | CC0 | 0.46초 | |
+| `sfx_trap_place.wav` | `TrapPlaced` | CC0 | 3.08초 | |
+| `sfx_banana_slip.wav` | `TrapSlip` | CC0 | 2.28초 | |
+| `sfx_sensor_trip.wav` | `SensorTripped` | CC0 | 3.40초 | 노출이 2.5초다 |
+| `sfx_lure_eat.wav` | `LureTaken` | CC0 | 5.00초 | 미끼가 4초다 |
+| `sfx_loot_search.wav` | `LootPickupStart` | CC0 | 2.28초 | |
+| `sfx_glass_break.mp3` | `GlassBreak` | CC0 | 0.84초 | |
+| `sfx_case_unlock.wav` | `CaseKeyUnlock` | CC0 | 2.80초 | 14.23초에서 **잘랐다** (아래 참고) |
 
 #### 잘라낸 것 둘 — `sfx_case_unlock`과 `sfx_fuse_burn`
 

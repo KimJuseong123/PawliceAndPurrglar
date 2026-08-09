@@ -5,6 +5,14 @@
 ## Unreleased
 
 ### Changed
+- **효과음 37개 전부 CC0(freesound)로 확인해 기록했다.** 2026-08-09에 들어온 27종
+  (C-4~C-11의 11종, C-1~C-3의 16종)이 "미확인"으로 남아 있던 것을 채웠다.
+  `docs/17`과 `THIRD_PARTY_NOTICES.md` **양쪽**을 갱신했고, `SUBMIT-005`에서 효과음
+  항목이 빠졌다 — 남은 것은 BGM과 Tripo 증빙이다.
+  - URL은 세 묶음 어디에도 남아 있지 않다. CC0라 라이선스 문제는 없지만, 교체하거나
+    다시 찾을 때는 처음부터 찾아야 한다
+
+### Changed
 - **`sfx_case_unlock`을 14.2초에서 2.80초로, `sfx_fuse_burn`을 8.10초에서 2.50초로
   잘랐다.** 각각 진열장 여는 시간(`UnlockSeconds` 2.8초)과 도화선(`FireworkFuseSeconds`
   2.5초)에 맞췄다 — 후자는 이제 폭죽이 터지는 순간 정확히 멎는다.
