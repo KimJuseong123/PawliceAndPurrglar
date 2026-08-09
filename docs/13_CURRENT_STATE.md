@@ -1150,6 +1150,10 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-10 | **EC2 배포 실측** (`https://pawlice.duckdns.org`) | 페이지 200, `loader.js` 200, `data.unityweb` `Content-Length 47890094` + `immutable`(= 방금 만든 빌드가 서빙되는 증거), `/health` 200, `http` → 301 `https`. 인증서 검증 통과. 음성 서버가 `127.0.0.1:3000`에만 바인딩된 것을 `ss`로 확인. OpenAI 키는 `/v1/models` 200으로 유효 확인(값은 출력하지 않음) |
+| 2026-08-10 | 배포 전 회귀 (트리 전체 — 배포 작업 + 다른 세션의 동물 명령표 UI) | Edit Mode **330/330**, Play Mode 227개 중 **225 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재) |
+| 2026-08-10 | **빌드에 `cloudProjectId`가 들어갔는지 실측** | `WebGL.data.unityweb`를 압축 해제해 프로젝트 GUID를 **바이트로 찾아** 확인했다. 파일 시각 비교(빌드 01:49 > 설정 00:30)만으로 넘기지 않은 이유는, 직전 빌드가 정확히 그 순서 착오로 **배포본에서만** 실패했기 때문이다 |
+| 2026-08-10 | WebGL 릴리스 빌드가 한 번 조용히 죽었다 | emscripten 링크 단계에서 프로세스가 사라졌다 — `error CS` 0, 예외 없음, 완료 표시 없음. 그 시각 다른 세션도 Unity를 돌리고 있었다. 재실행은 성공했고 **원인은 특정하지 못했다** |
 | 2026-08-10 | 동물 명령 음성 표 추가 · `Ctrl+1~4` 제거 · 배포 nginx 이관 마무리 | 아래 참조. `server` 14/14 통과, `tsc` 통과, `bash -n setup-ec2.sh` 통과, 저장소에 남은 `caddy` 참조 **0건** |
 | 2026-08-10 | HUD 프리팹 재생성 (`Create Role-Aware HUD Prefabs` + `Sync HUD Canvas To Resources`) | `ANIMAL COMMANDS` 패널이 두 프리팹 모두에서 **0건**. 씬은 재생성하지 않았다 — 표는 런타임에 스스로 설치되므로 `GlobalObjectIdHash`를 건드릴 이유가 없다 |
 | 2026-08-10 | 투척 당기기·동물 경계 소리를 로컬 전용으로 바꾼 뒤 | Edit Mode **331/331**, Play Mode 224개 중 **222 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`. 신규 `OnlyThisPlayersThrowWindUpIsHeard`가 XML에서 `Passed` |
