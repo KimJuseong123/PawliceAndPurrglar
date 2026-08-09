@@ -1145,6 +1145,7 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-09 | `sfx_case_unlock`·`sfx_fuse_burn` 자른 뒤 재검증 | Edit Mode **299/299**, Play Mode 217개 중 **215 통과** + 1 실패 + 1 스킵 (`CompanionExpression`, `MODEL-002`). 뱅크 40/43 배정 유지. 길이 경고가 9건에서 **7건**으로 줄었고 `NoisePropFuse`는 목록에서 빠졌다 |
 | 2026-08-09 | Edit Mode·Play Mode (효과음 C-1~C-3 배선 이후) | Edit Mode **299/299**, Play Mode 217개 중 **215 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 뱅크는 43개 중 **40개 클립 배정**, 나머지 3개는 파일 대기 |
 | 2026-08-09 | Windows 빌드 + 호스트·클라이언트 2프로세스 (`-netJoinMode ui`, full 60초) | 예외 0, `[AUDIO]` 경고 0(= `Resources` 폴백이 뱅크를 찾았다), 체포 3회, 양쪽 `Result` 도달, 스폰 링크 2 / 보물 62 |
 | 2026-08-09 | Edit Mode·Play Mode (효과음 C-4~C-11 배선 이후). **트리에 있던 무관한 미커밋 변경(보물 가격 조정)을 따로 치우고 실측했다** | Edit Mode **300/300**, Play Mode 216개 중 **214 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 새 테스트 3건(`SoundVocabularyPlayModeTests`)이 XML에 이름으로 있는 것을 확인했다 |

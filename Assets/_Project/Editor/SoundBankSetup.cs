@@ -135,15 +135,23 @@ namespace PawsAndLoot.Editor
         /// <summary>
         /// Ids whose clip is meant to run past the two-and-a-half second mark.
         ///
-        /// Listed so the length warning below stays worth reading. The countdown
-        /// is the only one here that is not a match-end sting: the recording is a
-        /// whole three-second count rather than one beep, which is why it is
-        /// raised once at the start of the count instead of on every second.
+        /// Listed so the length warning below stays worth reading. A warning that
+        /// is always there is a warning nobody reads.
+        ///
+        /// The countdown recording is a whole three-second count rather than one
+        /// beep, which is why it is raised once at the start of the count instead
+        /// of on every second.
+        ///
+        /// The case unlock is 2.8 seconds because
+        /// <c>LootDisplayCase.UnlockSeconds</c> is 2.8 seconds — it covers an
+        /// action of exactly that length and stops when the case opens. It was
+        /// trimmed to that from 14.2s; the two numbers move together.
         /// </summary>
         private static bool IsLongByDesign(GameSoundId id)
         {
             return GameSoundBank.OutlivesTheScene(id)
-                || id == GameSoundId.CountdownTick;
+                || id == GameSoundId.CountdownTick
+                || id == GameSoundId.CaseKeyUnlock;
         }
 
         /// <summary>
