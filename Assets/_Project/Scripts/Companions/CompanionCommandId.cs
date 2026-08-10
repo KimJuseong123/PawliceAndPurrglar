@@ -21,6 +21,16 @@ namespace PawliceAndPurrglar.Companions
         Steal = 13,
         Hide = 14,
 
+        /// <summary>
+        /// CAT-010. The cat runs at the officer and holds them still for a
+        /// moment. The thief's only way to touch the police directly.
+        ///
+        /// Deliberately the cat's alone. The dog biting would overlap the arrest
+        /// it already performs, and `CoreCommandMatcher` refuses "물어" from the
+        /// police on purpose.
+        /// </summary>
+        Bite = 15,
+
         // Safety commands are shared by both animals and must remain usable
         // when the external voice service is unavailable.
         Stop = 20,

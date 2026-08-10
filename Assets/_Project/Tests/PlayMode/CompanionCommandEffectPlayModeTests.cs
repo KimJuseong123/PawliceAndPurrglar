@@ -1,6 +1,7 @@
 using System.Collections;
 using NUnit.Framework;
 using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Config;
 using PawliceAndPurrglar.Gameplay.Map;
 using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
@@ -293,6 +294,179 @@ namespace PawliceAndPurrglar.Tests.PlayMode
                     Does.StartWith("고양이: "),
                     $"Missing wording for {rejection}.");
             }
+        }
+
+        private sealed class PlayingMatchState : PawliceAndPurrglar.Match.IMatchStateReader
+        {
+            public PawliceAndPurrglar.Match.MatchState CurrentState =>
+                PawliceAndPurrglar.Match.MatchState.Playing;
+
+            public bool IsGameplayActive => true;
+        }
+
+        private static CompanionCommandRequest BiteRequest(float at = 0f)
+        {
+            return new CompanionCommandRequest(
+                CompanionCommandId.Bite,
+                PlayerRole.Thief,
+                CompanionKind.Cat,
+                CompanionCommandInputSource.Voice,
+                at);
+        }
+
+        /// <summary>
+        /// CAT-010, end to end: the order arrives with no target at all — which
+        /// is the only shape voice can produce — and the officer ends up held.
+        ///
+        /// The whole point of the walk is that the hold is not instant, so the
+        /// officer must still be free while the cat is crossing the road.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator BitingRunsAtTheOfficerAndOnlyHoldsThemOnArrival()
+        {
+            var police = new GameObject("Police");
+            police.transform.position = new Vector3(6f, 0f, 0f);
+            StunState stun = police.AddComponent<StunState>();
+
+            var owner = new GameObject("Thief Owner");
+            owner.transform.position = new Vector3(-30f, 0f, 0f);
+
+            CompanionConfig config =
+                ScriptableObject.CreateInstance<CompanionConfig>();
+
+            var catObject = new GameObject("Cat");
+            catObject.SetActive(false);
+            catObject.transform.position = Vector3.zero;
+            CompanionCommandResolver resolver =
+                catObject.AddComponent<CompanionCommandResolver>();
+            resolver.Configure(null, null, police.transform, 26f);
+            CompanionAgent agent = catObject.AddComponent<CompanionAgent>();
+            agent.Configure(
+                CompanionKind.Cat,
+                owner.transform,
+                config,
+                new PlayingMatchState(),
+                null,
+                resolver);
+            catObject.SetActive(true);
+
+            Assert.That(agent.TryAcceptCommand(BiteRequest()), Is.True);
+            Assert.That(
+                agent.CurrentState,
+                Is.EqualTo(CompanionState.MoveToTarget));
+            Assert.That(
+                stun.IsStunned,
+                Is.False,
+                "The officer must not be held the instant the order is given — "
+                + "the run across the street is the counterplay.");
+
+            for (int step = 0; step < 200 && !stun.IsStunned; step++)
+            {
+                agent.Tick(0.05f);
+            }
+
+            Assert.That(
+                stun.IsStunned,
+                Is.True,
+                "The cat reached the officer and nothing held them.");
+            Assert.That(
+                stun.RemainingSeconds,
+                Is.EqualTo(config.BiteStunSeconds).Within(0.001f));
+            Assert.That(
+                agent.LastOutcome,
+                Is.EqualTo(CompanionCommandOutcome.BiteLanded));
+
+            Object.DestroyImmediate(catObject);
+            Object.DestroyImmediate(owner);
+            Object.DestroyImmediate(police);
+            Object.DestroyImmediate(config);
+            yield return null;
+        }
+
+        /// <summary>
+        /// Out of reach is refused where the order is given, rather than sending
+        /// the cat off across the map to return six seconds later having done
+        /// nothing — which reads as a broken command, not a missed one.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator BitingRefusesAnOfficerTooFarToRunAt()
+        {
+            var police = new GameObject("Police");
+            police.transform.position = new Vector3(120f, 0f, 0f);
+
+            var resolverObject = new GameObject("Resolver");
+            CompanionCommandResolver resolver =
+                resolverObject.AddComponent<CompanionCommandResolver>();
+            resolver.Configure(null, null, police.transform, 26f);
+
+            CompanionCommandResolver.Resolution resolution =
+                resolver.Resolve(BiteRequest(), Vector3.zero, 0f);
+
+            Assert.That(resolution.Accepted, Is.False);
+            Assert.That(
+                resolution.Outcome,
+                Is.EqualTo(CompanionCommandOutcome.BiteNoTarget));
+
+            Object.DestroyImmediate(resolverObject);
+            Object.DestroyImmediate(police);
+            yield return null;
+        }
+
+        /// <summary>
+        /// An officer already held is reported as immune rather than as absent.
+        ///
+        /// `StunState` refuses a second hold inside its own guard, and the two
+        /// failures ask the player for opposite things — wait, versus get
+        /// closer. Sharing one outcome would teach neither.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator BitingAnAlreadyHeldOfficerSaysSoInsteadOfSayingNobodyIsThere()
+        {
+            var police = new GameObject("Police");
+            police.transform.position = new Vector3(2f, 0f, 0f);
+            StunState stun = police.AddComponent<StunState>();
+            Assert.That(stun.TryApply(3f), Is.True);
+
+            var owner = new GameObject("Thief Owner");
+            owner.transform.position = new Vector3(-30f, 0f, 0f);
+
+            CompanionConfig config =
+                ScriptableObject.CreateInstance<CompanionConfig>();
+
+            var catObject = new GameObject("Cat");
+            catObject.SetActive(false);
+            catObject.transform.position = Vector3.zero;
+            CompanionCommandResolver resolver =
+                catObject.AddComponent<CompanionCommandResolver>();
+            resolver.Configure(null, null, police.transform, 26f);
+            CompanionAgent agent = catObject.AddComponent<CompanionAgent>();
+            agent.Configure(
+                CompanionKind.Cat,
+                owner.transform,
+                config,
+                new PlayingMatchState(),
+                null,
+                resolver);
+            catObject.SetActive(true);
+
+            Assert.That(agent.TryAcceptCommand(BiteRequest()), Is.True);
+            for (int step = 0;
+                step < 200
+                    && agent.LastOutcome != CompanionCommandOutcome.BiteImmune;
+                step++)
+            {
+                agent.Tick(0.05f);
+            }
+
+            Assert.That(
+                agent.LastOutcome,
+                Is.EqualTo(CompanionCommandOutcome.BiteImmune));
+
+            Object.DestroyImmediate(catObject);
+            Object.DestroyImmediate(owner);
+            Object.DestroyImmediate(police);
+            Object.DestroyImmediate(config);
+            yield return null;
         }
     }
 }

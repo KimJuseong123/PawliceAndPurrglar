@@ -30,7 +30,8 @@ namespace PawliceAndPurrglar.Companions
                 CompanionCommandId.Scout
                     or CompanionCommandId.Distract
                     or CompanionCommandId.Steal
-                    or CompanionCommandId.Hide =>
+                    or CompanionCommandId.Hide
+                    or CompanionCommandId.Bite =>
                     role == PlayerRole.Thief,
                 CompanionCommandId.Stop
                     or CompanionCommandId.FollowOwner
@@ -44,18 +45,41 @@ namespace PawliceAndPurrglar.Companions
         /// <summary>
         /// Commands that are meaningless without a destination. A command that
         /// does not require one must not be refused for lacking it.
+        ///
+        /// The answer has to match what <see cref="CompanionCommandResolver"/>
+        /// actually reads. Three of these said yes while their resolver never
+        /// looked at the request's target at all — TRACK reads the scent trail,
+        /// SCOUT sweeps for the nearest loot, HIDE sweeps for the nearest
+        /// stash. Every one of them was refused here for lacking a target the
+        /// resolver was never going to use.
+        ///
+        /// That made them unreachable by voice specifically, because no voice
+        /// path can supply a target: the deterministic matcher hardcodes
+        /// `targetId: null` (`resolveWithMatcher`) and the model may only name
+        /// something already in `visibleTargets`. "냄새 맡아" — the one command
+        /// whose whole purpose is finding a thief you cannot see — therefore
+        /// needed the thief visible to be allowed to run.
         /// </summary>
         public static bool RequiresTarget(CompanionCommandId commandId)
         {
             return commandId switch
             {
-                CompanionCommandId.Track => true,
+                // Tracks the scent trail from wherever the dog stands. A cold
+                // trail is a gameplay outcome (`TrailMissing`), not a refusal.
+                CompanionCommandId.Track => false,
                 CompanionCommandId.Search => true,
                 CompanionCommandId.Guard => true,
-                CompanionCommandId.Scout => true,
+                // Sweeps its own surroundings and reports what it noticed.
+                CompanionCommandId.Scout => false,
                 CompanionCommandId.Distract => true,
                 CompanionCommandId.Steal => false,
-                CompanionCommandId.Hide => true,
+                // Walks to the nearest free hiding spot.
+                CompanionCommandId.Hide => false,
+                // Runs at the officer, who the resolver already holds a
+                // reference to. Asking the player to name them would put this
+                // command back out of reach of voice for no gain — there is only
+                // ever one officer.
+                CompanionCommandId.Bite => false,
                 // Barking happens where the dog already stands.
                 CompanionCommandId.Bark => false,
                 _ => false
@@ -103,6 +127,14 @@ namespace PawliceAndPurrglar.Companions
                 "HIDE" => kind == CompanionKind.Cat
                     ? CompanionCommandId.Hide
                     : CompanionCommandId.Guard,
+
+                // CAT-010. Never substituted for the dog: a police dog biting
+                // overlaps the arrest and was refused on purpose. An order the
+                // dog cannot carry out resolves to nothing, which the feed
+                // reports, rather than quietly becoming a different command.
+                "BITE" => kind == CompanionKind.Cat
+                    ? CompanionCommandId.Bite
+                    : CompanionCommandId.None,
                 "MOVE_TO_POSITION" => kind == CompanionKind.Dog
                     ? CompanionCommandId.Guard
                     : CompanionCommandId.Scout,
@@ -145,6 +177,22 @@ namespace PawliceAndPurrglar.Companions
             int numberKey) => FromNumberKey(role, numberKey);
 
         /// <summary>
+        /// Whether either animal obeys this command.
+        ///
+        /// The five absolute commands sit at 20 and above, which the validator
+        /// already relies on. Exposed because the on-screen table draws a line
+        /// between an animal's own orders and the shared ones, and it had that
+        /// line hardcoded at four rows — the count was right for both animals
+        /// until CAT-010 gave the cat a fifth of its own, at which point the
+        /// cat's table would have filed "물기" under "either animal obeys these"
+        /// while the dog cannot obey it at all.
+        /// </summary>
+        public static bool IsSharedByBothAnimals(CompanionCommandId commandId)
+        {
+            return (int)commandId >= (int)CompanionCommandId.Stop;
+        }
+
+        /// <summary>
         /// The commands one role can give, in the order they belong on screen:
         /// the four that are this animal's own, then the five either animal
         /// obeys.
@@ -174,6 +222,7 @@ namespace PawliceAndPurrglar.Companions
                     CompanionCommandId.Distract,
                     CompanionCommandId.Steal,
                     CompanionCommandId.Hide,
+                    CompanionCommandId.Bite,
                     CompanionCommandId.Stop,
                     CompanionCommandId.FollowOwner,
                     CompanionCommandId.Stay,
@@ -198,6 +247,7 @@ namespace PawliceAndPurrglar.Companions
                 CompanionCommandId.Distract => "유인",
                 CompanionCommandId.Steal => "지붕/훔치기",
                 CompanionCommandId.Hide => "숨기",
+                CompanionCommandId.Bite => "물기",
                 CompanionCommandId.Stop => "멈추기",
                 CompanionCommandId.FollowOwner => "따라오기",
                 CompanionCommandId.Stay => "기다리기",
@@ -233,6 +283,7 @@ namespace PawliceAndPurrglar.Companions
                 CompanionCommandId.Distract => "\"유인해\" · \"할퀴어\" · \"야옹\"",
                 CompanionCommandId.Steal => "\"훔쳐와\" · \"가져와\" · \"지붕으로\"",
                 CompanionCommandId.Hide => "\"숨어\" · \"은신해\"",
+                CompanionCommandId.Bite => "\"물어\" · \"깨물어\" · \"공격해\"",
                 CompanionCommandId.Stop => "\"멈춰\" · \"그만\"",
                 CompanionCommandId.FollowOwner => "\"따라와\" · \"이리와\"",
                 CompanionCommandId.Stay => "\"기다려\" · \"가만히 있어\"",
@@ -254,6 +305,7 @@ namespace PawliceAndPurrglar.Companions
                 CompanionCommandId.Distract => "DISTRACT",
                 CompanionCommandId.Steal => "ROOF",
                 CompanionCommandId.Hide => "HIDE",
+                CompanionCommandId.Bite => "BITE",
                 CompanionCommandId.Stop => "STOP",
                 CompanionCommandId.FollowOwner => "FOLLOW OWNER",
                 CompanionCommandId.Stay => "STAY",

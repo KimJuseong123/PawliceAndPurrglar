@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PawliceAndPurrglar.Config.CompanionConfig
   moveSpeed: 4.5
   commandCooldownSeconds: 2
+  biteStunSeconds: 1.2

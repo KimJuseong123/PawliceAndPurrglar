@@ -53,7 +53,7 @@ namespace PawliceAndPurrglar.Integration.Voice
         {
             return kind == CompanionKind.Dog
                 ? new[] { "TRACK", "SEARCH", "GUARD", "BARK", "STAY", "STOP" }
-                : new[] { "SCOUT", "DISTRACT", "ROOF", "HIDE", "STAY", "STOP" };
+                : new[] { "SCOUT", "DISTRACT", "ROOF", "HIDE", "BITE", "STAY", "STOP" };
         }
     }
 }

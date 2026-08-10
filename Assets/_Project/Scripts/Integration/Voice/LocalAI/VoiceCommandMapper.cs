@@ -28,6 +28,10 @@ namespace PawliceAndPurrglar.Integration.Voice
                     when kind == CompanionKind.Cat => CompanionCommandId.Steal,
                 "HIDE" or "GUARD_AREA" or "MOVE_TO_POSITION"
                     when kind == CompanionKind.Cat => CompanionCommandId.Hide,
+                // CAT-010. No dog arm: the dog biting overlaps the arrest, so an
+                // officer who says it gets nothing rather than a substitute.
+                "BITE" or "ATTACK"
+                    when kind == CompanionKind.Cat => CompanionCommandId.Bite,
                 "STAY" => CompanionCommandId.Stay,
                 "STOP" => CompanionCommandId.Stop,
                 "FOLLOW_OWNER" => CompanionCommandId.FollowOwner,

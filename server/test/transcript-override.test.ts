@@ -32,7 +32,9 @@ function buildService() {
     ],
     ""
   );
-  return { commands, token: tokens["host-1"] };
+  // A capability is bound to one pet, so the cat's sentences need the cat
+  // owner's token — the police token is refused for `petId: "cat"`.
+  return { commands, token: tokens["host-1"], catToken: tokens["peer-1"] };
 }
 
 async function run(transcript: string, petId: string, token: string, commands: VoiceCommandService) {
@@ -84,5 +86,28 @@ describe("transcript override with stub providers", () => {
     // pipeline still finishes and says so.
     expect(record.transcript).toBe("오늘 날씨가 좋네");
     expect(record.classification).toBeDefined();
+  });
+
+  /**
+   * No context is registered here — exactly the state a Windows build or the
+   * editor is always in, because `RegisterVoiceContext` has an empty body off
+   * WebGL. The fallback used to assume DOG, so a cat player's sentence was
+   * looked up in the dog's vocabulary and came back as no command at all.
+   *
+   * "숨어" is the sharpest probe: it is a cat stem and there is nothing like it
+   * on the dog's list, so a DOG lookup cannot accidentally pass.
+   */
+  it("uses the cat's vocabulary for the cat with no registered context", async () => {
+    const { commands, catToken } = buildService();
+    const record = await run("숨어", "cat", catToken, commands);
+
+    expect(record.classification?.candidates[0]?.intent).toBe("HIDE");
+  });
+
+  it("still uses the dog's vocabulary for the dog", async () => {
+    const { commands, token } = buildService();
+    const record = await run("냄새 맡아", "dog", token, commands);
+
+    expect(record.classification?.candidates[0]?.intent).toBe("CHASE_TARGET");
   });
 });

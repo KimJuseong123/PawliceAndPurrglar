@@ -63,6 +63,26 @@ describe("ExactCommandMatcher.suggest", () => {
     expect(matcher.suggest("숨어", "DOG")?.intent).not.toBe("HIDE");
   });
 
+  /**
+   * CAT-010. "물어" and "물어와" are one jamo apart and mean different things —
+   * bite the officer, fetch the treasure. The near-match pass takes the cheaper
+   * edit, so this holds only while FETCH_OBJECT keeps its 와 and BITE does not.
+   */
+  it("tells the cat's bite apart from its fetch", () => {
+    expect(matcher.suggest("경찰을 물어", "CAT")?.intent).toBe("BITE");
+    expect(matcher.suggest("저거 물어와", "CAT")?.intent).toBe("FETCH_OBJECT");
+    expect(matcher.suggest("깨물어", "CAT")?.intent).toBe("BITE");
+  });
+
+  it("gives the dog no bite at all", () => {
+    // The officer already arrests. A dog that also bit would be a second way to
+    // do the same thing, and `FromIntent` maps BITE for a dog to no command —
+    // so offering it here would produce an intent the game throws away.
+    expect(matcher.suggest("경찰을 물어", "DOG")?.intent).not.toBe("BITE");
+    expect(matcher.vocabularyFor("DOG")).not.toContain("BITE");
+    expect(matcher.vocabularyFor("CAT")).toContain("BITE");
+  });
+
   it("never returns an intent the caller did not allow", () => {
     // The server clamps candidates to `allowedIntents` afterwards, so a
     // suggestion outside the list is silently dropped — better to not make it.
@@ -83,6 +103,7 @@ describe("ExactCommandMatcher.suggest", () => {
     expect(lexicon).toContain("짖");
     expect(matcher.transcriptionPromptFor("DOG")).toContain("짖어");
     expect(matcher.transcriptionPromptFor("CAT")).toContain("숨어");
+    expect(matcher.transcriptionPromptFor("CAT")).toContain("물어");
     // A sentence, not a list — a comma-separated list measurably hurt accuracy.
     expect(matcher.transcriptionPromptFor("DOG")).toContain("상황이다");
     expect(lexicon).toContain("멈춰");
