@@ -1150,6 +1150,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-10 | **배포 실측** (`8c36daf` 빌드) | `web/Build/`의 네 파일이 교체됨(서버 00:28 UTC). 페이지 200, `loader.js` 200, `data.unityweb` `Content-Length 47891270`(로컬 산출물과 바이트까지 일치), `/health` 200. **도장을 실측했다** — `WebGL.data.unityweb`를 gzip 해제해 `+8c36daf`를 바이트로 찾았다. 시각 비교만으로 넘기지 않는다 |
+| 2026-08-10 | 배포 로그인이 `ubuntu`가 아니라 `ec2-user`였다 | 문서와 `upload.ps1` 예시가 둘 다 `ubuntu`였고, 틀린 사용자는 `Permission denied (publickey)`로 돌아온다 — **키가 틀렸다는 말처럼 읽힌다.** 고쳤다 |
 | 2026-08-10 | 접속한 쪽 음성 경로 복구 · 명령 직후 멈춤 · 실내 캡슐 스킨 · 틱 60 이후 | Edit Mode **332/332**, Play Mode 227개 중 **225 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 `VoiceResultRoundTripTests` 2건이 XML에 이름으로 있는 것을 확인 |
 | 2026-08-10 | WebGL 릴리스 빌드 (틱 60이 들어간 `Bootstrap.unity` 포함) | `error CS` 0, `Exiting batchmode successfully` |
 | 2026-08-10 | **접속한 쪽 음성이 왜 안 되는지 코드로 추적** | 굴림·실행은 호스트가 맞는데 결과를 **버리고** 있었다 (`if (!IsServer) return;`). 그리고 호스트가 복제해 보낸 결과를 받는 메서드가 **주석만 있는 빈 몸통**이었다. 두 구멍이 겹쳐서 "처리 중"이 끝나지 않았다. **실제 2인 플레이로는 아직 확인하지 않았다** — 세션과 마이크가 있어야 한다 |
