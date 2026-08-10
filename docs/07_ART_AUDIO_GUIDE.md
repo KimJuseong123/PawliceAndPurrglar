@@ -157,7 +157,7 @@ Assets/_Project/Prefabs/Characters/Police.prefab
 
 현재 프로토타입 우선순위:
 
-1. 숫자키 명령 접수
+1. 음성 명령 접수
 2. 명령 거부
 3. 보물 획득
 4. 판매
