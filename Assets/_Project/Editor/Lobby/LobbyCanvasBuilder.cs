@@ -347,6 +347,7 @@ namespace PawliceAndPurrglar.Editor
             float width = height * aspect;
 
             RectTransform panel = Node("HowToPanel", parent);
+            LobbyHowToPanel presenter;
             Anchor(
                 panel,
                 new Vector2(0.5f, 1f),
@@ -354,7 +355,7 @@ namespace PawliceAndPurrglar.Editor
                 new Vector2(0.5f, 1f),
                 new Vector2(0f, -(CharacterTop + 4f)),
                 new Vector2(width, height));
-            panel.gameObject.AddComponent<LobbyHowToPanel>();
+            presenter = panel.gameObject.AddComponent<LobbyHowToPanel>();
 
             RectTransform pageRoot = Node(
                 LobbyHowToPanel.PagesNodeName,
@@ -379,45 +380,21 @@ namespace PawliceAndPurrglar.Editor
                 LobbyHowToPanel.NextButtonName,
                 1f);
 
-            TMP_Text counter = Text(
-                LobbyHowToPanel.PageLabelName,
-                panel,
-                26f,
-                TextAlignmentOptions.Center);
-            counter.color = Ink;
-            // 1.45x the font size. Under a shorter rect TMP draws nothing at
-            // all rather than clipping, which is a caption that vanishes with
-            // no warning anywhere (`ISSUE-047`).
-            Anchor(
-                (RectTransform)counter.transform,
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -30f),
-                new Vector2(220f, LineBox(26f)));
+            // 카운터와 점은 코드로 만들지 않는다.
+            //
+            // 페이지 그림에 이미 그려져 있다. 한 벌 더 만들면 같은 것이 화면에
+            // 두 번 나오고, 그림 밖에 놓인 쪽이 아래 문구를 덮는다 — 실제로
+            // "초대코드로 만나세요" 위에 큼직한 1 / 3이 겹쳐 나왔다.
+            //
+            // 프레젠터는 둘 다 없어도 동작한다. 나중에 그림에서 빠지면
+            // `LobbyHowToPanel.PageLabelName`·`DotsNodeName` 이름으로 다시
+            // 만들기만 하면 붙는다.
 
-            RectTransform dots = Node(LobbyHowToPanel.DotsNodeName, panel);
-            Anchor(
-                dots,
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -66f),
-                new Vector2(160f, 20f));
-            var row = dots.gameObject.AddComponent<HorizontalLayoutGroup>();
-            row.childAlignment = TextAnchor.MiddleCenter;
-            row.spacing = 14f;
-            row.childForceExpandWidth = false;
-            row.childForceExpandHeight = false;
-
-            for (int page = 0; page < pages.Length; page++)
-            {
-                var dot = NewGraphic<CircleGraphic>($"Dot {page + 1}", dots);
-                var element = dot.gameObject.AddComponent<LayoutElement>();
-                element.preferredWidth = 12f;
-                element.preferredHeight = 12f;
-                dot.raycastTarget = false;
-            }
+            // 저장되는 프리팹이 1페이지 상태로 열리게 한다. 이걸 부르지 않으면
+            // 세 페이지가 전부 켜진 채 저장돼, 마지막 페이지가 앞의 것들을 덮은
+            // 그림이 프리팹의 기본 모습이 된다 — 레이아웃 캡처가 정확히 그렇게
+            // 렌더했다.
+            presenter.Rebind();
         }
 
         /// <summary>

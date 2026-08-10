@@ -58,6 +58,28 @@ namespace PawliceAndPurrglar.UI
         private static readonly Color ActiveDot = new(0.22f, 0.15f, 0.12f, 1f);
         private static readonly Color IdleDot = new(0.22f, 0.15f, 0.12f, 0.28f);
 
+        /// <summary>
+        /// Reads the hierarchy and puts the first page on screen, without
+        /// touching the buttons.
+        ///
+        /// Public because two callers cannot use <see cref="OnEnable"/>: the
+        /// builder, which runs in the editor where lifecycle callbacks do not
+        /// fire without <c>[ExecuteAlways]</c>, and the tests, for the same
+        /// reason. The builder calling this is what makes the saved prefab open
+        /// on page one with the left arrow already gone, instead of every page
+        /// stacked on top of each other — which is how the layout capture
+        /// rendered it, and it reads as the panel being broken.
+        ///
+        /// Deliberately does not wire the buttons. A listener added here would
+        /// be added from an editor script, and those do not survive the scene
+        /// being saved (`ISSUE-017`).
+        /// </summary>
+        public void Rebind()
+        {
+            Resolve();
+            Apply();
+        }
+
         private void OnEnable()
         {
             Resolve();
