@@ -216,6 +216,7 @@ namespace PawliceAndPurrglar.Editor
             BuildBackground(safeArea);
             BuildHeader(safeArea);
             LobbyCharacterView characterView = BuildCharacterArea(safeArea);
+            BuildHowTo(safeArea);
             LobbyControls controls = BuildControlArea(safeArea);
             LobbyActions actions = BuildActionBar(safeArea);
             Node("DebugLayer", safeArea).gameObject.SetActive(false);
@@ -289,6 +290,204 @@ namespace PawliceAndPurrglar.Editor
 
             CreatePaw(header, "LeftPawDecoration", -287f);
             CreatePaw(header, "RightPawDecoration", 287f);
+        }
+
+        /// <summary>
+        /// Where the how-to pages live, one PNG per page.
+        /// </summary>
+        public const string HowToFolder = "Assets/_Project/UI/Lobby/HowTo";
+
+        /// <summary>
+        /// Tallest the panel may be. It sits inside the character band, so this
+        /// is what stops it from reaching the invite code row below.
+        /// </summary>
+        private const float HowToMaxHeight = 404f;
+
+        /// <summary>
+        /// Widest the panel may be. The two team groups are anchored to the
+        /// outer edges; this keeps the panel clear of the characters instead of
+        /// growing into them when a page happens to be a wide image.
+        /// </summary>
+        private const float HowToMaxWidth = 812f;
+
+        private const float HowToArrowSize = 62f;
+
+        /// <summary>
+        /// The paged "how do I play" panel.
+        ///
+        /// Its rect comes from the pages' own aspect ratio rather than a figure
+        /// chosen here. `Preserve Aspect` centres the image inside whatever rect
+        /// it is given, so a rect that does not match the art either floats it
+        /// in empty space or — worse — makes the art shrink to fit the narrower
+        /// axis, which is how a character in this same lobby ended up smaller
+        /// every time its pose changed. The widest page decides, so no page
+        /// shrinks relative to another.
+        ///
+        /// The arrows and the page counter are real controls outside the image,
+        /// not regions pinned on top of it. A finished screenshot with invisible
+        /// buttons at fixed pixel offsets is exactly what this lobby used to be,
+        /// and it came apart at every aspect ratio but the mockup's own
+        /// (`ISSUE-046`).
+        /// </summary>
+        private static void BuildHowTo(RectTransform parent)
+        {
+            Sprite[] pages = LoadHowToPages();
+
+            float aspect = 1.9f;
+            foreach (Sprite page in pages)
+            {
+                aspect = Mathf.Max(
+                    aspect,
+                    page.rect.width / Mathf.Max(1f, page.rect.height));
+            }
+
+            float height = Mathf.Min(
+                HowToMaxHeight,
+                HowToMaxWidth / aspect);
+            float width = height * aspect;
+
+            RectTransform panel = Node("HowToPanel", parent);
+            Anchor(
+                panel,
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -(CharacterTop + 4f)),
+                new Vector2(width, height));
+            panel.gameObject.AddComponent<LobbyHowToPanel>();
+
+            RectTransform pageRoot = Node(
+                LobbyHowToPanel.PagesNodeName,
+                panel);
+            Stretch(pageRoot);
+
+            for (int page = 0; page < pages.Length; page++)
+            {
+                Image art = NewGraphic<Image>($"Page {page + 1}", pageRoot);
+                Stretch((RectTransform)art.transform);
+                art.sprite = pages[page];
+                art.preserveAspect = true;
+                art.raycastTarget = false;
+            }
+
+            CreateHowToArrow(
+                panel,
+                LobbyHowToPanel.PreviousButtonName,
+                -1f);
+            CreateHowToArrow(
+                panel,
+                LobbyHowToPanel.NextButtonName,
+                1f);
+
+            TMP_Text counter = Text(
+                LobbyHowToPanel.PageLabelName,
+                panel,
+                26f,
+                TextAlignmentOptions.Center);
+            counter.color = Ink;
+            // 1.45x the font size. Under a shorter rect TMP draws nothing at
+            // all rather than clipping, which is a caption that vanishes with
+            // no warning anywhere (`ISSUE-047`).
+            Anchor(
+                (RectTransform)counter.transform,
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -30f),
+                new Vector2(220f, LineBox(26f)));
+
+            RectTransform dots = Node(LobbyHowToPanel.DotsNodeName, panel);
+            Anchor(
+                dots,
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -66f),
+                new Vector2(160f, 20f));
+            var row = dots.gameObject.AddComponent<HorizontalLayoutGroup>();
+            row.childAlignment = TextAnchor.MiddleCenter;
+            row.spacing = 14f;
+            row.childForceExpandWidth = false;
+            row.childForceExpandHeight = false;
+
+            for (int page = 0; page < pages.Length; page++)
+            {
+                var dot = NewGraphic<CircleGraphic>($"Dot {page + 1}", dots);
+                var element = dot.gameObject.AddComponent<LayoutElement>();
+                element.preferredWidth = 12f;
+                element.preferredHeight = 12f;
+                dot.raycastTarget = false;
+            }
+        }
+
+        /// <summary>
+        /// One arrow, just outside the panel edge.
+        ///
+        /// Outside rather than overlapping, so it never covers the artwork it is
+        /// paging through, and centred vertically on the image rather than on
+        /// the whole panel — the counter and dots sit below the image and would
+        /// drag the arrows down with them.
+        /// </summary>
+        private static void CreateHowToArrow(
+            RectTransform panel,
+            string name,
+            float direction)
+        {
+            Button arrow = Plate(
+                name,
+                panel,
+                PanelCream,
+                Ink,
+                direction < 0f ? "‹" : "›",
+                40f,
+                4.5f,
+                null,
+                HowToArrowSize);
+            float edge = direction < 0f ? 0f : 1f;
+            Anchor(
+                (RectTransform)arrow.transform,
+                new Vector2(edge, 0.5f),
+                new Vector2(edge, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(direction * (HowToArrowSize * 0.62f), 0f),
+                new Vector2(HowToArrowSize, HowToArrowSize));
+        }
+
+        /// <summary>
+        /// The page images, in order, or a refusal naming what is missing.
+        ///
+        /// Refused rather than skipped. A panel built with zero pages is a panel
+        /// that renders as nothing, and every check that asks "does the how-to
+        /// panel exist" would still pass — this project has already shipped a
+        /// result screen whose labels existed, were present, and drew nothing
+        /// (`ISSUE-050`).
+        /// </summary>
+        private static Sprite[] LoadHowToPages()
+        {
+            var found = new List<Sprite>();
+            for (int page = 1; page <= 16; page++)
+            {
+                string path = $"{HowToFolder}/howto_page{page}.png";
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (sprite == null)
+                {
+                    break;
+                }
+
+                found.Add(sprite);
+            }
+
+            if (found.Count == 0)
+            {
+                throw new FileNotFoundException(
+                    "The lobby how-to pages are missing. Put one PNG per page "
+                    + $"at {HowToFolder}/howto_page1.png, howto_page2.png, ... "
+                    + "and run 'PawliceAndPurrglar/UI/Import Lobby How-To Art' "
+                    + "to import them with the right settings.",
+                    $"{HowToFolder}/howto_page1.png");
+            }
+
+            return found.ToArray();
         }
 
         private static void CreatePaw(RectTransform parent, string name, float x)
