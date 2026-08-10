@@ -215,6 +215,16 @@ URL을 함께 움직일 이유가 없다. `-executeMethod`에는 여전히
 > 결과다. 로그의 `error CS` 개수도 함께 센다. 어셈블리가 나뉘어 있어서 EditMode는
 > 멀쩡히 돌고 PlayMode만 깨져 있을 수 있다.
 
+> **HUD를 코드로 고쳤으면 프리팹을 다시 굽는다.** 게임의 HUD는 씬이 아니라
+> `Resources/HudCanvas.prefab`을 인스턴스화한다 (`HudRuntimeInstaller.InstallForScene`).
+> `BuildRuntimeCanvas`에 무엇을 추가해도 **프리팹을 재생성하지 않으면 게임에는
+> 나타나지 않고**, 정작 `BuildRuntimeCanvas`를 직접 부르는 테스트는 전부 통과한다 —
+> 새로 만든 것을 보고 있으니까. `Create Role-Aware HUD Prefabs`를 돌린 뒤
+> `Assets/Resources/HudCanvas.prefab`에서 그 이름을 찾아본다.
+>
+> 그 실행은 **URP 전역 설정을 더럽힌다.** 끝나면 `git status -- Assets/Settings/`를
+> 보고 되돌린다.
+
 > **에디터 스크립트가 채운 `List`는 씬 저장에서 사라진다.** `onClick.AddListener`와
 > 같은 종류인데 컴포넌트 목록에서도 일어난다. 센서 신호 호 7개를 `AddBar`로
 > 넘겼더니 빌드에서 목록이 비어 있어서 칸수 계산이 아무 일도 하지 않았다

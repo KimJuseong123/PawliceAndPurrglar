@@ -316,7 +316,10 @@ namespace PawliceAndPurrglar.UI
                         : string.Empty,
                     string.Empty,
                     inBag ? UnitPrice(definition) : 0,
-                    inBag ? CoinSprite : null));
+                    inBag ? CoinSprite : null,
+                    tooltip: inBag
+                        ? ItemTooltipCatalog.ForLoot(definition, ResolveIcon(definition))
+                        : default));
             }
 
             TickNotice();
@@ -464,7 +467,10 @@ namespace PawliceAndPurrglar.UI
                 hasProp ? _propCarrier.GetSlotQuantity(index) : 0,
                 _propCarrier != null && _propCarrier.SelectedSlot == index && hasProp,
                 !hasProp,
-                hasProp && icon == null ? PropGlyph(kind) : string.Empty));
+                hasProp && icon == null ? PropGlyph(kind) : string.Empty,
+                tooltip: hasProp
+                    ? ItemTooltipCatalog.ForProp(kind, icon)
+                    : default));
         }
 
         private int CountOwned(ThrowableKind kind)
@@ -654,7 +660,10 @@ namespace PawliceAndPurrglar.UI
                 hasProp && icon == null ? PropGlyph(kind) : string.Empty,
                 string.Empty,
                 0,
-                null));
+                null,
+                tooltip: hasProp
+                    ? ItemTooltipCatalog.ForProp(kind, icon)
+                    : default));
         }
 
         private static Sprite PropIcon(ThrowableKind kind)

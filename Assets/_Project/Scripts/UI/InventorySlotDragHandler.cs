@@ -39,6 +39,16 @@ namespace PawliceAndPurrglar.UI
         private RoleAwareHudController _controller;
         private GameObject _ghost;
 
+        /// <summary>
+        /// The shared hover tooltip, so a drag can put it away.
+        ///
+        /// The event system keeps raising enter and exit through a drag, so
+        /// without this the tooltip describes every cell the cursor crosses while
+        /// the player's own item is under the hand — the panel would sit on top
+        /// of the thing being dragged and say the wrong item's name.
+        /// </summary>
+        private ItemTooltipView _tooltip;
+
         public SlotGroup Group => group;
         public int Index => index;
 
@@ -64,6 +74,7 @@ namespace PawliceAndPurrglar.UI
                 return;
             }
 
+            ResolveTooltip()?.SetDragging(true);
             _ghost = BuildGhost(FindIcon());
             MoveGhost(eventData);
         }
@@ -75,6 +86,9 @@ namespace PawliceAndPurrglar.UI
 
         public void OnEndDrag(PointerEventData eventData)
         {
+            // Released before the drop is resolved, so a cell the cursor is still
+            // resting on can describe itself again on the next hover.
+            ResolveTooltip()?.SetDragging(false);
             if (_ghost != null)
             {
                 Destroy(_ghost);
@@ -166,6 +180,16 @@ namespace PawliceAndPurrglar.UI
             return null;
         }
 
+        private ItemTooltipView ResolveTooltip()
+        {
+            if (_tooltip == null)
+            {
+                _tooltip = ItemTooltipView.Find(this);
+            }
+
+            return _tooltip;
+        }
+
         private RoleAwareHudController ResolveController()
         {
             if (_controller == null)
@@ -178,6 +202,14 @@ namespace PawliceAndPurrglar.UI
 
         private void OnDisable()
         {
+            // A cell switched off mid-drag never gets its OnEndDrag, and a
+            // suppression flag left standing would mean no tooltip for the rest
+            // of the match.
+            if (_tooltip != null)
+            {
+                _tooltip.SetDragging(false);
+            }
+
             if (_ghost != null)
             {
                 Destroy(_ghost);

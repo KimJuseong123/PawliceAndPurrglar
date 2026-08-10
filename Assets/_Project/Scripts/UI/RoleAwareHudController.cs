@@ -94,6 +94,9 @@ namespace PawliceAndPurrglar.UI
         // of them, and a second screen per container kind would be a second
         // place for "the icon moved but the item did not".
         private ISlotContainer activeContainer;
+
+        /// <summary>The canvas's one hover tooltip, found on first use.</summary>
+        private ItemTooltipView itemTooltip;
         private ToolCarrier exchangeCarrier;
         private bool inventoryOpen;
         private bool catExchangeOpen;
@@ -221,6 +224,7 @@ namespace PawliceAndPurrglar.UI
             }
 
             ClearSlotListeners();
+            HideItemTooltip();
             GameplayInputRouter.SetGameplayInputSuppressed(false);
         }
 
@@ -438,6 +442,7 @@ namespace PawliceAndPurrglar.UI
                 inventoryPanel.SetActive(open);
             }
 
+            HideItemTooltip();
             RefreshInputSuppression();
         }
 
@@ -500,7 +505,29 @@ namespace PawliceAndPurrglar.UI
                 catExchangePanel.SetActive(open);
             }
 
+            HideItemTooltip();
             RefreshInputSuppression();
+        }
+
+        /// <summary>
+        /// Puts the hover tooltip away when a panel opens or closes.
+        ///
+        /// Called on both edges, not just the closing one. A panel appearing
+        /// under the cursor gets no pointer-enter either, so a tooltip left over
+        /// from the bag would sit on top of the cat's bag describing a cell that
+        /// has moved.
+        ///
+        /// Found rather than assigned, and looked up once. It is the only HUD
+        /// reference not threaded through <c>Configure</c> — see the note where
+        /// it is built.
+        /// </summary>
+        private void HideItemTooltip()
+        {
+            itemTooltip ??= GetComponentInChildren<ItemTooltipView>(true);
+            if (itemTooltip != null)
+            {
+                itemTooltip.HideImmediately();
+            }
         }
 
         private void RefreshInputSuppression()
@@ -862,7 +889,8 @@ namespace PawliceAndPurrglar.UI
                     0f,
                     hasItem && GetItemIcon(kind) == null
                         ? GetItemGlyph(kind)
-                        : string.Empty);
+                        : string.Empty,
+                    hasItem ? BuildPropTooltip(kind) : default);
                 quickSlots[index]?.Bind(model);
             }
 
@@ -935,8 +963,35 @@ namespace PawliceAndPurrglar.UI
                     string.Empty,
                     0,
                     null,
-                    isNew));
+                    isNew,
+                    hasItem
+                        ? BuildPropTooltip(kind)
+                        : hasLoot
+                            ? BuildLootTooltip(definition)
+                            : default));
             }
+        }
+
+        /// <summary>
+        /// What the hover tooltip should say about a prop, and about a piece of
+        /// treasure.
+        ///
+        /// Two lines rather than one, because the two item layers are genuinely
+        /// separate: a prop is an enum the whole game switches on, and a piece of
+        /// treasure is an authored asset. The words for both are decided in
+        /// <see cref="ItemTooltipCatalog"/> — this only picks which of the two is
+        /// being asked about, and hands over the icon it already resolved for the
+        /// cell so the panel and the cell cannot disagree about what it looks
+        /// like.
+        /// </summary>
+        private ItemTooltipContent BuildPropTooltip(ThrowableKind kind)
+        {
+            return ItemTooltipCatalog.ForProp(kind, GetItemIcon(kind));
+        }
+
+        private ItemTooltipContent BuildLootTooltip(LootDefinition definition)
+        {
+            return ItemTooltipCatalog.ForLoot(definition, GetLootIcon(definition));
         }
 
         /// <summary>
@@ -1191,7 +1246,12 @@ namespace PawliceAndPurrglar.UI
                         ? ThrowableCatalog.GetDisplayName(kind)
                         : hasLoot
                             ? definition.DisplayName
-                            : string.Empty));
+                            : string.Empty,
+                    tooltip: hasItem
+                        ? BuildPropTooltip(kind)
+                        : hasLoot
+                            ? BuildLootTooltip(definition)
+                            : default));
             }
 
             for (int index = 0; index < exchangeCatSlots.Length; index++)
@@ -1209,7 +1269,8 @@ namespace PawliceAndPurrglar.UI
                     hasItem && GetItemIcon(kind) == null
                         ? GetItemGlyph(kind)
                         : string.Empty,
-                    hasItem ? ThrowableCatalog.GetDisplayName(kind) : string.Empty));
+                    hasItem ? ThrowableCatalog.GetDisplayName(kind) : string.Empty,
+                    tooltip: hasItem ? BuildPropTooltip(kind) : default));
             }
         }
 
@@ -2328,6 +2389,19 @@ namespace PawliceAndPurrglar.UI
             MinimapHudController minimap = BuildMinimap(canvasObject.transform);
             BuildSensorRadar(canvasObject.transform, canvasObject);
 
+            // Last, so it is the last sibling and therefore drawn over every
+            // panel it can describe. One for the whole canvas: the bag, the four
+            // quick slots, the cat's bag and the merchant's grid all share it,
+            // and it re-claims the top when it appears because the merchant's
+            // window is added after this.
+            //
+            // Not handed to Configure. That signature is called by the prefab
+            // builder, by the tests and by the scene, and this is the one thing
+            // in the HUD the controller can find for itself without risking the
+            // stale-serialized-reference problem that emptied a bar list in
+            // ISSUE-031.
+            BuildItemTooltip(canvasObject.transform);
+
             var controller = canvasObject.AddComponent<RoleAwareHudController>();
             controller.Configure(
                 matchTimer,
@@ -2416,7 +2490,180 @@ namespace PawliceAndPurrglar.UI
             selected.transform.SetAsFirstSibling();
             var view = slot.AddComponent<QuickSlotView>();
             view.Configure(key, quantity, icon, selected, disabled, cooldown, glyph);
+
+            // The panel behind the slot is an Image, so it is already something
+            // the pointer can enter. Nothing else needs configuring — the trigger
+            // finds the view beside it and the tooltip on the canvas.
+            slot.AddComponent<ItemSlotTooltipTrigger>();
             return view;
+        }
+
+        /// <summary>
+        /// Panel width. Height follows the text.
+        /// </summary>
+        internal const float TooltipWidth = 320f;
+
+        /// <summary>
+        /// The tooltip's icon, at the size the bag draws one.
+        /// </summary>
+        private const float TooltipIconSize = 46f;
+
+        /// <summary>
+        /// How much taller than its font a text rect has to be.
+        ///
+        /// TMP draws nothing at all when a rect is shorter than one line and the
+        /// overflow mode is Ellipsis — not a clipped line, nothing (ISSUE-047).
+        /// The labels here are set to Overflow so that cannot happen, and the
+        /// rects are still given the headroom so a wrapped second line has
+        /// somewhere to go.
+        /// </summary>
+        private const float MinimumTextHeightFactor = 1.45f;
+
+        /// <summary>
+        /// The one hover tooltip for the whole canvas.
+        ///
+        /// A holder that stretches over the canvas but draws nothing, and a panel
+        /// child that is switched off until it is needed. The split is what lets
+        /// the hover delay be counted while nothing is visible — a timer on the
+        /// panel would only run once the panel was already up.
+        ///
+        /// Sized by a vertical layout and a content fitter rather than by hand,
+        /// because the description is the one line whose length is not known in
+        /// advance. Every graphic in it has raycasts off: a tooltip the pointer
+        /// can hit steals the exit event for the cell underneath it, and then it
+        /// flickers as fast as the mouse moves.
+        /// </summary>
+        private static ItemTooltipView BuildItemTooltip(Transform parent)
+        {
+            var holderObject = new GameObject("Item Tooltip", typeof(RectTransform));
+            holderObject.transform.SetParent(parent, false);
+            Stretch(holderObject.GetComponent<RectTransform>());
+
+            GameObject panel = CreatePanel(
+                holderObject.transform,
+                "Panel",
+                new Vector2(TooltipWidth, 132f));
+            Skin(
+                panel,
+                HudPanelSkin.Shape.Window,
+                HudSpriteLibrary.PanelFill,
+                HudSpriteLibrary.Border,
+                10,
+                2);
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+
+            // Pivoted top-left, which is what the positioning maths assumes: the
+            // anchored position is the corner nearest the cursor, so flipping
+            // sides is one subtraction rather than a second set of rules.
+            panelRect.pivot = new Vector2(0f, 1f);
+            panelRect.sizeDelta = new Vector2(TooltipWidth, 132f);
+            panel.GetComponent<Image>().raycastTarget = false;
+
+            var fade = panel.AddComponent<CanvasGroup>();
+            fade.alpha = 0f;
+            fade.blocksRaycasts = false;
+            fade.interactable = false;
+
+            var column = panel.AddComponent<VerticalLayoutGroup>();
+            column.padding = new RectOffset(14, 14, 12, 12);
+            column.spacing = 6f;
+            column.childAlignment = TextAnchor.UpperLeft;
+            column.childControlWidth = true;
+            column.childControlHeight = true;
+            column.childForceExpandWidth = true;
+            column.childForceExpandHeight = false;
+
+            var fitter = panel.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var headerObject = new GameObject("Header", typeof(RectTransform));
+            headerObject.transform.SetParent(panel.transform, false);
+            var headerRow = headerObject.AddComponent<HorizontalLayoutGroup>();
+            headerRow.spacing = 12f;
+            headerRow.childAlignment = TextAnchor.UpperLeft;
+            headerRow.childControlWidth = true;
+            headerRow.childControlHeight = true;
+            headerRow.childForceExpandWidth = false;
+            headerRow.childForceExpandHeight = false;
+            LayoutElement headerElement = headerObject.AddComponent<LayoutElement>();
+            headerElement.minHeight = TooltipIconSize;
+
+            Image icon = CreateImage(headerObject.transform, "Icon", Color.white);
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+            LayoutElement iconElement = icon.gameObject.AddComponent<LayoutElement>();
+            iconElement.minWidth = TooltipIconSize;
+            iconElement.minHeight = TooltipIconSize;
+            iconElement.preferredWidth = TooltipIconSize;
+            iconElement.preferredHeight = TooltipIconSize;
+
+            var titlesObject = new GameObject("Titles", typeof(RectTransform));
+            titlesObject.transform.SetParent(headerObject.transform, false);
+            var titleColumn = titlesObject.AddComponent<VerticalLayoutGroup>();
+            titleColumn.spacing = 2f;
+            titleColumn.childAlignment = TextAnchor.UpperLeft;
+            titleColumn.childControlWidth = true;
+            titleColumn.childControlHeight = true;
+            titleColumn.childForceExpandWidth = true;
+            titleColumn.childForceExpandHeight = false;
+            LayoutElement titlesElement = titlesObject.AddComponent<LayoutElement>();
+            titlesElement.flexibleWidth = 1f;
+
+            TMP_Text name = BuildTooltipLabel(
+                titlesObject.transform,
+                "Item Name",
+                22f,
+                HudSpriteLibrary.Gold);
+            TMP_Text category = BuildTooltipLabel(
+                titlesObject.transform,
+                "Category",
+                15f,
+                new Color(0.62f, 0.78f, 0.88f, 0.88f));
+            TMP_Text description = BuildTooltipLabel(
+                panel.transform,
+                "Description",
+                16f,
+                new Color(0.93f, 0.96f, 0.98f, 0.96f));
+            TMP_Text usage = BuildTooltipLabel(
+                panel.transform,
+                "Usage Hint",
+                14f,
+                HudSpriteLibrary.Accent);
+
+            var view = holderObject.AddComponent<ItemTooltipView>();
+            view.Configure(
+                panelRect,
+                fade,
+                icon,
+                name,
+                category,
+                description,
+                usage);
+            panel.SetActive(false);
+            return view;
+        }
+
+        private static TMP_Text BuildTooltipLabel(
+            Transform parent,
+            string name,
+            float fontSize,
+            Color color)
+        {
+            TMP_Text label = CreateText(
+                parent,
+                name,
+                string.Empty,
+                fontSize,
+                TextAlignmentOptions.TopLeft);
+            label.color = color;
+            label.overflowMode = TextOverflowModes.Overflow;
+            label.enableWordWrapping = true;
+            LayoutElement element = label.gameObject.AddComponent<LayoutElement>();
+            element.minHeight = fontSize * MinimumTextHeightFactor;
+            return label;
         }
 
         private static MicrophoneStatusView BuildMicrophone(
@@ -3202,6 +3449,14 @@ namespace PawliceAndPurrglar.UI
                 price,
                 priceIcon,
                 newBadge);
+
+            // Every cell built through here gets one, which is what makes the bag,
+            // the cat's bag and the merchant's grid behave the same without any of
+            // them knowing the tooltip exists. It has nothing to configure: a
+            // serialized reference an editor script writes into a prefab is the
+            // thing that comes back from disk empty (ISSUE-031), so it resolves
+            // the view beside it and the panel on its canvas at runtime.
+            slot.AddComponent<ItemSlotTooltipTrigger>();
             return view;
         }
 

@@ -434,6 +434,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4024672706934083897}
   - component: {fileID: 2617226499593243085}
+  - component: {fileID: 5005307066592660367}
   m_Layer: 0
   m_Name: InventorySlotView
   m_TagString: Untagged
@@ -491,6 +492,18 @@ MonoBehaviour:
   selectedFrame: {fileID: 482028680126258265}
   disabledOverlay: {fileID: 1681049016766033925}
   newBadge: {fileID: 0}
+--- !u!114 &5005307066592660367
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3432952534175382391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e114ab0c638cc3e4ca00ee25cc992c99, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.ItemSlotTooltipTrigger
 --- !u!1 &4538377470217378557
 GameObject:
   m_ObjectHideFlags: 0

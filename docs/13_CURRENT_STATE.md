@@ -1150,6 +1150,9 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-10 | 아이템 Hover 툴팁 (`UI-023`) 추가 후 | Edit Mode **355/355**, Play Mode 235개 중 **233 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 21건이 XML에 이름으로 있고 전부 `Passed` — Edit Mode 13건(`ItemTooltipTests` 11 + HUD 프리팹 계약 2), Play Mode 8건(`ItemTooltipPlayModeTests`) |
+| 2026-08-10 | HUD 프리팹 재생성 (`Create Role-Aware HUD Prefabs`) | 툴팁이 두 프리팹에 들어간 것을 확인. **재생성이 필수다** — 게임의 HUD는 `Resources/HudCanvas.prefab`을 인스턴스화하므로, 코드만 고치면 툴팁이 없는 낡은 프리팹이 계속 뜬다. 씬은 재생성하지 않았다(`GlobalObjectIdHash` 무변경). URP 전역 설정이 배치 실행에 더러워진 것은 되돌렸다 |
+| 2026-08-10 | 툴팁을 **손으로 호버해 보지는 않았다** | 위치·clamp·가독성·레이캐스트는 Play Mode 8건이 잰다. 실제 마우스로 25칸을 훑어 본 것은 아니다 |
 | 2026-08-10 | **배포 실측** (`8c36daf` 빌드) | `web/Build/`의 네 파일이 교체됨(서버 00:28 UTC). 페이지 200, `loader.js` 200, `data.unityweb` `Content-Length 47891270`(로컬 산출물과 바이트까지 일치), `/health` 200. **도장을 실측했다** — `WebGL.data.unityweb`를 gzip 해제해 `+8c36daf`를 바이트로 찾았다. 시각 비교만으로 넘기지 않는다 |
 | 2026-08-10 | 배포 로그인이 `ubuntu`가 아니라 `ec2-user`였다 | 문서와 `upload.ps1` 예시가 둘 다 `ubuntu`였고, 틀린 사용자는 `Permission denied (publickey)`로 돌아온다 — **키가 틀렸다는 말처럼 읽힌다.** 고쳤다 |
 | 2026-08-10 | 접속한 쪽 음성 경로 복구 · 명령 직후 멈춤 · 실내 캡슐 스킨 · 틱 60 이후 | Edit Mode **332/332**, Play Mode 227개 중 **225 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 `VoiceResultRoundTripTests` 2건이 XML에 이름으로 있는 것을 확인 |

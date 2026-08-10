@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace PawliceAndPurrglar.UI
 {
-    public sealed class InventorySlotView : MonoBehaviour
+    public sealed class InventorySlotView : MonoBehaviour, IItemTooltipContentSource
     {
         [SerializeField] private TMP_Text keyLabel;
         [SerializeField] private TMP_Text itemNameLabel;
@@ -36,6 +36,29 @@ namespace PawliceAndPurrglar.UI
         /// broken rather than as unfinished art.
         /// </summary>
         public bool HasContent { get; private set; }
+
+        /// <summary>
+        /// What the shared tooltip says while the cursor is on this cell.
+        ///
+        /// Stored from the last bind rather than worked out here. The cell knows
+        /// what it is drawing and nothing about what a banana does, which is the
+        /// only arrangement in which the same prop cannot be described two ways
+        /// in two panels.
+        /// </summary>
+        private ItemTooltipContent tooltip;
+
+        /// <summary>
+        /// Refused for an empty cell, and for one holding something with no
+        /// words yet. Not keyed on <see cref="HasContent"/>: the merchant's
+        /// window draws the officer's own props as deliberately unusable cells,
+        /// and "you cannot sell this" is exactly when a player wants to know what
+        /// it is.
+        /// </summary>
+        public bool TryGetTooltipContent(out ItemTooltipContent content)
+        {
+            content = tooltip;
+            return content.HasContent;
+        }
 
         public void SetCellIndex(int index)
         {
@@ -69,6 +92,7 @@ namespace PawliceAndPurrglar.UI
         public void Bind(InventorySlotViewModel model)
         {
             HasContent = !model.Disabled;
+            tooltip = model.Tooltip;
             if (keyLabel != null) keyLabel.text = model.KeyLabel;
             if (itemNameLabel != null)
             {

@@ -244,6 +244,11 @@ namespace PawliceAndPurrglar.Editor
                 itemName,
                 price,
                 priceIcon);
+
+            // Same as the cells the HUD builder makes. This prefab is the
+            // reference copy, and a reference copy that behaves differently from
+            // the thing it documents is worse than none.
+            root.AddComponent<ItemSlotTooltipTrigger>();
             return root;
         }
 

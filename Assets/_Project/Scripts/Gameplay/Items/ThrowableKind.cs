@@ -504,6 +504,105 @@ namespace PawliceAndPurrglar.Gameplay.Items
         }
 
         /// <summary>
+        /// What kind of thing this is, for the hover tooltip.
+        ///
+        /// Composed from the two facts that already exist — who owns it
+        /// (<see cref="GetOwner"/>) and how it is used (<see cref="GetUse"/>) —
+        /// rather than written out per kind, so a prop cannot be labelled the
+        /// officer's here and the thief's at the pickup point.
+        ///
+        /// The six results are held as static strings rather than built on
+        /// demand: the HUD rebinds twenty-five cells every frame, and a tooltip
+        /// that allocated a string per cell per frame would be a per-frame cost
+        /// for a panel nobody is looking at.
+        /// </summary>
+        public static string GetCategoryLabel(ThrowableKind kind)
+        {
+            bool thrown = GetUse(kind) == ThrowableUse.Thrown;
+            return GetOwner(kind) switch
+            {
+                PlayerRole.Police => thrown
+                    ? PoliceThrownCategory
+                    : PolicePlacedCategory,
+                PlayerRole.Thief => thrown
+                    ? ThiefThrownCategory
+                    : ThiefPlacedCategory,
+                _ => thrown ? SharedThrownCategory : SharedPlacedCategory
+            };
+        }
+
+        /// <summary>
+        /// One line on what the prop does, for the hover tooltip.
+        ///
+        /// The seconds and the metres are interpolated from the constants above
+        /// once, at type load, so the sentence cannot say three seconds while
+        /// <see cref="GlueHoldSeconds"/> says four. Written here beside the
+        /// durations rather than in the UI for the same reason
+        /// <see cref="GetDisplayName"/> is: a list of prop descriptions living
+        /// in a view is a list that drifts out of step with the enum.
+        /// </summary>
+        public static string GetShortDescription(ThrowableKind kind)
+        {
+            return kind switch
+            {
+                ThrowableKind.Banana => BananaDescription,
+                ThrowableKind.GlueTrap => GlueTrapDescription,
+                ThrowableKind.SensorLight => SensorLightDescription,
+                ThrowableKind.TunaCan => TunaCanDescription,
+                ThrowableKind.DogTreat => DogTreatDescription,
+                ThrowableKind.RubberChicken => RubberChickenDescription,
+                ThrowableKind.Firework => FireworkDescription,
+                ThrowableKind.FrozenOctopus => FrozenOctopusDescription,
+                _ => RockDescription
+            };
+        }
+
+        /// <summary>
+        /// How to use it, in the player's own controls.
+        ///
+        /// Both bindings, because <c>ToolUseInput</c> accepts both and a hint
+        /// that named only the mouse would be wrong for the hand already on the
+        /// keyboard. Thrown and placed props say different words for the same
+        /// press: "throw" and "put down" are what the player is doing, and a
+        /// single "use" would describe neither.
+        /// </summary>
+        public static string GetUsageHint(ThrowableKind kind)
+        {
+            return GetUse(kind) == ThrowableUse.Thrown
+                ? ThrownUsageHint
+                : PlacedUsageHint;
+        }
+
+        private const string SharedThrownCategory = "공용 · 투척 아이템";
+        private const string SharedPlacedCategory = "공용 · 설치 아이템";
+        private const string PoliceThrownCategory = "경찰 전용 · 투척 아이템";
+        private const string PolicePlacedCategory = "경찰 전용 · 설치 아이템";
+        private const string ThiefThrownCategory = "도둑 전용 · 투척 아이템";
+        private const string ThiefPlacedCategory = "도둑 전용 · 설치 아이템";
+
+        private const string ThrownUsageHint = "좌클릭 · F : 던지기";
+        private const string PlacedUsageHint = "좌클릭 · F : 설치";
+
+        private static readonly string RockDescription =
+            $"맞은 상대를 {RockStunSeconds:0.#}초 동안 기절시킵니다.";
+        private static readonly string BananaDescription =
+            $"바닥에 두면 밟은 상대가 {BananaSlipSeconds:0.#}초 동안 미끄러집니다.";
+        private static readonly string GlueTrapDescription =
+            $"밟은 상대를 {GlueHoldSeconds:0.#}초 동안 붙잡아 둡니다.";
+        private static readonly string SensorLightDescription =
+            $"지나가는 상대를 {RevealSeconds:0.#}초 동안 환하게 드러냅니다.";
+        private static readonly string TunaCanDescription =
+            $"도둑의 고양이를 {LureSeconds:0.#}초 동안 불러 세웁니다.";
+        private static readonly string DogTreatDescription =
+            $"경찰의 강아지를 {LureSeconds:0.#}초 동안 불러 세웁니다.";
+        private static readonly string RubberChickenDescription =
+            $"누가 지나가면 {NoiseRadiusMeters:0}m 밖까지 들리는 소리를 냅니다.";
+        private static readonly string FireworkDescription =
+            $"{FireworkFuseSeconds:0.#}초 뒤에 스스로 터져 큰 소리를 냅니다.";
+        private static readonly string FrozenOctopusDescription =
+            $"맞은 상대의 시야를 {BlindSeconds:0.#}초 동안 가립니다.";
+
+        /// <summary>
         /// Model stem under <c>Assets/_Project/Art/Props</c>, or null for a prop
         /// whose art has not been made.
         ///

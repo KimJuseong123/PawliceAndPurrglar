@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace PawliceAndPurrglar.UI
 {
-    public sealed class QuickSlotView : MonoBehaviour
+    public sealed class QuickSlotView : MonoBehaviour, IItemTooltipContentSource
     {
         [SerializeField] private TMP_Text keyLabel;
         [SerializeField] private TMP_Text quantityLabel;
@@ -33,8 +33,22 @@ namespace PawliceAndPurrglar.UI
             cooldownOverlay = configuredCooldownOverlay;
         }
 
+        /// <summary>
+        /// What the shared tooltip says while the cursor is on this slot, from
+        /// the last bind. Same arrangement as the bag's cells: the slot carries
+        /// finished words and decides nothing about the prop itself.
+        /// </summary>
+        private ItemTooltipContent tooltip;
+
+        public bool TryGetTooltipContent(out ItemTooltipContent content)
+        {
+            content = tooltip;
+            return content.HasContent;
+        }
+
         public void Bind(QuickSlotViewModel model)
         {
+            tooltip = model.Tooltip;
             if (keyLabel != null) keyLabel.text = model.KeyLabel;
             if (quantityLabel != null)
             {

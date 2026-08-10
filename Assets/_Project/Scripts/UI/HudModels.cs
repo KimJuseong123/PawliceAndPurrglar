@@ -17,7 +17,8 @@ namespace PawliceAndPurrglar.UI
             bool selected,
             bool disabled,
             float cooldown01,
-            string iconGlyph = "")
+            string iconGlyph = "",
+            ItemTooltipContent tooltip = default)
         {
             KeyLabel = keyLabel;
             Icon = icon;
@@ -26,6 +27,7 @@ namespace PawliceAndPurrglar.UI
             Disabled = disabled;
             Cooldown01 = Mathf.Clamp01(cooldown01);
             IconGlyph = iconGlyph ?? string.Empty;
+            Tooltip = tooltip;
         }
 
         public string KeyLabel { get; }
@@ -35,6 +37,16 @@ namespace PawliceAndPurrglar.UI
         public bool Disabled { get; }
         public float Cooldown01 { get; }
         public string IconGlyph { get; }
+
+        /// <summary>
+        /// What the hover tooltip should say about whatever is in this slot.
+        ///
+        /// Carried with the rest of the binding rather than looked up by the
+        /// tooltip, so the words come from the same pass that decided the icon
+        /// and the count. Default for an empty slot, and an empty tooltip means
+        /// no panel at all.
+        /// </summary>
+        public ItemTooltipContent Tooltip { get; }
     }
 
     public readonly struct AnimalCommandShortcutViewModel
@@ -157,8 +169,10 @@ namespace PawliceAndPurrglar.UI
             string itemName = "",
             int price = 0,
             Sprite priceIcon = null,
-            bool isNew = false)
+            bool isNew = false,
+            ItemTooltipContent tooltip = default)
         {
+            Tooltip = tooltip;
             KeyLabel = keyLabel;
             Icon = icon;
             Quantity = quantity;
@@ -185,6 +199,12 @@ namespace PawliceAndPurrglar.UI
         /// Whether to flag this cell as the newest thing in the bag.
         /// </summary>
         public bool IsNew { get; }
+
+        /// <summary>
+        /// What the hover tooltip should say about whatever is in this cell.
+        /// Default for an empty cell, and an empty tooltip means no panel.
+        /// </summary>
+        public ItemTooltipContent Tooltip { get; }
 
         public bool HasPrice => Price > 0;
     }

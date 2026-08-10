@@ -199,6 +199,175 @@ namespace PawliceAndPurrglar.Tests.EditMode
             Assert.That(catExchangeBackground.raycastTarget, Is.True);
         }
 
+        /// <summary>
+        /// The shared hover tooltip, as the prefab holds it.
+        ///
+        /// Every one of these is a way it has failed or could fail silently: more
+        /// than one instance and the cells fight over which is theirs; a cell
+        /// without a trigger and that cell simply never explains itself; a
+        /// graphic that can be raycast and the panel steals the exit event for
+        /// the cell it is describing; a text rect shorter than its own line and
+        /// TMP draws nothing at all (<c>ISSUE-047</c>). None of them logs
+        /// anything and none of them is visible in a screenshot of the closed
+        /// bag.
+        /// </summary>
+        [Test]
+        public void HudPrefabCarriesOneSharedHoverTooltipThatCannotBeRaycast()
+        {
+            GameObject prefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
+            Assert.That(prefab, Is.Not.Null, HudPrefabPath);
+
+            ItemTooltipView[] tooltips =
+                prefab.GetComponentsInChildren<ItemTooltipView>(true);
+            Assert.That(
+                tooltips,
+                Has.Length.EqualTo(1),
+                "One tooltip for the whole canvas, not one per slot.");
+
+            Transform holder = prefab.transform.Find("Item Tooltip");
+            Assert.That(holder, Is.Not.Null);
+            Assert.That(
+                holder.GetComponent<Image>(),
+                Is.Null,
+                "The holder must draw nothing; only the panel inside it does.");
+            // After everything it has to cover. Sibling order is draw order, and a
+            // tooltip built before the bag would be drawn underneath it — which
+            // looks like the panel never appearing at all. Not asserted as the
+            // very last child, because a presenter that installs itself on enable
+            // may append one after this; the view re-claims the top when it
+            // appears for exactly that reason.
+            foreach (string covered in new[] { "Inventory", "Cat Exchange", "Quick Slots" })
+            {
+                Transform panelBelow = prefab.transform.Find(covered);
+                Assert.That(panelBelow, Is.Not.Null, covered);
+                Assert.That(
+                    holder.GetSiblingIndex(),
+                    Is.GreaterThan(panelBelow.GetSiblingIndex()),
+                    $"The tooltip is drawn behind {covered}.");
+            }
+
+            Transform panel = prefab.transform.Find("Item Tooltip/Panel");
+            Assert.That(panel, Is.Not.Null);
+            Assert.That(
+                panel.gameObject.activeSelf,
+                Is.False,
+                "The tooltip has to start hidden.");
+            Assert.That(
+                prefab.transform.Find("Item Tooltip/Panel/Header/Icon"),
+                Is.Not.Null);
+            Assert.That(
+                prefab.transform.Find("Item Tooltip/Panel/Header/Titles/Item Name"),
+                Is.Not.Null);
+            Assert.That(
+                prefab.transform.Find("Item Tooltip/Panel/Header/Titles/Category"),
+                Is.Not.Null);
+            Assert.That(
+                prefab.transform.Find("Item Tooltip/Panel/Description"),
+                Is.Not.Null);
+            Assert.That(
+                prefab.transform.Find("Item Tooltip/Panel/Usage Hint"),
+                Is.Not.Null);
+
+            var fade = panel.GetComponent<CanvasGroup>();
+            Assert.That(fade, Is.Not.Null);
+            Assert.That(fade.blocksRaycasts, Is.False);
+            Assert.That(fade.interactable, Is.False);
+
+            var fitter = panel.GetComponent<ContentSizeFitter>();
+            Assert.That(fitter, Is.Not.Null);
+            Assert.That(
+                fitter.verticalFit,
+                Is.EqualTo(ContentSizeFitter.FitMode.PreferredSize),
+                "Height follows the text, or a two-line description is clipped.");
+            Assert.That(
+                fitter.horizontalFit,
+                Is.EqualTo(ContentSizeFitter.FitMode.Unconstrained),
+                "A tooltip that also grew sideways would be a different shape "
+                + "for every item.");
+
+            foreach (Graphic graphic in holder.GetComponentsInChildren<Graphic>(true))
+            {
+                Assert.That(
+                    graphic.raycastTarget,
+                    Is.False,
+                    $"{graphic.name} in the tooltip can be hit by the pointer.");
+            }
+
+            // Rects rather than labels. A label that exists and cannot be read is
+            // what ISSUE-050 shipped, and TMP's answer to a rect it cannot fit a
+            // line into is to draw nothing.
+            foreach (TMP_Text label in holder.GetComponentsInChildren<TMP_Text>(true))
+            {
+                Assert.That(
+                    label.fontSize,
+                    Is.GreaterThan(9f),
+                    $"{label.name} is too small to read.");
+                Assert.That(
+                    label.color.a,
+                    Is.GreaterThan(0.5f),
+                    $"{label.name} is nearly invisible.");
+                Assert.That(
+                    label.overflowMode,
+                    Is.Not.EqualTo(TextOverflowModes.Ellipsis),
+                    $"{label.name} would draw nothing in a tight rect.");
+                var element = label.GetComponent<LayoutElement>();
+                Assert.That(
+                    element,
+                    Is.Not.Null,
+                    $"{label.name} has no minimum height.");
+                Assert.That(
+                    element.minHeight,
+                    Is.GreaterThanOrEqualTo(label.fontSize * 1.45f),
+                    $"{label.name} is allowed to be shorter than its own line.");
+            }
+        }
+
+        /// <summary>
+        /// Every cell the player can hover has a trigger on it, in all four
+        /// grids. Missing one is invisible: the cell draws, clicks, and drags
+        /// exactly as before and simply never says what it is holding.
+        /// </summary>
+        [Test]
+        public void EverySlotInTheHudPrefabCanRaiseTheTooltip()
+        {
+            GameObject prefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
+            Assert.That(prefab, Is.Not.Null, HudPrefabPath);
+
+            InventorySlotView[] cells =
+                prefab.GetComponentsInChildren<InventorySlotView>(true);
+            Assert.That(cells, Is.Not.Empty);
+            foreach (InventorySlotView cell in cells)
+            {
+                Assert.That(
+                    cell.GetComponent<ItemSlotTooltipTrigger>(),
+                    Is.Not.Null,
+                    $"{cell.name} cannot raise a tooltip.");
+            }
+
+            QuickSlotView[] quickSlots =
+                prefab.GetComponentsInChildren<QuickSlotView>(true);
+            Assert.That(quickSlots, Has.Length.EqualTo(4));
+            foreach (QuickSlotView slot in quickSlots)
+            {
+                Assert.That(
+                    slot.GetComponent<ItemSlotTooltipTrigger>(),
+                    Is.Not.Null,
+                    $"{slot.name} cannot raise a tooltip.");
+
+                // The trigger only ever fires if something under the cursor is a
+                // raycast target. The quick slots have no Button, so their own
+                // background is the only thing the pointer can enter.
+                var background = slot.GetComponent<Image>();
+                Assert.That(background, Is.Not.Null, slot.name);
+                Assert.That(
+                    background.raycastTarget,
+                    Is.True,
+                    $"{slot.name} cannot be hovered at all.");
+            }
+        }
+
         [Test]
         public void HudTextAndThrowPreviewUseBuildSafeMaterials()
         {
