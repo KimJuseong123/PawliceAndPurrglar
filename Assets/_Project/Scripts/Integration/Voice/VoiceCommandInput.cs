@@ -62,6 +62,22 @@ namespace PawsAndLoot.Integration.Voice
         /// </summary>
         private const float MinimumRecordingSeconds = 0.7f;
 
+        /// <summary>
+        /// How long the answer may take before the key is handed back.
+        ///
+        /// Nothing else ends the wait. The state machine leaves
+        /// <c>Transcribing</c> only when a result arrives, and on a guest that
+        /// result travels backend → host → NGO → here: four places where it can
+        /// go missing, none of which reports anything to this component. When it
+        /// did go missing the feed read "음성 명령 처리 중" for the rest of the
+        /// match and the key stayed dead, which is indistinguishable from a
+        /// broken microphone (`ISSUE-075`).
+        ///
+        /// Generous on purpose — a real transcription plus classification is
+        /// several seconds and a slow one must not be cut off.
+        /// </summary>
+        private const float ResultTimeoutSeconds = 25f;
+
         [SerializeField] private VoiceConfig config;
         [SerializeField] private string gameSessionId;
         [SerializeField] private string petId;
@@ -86,6 +102,7 @@ namespace PawsAndLoot.Integration.Voice
         private bool finishRequested;
         private bool releaseRequested;
         private string lastRecordingPath;
+        private float waitingSince = -1f;
 
         public VoiceCommandInputState State { get; private set; } =
             VoiceCommandInputState.Idle;
@@ -437,6 +454,11 @@ namespace PawsAndLoot.Integration.Voice
             if (response.classification == null
                 && string.IsNullOrWhiteSpace(response.transcript))
             {
+                PawsAndLoot.Logging.GameLogger.Info(
+                    PawsAndLoot.Logging.GameLogCategory.Voice,
+                    $"Voice command {response.commandId} was accepted with no "
+                    + "answer in the response, so the socket has to finish it.",
+                    this);
                 yield break;
             }
 
@@ -609,6 +631,24 @@ namespace PawsAndLoot.Integration.Voice
                 }
             }
 
+            if (IsAwaitingResult(State))
+            {
+                if (waitingSince < 0f)
+                {
+                    waitingSince = Time.unscaledTime;
+                }
+                else if (Time.unscaledTime - waitingSince > ResultTimeoutSeconds)
+                {
+                    waitingSince = -1f;
+                    SetError("VOICE_RESULT_TIMEOUT");
+                    return;
+                }
+            }
+            else
+            {
+                waitingSince = -1f;
+            }
+
             if (State != VoiceCommandInputState.Recording)
             {
                 return;
@@ -665,6 +705,17 @@ namespace PawsAndLoot.Integration.Voice
         {
             State = state;
             StateChanged?.Invoke(state);
+        }
+
+        /// <summary>
+        /// The states that are waiting on somebody else and cannot end by
+        /// themselves.
+        /// </summary>
+        private static bool IsAwaitingResult(VoiceCommandInputState state)
+        {
+            return state == VoiceCommandInputState.Encoding
+                || state == VoiceCommandInputState.Transcribing
+                || state == VoiceCommandInputState.Interpreting;
         }
 
         private void CleanupRecording()

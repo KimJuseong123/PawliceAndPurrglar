@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using PawsAndLoot.Gameplay.Loot;
 using PawsAndLoot.Gameplay.Map;
 using UnityEngine;
@@ -261,17 +262,8 @@ namespace PawsAndLoot.Companions
                 return true;
             }
 
-            foreach (Transform candidate in
-                Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            foreach (Transform candidate in RooftopsByName())
             {
-                if (candidate == null
-                    || !candidate.name.Contains(
-                        "Rooftop",
-                        System.StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
                 TryUseRooftopCandidate(
                     companionPosition,
                     candidate,
@@ -280,6 +272,62 @@ namespace PawsAndLoot.Companions
             }
 
             return !float.IsPositiveInfinity(bestDistance);
+        }
+
+        /// <summary>
+        /// Rooftops found by name, swept once and kept.
+        ///
+        /// The sweep is <c>FindObjectsByType&lt;Transform&gt;</c> — every
+        /// transform in every loaded scene, and this one has thousands once the
+        /// houses and the nineteen interiors are in it — followed by a
+        /// case-insensitive <c>Contains</c> on each name, which allocates the
+        /// name string every time. Run inline it was a visible freeze on the
+        /// host at the exact moment a cat was told to climb, and the player who
+        /// gave the order is on the other machine watching a world that had
+        /// stopped replicating.
+        ///
+        /// Cached because rooftops are built by the map generator and do not
+        /// move or multiply during a match. Re-swept only while the answer is
+        /// empty, so a scene that has not finished loading is not remembered as
+        /// having no roofs.
+        /// </summary>
+        private static Transform[] _rooftopsByName;
+
+        private static Transform[] RooftopsByName()
+        {
+            if (_rooftopsByName is { Length: > 0 })
+            {
+                bool intact = true;
+                foreach (Transform cached in _rooftopsByName)
+                {
+                    if (cached == null)
+                    {
+                        intact = false;
+                        break;
+                    }
+                }
+
+                if (intact)
+                {
+                    return _rooftopsByName;
+                }
+            }
+
+            var found = new List<Transform>();
+            foreach (Transform candidate in
+                Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            {
+                if (candidate != null
+                    && candidate.name.Contains(
+                        "Rooftop",
+                        System.StringComparison.OrdinalIgnoreCase))
+                {
+                    found.Add(candidate);
+                }
+            }
+
+            _rooftopsByName = found.ToArray();
+            return _rooftopsByName;
         }
 
         private void TryUseRooftopCandidate(

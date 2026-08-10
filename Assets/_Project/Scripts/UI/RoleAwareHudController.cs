@@ -702,10 +702,26 @@ namespace PawsAndLoot.UI
                 : PlayerRole.Police;
         }
 
+        /// <summary>
+        /// The role selector, found once.
+        ///
+        /// <see cref="ResolveRole"/> is called several times per frame from
+        /// <see cref="Update"/> and each call used to sweep every object in the
+        /// scene. There is exactly one selector and it lives across scene loads,
+        /// so the sweep answered the same thing thousands of times a second on a
+        /// scene with thousands of objects — pure cost in a browser, where this
+        /// game ships.
+        /// </summary>
+        private LocalPlayerRoleSelector roleSelector;
+
         private bool TryResolveRole(out PlayerRole role)
         {
-            LocalPlayerRoleSelector selector =
-                FindFirstObjectByType<LocalPlayerRoleSelector>();
+            if (roleSelector == null)
+            {
+                roleSelector = FindFirstObjectByType<LocalPlayerRoleSelector>();
+            }
+
+            LocalPlayerRoleSelector selector = roleSelector;
             if (selector != null)
             {
                 role = selector.ActiveRole;

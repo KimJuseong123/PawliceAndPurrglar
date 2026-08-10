@@ -85,9 +85,27 @@ namespace PawsAndLoot.Gameplay.Interiors
         /// </summary>
         private const float IndoorRadius = 0.24f;
 
+        /// <summary>
+        /// How much of the indoor radius the contact skin may be.
+        ///
+        /// Unity's own figure, and the reason this exists at all: narrowing the
+        /// radius to <see cref="IndoorRadius"/> left the skin the width it was
+        /// built for outdoors — 0.08 against 0.45, already generous — which
+        /// indoors is a third of the whole capsule. A skin that thick makes
+        /// <c>CharacterController</c> resolve contacts it is not really in, and
+        /// the character catches on walls and doorframes and crawls.
+        ///
+        /// That is the "the thief goes slow indoors" report with nothing in the
+        /// bag: it is not the carry penalty, it is the capsule. Nothing logs it,
+        /// the speed multiplier reads 1.0 the whole time, and the HUD's own
+        /// weight indicator agrees that the thief is unencumbered.
+        /// </summary>
+        private const float SkinWidthFractionOfRadius = 0.1f;
+
         private CharacterController _controller;
         private float _outdoorStepOffset = -1f;
         private float _outdoorRadius = -1f;
+        private float _outdoorSkinWidth = -1f;
 
         private void Awake()
         {
@@ -96,6 +114,7 @@ namespace PawsAndLoot.Gameplay.Interiors
             {
                 _outdoorStepOffset = _controller.stepOffset;
                 _outdoorRadius = _controller.radius;
+                _outdoorSkinWidth = _controller.skinWidth;
             }
         }
 
@@ -122,6 +141,19 @@ namespace PawsAndLoot.Gameplay.Interiors
                 _controller.radius = IsIndoors
                     ? Mathf.Min(IndoorRadius, _outdoorRadius)
                     : _outdoorRadius;
+            }
+
+            // The skin follows the radius. Written second because it is read off
+            // the radius that was just applied rather than from the constant, so
+            // a controller that was already narrower than the indoor figure
+            // keeps a skin that suits it.
+            if (_outdoorSkinWidth > 0f)
+            {
+                _controller.skinWidth = IsIndoors
+                    ? Mathf.Min(
+                        _outdoorSkinWidth,
+                        _controller.radius * SkinWidthFractionOfRadius)
+                    : _outdoorSkinWidth;
             }
         }
 

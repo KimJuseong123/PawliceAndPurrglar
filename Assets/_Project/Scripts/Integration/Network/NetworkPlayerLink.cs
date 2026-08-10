@@ -429,7 +429,22 @@ namespace PawsAndLoot.Integration.Network
 
         public event Action<ulong, string, string>
             VoiceCommandMetadataReceived;
-        public event Action<string, string, string, string, int, int, int>
+
+        /// <summary>
+        /// A guest's finished backend answer, arriving at the host.
+        ///
+        /// Sender, command id, pet, transcript, classification as JSON.
+        /// </summary>
+        public event Action<ulong, string, string, string, string>
+            VoiceCommandResultReceived;
+
+        /// <summary>
+        /// Pet, command id, event type, transcript, target, result, reaction,
+        /// action. The pet is first because a client receives both players'
+        /// events and has to know whose screen this one belongs on — without it
+        /// the officer's answer would land on the thief's feed.
+        /// </summary>
+        public event Action<string, string, string, string, string, int, int, int>
             VoiceCommandEventReceived;
 
         public PlayerRole Role =>
@@ -982,10 +997,45 @@ namespace PawsAndLoot.Integration.Network
         }
 
         /// <summary>
+        /// A guest's finished backend answer, handed to the host.
+        ///
+        /// The guest talks to the voice backend itself — the audio never travels
+        /// through NGO — but the obedience roll and the dispatch belong on the
+        /// host, so what comes back over HTTP is forwarded here rather than
+        /// acted on locally. Without this the guest's answer had nowhere to go:
+        /// the bridge dropped anything that arrived off the host, and a guest's
+        /// animal never heard a word (`ISSUE-075`).
+        ///
+        /// The classification travels as JSON because it is a nested array of
+        /// candidates and NGO has no serializer for it. It is at most three
+        /// candidates, so the message stays far inside a single fragment.
+        /// </summary>
+        [Rpc(SendTo.Server)]
+        public void SubmitVoiceCommandResultRpc(
+            string commandId,
+            string petId,
+            string transcript,
+            string classificationJson)
+        {
+            if (string.IsNullOrWhiteSpace(petId))
+            {
+                return;
+            }
+
+            VoiceCommandResultReceived?.Invoke(
+                OwnerClientId,
+                commandId,
+                petId,
+                transcript,
+                classificationJson);
+        }
+
+        /// <summary>
         /// Host-only result publication. Clients never calculate cognition or
         /// random outcomes; they only receive this presentation/event data.
         /// </summary>
         public void PublishVoiceCommandEvent(
+            string petId,
             string commandId,
             string eventType,
             string transcript,
@@ -1000,6 +1050,7 @@ namespace PawsAndLoot.Integration.Network
             }
 
             VoiceCommandEventReceived?.Invoke(
+                petId,
                 commandId,
                 eventType,
                 transcript,
@@ -1008,10 +1059,11 @@ namespace PawsAndLoot.Integration.Network
                 reaction,
                 action);
             BroadcastVoiceCommandEventRpc(
-                commandId,
-                eventType,
-                transcript,
-                targetId,
+                petId ?? string.Empty,
+                commandId ?? string.Empty,
+                eventType ?? string.Empty,
+                transcript ?? string.Empty,
+                targetId ?? string.Empty,
                 resultType,
                 reaction,
                 action);
@@ -1019,6 +1071,7 @@ namespace PawsAndLoot.Integration.Network
 
         [Rpc(SendTo.NotServer)]
         private void BroadcastVoiceCommandEventRpc(
+            string petId,
             string commandId,
             string eventType,
             string transcript,
@@ -1028,6 +1081,7 @@ namespace PawsAndLoot.Integration.Network
             int action)
         {
             VoiceCommandEventReceived?.Invoke(
+                petId,
                 commandId,
                 eventType,
                 transcript,

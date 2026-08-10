@@ -163,6 +163,10 @@ namespace PawsAndLoot.UI
                     "녹음이 응답하지 않았습니다. 다시 시도해 주세요",
                 "VOICE_INPUT_DISABLED" =>
                     "음성 입력이 꺼져 있습니다",
+                "VOICE_RESULT_TIMEOUT" =>
+                    "결과가 오지 않았습니다. 다시 시도해 주세요",
+                "VOICE_HOST_LINK_MISSING" =>
+                    "방장에게 명령을 보내지 못했습니다",
                 _ => error
             };
         }

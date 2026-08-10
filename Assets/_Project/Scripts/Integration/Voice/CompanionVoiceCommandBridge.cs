@@ -4,6 +4,7 @@ using PawsAndLoot.Companions;
 using PawsAndLoot.Config;
 using PawsAndLoot.Gameplay.Players;
 using PawsAndLoot.Integration.Network;
+using PawsAndLoot.Logging;
 using UnityEngine;
 
 namespace PawsAndLoot.Integration.Voice
@@ -28,6 +29,24 @@ namespace PawsAndLoot.Integration.Voice
         [SerializeField] private PetCognitionConfig cognitionConfig;
 
         private readonly Dictionary<PlayerRole, int> sequences = new();
+
+        /// <summary>
+        /// Command ids the host has already answered.
+        ///
+        /// One command can reach the host twice: the backend pushes it down the
+        /// host's event socket *and* the player who spoke forwards the same
+        /// answer over NGO. Both carry the server's own command id, so one entry
+        /// here is enough to keep the obedience roll and the dispatch happening
+        /// once. Rolling twice would be worse than harmless — the roll decides
+        /// whether the animal obeys, and the second one is allowed to disagree.
+        ///
+        /// Bounded because a long match issues a command every thirty seconds
+        /// and nothing ever removes one.
+        /// </summary>
+        private readonly HashSet<string> handledEvents = new();
+        private readonly Queue<string> handledOrder = new();
+        private const int HandledEventMemory = 64;
+
         private PetCognitionResolver resolver;
         private bool socketConnected;
 
@@ -92,6 +111,7 @@ namespace PawsAndLoot.Integration.Voice
                 FindObjectsByType<NetworkPlayerLink>(FindObjectsSortMode.None))
             {
                 link.VoiceCommandMetadataReceived += HandleMetadata;
+                link.VoiceCommandResultReceived += HandleNetworkResult;
                 link.VoiceCommandEventReceived += HandleNetworkEvent;
             }
         }
@@ -108,6 +128,7 @@ namespace PawsAndLoot.Integration.Voice
                 FindObjectsByType<NetworkPlayerLink>(FindObjectsSortMode.None))
             {
                 link.VoiceCommandMetadataReceived -= HandleMetadata;
+                link.VoiceCommandResultReceived -= HandleNetworkResult;
                 link.VoiceCommandEventReceived -= HandleNetworkEvent;
             }
         }
@@ -221,6 +242,22 @@ namespace PawsAndLoot.Integration.Voice
                 return;
             }
 
+            // A guest reached the backend on its own and is holding the answer.
+            // It cannot roll the obedience dice or move an animal — the host
+            // owns both — so the answer is forwarded instead of applied.
+            //
+            // This used to fall straight into `HandleBackendEvent`, whose first
+            // line returns off the host **without a word**. The guest's command
+            // therefore ended here every single time: the animal never heard it
+            // and the guest's feed sat on "음성 명령 처리 중" until the match
+            // ended, because the state machine is only ever advanced by a
+            // result that never came (`ISSUE-075`).
+            if (!IsServer)
+            {
+                ForwardResultToHost(commandId, petId, transcript, classification);
+                return;
+            }
+
             if (!string.IsNullOrWhiteSpace(transcript))
             {
                 HandleBackendEvent(new VoiceBackendEvent
@@ -253,17 +290,154 @@ namespace PawsAndLoot.Integration.Voice
             });
         }
 
+        /// <summary>
+        /// Sends a guest's answer to the host over its own player link.
+        ///
+        /// Its own link, not whichever one matches the pet: <c>SendTo.Server</c>
+        /// carries <c>OwnerClientId</c>, and sending through somebody else's
+        /// object would hand the host a sender it cannot check the request
+        /// against.
+        /// </summary>
+        private void ForwardResultToHost(
+            string commandId,
+            string petId,
+            string transcript,
+            VoiceIntentClassificationResult classification)
+        {
+            CompanionKind expected = IsDog(petId)
+                ? CompanionKind.Dog
+                : CompanionKind.Cat;
+            foreach (NetworkPlayerLink link in
+                FindObjectsByType<NetworkPlayerLink>(FindObjectsSortMode.None))
+            {
+                if (!link.IsOwner
+                    || CompanionCommandCatalog.GetCompanionKind(link.Role)
+                        != expected)
+                {
+                    continue;
+                }
+
+                link.SubmitVoiceCommandResultRpc(
+                    commandId ?? string.Empty,
+                    petId,
+                    transcript ?? string.Empty,
+                    classification == null
+                        ? string.Empty
+                        : JsonUtility.ToJson(classification));
+                GameLogger.Info(
+                    GameLogCategory.Voice,
+                    $"Guest forwarded voice command {commandId} for {petId} to "
+                    + "the host for the obedience roll.",
+                    this);
+                return;
+            }
+
+            // Said out loud rather than dropped. Without a link the answer has
+            // nowhere to go, and the only symptom is a feed that never leaves
+            // "처리 중" — which reads as a microphone or a server fault.
+            GameLogger.Warning(
+                GameLogCategory.Voice,
+                $"Voice command {commandId} for {petId} was understood but this "
+                + "machine owns no player link to send it to the host with, so "
+                + "the animal will not hear it.",
+                this);
+            FindVoiceInput(petId)?.ApplyServerFailure("VOICE_HOST_LINK_MISSING");
+        }
+
+        /// <summary>
+        /// Host side of <see cref="ForwardResultToHost"/>.
+        /// </summary>
+        private void HandleNetworkResult(
+            ulong senderClientId,
+            string commandId,
+            string petId,
+            string transcript,
+            string classificationJson)
+        {
+            if (!IsServer) return;
+
+            NetworkPlayerLink link = FindLink(petId);
+            if (link == null || link.OwnerClientId != senderClientId)
+            {
+                GameLogger.Warning(
+                    GameLogCategory.Voice,
+                    $"Client {senderClientId} sent a voice result for {petId}, "
+                    + "which is not the animal it owns. Refused.",
+                    this);
+                return;
+            }
+
+            VoiceIntentClassificationResult classification = null;
+            if (!string.IsNullOrWhiteSpace(classificationJson))
+            {
+                try
+                {
+                    classification =
+                        JsonUtility.FromJson<VoiceIntentClassificationResult>(
+                            classificationJson);
+                }
+                catch (Exception exception)
+                {
+                    GameLogger.Warning(
+                        GameLogCategory.Voice,
+                        $"Voice classification from client {senderClientId} "
+                        + "could not be read: " + exception.Message,
+                        this);
+                }
+            }
+
+            ApplyBackendResult(
+                commandId,
+                petId,
+                transcript,
+                classification,
+                0);
+        }
+
         private void HandleBackendEvent(VoiceBackendEvent backendEvent)
         {
-            if (!IsServer || backendEvent == null) return;
+            if (backendEvent == null) return;
+            if (!IsServer)
+            {
+                // Only the host is registered on the backend's socket, so this
+                // is the guest's own rejected registration answering back. Named
+                // rather than swallowed: a dropped event used to be
+                // indistinguishable from one that never arrived.
+                GameLogger.Debug(
+                    GameLogCategory.Voice,
+                    $"Ignored backend event '{backendEvent.type}' off the host.",
+                    this);
+                return;
+            }
+
             NetworkPlayerLink link = FindLink(backendEvent.petId);
-            if (link == null) return;
+            if (link == null)
+            {
+                GameLogger.Warning(
+                    GameLogCategory.Voice,
+                    $"Backend event '{backendEvent.type}' names pet "
+                    + $"'{backendEvent.petId}', which no player link matches.",
+                    this);
+                return;
+            }
+
+            if (!TryClaim(backendEvent.commandId, backendEvent.type))
+            {
+                // The socket and the guest's forward carry the same command.
+                GameLogger.Debug(
+                    GameLogCategory.Voice,
+                    $"Voice command {backendEvent.commandId} was already "
+                    + $"answered; the second '{backendEvent.type}' is ignored.",
+                    this);
+                return;
+            }
 
             if (backendEvent.type == "VOICE_COMMAND_TRANSCRIBED")
             {
                 FindVoiceInput(backendEvent.petId)?.ApplyServerTranscript(
                     backendEvent.payload?.transcript);
                 link.PublishVoiceCommandEvent(
+                    backendEvent.petId,
                     backendEvent.commandId,
                     backendEvent.type,
                     backendEvent.payload?.transcript ?? string.Empty,
@@ -327,6 +501,7 @@ namespace PawsAndLoot.Integration.Voice
             }
 
             link.PublishVoiceCommandEvent(
+                backendEvent.petId,
                 backendEvent.commandId,
                 "PET_COMMAND_INTERPRETED",
                 classification.normalizedText,
@@ -336,7 +511,21 @@ namespace PawsAndLoot.Integration.Voice
                 (int)decision.selectedCommandId);
         }
 
+        /// <summary>
+        /// The host's answer, arriving at the machine that spoke.
+        ///
+        /// Presentation only — no roll, no dispatch, no target resolution. What
+        /// it does do is move the local state machine off
+        /// <c>Transcribing</c>, which nothing else on a guest ever did: the
+        /// broadcast landed in an empty method, so the guest's feed showed
+        /// "음성 명령 처리 중" for the rest of the match no matter what the
+        /// animal actually did (`ISSUE-075`).
+        ///
+        /// The host skips this. It applied the same result directly, and
+        /// applying it twice would restart the cooldown.
+        /// </summary>
         private void HandleNetworkEvent(
+            string petId,
             string commandId,
             string eventType,
             string transcript,
@@ -345,14 +534,105 @@ namespace PawsAndLoot.Integration.Voice
             int reaction,
             int action)
         {
-            // Presentation subscribers can attach to NetworkPlayerLink. This
-            // method intentionally does not mutate gameplay on clients.
+            if (IsServer) return;
+
+            VoiceCommandInput input = FindVoiceInput(petId);
+            if (input == null)
+            {
+                GameLogger.Warning(
+                    GameLogCategory.Voice,
+                    $"Voice event '{eventType}' arrived for pet '{petId}' with "
+                    + "no matching input on this machine, so nothing on screen "
+                    + "will change.",
+                    this);
+                return;
+            }
+
+            if (eventType == "VOICE_COMMAND_TRANSCRIBED")
+            {
+                input.ApplyServerTranscript(transcript);
+                return;
+            }
+
+            if (eventType != "PET_COMMAND_INTERPRETED")
+            {
+                return;
+            }
+
+            var command = (CompanionCommandId)action;
+            input.ApplyServerDecision(
+                command != CompanionCommandId.None,
+                new VoiceCommandResult
+                {
+                    transcript = transcript,
+                    interpretedCommand = IntentNameOf(command),
+                    targetId = targetId,
+                    deliberatelyMisunderstood =
+                        (PetCommandResultType)resultType
+                            == PetCommandResultType.Misunderstood,
+                    animalFeedback = ((PetReactionType)reaction).ToString(),
+                    requestId = commandId
+                });
+        }
+
+        /// <summary>
+        /// The name the feed's mapper knows this command by.
+        ///
+        /// Not <c>ToString</c>: the mapper's vocabulary is the server's intent
+        /// list, where two of these carry an underscore. Left to the enum name,
+        /// `FollowOwner` and `ReturnOwner` would map back to nothing and the
+        /// guest would be told "NO COMMAND" for an order the animal obeyed.
+        /// </summary>
+        public static string IntentNameOf(CompanionCommandId command)
+        {
+            return command switch
+            {
+                CompanionCommandId.None => string.Empty,
+                CompanionCommandId.FollowOwner => "FOLLOW_OWNER",
+                CompanionCommandId.ReturnOwner => "RETURN_OWNER",
+                _ => command.ToString().ToUpperInvariant()
+            };
+        }
+
+        /// <summary>
+        /// Whether this is the first time the host has seen this command event.
+        /// </summary>
+        private bool TryClaim(string commandId, string eventType)
+        {
+            if (string.IsNullOrWhiteSpace(commandId))
+            {
+                // Nothing to compare against, so it cannot be a repeat. Better
+                // to answer twice than to drop the only copy.
+                return true;
+            }
+
+            string key = commandId + "|" + eventType;
+            if (!handledEvents.Add(key))
+            {
+                return false;
+            }
+
+            handledOrder.Enqueue(key);
+            while (handledOrder.Count > HandledEventMemory)
+            {
+                handledEvents.Remove(handledOrder.Dequeue());
+            }
+
+            return true;
+        }
+
+        private static bool IsDog(string petId)
+        {
+            return string.Equals(petId, "dog", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(
+                    petId,
+                    "dog-1",
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         private NetworkPlayerLink FindLink(string petId)
         {
-            bool dog = string.Equals(petId, "dog", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(petId, "dog-1", StringComparison.OrdinalIgnoreCase);
+            bool dog = IsDog(petId);
             PlayerRole role = dog ? PlayerRole.Police : PlayerRole.Thief;
             foreach (NetworkPlayerLink link in
                 FindObjectsByType<NetworkPlayerLink>(FindObjectsSortMode.None))
@@ -364,9 +644,9 @@ namespace PawsAndLoot.Integration.Voice
 
         private static VoiceCommandInput FindVoiceInput(string petId)
         {
-            bool dog = string.Equals(petId, "dog", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(petId, "dog-1", StringComparison.OrdinalIgnoreCase);
-            CompanionKind kind = dog ? CompanionKind.Dog : CompanionKind.Cat;
+            CompanionKind kind = IsDog(petId)
+                ? CompanionKind.Dog
+                : CompanionKind.Cat;
             foreach (VoiceCommandInput input in
                 FindObjectsByType<VoiceCommandInput>(FindObjectsSortMode.None))
             {

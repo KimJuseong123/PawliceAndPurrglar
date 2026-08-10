@@ -208,7 +208,26 @@ namespace PawsAndLoot.Editor
             {
                 NetworkTransport = transport,
                 PlayerPrefab = null,
-                TickRate = 30,
+
+                // 60, not 30. The tick is when NGO flushes RPCs and variable
+                // deltas, so at 30 a guest's keypress waits up to 33 ms to leave
+                // and the host's answer waits up to another 33 ms to come back —
+                // roughly 33 ms of average delay that has nothing to do with the
+                // network and is added on top of the real round trip. The guest
+                // feels all of it and the host feels none, which is exactly the
+                // asymmetry that was reported.
+                //
+                // This is not the whole of it. The remaining delay is
+                // architectural: a guest's character is moved only by the host
+                // and mirrored back, so every input costs one full round trip
+                // and no transport can remove it. Relay already runs over
+                // WebSocket here (`RelaySessionService` sets `UseWebSockets` and
+                // `isWebSocket` together) — switching transport was never the
+                // lever. Local prediction is, and it is not this change.
+                //
+                // Two players, so the doubled update rate is a few kilobytes a
+                // second.
+                TickRate = 60,
                 // Approval must be identical on both sides: NGO hashes the
                 // config and drops a client whose flags differ, so flipping
                 // this only on the host silently disconnected every join.
