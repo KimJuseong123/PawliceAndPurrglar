@@ -24,7 +24,7 @@ Claude Code 전용 작업 지침서다.
 | 항목 | 값 |
 |---|---|
 | 엔진 | Unity `6000.5.4f1` (URP `17.5.0`) |
-| 저장소 루트 | `C:\Users\SSAFY\PawliceAndPurrglar` (Unity 프로젝트 루트와 동일) |
+| 저장소 루트 | `C:\Users\SSAFY\paws-github` (Unity 프로젝트 루트와 동일) |
 | 에디터 스크립트 네임스페이스 | `PawliceAndPurrglar.Editor`. `-executeMethod`에 이 이름을 쓴다 |
 | 런타임 어셈블리 | `PawliceAndPurrglar.Runtime` (루트 네임스페이스 `PawliceAndPurrglar`) |
 | 현재 코드 위치 | `Assets/_Project/` |
@@ -89,7 +89,7 @@ URL을 함께 움직일 이유가 없다. `-executeMethod`에는 여전히
 > 플랫폼 분기를 넣거나 옮겼으면 **그 자리에서 WebGL 빌드를 한 번 돌린다.**
 >
 > ```bash
-> "C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -quit -projectPath "C:/Users/SSAFY/PawliceAndPurrglar" -executeMethod PawliceAndPurrglar.Editor.PlaytestBuild.BuildWebGlRelease -logFile Logs/webgl-release.log
+> "C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -quit -projectPath "C:/Users/SSAFY/paws-github" -executeMethod PawliceAndPurrglar.Editor.PlaytestBuild.BuildWebGlRelease -logFile Logs/webgl-release.log
 > ```
 
 > **브라우저는 서버가 될 수 없다. Relay일 때만 예외다.** `UnityTransport.cs`가 그
@@ -640,7 +640,7 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 ### 테스트 (배치 모드)
 
 ```bash
-"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -projectPath "C:/Users/SSAFY/PawliceAndPurrglar" -runTests -testPlatform EditMode -testResults "C:/Users/SSAFY/PawliceAndPurrglar/Logs/TestResults/editmode.xml" -logFile "C:/Users/SSAFY/PawliceAndPurrglar/Logs/editmode-tests.log"
+"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -projectPath "C:/Users/SSAFY/paws-github" -runTests -testPlatform EditMode -testResults "C:/Users/SSAFY/paws-github/Logs/TestResults/editmode.xml" -logFile "C:/Users/SSAFY/paws-github/Logs/editmode-tests.log"
 ```
 
 `-testPlatform PlayMode`로 바꿔 Play Mode도 실행한다. 확인 사항:
