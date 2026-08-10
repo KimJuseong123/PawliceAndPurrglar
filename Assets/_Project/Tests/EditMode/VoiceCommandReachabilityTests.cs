@@ -41,7 +41,7 @@ namespace PawliceAndPurrglar.Tests.EditMode
         {
             "STOP", "FOLLOW_OWNER", "STAY", "RETURN_OWNER", "CANCEL",
             "SEARCH_AREA", "FETCH_OBJECT", "DISTRACT_TARGET", "INSPECT_TARGET",
-            "HIDE"
+            "HIDE", "BITE"
         };
 
         private static IEnumerable<CompanionCommandId> NumberKeyCommands(
@@ -141,6 +141,175 @@ namespace PawliceAndPurrglar.Tests.EditMode
                         $"{role} is allowed to be told '{intent}' but it maps to "
                         + "no command, so the answer is thrown away in silence.");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Commands whose resolver sweeps the world itself, and therefore must
+        /// not be refused for arriving without a target.
+        ///
+        /// `ResolveTrack` reads the scent trail, `ResolveScout` finds the
+        /// nearest loot, `ResolveHide` finds the nearest free stash — none of
+        /// the three ever looks at <c>request.TryGetDestination</c>. All three
+        /// were nonetheless listed as requiring a target, so the validator
+        /// refused them before the resolver got a chance.
+        /// </summary>
+        private static readonly CompanionCommandId[] SelfTargetingCommands =
+        {
+            CompanionCommandId.Track,
+            CompanionCommandId.Scout,
+            CompanionCommandId.Hide
+        };
+
+        /// <summary>
+        /// No voice path can supply a target.
+        ///
+        /// The deterministic matcher hardcodes `targetId: null`
+        /// (`resolveWithMatcher`), and the model may only name something already
+        /// in `visibleTargets`. So a command that demands one is reachable by
+        /// number key and dead by voice — and it fails as `TargetMissing`, which
+        /// plays the same beep as a broken microphone and prints nothing,
+        /// because the HUD only narrates refusals from `Keyboard`.
+        ///
+        /// "냄새 맡아" was the worst case: the one order whose purpose is finding
+        /// a thief you cannot see needed the thief visible to be allowed to run.
+        /// </summary>
+        [Test]
+        public void CommandsThatFindTheirOwnTargetDoNotDemandOne()
+        {
+            foreach (CompanionCommandId command in SelfTargetingCommands)
+            {
+                Assert.That(
+                    CompanionCommandCatalog.RequiresTarget(command),
+                    Is.False,
+                    $"{command} resolves its own destination, but is listed as "
+                    + "requiring a target. No voice path can supply one, so the "
+                    + "validator refuses it before the resolver runs and the "
+                    + "player hears an unexplained failure beep.");
+            }
+        }
+
+        /// <summary>
+        /// The other side of the same contract: the three that genuinely read
+        /// the request's destination must keep demanding it, or they resolve to
+        /// a silent no-op instead of an honest refusal.
+        /// </summary>
+        [Test]
+        public void CommandsThatWalkToASpokenPlaceStillDemandOne()
+        {
+            foreach (CompanionCommandId command in new[]
+            {
+                CompanionCommandId.Search,
+                CompanionCommandId.Guard,
+                CompanionCommandId.Distract
+            })
+            {
+                Assert.That(
+                    CompanionCommandCatalog.RequiresTarget(command),
+                    Is.True,
+                    $"{command} is meaningless without a destination.");
+            }
+        }
+
+        /// <summary>
+        /// CAT-010. The cat's bite, reachable by voice and by nothing else.
+        ///
+        /// Checked at every link because the chain is long and each break is
+        /// silent in its own way: an intent absent from the allowed list is
+        /// dropped by the server without a word, one absent from `FromIntent`
+        /// resolves to no command, and one absent from `VoiceCommandMapper` is
+        /// obeyed but printed on screen as "NO COMMAND".
+        /// </summary>
+        [Test]
+        public void TheCatsBiteIsWiredAtEveryLink()
+        {
+            Assert.That(
+                ThiefIntents,
+                Contains.Item("BITE"),
+                "The server clamps candidates to this list.");
+            Assert.That(
+                CompanionCommandCatalog.FromIntent("BITE", CompanionKind.Cat),
+                Is.EqualTo(CompanionCommandId.Bite));
+            Assert.That(
+                CompanionCommandCatalog.BelongsTo(
+                    CompanionCommandId.Bite,
+                    PlayerRole.Thief),
+                Is.True);
+            Assert.That(
+                CompanionCommandCatalog.RequiresTarget(CompanionCommandId.Bite),
+                Is.False,
+                "There is only one officer, and demanding that voice name them "
+                + "would put the command out of reach of the only input that "
+                + "can issue it.");
+            Assert.That(
+                CompanionCommandCatalog.GetCommandsFor(PlayerRole.Thief),
+                Contains.Item(CompanionCommandId.Bite),
+                "The on-screen table is where a player learns the command "
+                + "exists at all.");
+        }
+
+        /// <summary>
+        /// The dog is refused, at both ends.
+        ///
+        /// The officer already arrests; a dog that also bit would be a second
+        /// route to the same outcome. Refusing beats substituting — a wrong
+        /// action the player did not ask for cannot be told apart from being
+        /// misheard.
+        /// </summary>
+        [Test]
+        public void TheDogHasNoBite()
+        {
+            Assert.That(
+                PoliceIntents,
+                Does.Not.Contain("BITE"));
+            Assert.That(
+                CompanionCommandCatalog.FromIntent("BITE", CompanionKind.Dog),
+                Is.EqualTo(CompanionCommandId.None));
+            Assert.That(
+                CompanionCommandCatalog.BelongsTo(
+                    CompanionCommandId.Bite,
+                    PlayerRole.Police),
+                Is.False);
+        }
+
+        /// <summary>
+        /// The animals no longer have the same number of their own commands, so
+        /// anything that counted four is now wrong for the cat.
+        /// </summary>
+        [Test]
+        public void EachAnimalsOwnCommandsComeBeforeTheSharedOnes()
+        {
+            foreach (PlayerRole role in new[]
+            {
+                PlayerRole.Police,
+                PlayerRole.Thief
+            })
+            {
+                CompanionCommandId[] commands =
+                    CompanionCommandCatalog.GetCommandsFor(role);
+                bool reachedShared = false;
+                foreach (CompanionCommandId command in commands)
+                {
+                    bool shared =
+                        CompanionCommandCatalog.IsSharedByBothAnimals(command);
+                    if (shared)
+                    {
+                        reachedShared = true;
+                        continue;
+                    }
+
+                    Assert.That(
+                        reachedShared,
+                        Is.False,
+                        $"{role}'s {command} is its own but is listed after the "
+                        + "shared commands, so the table draws its divider in "
+                        + "the wrong place.");
+                }
+
+                Assert.That(
+                    reachedShared,
+                    Is.True,
+                    $"{role} must still be offered the shared commands.");
             }
         }
 

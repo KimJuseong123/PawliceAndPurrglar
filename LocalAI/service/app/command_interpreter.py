@@ -25,6 +25,10 @@ def core_fallback(transcript: str, animal_type: str) -> Interpretation:
         if any(token in text for token in ("짖어", "짖", "소리", "bark")):
             return Interpretation(intent="BARK", confidence=0.76, needsClarification=False)
     if animal_type.upper() == "CAT":
+        # CAT-010. Before the steal check: "물어와" is a fetch and "물어" is not,
+        # and the steal list matches on the bare "물".
+        if any(token in text for token in ("물어", "깨물", "물기", "공격", "bite")):
+            return Interpretation(intent="BITE", confidence=0.76, needsClarification=False)
         if any(token in text for token in ("지붕", "옥상", "올라", "roof", "climb")):
             return Interpretation(intent="ROOF", confidence=0.76, needsClarification=False)
         if any(token in text for token in ("정찰", "확인", "살펴", "봐", "scout", "inspect")):

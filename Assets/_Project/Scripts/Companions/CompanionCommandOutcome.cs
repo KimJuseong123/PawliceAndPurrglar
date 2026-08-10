@@ -75,7 +75,26 @@ namespace PawliceAndPurrglar.Companions
         RoofClimbReached = 22,
 
         /// <summary>No usable rooftop was close enough for the cat.</summary>
-        RoofClimbUnavailable = 23
+        RoofClimbUnavailable = 23,
+
+        /// <summary>CAT-010. Cat is running at the officer to bite them.</summary>
+        BiteStarted = 24,
+
+        /// <summary>CAT-010. The bite landed and the officer is held.</summary>
+        BiteLanded = 25,
+
+        /// <summary>CAT-010. No officer close enough to run at.</summary>
+        BiteNoTarget = 26,
+
+        /// <summary>
+        /// CAT-010. The officer was reached but could not be held — they are
+        /// already stunned, or still inside the re-stun guard.
+        ///
+        /// Separate from <see cref="BiteNoTarget"/> because the two ask for
+        /// opposite things from the player: one means "get closer", the other
+        /// means "wait". A single failure would teach neither.
+        /// </summary>
+        BiteImmune = 27
     }
 
     public static class CompanionCommandOutcomeText
@@ -137,6 +156,14 @@ namespace PawliceAndPurrglar.Companions
                     "지붕 위에 도착했습니다.",
                 CompanionCommandOutcome.RoofClimbUnavailable =>
                     "근처에 올라갈 지붕이 없습니다.",
+                CompanionCommandOutcome.BiteStarted =>
+                    "경찰에게 달려갑니다!",
+                CompanionCommandOutcome.BiteLanded =>
+                    "경찰을 물었습니다!",
+                CompanionCommandOutcome.BiteNoTarget =>
+                    "물 수 있는 거리에 경찰이 없습니다.",
+                CompanionCommandOutcome.BiteImmune =>
+                    "경찰이 아직 정신을 못 차렸습니다.",
                 _ => string.Empty
             };
 

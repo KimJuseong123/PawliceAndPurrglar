@@ -111,11 +111,23 @@ export class VoiceCommandService {
       // Taken before transcription, not after. The animal decides which words to
       // bias the speech model toward, and a lexicon fetched afterwards is a
       // lexicon that arrived too late to be worth having.
+      // The world context arrives over the socket, and the socket client is a
+      // jslib plugin — `RegisterVoiceContext` has an empty body off WebGL. So a
+      // Windows build or the editor never registers one and always lands here.
+      //
+      // Which made the fallback's hardcoded `DOG` the wrong answer half the
+      // time: a cat player's sentence was looked up in the **dog's** vocabulary
+      // and came back as no command, and the transcription was biased with dog
+      // examples on top of it. `petId` is in the multipart body of every
+      // request, so the animal was known all along and simply not read.
+      const petType = input.petId.trim().toLowerCase().startsWith("cat")
+        ? ("CAT" as const)
+        : ("DOG" as const);
       const context = this.events.takeContext(input.clientCommandId) ?? {
         allowedIntents: [],
         visibleTargets: [],
-        petType: "DOG" as const,
-        ownerRole: "POLICE" as const,
+        petType,
+        ownerRole: petType === "CAT" ? ("THIEF" as const) : ("POLICE" as const),
         commandSequence: 0,
         gameSessionSeed: "unregistered"
       };

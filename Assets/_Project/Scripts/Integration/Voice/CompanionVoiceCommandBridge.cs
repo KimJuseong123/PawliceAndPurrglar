@@ -668,7 +668,7 @@ namespace PawliceAndPurrglar.Integration.Voice
             // dropped without a word in any log.
             return role == PlayerRole.Police
                 ? new[] { "STOP", "FOLLOW_OWNER", "STAY", "RETURN_OWNER", "CANCEL", "SEARCH_AREA", "CHASE_TARGET", "GUARD_AREA", "INSPECT_TARGET", "BARK" }
-                : new[] { "STOP", "FOLLOW_OWNER", "STAY", "RETURN_OWNER", "CANCEL", "SEARCH_AREA", "FETCH_OBJECT", "DISTRACT_TARGET", "INSPECT_TARGET", "HIDE" };
+                : new[] { "STOP", "FOLLOW_OWNER", "STAY", "RETURN_OWNER", "CANCEL", "SEARCH_AREA", "FETCH_OBJECT", "DISTRACT_TARGET", "INSPECT_TARGET", "HIDE", "BITE" };
         }
 
         private static int StableSeed(

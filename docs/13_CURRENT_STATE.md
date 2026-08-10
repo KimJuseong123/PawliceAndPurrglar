@@ -1150,6 +1150,9 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-10 | 고양이 물기 (`CAT-010`) + `ISSUE-081`·`ISSUE-082` 수정 후 (`origin/main` 위에서 실측) | Edit Mode **366/366**, Play Mode 235개 중 **233 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 6건이 XML에 이름으로 있고 전부 `Passed` — Edit Mode 3건(`TheCatsBiteIsWiredAtEveryLink`·`TheDogHasNoBite`·`EachAnimalsOwnCommandsComeBeforeTheSharedOnes`) + `RequiresTarget` 계약 2건, Play Mode 3건(`Biting*`). `server/` `tsc --noEmit` 0, `vitest` **18/18** |
+| 2026-08-10 | `CAT-010`을 **손으로 말해서 확인하지는 않았다** | 고양이가 달려가 무는 것과 1.2초 기절은 Play Mode 3건이 잰다. 실제 2인 세션에서 마이크로 "물어"라고 해 본 것은 아니다. 그리고 **서버 어휘 추가는 재배포해야 적용된다** |
+| 2026-08-10 | 위 두 건을 **실제로 말해서 확인하지는 않았다** | 정적 추적과 테스트만이다. `ISSUE-082`은 **서버 변경이라 재배포해야 적용된다** — 지금 `pawlice.duckdns.org`에 떠 있는 서버는 여전히 고양이를 개로 본다 |
 | 2026-08-10 | **배포 실측** (`d02385e` — 신고 5건 + 숨기 수정) | `Content-Length`가 로컬과 바이트까지 일치: `data.unityweb` 48,657,928 / `wasm.unityweb` 16,262,443 / `loader.js` 48,105, `Last-Modified` 12:23 UTC. 페이지 200, `/health` 200, `index.html`에 `d02385e`. **서빙되는 바이트에서 도장 실측** — Range로 앞 256KB만 받아 gzip을 풀고 비압축 오프셋 4289에서 `1.0+d02385e` 확인, `-dirty` 없음. 음성 서버는 건드리지 않았다 (`-GameOnly`) |
 | 2026-08-10 | 신고 6건 (명령표·음성 무반응·클라 결과창·실내 성능·클라 지연·두 판 연속) 이후 | Edit Mode **361/361**, Play Mode 232개 중 **230 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`. 신규 7건(설치 2, 복종 3, 숨기 2)이 XML에서 `Passed` |
 | 2026-08-10 | **2프로세스 재경기 실측** (`-netScenario rematch`) | 양쪽 `passed=true`, `returnedToGame=true`, 호스트가 요청 1건 수신. 로그를 첫 경기/두 번째 경기로 갈라 세어 보면 **두 번째 경기도 양쪽 모두 `Ready -> Playing`에 도달**하고 `Failed to spawn`·`soft synchronization`·`not listening`은 0건이다. 즉 **"두 판 연속"은 이 경로에서 재현되지 않는다** — 신고된 증상이 무엇인지 더 좁혀야 한다 |

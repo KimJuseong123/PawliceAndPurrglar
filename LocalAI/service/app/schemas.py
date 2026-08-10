@@ -72,4 +72,4 @@ def allowed_commands(context: dict[str, Any], animal_type: str) -> list[str]:
         return [str(value).upper() for value in values if str(value).strip()]
     if animal_type.upper() == "DOG":
         return ["TRACK", "SEARCH", "GUARD", "BARK", "STAY", "STOP"]
-    return ["SCOUT", "DISTRACT", "ROOF", "HIDE", "STAY", "STOP"]
+    return ["SCOUT", "DISTRACT", "ROOF", "HIDE", "BITE", "STAY", "STOP"]

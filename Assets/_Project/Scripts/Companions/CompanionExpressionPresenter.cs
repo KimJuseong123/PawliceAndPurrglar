@@ -54,6 +54,13 @@ namespace PawliceAndPurrglar.Companions
                 case CompanionCommandOutcome.TrailFound:
                 case CompanionCommandOutcome.BarkRevealedThief:
                 case CompanionCommandOutcome.ScoutReported:
+                // CAT-010. Alert, not Happy: the cat has locked onto somebody
+                // and is on its way, which is the same thing the dog's face
+                // says when it picks up a trail. The officer is looking at this
+                // animal too, and a cheerful cat sprinting at them would be the
+                // wrong warning.
+                case CompanionCommandOutcome.BiteStarted:
+                case CompanionCommandOutcome.BiteLanded:
                     return CompanionExpression.Alert;
 
                 case CompanionCommandOutcome.Completed:
@@ -78,6 +85,8 @@ namespace PawliceAndPurrglar.Companions
                 case CompanionCommandOutcome.StealOwnerBusy:
                 case CompanionCommandOutcome.HideUnavailable:
                 case CompanionCommandOutcome.RoofClimbUnavailable:
+                case CompanionCommandOutcome.BiteNoTarget:
+                case CompanionCommandOutcome.BiteImmune:
                     return CompanionExpression.Confused;
 
                 default:

@@ -63,6 +63,10 @@ namespace PawliceAndPurrglar.Companions
                     return Match(CompanionCommandId.Track, normalized, "쫓아", "chase");
                 }
 
+                // The dog is told no on purpose. Biting overlaps the arrest the
+                // officer already performs, and CAT-010 gave the order to the
+                // cat instead — so this stays a refusal rather than becoming a
+                // second route into `Bite`.
                 if (ContainsAny(normalized, "물어", "물기", "bite"))
                 {
                     return new CoreCommandMatch(
@@ -73,6 +77,13 @@ namespace PawliceAndPurrglar.Companions
             }
             else
             {
+                // CAT-010. Before "지붕", because "물어와" is a fetch and "물어"
+                // is not — checking steal first would swallow the bite.
+                if (ContainsAny(normalized, "물어", "깨물", "물기", "공격", "bite"))
+                {
+                    return Match(CompanionCommandId.Bite, normalized, "물어", "bite");
+                }
+
                 if (ContainsAny(normalized, "지붕", "옥상", "climb", "roof"))
                 {
                     return Match(CompanionCommandId.Steal, normalized, "지붕", "roof");

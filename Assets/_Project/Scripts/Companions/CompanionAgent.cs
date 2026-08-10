@@ -480,6 +480,11 @@ namespace PawliceAndPurrglar.Companions
                     return;
                 }
 
+                if (TryCompleteBite())
+                {
+                    return;
+                }
+
                 // CAT-005. Arriving at loot means picking it up, then walking
                 // it home; the command is not finished until it is handed over.
                 if (TryBeginLootEscort())
@@ -515,6 +520,57 @@ namespace PawliceAndPurrglar.Companions
             ReportOutcome(CompanionCommandOutcome.RoofClimbReached);
             _commandElapsedSeconds = 0f;
             _stuckElapsedSeconds = 0f;
+            _stateMachine.TryTransitionTo(CompanionState.ExecuteCommand);
+            return true;
+        }
+
+        /// <summary>
+        /// CAT-010. The bite lands here rather than when the order was given.
+        ///
+        /// The run is the counterplay. Holding the officer the instant the thief
+        /// speaks would let them freeze someone across the street, and the
+        /// officer would have nothing to react to; the cat crossing the road is
+        /// the warning.
+        ///
+        /// **Host only, by construction.** A client's `CompanionAgent` is
+        /// switched off outright the first time `NetworkPlayerLink` applies a
+        /// replicated companion position, so this cannot run there — and the
+        /// stun the host applies reaches the client through the same
+        /// `_stunCount` path a thrown rock uses. Nothing here needs to know that
+        /// a network exists, which is the reason the rules layer is allowed not
+        /// to reference it.
+        ///
+        /// Returns false for every other command.
+        /// </summary>
+        private bool TryCompleteBite()
+        {
+            if (_activeRequest.CommandId != CompanionCommandId.Bite)
+            {
+                return false;
+            }
+
+            Transform police = commandResolver != null
+                ? commandResolver.PoliceTransform
+                : null;
+            StunState stun = police != null
+                ? police.GetComponent<StunState>()
+                : null;
+
+            // A refused stun is reported as its own outcome. "Already stunned"
+            // and "nobody there" ask the player for opposite things — wait
+            // versus get closer — and one shared failure would teach neither.
+            bool held = stun != null
+                && stun.TryApply(
+                    companionConfig.BiteStunSeconds,
+                    StunCause.Impact);
+            ReportOutcome(
+                held
+                    ? CompanionCommandOutcome.BiteLanded
+                    : CompanionCommandOutcome.BiteImmune);
+
+            _commandElapsedSeconds = 0f;
+            _stuckElapsedSeconds = 0f;
+            _hasCommandDestination = false;
             _stateMachine.TryTransitionTo(CompanionState.ExecuteCommand);
             return true;
         }

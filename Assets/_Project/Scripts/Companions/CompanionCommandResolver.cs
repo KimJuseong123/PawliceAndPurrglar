@@ -49,6 +49,19 @@ namespace PawliceAndPurrglar.Companions
         private float roofSearchRange = 28f;
 
         /// <summary>
+        /// CAT-010. How far the cat will run at the officer.
+        ///
+        /// Kept beside the other reach limits rather than on
+        /// <c>CompanionConfig</c>: adding it to <see cref="Configure"/> would
+        /// mean editing the scene generator, and regenerating `Game.unity`
+        /// rewrites 130 `GlobalObjectIdHash` values — a build-mismatch risk far
+        /// larger than one number's filing cabinet. The duration, which the
+        /// agent applies and balance cares about, is on the config.
+        /// </summary>
+        [SerializeField, Min(1f)]
+        private float biteSearchRange = 18f;
+
+        /// <summary>
         /// CAT-003 and CAT-005 report what the cat noticed so the HUD can name
         /// it. Set on the last resolve.
         /// </summary>
@@ -131,6 +144,8 @@ namespace PawliceAndPurrglar.Companions
                     return ResolveRoofClimb(companionPosition);
                 case CompanionCommandId.Hide:
                     return ResolveHide(companionPosition);
+                case CompanionCommandId.Bite:
+                    return ResolveBite(companionPosition);
                 default:
                     request.TryGetDestination(out Vector3 fallback);
                     return new Resolution(
@@ -582,6 +597,45 @@ namespace PawliceAndPurrglar.Companions
 
             return null;
         }
+
+        /// <summary>
+        /// CAT-010. Sends the cat at the officer.
+        ///
+        /// Only the run is decided here. The hold itself happens when the cat
+        /// arrives — see <see cref="CompanionAgent"/> — because a stun applied
+        /// at the moment of the order would let the thief freeze an officer
+        /// halfway across the street, and the walk is the counterplay.
+        ///
+        /// The range refuses rather than sending the cat off at a distant
+        /// officer: the walk is already the cost, and a cat that leaves for six
+        /// seconds and returns having done nothing reads as a broken command.
+        /// </summary>
+        private Resolution ResolveBite(Vector3 companionPosition)
+        {
+            if (policeTransform == null
+                || PlanarDistance(companionPosition, policeTransform.position)
+                    > biteSearchRange)
+            {
+                return new Resolution(
+                    false,
+                    CompanionCommandOutcome.BiteNoTarget,
+                    null);
+            }
+
+            return new Resolution(
+                true,
+                CompanionCommandOutcome.BiteStarted,
+                policeTransform.position);
+        }
+
+        /// <summary>
+        /// The officer, so the agent can find who it just caught up with.
+        ///
+        /// Read only. Handing out the transform rather than the stun keeps the
+        /// numbers where the rest of the animal's numbers are — on
+        /// <c>CompanionConfig</c>, which the agent already holds.
+        /// </summary>
+        public Transform PoliceTransform => policeTransform;
 
         private Resolution ResolveDistract(
             in CompanionCommandRequest request,
