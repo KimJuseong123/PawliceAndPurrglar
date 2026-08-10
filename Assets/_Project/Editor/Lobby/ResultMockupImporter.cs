@@ -3,7 +3,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Brings the authored result mockups into the project under names that say

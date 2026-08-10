@@ -1,9 +1,9 @@
 using System;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// Uses the held prop: throws it, or puts it on the ground.

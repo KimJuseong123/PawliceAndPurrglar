@@ -1,9 +1,9 @@
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// NET-005. Replicates one loot item's ownership and state.

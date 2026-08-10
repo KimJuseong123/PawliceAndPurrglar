@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 91a19b6b0c904ed0a1e2f6c4d7b8a901, type: 3}
   m_Name: PetCognitionConfig
-  m_EditorClassIdentifier: Assembly-CSharp::PawsAndLoot.Config.PetCognitionConfig
+  m_EditorClassIdentifier: Assembly-CSharp::PawliceAndPurrglar.Config.PetCognitionConfig
   dogCorrectThreshold: 0.62
   catCorrectThreshold: 0.78
   confusedThreshold: 0.34

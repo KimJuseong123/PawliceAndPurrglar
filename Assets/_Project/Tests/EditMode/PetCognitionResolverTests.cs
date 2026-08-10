@@ -1,7 +1,7 @@
-using PawsAndLoot.Companions;
+using PawliceAndPurrglar.Companions;
 using NUnit.Framework;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class PetCognitionResolverTests
     {

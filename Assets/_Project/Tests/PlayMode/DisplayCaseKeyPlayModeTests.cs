@@ -1,13 +1,13 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Gameplay.Sensing;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Sensing;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// A key opens a case without a sound, and costs time to make up for it.

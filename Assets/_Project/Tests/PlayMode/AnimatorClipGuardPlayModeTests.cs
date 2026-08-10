@@ -1,10 +1,10 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Animation;
+using PawliceAndPurrglar.Animation;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// The characters ship no locomotion clips yet, and a humanoid

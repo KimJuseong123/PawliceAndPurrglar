@@ -1,7 +1,7 @@
-using PawsAndLoot.Companions;
+using PawliceAndPurrglar.Companions;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     [System.Serializable]
     public sealed class VoiceCommandResult

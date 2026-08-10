@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Checks whether the authored character rigs can be imported as Unity

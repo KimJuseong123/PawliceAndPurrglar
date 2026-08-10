@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     public enum CharacterAnimationCharacter
     {

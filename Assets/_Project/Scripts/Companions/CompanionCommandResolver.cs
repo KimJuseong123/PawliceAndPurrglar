@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Map;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Map;
 using UnityEngine;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// Turns an accepted command into a destination and a reportable outcome.
@@ -541,21 +541,21 @@ namespace PawsAndLoot.Companions
         /// </summary>
         private static Vector3? TryResolveIndoorDoor()
         {
-            PawsAndLoot.Gameplay.Interiors.PlayerInteriorState thiefState =
+            PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState thiefState =
                 null;
-            foreach (PawsAndLoot.Gameplay.Players.PlayerRoleIdentity candidate
+            foreach (PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity candidate
                 in Object.FindObjectsByType<
-                    PawsAndLoot.Gameplay.Players.PlayerRoleIdentity>(
+                    PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity>(
                     FindObjectsSortMode.None))
             {
                 if (candidate.Role
-                    != PawsAndLoot.Gameplay.Players.PlayerRole.Thief)
+                    != PawliceAndPurrglar.Gameplay.Players.PlayerRole.Thief)
                 {
                     continue;
                 }
 
                 thiefState = candidate.GetComponent<
-                    PawsAndLoot.Gameplay.Interiors.PlayerInteriorState>();
+                    PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState>();
                 break;
             }
 
@@ -564,9 +564,9 @@ namespace PawsAndLoot.Companions
                 return null;
             }
 
-            foreach (PawsAndLoot.Gameplay.Interiors.HouseDoorway door in
+            foreach (PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway door in
                 Object.FindObjectsByType<
-                    PawsAndLoot.Gameplay.Interiors.HouseDoorway>(
+                    PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway>(
                     FindObjectsSortMode.None))
             {
                 // The street-side door of that house: the one the officer can

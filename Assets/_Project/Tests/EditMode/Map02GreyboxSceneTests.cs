@@ -1,13 +1,13 @@
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Map;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Map;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// Asks whether MAP-002 is a town you could walk around, not whether it

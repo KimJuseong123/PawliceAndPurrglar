@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Lists where the town's landmarks and buildings actually are.

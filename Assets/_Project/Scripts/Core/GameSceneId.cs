@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Core
+namespace PawliceAndPurrglar.Core
 {
     public enum GameSceneId
     {

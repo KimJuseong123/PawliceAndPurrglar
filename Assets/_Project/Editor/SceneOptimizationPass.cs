@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using PawsAndLoot.Animation;
+using PawliceAndPurrglar.Animation;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// ART-012. Reduces the draw cost of the assembled Game scene.
@@ -252,7 +252,7 @@ namespace PawsAndLoot.Editor
         private static bool IsInsideAHouseInterior(Transform candidate)
         {
             return candidate.GetComponentInParent<
-                PawsAndLoot.Gameplay.Interiors.HouseInterior>() != null;
+                PawliceAndPurrglar.Gameplay.Interiors.HouseInterior>() != null;
         }
 
         private static bool IsUnderDynamicRoot(Transform candidate)
@@ -303,9 +303,9 @@ namespace PawsAndLoot.Editor
         /// </summary>
         private static bool IsAnimatedByDoor(Transform candidate)
         {
-            foreach (PawsAndLoot.Animation.HouseDoorLeaf leaf in
+            foreach (PawliceAndPurrglar.Animation.HouseDoorLeaf leaf in
                 Object.FindObjectsByType<
-                    PawsAndLoot.Animation.HouseDoorLeaf>(
+                    PawliceAndPurrglar.Animation.HouseDoorLeaf>(
                     FindObjectsSortMode.None))
             {
                 if (leaf.MovesTransform(candidate))

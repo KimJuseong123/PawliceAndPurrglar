@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// A coin and a number: how much money the local player has.

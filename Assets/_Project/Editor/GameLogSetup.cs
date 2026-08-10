@@ -1,10 +1,10 @@
 using System;
-using PawsAndLoot.Config;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Logging;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class GameLogSetup
     {

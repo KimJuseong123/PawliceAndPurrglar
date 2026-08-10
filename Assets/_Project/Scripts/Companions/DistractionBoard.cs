@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// CAT-004 support. Holds the one active distraction signal.

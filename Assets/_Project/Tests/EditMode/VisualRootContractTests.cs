@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using PawsAndLoot.TechnicalValidation;
+using PawliceAndPurrglar.TechnicalValidation;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class VisualRootContractTests
     {

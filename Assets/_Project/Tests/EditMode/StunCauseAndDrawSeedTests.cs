@@ -1,9 +1,9 @@
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// Two things that look like presentation and are not.

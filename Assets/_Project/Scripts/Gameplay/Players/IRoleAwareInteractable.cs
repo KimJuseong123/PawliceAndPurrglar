@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// An interactable that is offered to one role and not the other, without

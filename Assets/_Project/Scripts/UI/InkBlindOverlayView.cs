@@ -1,8 +1,8 @@
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// Ink across the screen while the frozen octopus is stuck to your face.

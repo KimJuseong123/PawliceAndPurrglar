@@ -1,10 +1,10 @@
 using System;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// What the officer can buy, and the rule for buying it.

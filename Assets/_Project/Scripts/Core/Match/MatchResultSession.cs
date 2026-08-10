@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Match
+namespace PawliceAndPurrglar.Match
 {
     public static class MatchResultSession
     {

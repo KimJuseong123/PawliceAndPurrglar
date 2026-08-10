@@ -1,8 +1,8 @@
 using System.Text;
 using NUnit.Framework;
-using PawsAndLoot.Integration.Network;
+using PawliceAndPurrglar.Integration.Network;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// The room advert is the only thing in this project parsed straight off the

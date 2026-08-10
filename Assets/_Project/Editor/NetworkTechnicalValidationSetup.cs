@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using PawsAndLoot.Core;
-using PawsAndLoot.TechnicalValidation;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.TechnicalValidation;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
@@ -10,14 +10,14 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class NetworkTechnicalValidationSetup
     {
         public const string PlayerPrefabPath =
             "Assets/_Project/Prefabs/TechnicalValidation/NetworkPlayer.prefab";
         public const string WindowsBuildPath =
-            "Builds/TechnicalValidation/Windows/PawsAndLootNetworkTech.exe";
+            "Builds/TechnicalValidation/Windows/PawliceAndPurrglarNetworkTech.exe";
 
         private const string PlayerMaterialPath =
             "Assets/_Project/Materials/TechnicalValidation/NetworkPlayer.mat";

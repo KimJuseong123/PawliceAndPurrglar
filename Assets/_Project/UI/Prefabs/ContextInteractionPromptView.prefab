@@ -50,7 +50,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9fc09edd197d403f91ddbc049327ec83, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.ContextInteractionPromptView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.ContextInteractionPromptView
   keyLabel: {fileID: 4660897623047920537}
   actionLabel: {fileID: 4158213364009077862}
   holdProgress: {fileID: 2339399352787779012}
@@ -247,7 +247,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 04bfbb23312b4c99b98357703e393ea4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.RadialProgressGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.RadialProgressGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1

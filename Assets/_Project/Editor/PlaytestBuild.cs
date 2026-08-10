@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PawsAndLoot.Core;
+using PawliceAndPurrglar.Core;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Builds the playable vertical slice with every scene of the build
@@ -17,7 +17,7 @@ namespace PawsAndLoot.Editor
     public static class PlaytestBuild
     {
         private const string WindowsBuildPath =
-            "Builds/Playtest/Windows/PawsAndLoot.exe";
+            "Builds/Playtest/Windows/PawliceAndPurrglar.exe";
 
         private const string WebGlBuildPath = "Builds/Playtest/WebGL";
 
@@ -133,7 +133,7 @@ namespace PawsAndLoot.Editor
         public static void BuildLinuxServer()
         {
             const string ServerBuildPath =
-                "Builds/Server/Linux/PawsAndLoot.x86_64";
+                "Builds/Server/Linux/PawliceAndPurrglar.x86_64";
 
             if (!BuildPipeline.IsBuildTargetSupported(
                     BuildTargetGroup.Standalone,
@@ -170,7 +170,7 @@ namespace PawsAndLoot.Editor
 
             Debug.Log(
                 $"Linux dedicated server built at '{absoluteBuildPath}'. Run "
-                + "it with: ./PawsAndLoot.x86_64 -dedicatedServer -netPort 7979");
+                + "it with: ./PawliceAndPurrglar.x86_64 -dedicatedServer -netPort 7979");
         }
 
         /// <summary>

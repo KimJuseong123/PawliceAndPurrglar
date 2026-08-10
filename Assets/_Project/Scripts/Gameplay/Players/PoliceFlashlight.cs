@@ -1,7 +1,7 @@
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// The cone of light the police carries at night.

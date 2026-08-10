@@ -7,7 +7,7 @@ using UnityEngine;
 // container and a client must never roll its own.
 using Random = System.Random;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// One rolled stack: what came up and how many of it.

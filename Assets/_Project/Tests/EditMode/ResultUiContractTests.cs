@@ -3,8 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.UI;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -12,7 +12,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// Guards the properties the previous result screen lost silently.
@@ -28,7 +28,7 @@ namespace PawsAndLoot.Tests.EditMode
             "Assets/_Project/UI/Prefabs/ResultCanvas.prefab";
 
         private const string FontPath =
-            "Assets/Resources/PawsAndLootDefaultFont.asset";
+            "Assets/Resources/PawliceAndPurrglarDefaultFont.asset";
 
         private const string ResultScenePath =
             "Assets/_Project/Scenes/Result.unity";

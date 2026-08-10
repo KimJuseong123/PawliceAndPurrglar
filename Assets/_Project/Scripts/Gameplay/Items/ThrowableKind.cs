@@ -1,7 +1,7 @@
-using PawsAndLoot.Companions;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Gameplay.Players;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// The prop kinds a player can pick up and use.
@@ -277,25 +277,25 @@ namespace PawsAndLoot.Gameplay.Items
         /// Which side a prop belongs to. The pickup points enforce it, and it is
         /// stated here so a shop or a drop cannot disagree with the map.
         /// </summary>
-        public static PawsAndLoot.Gameplay.Players.PlayerRole? GetOwner(
+        public static PawliceAndPurrglar.Gameplay.Players.PlayerRole? GetOwner(
             ThrowableKind kind)
         {
             return kind switch
             {
                 ThrowableKind.Banana =>
-                    PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                    PawliceAndPurrglar.Gameplay.Players.PlayerRole.Thief,
                 ThrowableKind.DogTreat =>
-                    PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                    PawliceAndPurrglar.Gameplay.Players.PlayerRole.Thief,
                 ThrowableKind.TunaCan =>
-                    PawsAndLoot.Gameplay.Players.PlayerRole.Police,
+                    PawliceAndPurrglar.Gameplay.Players.PlayerRole.Police,
                 ThrowableKind.GlueTrap =>
-                    PawsAndLoot.Gameplay.Players.PlayerRole.Police,
+                    PawliceAndPurrglar.Gameplay.Players.PlayerRole.Police,
                 ThrowableKind.SensorLight =>
-                    PawsAndLoot.Gameplay.Players.PlayerRole.Police,
+                    PawliceAndPurrglar.Gameplay.Players.PlayerRole.Police,
                 ThrowableKind.Firework =>
-                    PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                    PawliceAndPurrglar.Gameplay.Players.PlayerRole.Thief,
                 ThrowableKind.FrozenOctopus =>
-                    PawsAndLoot.Gameplay.Players.PlayerRole.Thief,
+                    PawliceAndPurrglar.Gameplay.Players.PlayerRole.Thief,
                 // A rock in the street is nobody's, and neither is a rubber
                 // chicken on a supermarket shelf.
                 _ => null

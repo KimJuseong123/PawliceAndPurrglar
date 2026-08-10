@@ -1,13 +1,13 @@
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Loot;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Loot;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// The houses are one size, and every one of them is inside the town.
@@ -200,7 +200,7 @@ namespace PawsAndLoot.Tests.EditMode
                 .GetRootGameObjects()
                 .SelectMany(root =>
                     root.GetComponentsInChildren<
-                        PawsAndLoot.Animation.HouseDoorLeaf>(true))
+                        PawliceAndPurrglar.Animation.HouseDoorLeaf>(true))
                 .Count();
             Assert.That(
                 doors,

@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Arrest;
+using PawliceAndPurrglar.Gameplay.Arrest;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// The arrest tally and the sentence have to reach the machine that is not

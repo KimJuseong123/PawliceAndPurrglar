@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Logging
+namespace PawliceAndPurrglar.Logging
 {
     [DefaultExecutionOrder(-11000)]
     public sealed class GameLogBootstrap : MonoBehaviour

@@ -1,8 +1,8 @@
-using PawsAndLoot.Core;
+using PawliceAndPurrglar.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Audio
+namespace PawliceAndPurrglar.Audio
 {
     /// <summary>
     /// Looping music for the lobby, and silence once a match starts.

@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using PawsAndLoot.Core;
-using PawsAndLoot.Integration.Network;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Integration.Network;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     /// <summary>
     /// NET-008. Checks that one player's rematch press restarts the match on both

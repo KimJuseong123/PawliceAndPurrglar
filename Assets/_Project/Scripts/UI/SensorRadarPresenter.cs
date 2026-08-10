@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// A wifi-style pulse on the officer's screen, pointing at the sensor that
@@ -144,19 +144,19 @@ namespace PawsAndLoot.UI
             return _officer;
         }
 
-        private PawsAndLoot.Gameplay.Loot.LootAlarm _alarm;
+        private PawliceAndPurrglar.Gameplay.Loot.LootAlarm _alarm;
 
         /// <summary>
         /// The town's one alarm, remembered. There is exactly one, so finding it
         /// by type is safe here in a way it would not be for anything the map
         /// has several of.
         /// </summary>
-        private PawsAndLoot.Gameplay.Loot.LootAlarm ResolveAlarm()
+        private PawliceAndPurrglar.Gameplay.Loot.LootAlarm ResolveAlarm()
         {
             if (_alarm == null)
             {
                 _alarm = FindFirstObjectByType<
-                    PawsAndLoot.Gameplay.Loot.LootAlarm>();
+                    PawliceAndPurrglar.Gameplay.Loot.LootAlarm>();
             }
 
             return _alarm;
@@ -181,7 +181,7 @@ namespace PawsAndLoot.UI
             // The alarm wins when both are live. It is rarer, it is louder, and
             // it names a place that stays worth going to after the thief has
             // moved; a sensor only ever meant "somebody passed here".
-            PawsAndLoot.Gameplay.Loot.LootAlarm alarm = ResolveAlarm();
+            PawliceAndPurrglar.Gameplay.Loot.LootAlarm alarm = ResolveAlarm();
             bool beacon = alarm != null && alarm.IsBeaconActive;
 
             bool showing = ViewerIsPolice()

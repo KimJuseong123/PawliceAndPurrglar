@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     public enum PlayerRole
     {

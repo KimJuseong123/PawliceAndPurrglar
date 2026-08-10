@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Gameplay.Players;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// What this player can say to their animal, in the top-left corner.
@@ -138,7 +138,7 @@ namespace PawsAndLoot.UI
             _group.blocksRaycasts = false;
             _group.interactable = false;
 
-            _font = Resources.Load<TMP_FontAsset>("PawsAndLootDefaultFont");
+            _font = Resources.Load<TMP_FontAsset>("PawliceAndPurrglarDefaultFont");
         }
 
         private void Update()

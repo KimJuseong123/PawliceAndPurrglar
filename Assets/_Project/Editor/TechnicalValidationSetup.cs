@@ -1,19 +1,19 @@
 using System;
 using System.IO;
-using PawsAndLoot.Core;
-using PawsAndLoot.TechnicalValidation;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.TechnicalValidation;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class TechnicalValidationSetup
     {
         public const string WindowsBuildPath =
-            "Builds/TechnicalValidation/Windows/PawsAndLootTech.exe";
+            "Builds/TechnicalValidation/Windows/PawliceAndPurrglarTech.exe";
 
         private const string MaterialRoot =
             "Assets/_Project/Materials/TechnicalValidation";
@@ -92,8 +92,8 @@ namespace PawsAndLoot.Editor
         {
             CreateTechnicalTestScene();
 
-            PlayerSettings.companyName = "PawsAndLoot";
-            PlayerSettings.productName = "PawsAndLoot";
+            PlayerSettings.companyName = "PawliceAndPurrglar";
+            PlayerSettings.productName = "PawliceAndPurrglar";
 
             string absoluteBuildPath = Path.GetFullPath(WindowsBuildPath);
             string buildDirectory = Path.GetDirectoryName(absoluteBuildPath);

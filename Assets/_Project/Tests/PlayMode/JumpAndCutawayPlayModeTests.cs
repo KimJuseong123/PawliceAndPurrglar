@@ -2,17 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Animation;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Camera;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Animation;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Camera;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// Getting over the furniture, and seeing past the walls.

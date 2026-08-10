@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using PawsAndLoot.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Items;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Reports what is wrong with the loot setup before anybody plays it.

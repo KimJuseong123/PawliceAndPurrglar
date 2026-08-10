@@ -1,7 +1,7 @@
-using PawsAndLoot.Gameplay.Sensing;
+using PawliceAndPurrglar.Gameplay.Sensing;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// Draws a ring on the ground where something banged.

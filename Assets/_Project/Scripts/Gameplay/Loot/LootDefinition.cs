@@ -1,8 +1,8 @@
 using System;
-using PawsAndLoot.Config;
+using PawliceAndPurrglar.Config;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     [CreateAssetMenu(
         menuName = "PawliceAndPurrglar/Loot/Definition",

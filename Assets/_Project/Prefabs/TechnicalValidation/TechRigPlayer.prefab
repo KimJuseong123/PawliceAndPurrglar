@@ -69,7 +69,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17399517b069b724d84a331e00a46119, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.KeyboardCubeMover
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.KeyboardCubeMover
   movementSpeed: 4
 --- !u!114 &1423843504156283675
 MonoBehaviour:
@@ -82,7 +82,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0e1d433aa739e7408e268cd39781fd9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.VisualRootContract
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.VisualRootContract
   visualRoot: {fileID: 2500859503822760561}
   gameplayCollider: {fileID: 5307941841204201821}
   visualAnimator: {fileID: 7235706381971268995}

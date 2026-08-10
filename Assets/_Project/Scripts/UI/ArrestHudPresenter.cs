@@ -1,10 +1,10 @@
 using System;
-using PawsAndLoot.Gameplay.Arrest;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Arrest;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     public sealed class ArrestHudPresenter : MonoBehaviour
     {

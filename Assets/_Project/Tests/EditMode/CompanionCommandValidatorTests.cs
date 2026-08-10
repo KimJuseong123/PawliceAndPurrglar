@@ -1,9 +1,9 @@
 using NUnit.Framework;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class CompanionCommandValidatorTests
     {

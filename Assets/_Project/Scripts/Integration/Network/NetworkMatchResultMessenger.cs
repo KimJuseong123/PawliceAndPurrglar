@@ -1,11 +1,11 @@
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Match;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// Sends the decided result to the client as a named message.
@@ -28,7 +28,7 @@ namespace PawsAndLoot.Integration.Network
     [DisallowMultipleComponent]
     public sealed class NetworkMatchResultMessenger : MonoBehaviour
     {
-        public const string ResultMessageName = "PawsAndLoot.MatchResult";
+        public const string ResultMessageName = "PawliceAndPurrglar.MatchResult";
 
         [SerializeField]
         private MatchResultEvaluator evaluator;

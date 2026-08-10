@@ -2,15 +2,15 @@ using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Animation;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Core;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Animation;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// The animals show what they are doing.

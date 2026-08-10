@@ -1,15 +1,15 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// Walk a thief into a sensor and check the officer is actually told, in the
@@ -60,7 +60,7 @@ namespace PawsAndLoot.Tests.PlayMode
             // The officer stands at the origin; the sensor goes due east of them.
             police.transform.position = Vector3.zero;
             var sensorSpot = new Vector3(8f, 0f, 0f);
-            PawsAndLoot.Integration.Network.NetworkItemCoordinator.Place(
+            PawliceAndPurrglar.Integration.Network.NetworkItemCoordinator.Place(
                 ThrowableKind.SensorLight,
                 PlayerRole.Police,
                 sensorSpot);
@@ -90,7 +90,7 @@ namespace PawsAndLoot.Tests.PlayMode
                 + "nothing to point at once the sensor is gone.");
 
             var radar = Object.FindFirstObjectByType<
-                PawsAndLoot.UI.SensorRadarPresenter>();
+                PawliceAndPurrglar.UI.SensorRadarPresenter>();
             Assert.That(radar, Is.Not.Null);
             radar.Refresh(0.02f);
 
@@ -149,7 +149,7 @@ namespace PawsAndLoot.Tests.PlayMode
             // the instant it fires.
             Assert.That(
                 Object.FindObjectsByType<
-                        PawsAndLoot.Animation.PlacedTrapView>(
+                        PawliceAndPurrglar.Animation.PlacedTrapView>(
                         FindObjectsSortMode.None)
                     .Any(view => view.IsFlashing),
                 Is.True,

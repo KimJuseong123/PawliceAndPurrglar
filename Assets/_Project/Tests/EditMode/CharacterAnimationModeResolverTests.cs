@@ -1,10 +1,10 @@
 using NUnit.Framework;
-using PawsAndLoot.Animation;
+using PawliceAndPurrglar.Animation;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class CharacterAnimationModeResolverTests
     {

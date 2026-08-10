@@ -1,15 +1,15 @@
 ﻿using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// Getting out of a room is walking out of it.

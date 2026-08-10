@@ -1,7 +1,7 @@
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// Switches an Animator off when its controller has no usable clips, so a

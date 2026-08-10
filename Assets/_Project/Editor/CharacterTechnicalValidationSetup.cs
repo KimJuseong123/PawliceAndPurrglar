@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PawsAndLoot.TechnicalValidation;
+using PawliceAndPurrglar.TechnicalValidation;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.Build.Reporting;
@@ -10,7 +10,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class CharacterTechnicalValidationSetup
     {
@@ -21,7 +21,7 @@ namespace PawsAndLoot.Editor
         private const string ControllerRoot =
             AssetRoot + "/GeneratedControllers";
         private const string WindowsBuildPath =
-            "Builds/TechnicalValidation/Windows/PawsAndLootCharacterTech.exe";
+            "Builds/TechnicalValidation/Windows/PawliceAndPurrglarCharacterTech.exe";
 
         private static readonly CharacterSource[] CharacterSources =
         {

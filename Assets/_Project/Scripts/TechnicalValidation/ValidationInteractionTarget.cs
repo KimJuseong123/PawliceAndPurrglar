@@ -1,7 +1,7 @@
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     public enum ValidationInteractionKind
     {

@@ -1,12 +1,12 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// The host's two item decisions: did a throw connect, and did a trap catch
@@ -354,8 +354,8 @@ namespace PawsAndLoot.Tests.PlayMode
         {
             var playerObject = Track(new GameObject("Stunned Player"));
             StunState stun = playerObject.AddComponent<StunState>();
-            PawsAndLoot.Animation.StunStarsView stars = playerObject
-                .AddComponent<PawsAndLoot.Animation.StunStarsView>();
+            PawliceAndPurrglar.Animation.StunStarsView stars = playerObject
+                .AddComponent<PawliceAndPurrglar.Animation.StunStarsView>();
             stars.Configure(stun, null);
             yield return null;
 
@@ -396,8 +396,8 @@ namespace PawsAndLoot.Tests.PlayMode
         public IEnumerator ThrowArmSwingsBackThenThroughAndReturnsToRest()
         {
             var playerObject = Track(new GameObject("Thrower"));
-            PawsAndLoot.Animation.ThrowPresenter presenter = playerObject
-                .AddComponent<PawsAndLoot.Animation.ThrowPresenter>();
+            PawliceAndPurrglar.Animation.ThrowPresenter presenter = playerObject
+                .AddComponent<PawliceAndPurrglar.Animation.ThrowPresenter>();
             yield return null;
 
             float windup = presenter.EvaluateArmAngle(0.10f);
@@ -727,8 +727,8 @@ namespace PawsAndLoot.Tests.PlayMode
             var labelObject = Track(new GameObject("Label"));
             UnityEngine.UI.Text label =
                 labelObject.AddComponent<UnityEngine.UI.Text>();
-            PawsAndLoot.UI.SensorAlertPresenter presenter =
-                hud.AddComponent<PawsAndLoot.UI.SensorAlertPresenter>();
+            PawliceAndPurrglar.UI.SensorAlertPresenter presenter =
+                hud.AddComponent<PawliceAndPurrglar.UI.SensorAlertPresenter>();
             presenter.Configure(label, null);
 
             LocalPlayerRoleSelector.OverrideRole(PlayerRole.Police);

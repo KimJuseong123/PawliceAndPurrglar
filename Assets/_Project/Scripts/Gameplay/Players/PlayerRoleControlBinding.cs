@@ -1,7 +1,7 @@
 using System;
-using PawsAndLoot.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Loot;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     [Serializable]
     public sealed class PlayerRoleControlBinding

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Loot;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class LootStateMachineTests
     {

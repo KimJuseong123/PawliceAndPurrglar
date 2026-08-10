@@ -151,5 +151,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ccda625c651ac274a9b935813c72bb4f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.TechnicalNetworkPlayer
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.TechnicalNetworkPlayer
   ShowTopMostFoldoutHeaderGroup: 1

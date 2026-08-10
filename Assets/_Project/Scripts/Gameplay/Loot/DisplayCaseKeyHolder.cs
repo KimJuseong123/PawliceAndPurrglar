@@ -1,8 +1,8 @@
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     /// <summary>
     /// Whether this player is carrying the jeweller's key.

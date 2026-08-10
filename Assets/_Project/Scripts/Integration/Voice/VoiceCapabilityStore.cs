@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     public static class VoiceCapabilityStore
     {

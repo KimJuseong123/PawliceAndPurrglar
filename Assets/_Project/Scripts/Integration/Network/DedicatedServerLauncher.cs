@@ -1,7 +1,7 @@
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// Starts the session as a server with nobody playing on it.

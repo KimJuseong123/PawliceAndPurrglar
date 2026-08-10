@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// What the animal shows above its head.

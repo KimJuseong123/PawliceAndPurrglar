@@ -1,7 +1,7 @@
-using PawsAndLoot.Companions;
+using PawliceAndPurrglar.Companions;
 using UnityEngine;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// World-space state icon driven by CompanionAgent state. The view owns the

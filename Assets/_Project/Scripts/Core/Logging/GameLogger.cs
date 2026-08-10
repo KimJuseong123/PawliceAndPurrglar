@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using PawsAndLoot.Config;
+using PawliceAndPurrglar.Config;
 using UnityEngine;
 
-namespace PawsAndLoot.Logging
+namespace PawliceAndPurrglar.Logging
 {
     public static class GameLogger
     {
-        private const string Prefix = "[PawsAndLoot]";
+        private const string Prefix = "[PawliceAndPurrglar]";
 
         private static readonly object Gate = new();
         private static readonly HashSet<string> OnceKeys = new(StringComparer.Ordinal);

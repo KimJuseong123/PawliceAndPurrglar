@@ -1,11 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using PawsAndLoot.Animation;
+using PawliceAndPurrglar.Animation;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// The front door actually swings, without the house being taken apart.

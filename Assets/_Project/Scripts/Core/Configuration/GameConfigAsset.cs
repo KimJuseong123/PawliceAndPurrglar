@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Config
+namespace PawliceAndPurrglar.Config
 {
     public abstract class GameConfigAsset : ScriptableObject
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     public static class PlayerRolePermissions
     {

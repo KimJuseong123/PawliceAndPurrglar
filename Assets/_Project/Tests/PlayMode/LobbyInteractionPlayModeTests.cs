@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Integration.Network;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Integration.Network;
+using PawliceAndPurrglar.UI;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -11,7 +11,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// Presses the shipping lobby's own controls.

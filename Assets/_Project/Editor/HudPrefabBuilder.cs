@@ -3,9 +3,9 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.TextCore.LowLevel;
 using UnityEngine.UI;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.UI;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Creates the reusable HUD prefab set without touching Game.unity.
@@ -18,7 +18,7 @@ namespace PawsAndLoot.Editor
         private const string HudCanvasResourcesPath =
             "Assets/Resources/HudCanvas.prefab";
         private const string RuntimeFontAssetPath =
-            "Assets/Resources/PawsAndLootDefaultFont.asset";
+            "Assets/Resources/PawliceAndPurrglarDefaultFont.asset";
         private const string RuntimeFontSourcePath =
             "Assets/ThirdParty/DNF_BitBit_v2/TTF/DNFBitBitv2.ttf";
         private const string TmpSettingsAssetPath =
@@ -372,7 +372,7 @@ namespace PawsAndLoot.Editor
                     $"Could not create HUD font asset from {RuntimeFontSourcePath}");
             }
 
-            font.name = "PawsAndLootDefaultFont";
+            font.name = "PawliceAndPurrglarDefaultFont";
             font.atlasPopulationMode = AtlasPopulationMode.Dynamic;
             Texture2D atlasTexture = font.atlasTexture;
             Material fontMaterial = font.material;

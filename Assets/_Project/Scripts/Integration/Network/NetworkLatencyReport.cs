@@ -1,9 +1,9 @@
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// Says how long the round trip to the host actually is.

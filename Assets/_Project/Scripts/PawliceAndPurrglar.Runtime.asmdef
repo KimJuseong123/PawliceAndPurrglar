@@ -1,6 +1,6 @@
 {
-  "name": "PawsAndLoot.Runtime",
-  "rootNamespace": "PawsAndLoot",
+  "name": "PawliceAndPurrglar.Runtime",
+  "rootNamespace": "PawliceAndPurrglar",
   "references": [
     "Unity.Netcode.Runtime",
     "Unity.Networking.Transport",

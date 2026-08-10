@@ -1,11 +1,11 @@
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.UI;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class RoleObjectiveSceneTests
     {

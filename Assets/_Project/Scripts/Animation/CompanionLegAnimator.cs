@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// Swings the animals' actual leg bones so they walk instead of sliding.
@@ -774,11 +774,11 @@ namespace PawsAndLoot.Animation
         /// not walked.
         /// </summary>
         [SerializeField]
-        private PawsAndLoot.Gameplay.Players.PlayerMovementMotor
+        private PawliceAndPurrglar.Gameplay.Players.PlayerMovementMotor
             airborneSource;
 
         public void ConfigureAirborneSource(
-            PawsAndLoot.Gameplay.Players.PlayerMovementMotor motor)
+            PawliceAndPurrglar.Gameplay.Players.PlayerMovementMotor motor)
         {
             airborneSource = motor;
         }

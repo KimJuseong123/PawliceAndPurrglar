@@ -1,9 +1,9 @@
 using System;
 using System.Runtime.InteropServices;
-using PawsAndLoot.Companions;
+using PawliceAndPurrglar.Companions;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     [Serializable]
     public sealed class VoiceBackendEvent
@@ -53,7 +53,7 @@ namespace PawsAndLoot.Integration.Voice
                 .Replace("http://", "ws://")
                 .TrimEnd('/')
                 + "/api/game/voice-events";
-            PawsAndLoot_VoiceBackendSocket_Connect(
+            PawliceAndPurrglar_VoiceBackendSocket_Connect(
                 gameObject.name,
                 websocketUrl,
                 sessionId,
@@ -74,7 +74,7 @@ namespace PawsAndLoot.Integration.Voice
         public void RegisterVoiceContext(string commandId, string contextJson)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            PawsAndLoot_VoiceBackendSocket_SendContext(
+            PawliceAndPurrglar_VoiceBackendSocket_SendContext(
                 gameObject.name,
                 commandId,
                 contextJson);
@@ -83,14 +83,14 @@ namespace PawsAndLoot.Integration.Voice
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
-        private static extern void PawsAndLoot_VoiceBackendSocket_Connect(
+        private static extern void PawliceAndPurrglar_VoiceBackendSocket_Connect(
             string gameObjectName,
             string websocketUrl,
             string sessionId,
             string token);
 
         [DllImport("__Internal")]
-        private static extern void PawsAndLoot_VoiceBackendSocket_SendContext(
+        private static extern void PawliceAndPurrglar_VoiceBackendSocket_SendContext(
             string gameObjectName,
             string commandId,
             string contextJson);

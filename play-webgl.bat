@@ -30,7 +30,7 @@ if not exist "%UNITY%" (
 if "%SKIP_BUILD%"=="0" if not exist "%WEBGL_ROOT%\index.html" (
     echo [BUILD] Creating WebGL playtest...
     if not exist "%ROOT%Logs" mkdir "%ROOT%Logs"
-    "%UNITY%" -batchmode -nographics -quit -projectPath "%ROOT%" -executeMethod PawsAndLoot.Editor.PlaytestBuild.BuildWebGlPlaytest -logFile "%ROOT%Logs\webgl-playtest-build.log"
+    "%UNITY%" -batchmode -nographics -quit -projectPath "%ROOT%" -executeMethod PawliceAndPurrglar.Editor.PlaytestBuild.BuildWebGlPlaytest -logFile "%ROOT%Logs\webgl-playtest-build.log"
     if errorlevel 1 (
         echo [ERROR] Unity WebGL build failed. See Logs\webgl-playtest-build.log
         exit /b 1

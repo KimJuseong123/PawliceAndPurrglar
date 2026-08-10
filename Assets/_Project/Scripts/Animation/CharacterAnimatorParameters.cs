@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// ART-003. The whole vocabulary the animation layer exposes.

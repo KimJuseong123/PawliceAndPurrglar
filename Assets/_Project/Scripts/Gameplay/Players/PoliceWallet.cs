@@ -1,8 +1,8 @@
 using System;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// The officer's recovered money, and the only thing they can spend.

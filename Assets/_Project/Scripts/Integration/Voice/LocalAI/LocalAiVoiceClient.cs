@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     public sealed class LocalAiVoiceClient
     {

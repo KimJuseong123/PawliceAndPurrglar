@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Arrest;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Input;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Arrest;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Input;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// NET-003. Moves one player across the network under host authority.
@@ -185,10 +185,10 @@ namespace PawsAndLoot.Integration.Network
         private ArrestProgressController arrestProgress;
 
         [SerializeField]
-        private PawsAndLoot.Animation.CompanionExpressionView companionFace;
+        private PawliceAndPurrglar.Animation.CompanionExpressionView companionFace;
 
         [SerializeField]
-        private PawsAndLoot.Companions.CompanionAgent companionAgent;
+        private PawliceAndPurrglar.Companions.CompanionAgent companionAgent;
 
         private Vector3 _companionLastPosition;
         private Vector3 _companionFollowVelocity;
@@ -198,10 +198,10 @@ namespace PawsAndLoot.Integration.Network
         private int _companionFaceSequence;
 
         [SerializeField]
-        private PawsAndLoot.Gameplay.Items.ToolUseAction toolUse;
+        private PawliceAndPurrglar.Gameplay.Items.ToolUseAction toolUse;
 
         [SerializeField]
-        private PawsAndLoot.Gameplay.Items.ToolUseInput toolInput;
+        private PawliceAndPurrglar.Gameplay.Items.ToolUseInput toolInput;
 
         [SerializeField]
         private StunState stun;
@@ -211,10 +211,10 @@ namespace PawsAndLoot.Integration.Network
         /// than consulted.
         /// </summary>
         [SerializeField]
-        private PawsAndLoot.Animation.ThrowPresenter throwPresenter;
+        private PawliceAndPurrglar.Animation.ThrowPresenter throwPresenter;
 
         [SerializeField]
-        private PawsAndLoot.Gameplay.Items.ToolCarrier toolCarrier;
+        private PawliceAndPurrglar.Gameplay.Items.ToolCarrier toolCarrier;
 
         [SerializeField]
         private PoliceWallet policeWallet;
@@ -225,10 +225,10 @@ namespace PawsAndLoot.Integration.Network
         /// speed from.
         /// </summary>
         [SerializeField]
-        private PawsAndLoot.Animation.CompanionLegAnimator legAnimator;
+        private PawliceAndPurrglar.Animation.CompanionLegAnimator legAnimator;
 
         [SerializeField]
-        private PawsAndLoot.Gameplay.Interiors.PlayerInteriorState
+        private PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState
             interiorState;
 
         /// <summary>
@@ -242,7 +242,7 @@ namespace PawsAndLoot.Integration.Network
         /// </summary>
         private readonly NetworkVariable<int> _interiorId =
             new(
-                PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside,
+                PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState.Outside,
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
 
@@ -481,25 +481,25 @@ namespace PawsAndLoot.Integration.Network
             CompanionCommandKeyboardInput configuredCompanionInput,
             ThiefLootWallet configuredWallet,
             ArrestProgressController configuredArrestProgress,
-            PawsAndLoot.Gameplay.Items.ToolUseAction configuredToolUse = null,
-            PawsAndLoot.Gameplay.Items.ToolUseInput configuredToolInput = null,
+            PawliceAndPurrglar.Gameplay.Items.ToolUseAction configuredToolUse = null,
+            PawliceAndPurrglar.Gameplay.Items.ToolUseInput configuredToolInput = null,
             StunState configuredStun = null,
-            PawsAndLoot.Animation.ThrowPresenter configuredThrowPresenter =
+            PawliceAndPurrglar.Animation.ThrowPresenter configuredThrowPresenter =
                 null,
-            PawsAndLoot.Gameplay.Items.ToolCarrier configuredToolCarrier =
+            PawliceAndPurrglar.Gameplay.Items.ToolCarrier configuredToolCarrier =
                 null,
             PoliceWallet configuredPoliceWallet = null,
-            PawsAndLoot.Animation.CompanionLegAnimator configuredLegAnimator =
+            PawliceAndPurrglar.Animation.CompanionLegAnimator configuredLegAnimator =
                 null,
-            PawsAndLoot.Gameplay.Interiors.PlayerInteriorState
+            PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState
                 configuredInteriorState = null,
-            PawsAndLoot.Animation.CompanionExpressionView
+            PawliceAndPurrglar.Animation.CompanionExpressionView
                 configuredCompanionFace = null)
         {
             companionFace = configuredCompanionFace;
             companionAgent = configuredCompanionFace != null
                 ? configuredCompanionFace
-                    .GetComponent<PawsAndLoot.Companions.CompanionAgent>()
+                    .GetComponent<PawliceAndPurrglar.Companions.CompanionAgent>()
                 : null;
             interiorState = configuredInteriorState;
             policeWallet = configuredPoliceWallet;
@@ -529,13 +529,13 @@ namespace PawsAndLoot.Integration.Network
             // reaches the host — but the state it sets moves the character, and a
             // client that moved its own copy would be dragged straight back by the
             // next position packet.
-            GetComponent<PawsAndLoot.Gameplay.Players.ThiefHidingState>()
+            GetComponent<PawliceAndPurrglar.Gameplay.Players.ThiefHidingState>()
                 ?.SetAuthority(IsServer);
 
             // Same reason as the interior: a client running its own sentence
             // teleports the thief on its screen only, and its clock drifts from
             // the host's.
-            GetComponent<PawsAndLoot.Gameplay.Arrest.ThiefJailState>()
+            GetComponent<PawliceAndPurrglar.Gameplay.Arrest.ThiefJailState>()
                 ?.SetAuthority(IsServer);
 
             // The animal's own presenter decides faces from events the host
@@ -553,7 +553,7 @@ namespace PawsAndLoot.Integration.Network
             {
                 var presenter = companionFace
                     .GetComponent<
-                        PawsAndLoot.Companions.CompanionExpressionPresenter>();
+                        PawliceAndPurrglar.Companions.CompanionExpressionPresenter>();
                 if (presenter != null)
                 {
                     presenter.enabled = false;
@@ -673,7 +673,7 @@ namespace PawsAndLoot.Integration.Network
                 foreach (MonoBehaviour behaviour in
                     named.GetComponents<MonoBehaviour>())
                 {
-                    if (behaviour is not PawsAndLoot.Gameplay.Players.IPlayerInteractable
+                    if (behaviour is not PawliceAndPurrglar.Gameplay.Players.IPlayerInteractable
                         candidate)
                     {
                         continue;
@@ -682,11 +682,11 @@ namespace PawsAndLoot.Integration.Network
                     // Through the resolver, so the role and availability rules the
                     // scanner applies are applied here too. Naming a target must
                     // not become a way around them.
-                    if (PawsAndLoot.Gameplay.Players.InteractionResolver.TryExecute(
+                    if (PawliceAndPurrglar.Gameplay.Players.InteractionResolver.TryExecute(
                             candidate,
-                            new PawsAndLoot.Gameplay.Players.PlayerInteractionContext(
+                            new PawliceAndPurrglar.Gameplay.Players.PlayerInteractionContext(
                                 identity),
-                            PawsAndLoot.Gameplay.Players.ContextInteractionKey.E))
+                            PawliceAndPurrglar.Gameplay.Players.ContextInteractionKey.E))
                     {
                         scanner.RefreshTarget();
                         return;
@@ -793,7 +793,7 @@ namespace PawsAndLoot.Integration.Network
             }
 
             toolCarrier.TryStore(
-                (PawsAndLoot.Gameplay.Items.ThrowableKind)throwableKindValue,
+                (PawliceAndPurrglar.Gameplay.Items.ThrowableKind)throwableKindValue,
                 1);
         }
 
@@ -859,9 +859,9 @@ namespace PawsAndLoot.Integration.Network
                 return;
             }
 
-            var kind = (PawsAndLoot.Gameplay.Items.ThrowableKind)throwableKindValue;
-            foreach (PawsAndLoot.Gameplay.Items.PoliceSupplyCounter counter in
-                FindObjectsByType<PawsAndLoot.Gameplay.Items.PoliceSupplyCounter>(
+            var kind = (PawliceAndPurrglar.Gameplay.Items.ThrowableKind)throwableKindValue;
+            foreach (PawliceAndPurrglar.Gameplay.Items.PoliceSupplyCounter counter in
+                FindObjectsByType<PawliceAndPurrglar.Gameplay.Items.PoliceSupplyCounter>(
                     FindObjectsSortMode.None))
             {
                 if (counter != null
@@ -877,7 +877,7 @@ namespace PawsAndLoot.Integration.Network
             // supermarket counters were removed on 2026-08-09 — the till lives in
             // `PoliceSupplyCatalogue` now, and without this line the client's
             // officer could open the stall, press Buy and never receive anything.
-            PawsAndLoot.Gameplay.Items.PoliceSupplyCatalogue.TryBuy(
+            PawliceAndPurrglar.Gameplay.Items.PoliceSupplyCatalogue.TryBuy(
                 identity,
                 kind);
         }
@@ -943,15 +943,15 @@ namespace PawsAndLoot.Integration.Network
             if (throwPresenter != null)
             {
                 throwPresenter.Play(
-                    (PawsAndLoot.Gameplay.Items.ThrowableKind)kind,
+                    (PawliceAndPurrglar.Gameplay.Items.ThrowableKind)kind,
                     origin,
                     landing);
             }
         }
 
         private void HandleHostThrew(
-            PawsAndLoot.Gameplay.Items.ThrowableKind kind,
-            PawsAndLoot.Gameplay.Items.ThrowResolver.Result result)
+            PawliceAndPurrglar.Gameplay.Items.ThrowableKind kind,
+            PawliceAndPurrglar.Gameplay.Items.ThrowResolver.Result result)
         {
             if (!IsServer || !IsSpawned)
             {
@@ -1217,8 +1217,8 @@ namespace PawsAndLoot.Integration.Network
             }
 
             _companionReportAt = Time.time + 5f;
-            PawsAndLoot.Logging.GameLogger.Warning(
-                PawsAndLoot.Logging.GameLogCategory.Companion,
+            PawliceAndPurrglar.Logging.GameLogger.Warning(
+                PawliceAndPurrglar.Logging.GameLogCategory.Companion,
                 $"{Role} link has no companion wired, so nothing about this "
                 + "animal reaches the client.",
                 this);
@@ -1281,7 +1281,7 @@ namespace PawsAndLoot.Integration.Network
                 Mathf.Clamp01(deltaTime * 10f));
 
             companionAgent
-                .GetComponent<PawsAndLoot.Animation.CompanionLegAnimator>()
+                .GetComponent<PawliceAndPurrglar.Animation.CompanionLegAnimator>()
                 ?.SetExternalSpeed(_companionSpeed.Value);
 
             // The body settle is told the same speed the legs are.
@@ -1293,7 +1293,7 @@ namespace PawsAndLoot.Integration.Network
             // cat shook.
             companionAgent
                 .GetComponent<
-                    PawsAndLoot.Animation.CompanionProceduralAnimator>()
+                    PawliceAndPurrglar.Animation.CompanionProceduralAnimator>()
                 ?.SetExternalSpeed(_companionSpeed.Value);
         }
 
@@ -1339,8 +1339,8 @@ namespace PawsAndLoot.Integration.Network
             }
 
             _lastCompanionFaceSequence = sequence;
-            var face = (PawsAndLoot.Companions.CompanionExpression)(packed & 0xF);
-            if (face == PawsAndLoot.Companions.CompanionExpression.None)
+            var face = (PawliceAndPurrglar.Companions.CompanionExpression)(packed & 0xF);
+            if (face == PawliceAndPurrglar.Companions.CompanionExpression.None)
             {
                 companionFace.Hide();
             }
@@ -1405,14 +1405,14 @@ namespace PawsAndLoot.Integration.Network
             // one of these is always null and that is fine — asking is cheaper
             // than a second link type.
             var completion =
-                GetComponent<PawsAndLoot.Gameplay.Arrest.ArrestCompletionController>();
+                GetComponent<PawliceAndPurrglar.Gameplay.Arrest.ArrestCompletionController>();
             if (completion != null)
             {
                 _catchCount.Value = completion.CurrentCatchCount;
             }
 
             var jail =
-                GetComponent<PawsAndLoot.Gameplay.Arrest.ThiefJailState>();
+                GetComponent<PawliceAndPurrglar.Gameplay.Arrest.ThiefJailState>();
             if (jail != null)
             {
                 _jailSeconds.Value = jail.RemainingSeconds;
@@ -1439,7 +1439,7 @@ namespace PawsAndLoot.Integration.Network
             }
 
             var hidingState =
-                GetComponent<PawsAndLoot.Gameplay.Players.ThiefHidingState>();
+                GetComponent<PawliceAndPurrglar.Gameplay.Players.ThiefHidingState>();
             if (hidingState != null)
             {
                 _hiding.Value = hidingState.IsHiding;
@@ -1485,9 +1485,9 @@ namespace PawsAndLoot.Integration.Network
             // than handed to the HUD separately. One reader, two writers that
             // never run on the same machine — the host simulates and the client
             // is told, which is how everything else here works.
-            GetComponent<PawsAndLoot.Gameplay.Arrest.ArrestCompletionController>()
+            GetComponent<PawliceAndPurrglar.Gameplay.Arrest.ArrestCompletionController>()
                 ?.ApplyReplicatedCatchCount(_catchCount.Value);
-            GetComponent<PawsAndLoot.Gameplay.Arrest.ThiefJailState>()
+            GetComponent<PawliceAndPurrglar.Gameplay.Arrest.ThiefJailState>()
                 ?.ApplyReplicatedRemaining(_jailSeconds.Value);
 
             if (interiorState != null)
@@ -1495,7 +1495,7 @@ namespace PawsAndLoot.Integration.Network
                 interiorState.ApplyReplicated(_interiorId.Value);
             }
 
-            GetComponent<PawsAndLoot.Gameplay.Players.ThiefHidingState>()
+            GetComponent<PawliceAndPurrglar.Gameplay.Players.ThiefHidingState>()
                 ?.ApplyReplicated(_hiding.Value);
 
             // What is in hand, so the HUD on this screen matches the hand the
@@ -1564,7 +1564,7 @@ namespace PawsAndLoot.Integration.Network
                 // screen, but the replicated player is moved exactly the same
                 // way and had exactly the same two opinions about its speed.
                 GetComponent<
-                    PawsAndLoot.Animation.CompanionProceduralAnimator>()
+                    PawliceAndPurrglar.Animation.CompanionProceduralAnimator>()
                     ?.SetExternalSpeed(told);
             }
         }

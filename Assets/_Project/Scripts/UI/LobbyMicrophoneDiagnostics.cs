@@ -1,11 +1,11 @@
 using System.Collections;
-using PawsAndLoot.Integration.Voice;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Integration.Voice;
+using PawliceAndPurrglar.Logging;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// The lobby's microphone check: press once, speak, and find out before the

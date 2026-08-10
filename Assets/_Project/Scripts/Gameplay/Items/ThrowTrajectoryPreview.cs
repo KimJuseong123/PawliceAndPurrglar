@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// Lightweight runtime preview for a charged throw. The marker is cosmetic;

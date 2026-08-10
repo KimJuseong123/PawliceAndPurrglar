@@ -1,9 +1,9 @@
-using PawsAndLoot.Input;
+using PawliceAndPurrglar.Input;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     /// <summary>
     /// Runtime-built HUD for the validation scene only. It uses safe anchors

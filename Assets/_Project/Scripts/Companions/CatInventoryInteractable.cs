@@ -1,10 +1,10 @@
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     [DisallowMultipleComponent]
     public sealed class CatInventoryInteractable :

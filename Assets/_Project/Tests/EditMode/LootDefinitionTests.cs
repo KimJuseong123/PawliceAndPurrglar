@@ -1,11 +1,11 @@
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Loot;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Loot;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class LootDefinitionTests
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Match
+namespace PawliceAndPurrglar.Match
 {
     /// <summary>
     /// What the match looked like, for the result screen to report.

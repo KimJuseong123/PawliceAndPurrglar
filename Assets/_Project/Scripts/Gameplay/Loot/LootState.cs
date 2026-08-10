@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     public enum LootState
     {

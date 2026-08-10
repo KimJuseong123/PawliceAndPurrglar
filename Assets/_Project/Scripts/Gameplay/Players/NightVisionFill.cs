@@ -1,7 +1,7 @@
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// Lifts the night on one player's screen. The thief's is lifted further.

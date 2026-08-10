@@ -1,6 +1,6 @@
 using UnityEditor;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Cuts the lobby's logo and four characters out of the authored mockup.

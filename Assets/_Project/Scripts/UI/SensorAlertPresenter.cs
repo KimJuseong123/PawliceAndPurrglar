@@ -1,9 +1,9 @@
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// Tells the officer a sensor went off, on their screen only.

@@ -1,9 +1,9 @@
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// Puts the thief at one of the outskirt corners when the match starts.

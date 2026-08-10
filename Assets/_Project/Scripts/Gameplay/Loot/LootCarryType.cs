@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     /// <summary>
     /// How much of the thief's hands and speed a piece of treasure costs.
@@ -48,7 +48,7 @@ namespace PawsAndLoot.Gameplay.Loot
         /// What fraction of full speed the thief keeps.
         ///
         /// The old flat penalty was a single multiplier in
-        /// <see cref="PawsAndLoot.Config.PlayerConfig"/>; one hand keeps that
+        /// <see cref="PawliceAndPurrglar.Config.PlayerConfig"/>; one hand keeps that
         /// value so nothing that already existed changes pace, and the other
         /// three are placed around it.
         ///

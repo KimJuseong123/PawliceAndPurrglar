@@ -1,11 +1,11 @@
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class PlayerSharedMovementSceneTests
     {

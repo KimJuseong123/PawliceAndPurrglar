@@ -767,7 +767,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27b91d35500753f4495c77a5c682d380, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyCharacterView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyCharacterView
   policeTeamImage: {fileID: 8706037844090430229}
   thiefTeamImage: {fileID: 7840960672768677555}
   policeIdleSprite: {fileID: 21300000, guid: 89e8243387d08fb4daa4f3ecd0a31d39, type: 3}
@@ -872,7 +872,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 6357148501794586389}
   fill: {fileID: 7715104405758303326}
   contents:
@@ -1904,7 +1904,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 8103220569136612738}
   fill: {fileID: 2199490586644744785}
   contents:
@@ -2850,7 +2850,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 162607063322063962}
   fill: {fileID: 3369393446850077946}
   contents:
@@ -3204,7 +3204,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8b760994982555f478e5553c6869e1c4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.NetworkLobbyPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.NetworkLobbyPresenter
   session: {fileID: 0}
   inviteNoteLabel: {fileID: 4568302747702584575}
   statusLabel: {fileID: 1997086344494658016}
@@ -3240,7 +3240,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b1b5403dcff04824182bc50e660a2262, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyMicrophoneDiagnostics
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyMicrophoneDiagnostics
   statusLabel: {fileID: 3723815804890036271}
   testButton: {fileID: 4309898989133445002}
   testButtonLabel: {fileID: 2753559639106925846}
@@ -3796,7 +3796,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 123335629021121647}
   fill: {fileID: 5870047686452755024}
   contents:
@@ -4774,7 +4774,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 1710915166754558121}
   fill: {fileID: 1789200682558629835}
   contents:
@@ -5368,7 +5368,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 3554440333366057721}
   fill: {fileID: 6823580265024891337}
   contents:
@@ -5989,7 +5989,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 5441076313446413034}
   fill: {fileID: 8385681433787735875}
   contents:
@@ -6265,7 +6265,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 703406901702614782}
   fill: {fileID: 9192017925416037085}
   contents:
@@ -7755,7 +7755,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 6055336297228978174}
   fill: {fileID: 2444027393041302846}
   contents:
@@ -7857,7 +7857,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 7050457069810104235}
   fill: {fileID: 5921460295374807894}
   contents:
@@ -8193,7 +8193,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 9131198110042509726}
   fill: {fileID: 6537278784304100279}
   contents:

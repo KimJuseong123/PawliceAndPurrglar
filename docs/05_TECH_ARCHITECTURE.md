@@ -522,12 +522,12 @@ GreyboxMapDefinition
 어셈블리 경계:
 
 ```text
-Assets/_Project/Scripts/PawsAndLoot.Runtime.asmdef
-Assets/_Project/Tests/EditMode/PawsAndLoot.Tests.EditMode.asmdef
-Assets/_Project/Tests/PlayMode/PawsAndLoot.Tests.PlayMode.asmdef
+Assets/_Project/Scripts/PawliceAndPurrglar.Runtime.asmdef
+Assets/_Project/Tests/EditMode/PawliceAndPurrglar.Tests.EditMode.asmdef
+Assets/_Project/Tests/PlayMode/PawliceAndPurrglar.Tests.PlayMode.asmdef
 ```
 
-테스트 어셈블리는 `PawsAndLoot.Runtime`을 참조하며 런타임 어셈블리는 테스트
+테스트 어셈블리는 `PawliceAndPurrglar.Runtime`을 참조하며 런타임 어셈블리는 테스트
 어셈블리를 참조하지 않는다. Edit Mode 테스트는 Editor에서만 컴파일하고,
 Play Mode 테스트는 일반 빌드에서 `TestAssemblies`로 제외한다.
 
@@ -560,7 +560,7 @@ Play Mode 테스트는 일반 빌드에서 `TestAssemblies`로 제외한다.
 - `Voice`
 - `Network`
 
-로그 형식은 `[PawsAndLoot][Category][Level] message`다.
+로그 형식은 `[PawliceAndPurrglar][Category][Level] message`다.
 `DefaultGameLogConfig`은 Editor와 Development Build에서 `Debug` 이상,
 일반 제출 빌드에서 `Warning` 이상을 출력한다. 개발 최소 레벨은 제출 최소
 레벨보다 반드시 상세해야 하며, 오류 레벨은 설정으로 완전히 숨길 수 없다.

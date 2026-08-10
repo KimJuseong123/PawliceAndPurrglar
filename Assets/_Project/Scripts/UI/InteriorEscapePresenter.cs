@@ -1,9 +1,9 @@
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// Counts the emergency exit down on screen.

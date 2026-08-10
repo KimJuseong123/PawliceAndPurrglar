@@ -1,9 +1,9 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Core;
+using PawliceAndPurrglar.Core;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     public sealed class RuntimeAssemblyPlayModeTests
     {

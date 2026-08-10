@@ -188,7 +188,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3cc6ec0afdb0437d823c219f6b7dd39c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.RoleStatusPanelView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.RoleStatusPanelView
   roleLabel: {fileID: 802964382219409059}
   objectiveLabel: {fileID: 3083617553123781776}
   statusLabel: {fileID: 7237273605470470848}

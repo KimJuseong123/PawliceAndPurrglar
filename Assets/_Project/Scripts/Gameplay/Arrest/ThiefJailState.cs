@@ -1,9 +1,9 @@
 using System;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Arrest
+namespace PawliceAndPurrglar.Gameplay.Arrest
 {
     /// <summary>
     /// Holds a caught thief for a spell and then puts them back on the map.

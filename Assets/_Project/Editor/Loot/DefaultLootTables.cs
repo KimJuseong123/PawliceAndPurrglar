@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.IO;
-using PawsAndLoot.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Items;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Creates the loot tables the containers draw from.

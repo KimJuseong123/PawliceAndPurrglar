@@ -4,8 +4,8 @@
 // Every exit from here reports something. A silent return leaves the C# state
 // machine sitting in `Recording` with no way to find out why, and in a shipped
 // build there is no console open to look at.
-var PawsAndLootVoiceLibrary = {
-  $PawsAndLootVoice: {
+var PawliceAndPurrglarVoiceLibrary = {
+  $PawliceAndPurrglarVoice: {
     // `SendMessage` is the only way back into Unity from here, and which scope
     // exposes it has moved between Unity versions. Resolve it once, and say so
     // if it is genuinely absent rather than throwing inside a promise where
@@ -24,7 +24,7 @@ var PawsAndLootVoiceLibrary = {
       }
 
       if (!target) {
-        console.error("[PawsAndLoot] SendMessage is unavailable; the voice "
+        console.error("[PawliceAndPurrglar] SendMessage is unavailable; the voice "
           + "result cannot reach Unity.");
         return;
       }
@@ -38,16 +38,16 @@ var PawsAndLootVoiceLibrary = {
     }
   },
 
-  PawsAndLoot_VoiceMediaRecorder_Start: function (
+  PawliceAndPurrglar_VoiceMediaRecorder_Start: function (
     gameObjectPtr,
     callbackPtr,
     maximumSeconds
   ) {
     var gameObject = UTF8ToString(gameObjectPtr);
     var callback = UTF8ToString(callbackPtr);
-    var send = PawsAndLootVoice.send;
+    var send = PawliceAndPurrglarVoice.send;
 
-    if (window.PawsAndLootVoiceRecorder) {
+    if (window.PawliceAndPurrglarVoiceRecorder) {
       // A previous recording never finished. Reporting is better than starting
       // a second recorder on the same device.
       send(gameObject, callback,
@@ -83,7 +83,7 @@ var PawsAndLootVoiceLibrary = {
         return MediaRecorder.isTypeSupported(candidate);
       });
       if (!mimeType) {
-        PawsAndLootVoice.stopTracks(stream);
+        PawliceAndPurrglarVoice.stopTracks(stream);
         send(gameObject, callback, JSON.stringify({ error: "MIME_UNSUPPORTED" }));
         return;
       }
@@ -93,7 +93,7 @@ var PawsAndLootVoiceLibrary = {
       var timer = window.setTimeout(function () {
         if (recorder.state !== "inactive") recorder.stop();
       }, Math.min(5000, Math.max(100, maximumSeconds * 1000)));
-      window.PawsAndLootVoiceRecorder = {
+      window.PawliceAndPurrglarVoiceRecorder = {
         recorder: recorder,
         stream: stream,
         timer: timer,
@@ -107,14 +107,14 @@ var PawsAndLootVoiceLibrary = {
       };
       recorder.onerror = function () {
         window.clearTimeout(timer);
-        PawsAndLootVoice.stopTracks(stream);
-        window.PawsAndLootVoiceRecorder = null;
+        PawliceAndPurrglarVoice.stopTracks(stream);
+        window.PawliceAndPurrglarVoiceRecorder = null;
         send(gameObject, callback, JSON.stringify({ error: "RECORDER_ERROR" }));
       };
       recorder.onstop = function () {
         window.clearTimeout(timer);
-        PawsAndLootVoice.stopTracks(stream);
-        window.PawsAndLootVoiceRecorder = null;
+        PawliceAndPurrglarVoice.stopTracks(stream);
+        window.PawliceAndPurrglarVoiceRecorder = null;
         var blob = new Blob(chunks, { type: mimeType });
         if (blob.size === 0) {
           send(gameObject, callback,
@@ -148,7 +148,7 @@ var PawsAndLootVoiceLibrary = {
       };
       recorder.start();
     }).catch(function (error) {
-      window.PawsAndLootVoiceRecorder = null;
+      window.PawliceAndPurrglarVoiceRecorder = null;
       send(
         gameObject,
         callback,
@@ -158,13 +158,13 @@ var PawsAndLootVoiceLibrary = {
     });
   },
 
-  PawsAndLoot_VoiceMediaRecorder_Stop: function () {
-    var active = window.PawsAndLootVoiceRecorder;
+  PawliceAndPurrglar_VoiceMediaRecorder_Stop: function () {
+    var active = window.PawliceAndPurrglarVoiceRecorder;
     if (active && active.recorder && active.recorder.state !== "inactive") {
       active.recorder.stop();
     }
   }
 };
 
-autoAddDeps(PawsAndLootVoiceLibrary, "$PawsAndLootVoice");
-mergeInto(LibraryManager.library, PawsAndLootVoiceLibrary);
+autoAddDeps(PawliceAndPurrglarVoiceLibrary, "$PawliceAndPurrglarVoice");
+mergeInto(LibraryManager.library, PawliceAndPurrglarVoiceLibrary);

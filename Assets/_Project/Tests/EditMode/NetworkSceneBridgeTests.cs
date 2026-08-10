@@ -1,7 +1,7 @@
 using NUnit.Framework;
-using PawsAndLoot.Core;
+using PawliceAndPurrglar.Core;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// NET-008. The rematch route has to be a separate handler from the plain

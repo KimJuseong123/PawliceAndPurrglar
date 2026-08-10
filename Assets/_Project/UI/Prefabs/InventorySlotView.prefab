@@ -480,7 +480,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 3596392808551686720}
   itemNameLabel: {fileID: 1711359746480728469}
   quantityLabel: {fileID: 4702440587838386567}

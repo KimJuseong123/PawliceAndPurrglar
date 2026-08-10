@@ -1,12 +1,12 @@
 using System.IO;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Map;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Map;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Renders the Game scene straight down into a PNG.

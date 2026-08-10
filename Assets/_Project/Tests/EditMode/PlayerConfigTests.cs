@@ -1,9 +1,9 @@
 using NUnit.Framework;
-using PawsAndLoot.Config;
+using PawliceAndPurrglar.Config;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class PlayerConfigTests
     {

@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using PawsAndLoot.Integration.Voice;
+using PawliceAndPurrglar.Integration.Voice;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class VoiceCaptureAndCommandResultTests
     {

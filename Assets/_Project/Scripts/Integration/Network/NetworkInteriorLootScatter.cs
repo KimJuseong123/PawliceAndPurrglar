@@ -1,13 +1,13 @@
 using System.Collections.Generic;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Match;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// Scatters loot around the house interiors when a match starts, and tells the
@@ -31,9 +31,9 @@ namespace PawsAndLoot.Integration.Network
     public sealed class NetworkInteriorLootScatter : MonoBehaviour
     {
         public const string ScatterMessageName =
-            "PawsAndLoot.InteriorLoot";
+            "PawliceAndPurrglar.InteriorLoot";
         public const string TakenMessageName =
-            "PawsAndLoot.InteriorLootTaken";
+            "PawliceAndPurrglar.InteriorLootTaken";
 
         /// <summary>
         /// Money per piece, and the reason it is small.

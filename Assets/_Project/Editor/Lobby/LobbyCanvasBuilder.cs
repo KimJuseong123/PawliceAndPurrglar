@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.UI;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Assembles the lobby as a prefab of individually anchored controls.
@@ -31,7 +31,7 @@ namespace PawsAndLoot.Editor
         private const string ElementFolder = LobbyArtExtractor.OutputFolder;
 
         private const string FontAssetPath =
-            "Assets/Resources/PawsAndLootDefaultFont.asset";
+            "Assets/Resources/PawliceAndPurrglarDefaultFont.asset";
 
         /// <summary>
         /// Room rows. A LAN playtest shows one; four is headroom. Kept at four

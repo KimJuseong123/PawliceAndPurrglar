@@ -1,10 +1,10 @@
 using System;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Input;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Input;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     public enum ThrowState
     {

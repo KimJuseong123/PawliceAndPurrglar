@@ -1,7 +1,7 @@
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// Builds the non-networked scene representation of a missed thrown item.

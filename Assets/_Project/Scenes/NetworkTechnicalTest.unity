@@ -350,7 +350,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3b666be4eb329478072982a05df962, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.NetworkConnectionProbe
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.NetworkConnectionProbe
   networkManager: {fileID: 485809132}
 --- !u!4 &1542842121
 Transform:

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// Something is stuck to this player's face.

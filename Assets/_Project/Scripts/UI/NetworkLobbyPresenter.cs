@@ -1,15 +1,15 @@
 using System.Collections.Generic;
 using System.Text;
-using PawsAndLoot.Audio;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Integration.Network;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Audio;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Integration.Network;
+using PawliceAndPurrglar.Logging;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// The invite-code lobby: one player makes a room and reads out the six

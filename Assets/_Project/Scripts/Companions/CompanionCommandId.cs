@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// The stable command vocabulary. Number keys today and voice later must

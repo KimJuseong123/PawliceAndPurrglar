@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Loot;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Loot;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Says, for every piece of treasure in every room, whether the player will

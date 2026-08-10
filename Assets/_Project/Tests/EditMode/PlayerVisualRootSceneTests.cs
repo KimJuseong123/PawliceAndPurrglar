@@ -1,14 +1,14 @@
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
 using Unity.Netcode;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class PlayerVisualRootSceneTests
     {

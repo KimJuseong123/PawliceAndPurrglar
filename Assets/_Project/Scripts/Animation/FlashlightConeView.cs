@@ -1,8 +1,8 @@
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// Draws the torch's reach on the ground: a filled wedge plus the circle

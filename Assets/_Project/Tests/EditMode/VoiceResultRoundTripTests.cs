@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Integration.Voice;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Integration.Voice;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// What the host decided has to survive the trip to the other machine.

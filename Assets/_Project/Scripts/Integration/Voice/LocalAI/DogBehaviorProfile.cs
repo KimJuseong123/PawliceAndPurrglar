@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     [CreateAssetMenu(
         menuName = "PawliceAndPurrglar/Voice/Dog Behavior Profile",

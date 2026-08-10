@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     [Serializable]
     public sealed class VoiceIntentCandidate

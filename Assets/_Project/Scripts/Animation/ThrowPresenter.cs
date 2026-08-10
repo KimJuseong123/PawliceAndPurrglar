@@ -1,7 +1,7 @@
-using PawsAndLoot.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Items;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// What a throw looks like: the arm that swings and the prop that flies.

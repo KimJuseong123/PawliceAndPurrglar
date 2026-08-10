@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Interiors
+namespace PawliceAndPurrglar.Gameplay.Interiors
 {
     /// <summary>
     /// A room's four outside faces, each one removable as a whole.

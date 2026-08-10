@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// UI-006. What a command actually achieved, so the HUD can report a

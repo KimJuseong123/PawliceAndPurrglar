@@ -11,6 +11,6 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3fa83f2998684e4799786ae54f150b6, type: 3}
   m_Name: ArrestConfig
-  m_EditorClassIdentifier: Assembly-CSharp::PawsAndLoot.Config.ArrestConfig
+  m_EditorClassIdentifier: Assembly-CSharp::PawliceAndPurrglar.Config.ArrestConfig
   arrestDistance: 1.75
   arrestDurationSeconds: 1.5

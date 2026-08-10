@@ -1,13 +1,13 @@
 using System;
 using System.Collections;
 using System.IO;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Integration.Network;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Integration.Network;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     public enum VoiceCommandInputState
     {
@@ -454,8 +454,8 @@ namespace PawsAndLoot.Integration.Voice
             if (response.classification == null
                 && string.IsNullOrWhiteSpace(response.transcript))
             {
-                PawsAndLoot.Logging.GameLogger.Info(
-                    PawsAndLoot.Logging.GameLogCategory.Voice,
+                PawliceAndPurrglar.Logging.GameLogger.Info(
+                    PawliceAndPurrglar.Logging.GameLogCategory.Voice,
                     $"Voice command {response.commandId} was accepted with no "
                     + "answer in the response, so the socket has to finish it.",
                     this);

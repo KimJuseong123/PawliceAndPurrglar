@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     public readonly struct CompanionStateChanged
     {

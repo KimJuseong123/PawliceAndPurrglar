@@ -1,9 +1,9 @@
 using System;
-using PawsAndLoot.Config;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Arrest
+namespace PawliceAndPurrglar.Gameplay.Arrest
 {
     /// <summary>
     /// Turns a completed arrest into a spell in the cells and a return to the
@@ -37,7 +37,7 @@ namespace PawsAndLoot.Gameplay.Arrest
         /// is what every test fixture builds.
         /// </summary>
         [SerializeField]
-        private PawsAndLoot.Gameplay.Players.ThiefSpawnPoints releasePoints;
+        private PawliceAndPurrglar.Gameplay.Players.ThiefSpawnPoints releasePoints;
 
         /// <summary>
         /// The room the cell is, or Outside when there is no cell to put them
@@ -46,14 +46,14 @@ namespace PawsAndLoot.Gameplay.Arrest
         /// </summary>
         [SerializeField]
         private int jailInteriorId =
-            PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside;
+            PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState.Outside;
 
         /// <summary>
         /// Cached rather than searched on every arrest. There is one wallet and
         /// it lives as long as the match does.
         /// </summary>
         [SerializeField]
-        private PawsAndLoot.Gameplay.Players.PoliceWallet policeWallet;
+        private PawliceAndPurrglar.Gameplay.Players.PoliceWallet policeWallet;
 
         private bool _subscribed;
 
@@ -63,10 +63,10 @@ namespace PawsAndLoot.Gameplay.Arrest
             Transform configuredCellPoint,
             Transform configuredReleasePoint,
             ArrestConfig configuredArrestConfig,
-            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints configuredReleasePoints
+            PawliceAndPurrglar.Gameplay.Players.ThiefSpawnPoints configuredReleasePoints
                 = null,
             int configuredJailInteriorId =
-                PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside)
+                PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState.Outside)
         {
             releasePoints = configuredReleasePoints;
             jailInteriorId = configuredJailInteriorId;
@@ -162,7 +162,7 @@ namespace PawsAndLoot.Gameplay.Arrest
 
             var room = jail
                 .GetComponent<
-                    PawsAndLoot.Gameplay.Interiors.PlayerInteriorState>();
+                    PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState>();
             if (room != null && room.HasAuthority)
             {
                 room.SetInterior(interiorId);
@@ -209,7 +209,7 @@ namespace PawsAndLoot.Gameplay.Arrest
                 return;
             }
 
-            PawsAndLoot.Gameplay.Players.PoliceWallet wallet = ResolveWallet();
+            PawliceAndPurrglar.Gameplay.Players.PoliceWallet wallet = ResolveWallet();
             if (wallet == null)
             {
                 GameLogger.Warning(
@@ -233,12 +233,12 @@ namespace PawsAndLoot.Gameplay.Arrest
         /// retried while it is null, because this coordinator exists before the
         /// players are spawned.
         /// </summary>
-        private PawsAndLoot.Gameplay.Players.PoliceWallet ResolveWallet()
+        private PawliceAndPurrglar.Gameplay.Players.PoliceWallet ResolveWallet()
         {
             if (policeWallet == null)
             {
                 policeWallet = FindFirstObjectByType<
-                    PawsAndLoot.Gameplay.Players.PoliceWallet>();
+                    PawliceAndPurrglar.Gameplay.Players.PoliceWallet>();
             }
 
             return policeWallet;
@@ -247,7 +247,7 @@ namespace PawsAndLoot.Gameplay.Arrest
         private void HandleReleased()
         {
             SetThiefRoom(
-                PawsAndLoot.Gameplay.Interiors.PlayerInteriorState.Outside);
+                PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState.Outside);
 
 
             arrestCompletion?.ClearForNextArrest();

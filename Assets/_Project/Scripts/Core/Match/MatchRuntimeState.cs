@@ -1,8 +1,8 @@
 using System;
-using PawsAndLoot.Config;
+using PawliceAndPurrglar.Config;
 using UnityEngine;
 
-namespace PawsAndLoot.Match
+namespace PawliceAndPurrglar.Match
 {
     public sealed class MatchRuntimeState : MonoBehaviour, IMatchStateReader
     {

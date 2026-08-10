@@ -1,7 +1,7 @@
 using System;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     public sealed class LootStateMachine
     {

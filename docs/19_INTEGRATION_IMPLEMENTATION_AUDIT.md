@@ -46,7 +46,7 @@ is not available.
 
 - Unity C# compilation: passed with no compiler errors in the final build log.
 - Windows build: passed with three scenes.
-- Build output: `Builds/Playtest/Windows/PawsAndLoot.exe`
+- Build output: `Builds/Playtest/Windows/PawliceAndPurrglar.exe`
 - Build log: `Logs/codex-windows-build-final.log`
 - EditMode: **173 total, 173 passed, 0 failed**.
 - PlayMode: **142 total, 142 passed, 0 failed**.

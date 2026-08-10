@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// States shared by the dog and the cat. The concrete command behaviour

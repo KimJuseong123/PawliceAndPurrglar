@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.IO;
-using PawsAndLoot.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Loot;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Renders every piece of loot's own model into a bag icon.
@@ -24,7 +24,7 @@ namespace PawsAndLoot.Editor
     /// Needs a real graphics device, like the map overview and the road tiles:
     ///
     ///     Unity.exe -batchmode -projectPath . -quit \
-    ///       -executeMethod PawsAndLoot.Editor.LootIconBaker.BakeAll
+    ///       -executeMethod PawliceAndPurrglar.Editor.LootIconBaker.BakeAll
     ///
     /// Note the absent <c>-nographics</c>. With it the camera renders nothing and
     /// writes twenty-nine transparent squares, which is worse than the letters

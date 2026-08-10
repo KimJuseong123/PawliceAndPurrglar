@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Interiors
+namespace PawliceAndPurrglar.Gameplay.Interiors
 {
     /// <summary>
     /// One house's inside, built at full character scale away from the town.

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// A grid of prop slots of any size.

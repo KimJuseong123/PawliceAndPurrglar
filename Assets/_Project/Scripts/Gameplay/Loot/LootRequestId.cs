@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     public readonly struct LootRequestId :
         IEquatable<LootRequestId>

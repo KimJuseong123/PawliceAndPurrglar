@@ -1,9 +1,9 @@
 using System.Linq;
-using PawsAndLoot.Audio;
+using PawliceAndPurrglar.Audio;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Puts the clips that exist into the sound bank.
@@ -218,7 +218,7 @@ namespace PawsAndLoot.Editor
         ///
         /// Batch mode:
         /// <code>
-        /// -executeMethod PawsAndLoot.Editor.SoundBankSetup.RebuildBank
+        /// -executeMethod PawliceAndPurrglar.Editor.SoundBankSetup.RebuildBank
         /// </code>
         /// </summary>
         [MenuItem("PawliceAndPurrglar/Setup/Rebuild Sound Bank")]

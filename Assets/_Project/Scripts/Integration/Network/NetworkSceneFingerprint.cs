@@ -1,9 +1,9 @@
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// Tells the two machines, in one sentence, that they are running different
@@ -45,7 +45,7 @@ namespace PawsAndLoot.Integration.Network
     [DisallowMultipleComponent]
     public sealed class NetworkSceneFingerprint : MonoBehaviour
     {
-        public const string MessageName = "PawsAndLoot.SceneFingerprint";
+        public const string MessageName = "PawliceAndPurrglar.SceneFingerprint";
 
         /// <summary>
         /// Room for the version string. Written as a length-prefixed string, so

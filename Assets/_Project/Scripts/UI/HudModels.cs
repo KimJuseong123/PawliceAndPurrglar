@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     public enum HudRole
     {

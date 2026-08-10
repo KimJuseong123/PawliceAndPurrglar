@@ -1,8 +1,8 @@
 using System;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// Disables both companions when the match ends.

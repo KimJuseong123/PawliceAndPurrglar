@@ -1,11 +1,11 @@
 using System.IO;
 using NUnit.Framework;
-using PawsAndLoot.Animation;
+using PawliceAndPurrglar.Animation;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// The other half of the guard: it must leave a working Animator alone.

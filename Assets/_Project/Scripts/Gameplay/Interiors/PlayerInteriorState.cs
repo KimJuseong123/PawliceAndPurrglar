@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Interiors
+namespace PawliceAndPurrglar.Gameplay.Interiors
 {
     /// <summary>
     /// Which house a player is inside, or none.

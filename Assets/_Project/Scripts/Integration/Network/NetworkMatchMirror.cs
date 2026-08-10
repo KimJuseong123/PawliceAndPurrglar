@@ -1,8 +1,8 @@
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Match;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// NET-004. The host owns the match state and the clock; clients mirror it.
@@ -164,8 +164,8 @@ namespace PawsAndLoot.Integration.Network
             // The animals are scene objects with no link of their own, so their
             // authority is set from the one component that knows whether this
             // machine is the host.
-            foreach (PawsAndLoot.Companions.CompanionLure lure in
-                FindObjectsByType<PawsAndLoot.Companions.CompanionLure>(
+            foreach (PawliceAndPurrglar.Companions.CompanionLure lure in
+                FindObjectsByType<PawliceAndPurrglar.Companions.CompanionLure>(
                     FindObjectsSortMode.None))
             {
                 lure.SetAuthority(IsServer);

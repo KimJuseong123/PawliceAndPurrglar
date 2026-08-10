@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 #endif
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// Finds and announces games on the local network so two players on one

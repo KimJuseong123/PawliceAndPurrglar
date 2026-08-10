@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PawsAndLoot.Core;
+using PawliceAndPurrglar.Core;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class LocalAiBuildMenu
     {
-        private const string BuildPath = "Build/Windows/PawsAndLoot.exe";
+        private const string BuildPath = "Build/Windows/PawliceAndPurrglar.exe";
 
         [MenuItem("PawliceAndPurrglar/Build/Build Windows Standalone with Local AI")]
         public static void BuildWindowsStandalone()

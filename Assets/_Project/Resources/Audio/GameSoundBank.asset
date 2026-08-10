@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8168ebd564dbca34d93afb8e9a00a6a2, type: 3}
   m_Name: GameSoundBank
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Audio.GameSoundBank
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Audio.GameSoundBank
   entries:
   - soundId: 1
     clip: {fileID: 8300000, guid: 5a05262802fa95745a511ee3dcb92788, type: 3}

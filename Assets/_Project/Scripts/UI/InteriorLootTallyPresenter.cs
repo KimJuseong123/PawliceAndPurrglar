@@ -1,10 +1,10 @@
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// Says how much of the room the player is standing in is still there.

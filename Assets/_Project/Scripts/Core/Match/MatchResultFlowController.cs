@@ -1,9 +1,9 @@
 using System;
-using PawsAndLoot.Core;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Match
+namespace PawliceAndPurrglar.Match
 {
     public sealed class MatchResultFlowController : MonoBehaviour
     {

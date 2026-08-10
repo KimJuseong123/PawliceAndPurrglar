@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Config
+namespace PawliceAndPurrglar.Config
 {
     /// <summary>
     /// Where a recording is sent for transcription and interpretation.

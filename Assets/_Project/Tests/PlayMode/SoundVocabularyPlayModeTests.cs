@@ -1,14 +1,14 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Audio;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Audio;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// AUDIO-001, sections C-4 to C-11 of the acquisition sheet.

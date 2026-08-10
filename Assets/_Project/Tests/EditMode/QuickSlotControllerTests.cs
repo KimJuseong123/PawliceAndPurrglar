@@ -1,9 +1,9 @@
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class QuickSlotControllerTests
     {

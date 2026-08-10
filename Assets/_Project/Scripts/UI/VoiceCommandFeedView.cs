@@ -1,9 +1,9 @@
 using TMPro;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Integration.Voice;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Integration.Voice;
 using UnityEngine;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// Central bottom feedback for voice and keyboard animal commands.

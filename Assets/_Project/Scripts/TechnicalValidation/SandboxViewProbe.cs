@@ -1,7 +1,7 @@
 using System.IO;
 using UnityEngine;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     /// <summary>
     /// Photographs the sandbox from inside the running build and quits.

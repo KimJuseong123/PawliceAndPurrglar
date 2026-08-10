@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// The four-slot item model used by the first integrated build.

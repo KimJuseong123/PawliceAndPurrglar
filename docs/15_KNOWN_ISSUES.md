@@ -313,7 +313,7 @@ WebGL에서만 도는 코드는 데스크톱 테스트가 검증하지 못한다
 남겨 두었다. 획득이 안 될 때 여덟 가지 거절 중 어느 것인지 바로 나온다.
 
 ```bash
-"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby host -netScenario full -netMatchSeconds 60
+"Builds/Playtest/Windows/PawliceAndPurrglar.exe" -batchmode -nographics -netLobby host -netScenario full -netMatchSeconds 60
 ```
 
 ## GAP-004 — 거래창이 목업과 다른 세 곳 (OPEN)
@@ -651,7 +651,7 @@ text.gameObject.SetActive(false);   // ← 결과가 보일 수 없다
 **증상**: 추출기의 크롭 좌표를 두 번 고치고 배치 실행했는데 산출물이 그대로였다.
 로그에는 `Cut 3 sprites`가 정상으로 찍혔다.
 
-**원인**: 무관한 어셈블리(`PawsAndLoot.Tests.EditMode`)가 옛 프레젠터 API를 참조해
+**원인**: 무관한 어셈블리(`PawliceAndPurrglar.Tests.EditMode`)가 옛 프레젠터 API를 참조해
 컴파일에 실패하고 있었다. Unity는 이때 **직전에 성공한 어셈블리를 그대로 쓰고
 `-executeMethod`를 실행한다.** 실패한 것은 테스트 어셈블리인데 영향은 에디터
 도구에 나타났고, 도구는 성공 로그를 남겼다.
@@ -1287,7 +1287,7 @@ pickups placed"라고 찍었다. 플레이해 봐야 알 수 있었다.
 - 상태: RESOLVED
 - 심각도: Critical
 - 발견 날짜: 2026-07-27
-- 발생 환경: `Builds/Playtest/Windows/PawsAndLoot.exe`, Bootstrap 로비
+- 발생 환경: `Builds/Playtest/Windows/PawliceAndPurrglar.exe`, Bootstrap 로비
 - 확인 절차: 빌드 실행 → IP 입력 → `접속` 클릭. 또는 `Bootstrap.unity`에서
   `m_OnClick:` 아래 `m_Calls:`가 비었는지 확인
 - 예상: 호스트·접속·역할 바꾸기·경기 시작·세션 종료가 동작
@@ -1617,7 +1617,7 @@ C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe
 - 심각도: High
 - 발견 날짜: 2026-07-24
 - 발생 환경: Unity `6000.5.4f1`, WindowsPlayer, Windows 빌드 `26200`, 한국어 사용자 언어
-- 확인 절차: `PawsAndLootVoiceTech.exe` 실행 후 `DictationRecognizer` 생성
+- 확인 절차: `PawliceAndPurrglarVoiceTech.exe` 실행 후 `DictationRecognizer` 생성
 - 예상: 마이크 입력을 받아 인식된 텍스트를 화면에 표시
 - 실제: 마이크 장치는 1개지만 생성 시 `0x80004003: Speech recognition is not supported on this machine.`
 - 영향: Unity 내장 API로는 TECH-003 실제 발화 완료 조건을 충족하지 못함

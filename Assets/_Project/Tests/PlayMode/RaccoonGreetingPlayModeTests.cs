@@ -1,13 +1,13 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Animation;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Animation;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
-using PawsAndLoot.Core;
+using PawliceAndPurrglar.Core;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// The raccoon's greeting is the only cue that marks the merchant as the

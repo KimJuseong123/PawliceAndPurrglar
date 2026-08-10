@@ -1,17 +1,17 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
+using PawliceAndPurrglar.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// The officer has to be able to tell an empty room from a robbed one.

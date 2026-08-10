@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// Something with numbered slots the exchange screen can move items in and

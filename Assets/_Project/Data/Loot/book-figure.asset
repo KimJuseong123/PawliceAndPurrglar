@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea8bf08a591fe804491e15f64ac5cd02, type: 3}
   m_Name: book-figure
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootDefinition
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootDefinition
   stableId: book-figure
   displayName: "\uCE90\uB9AD\uD130 \uD53C\uADDC\uC5B4"
   rarity: 1

@@ -1,7 +1,7 @@
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// A bin or a crate the thief can climb into with the interact key.

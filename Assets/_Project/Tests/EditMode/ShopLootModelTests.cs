@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Loot;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Loot;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// The shop pieces have to be twelve different things, drawn as themselves,

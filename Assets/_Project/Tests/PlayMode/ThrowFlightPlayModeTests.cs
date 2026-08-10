@@ -1,11 +1,11 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// A thrown rock has to travel, and travelling has to mean it can be dodged.

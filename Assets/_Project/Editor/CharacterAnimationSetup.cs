@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using PawsAndLoot.Animation;
+using PawliceAndPurrglar.Animation;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Builds the shared locomotion Animator controller for the authored

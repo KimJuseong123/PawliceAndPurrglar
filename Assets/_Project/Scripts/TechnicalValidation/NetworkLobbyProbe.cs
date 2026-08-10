@@ -3,22 +3,22 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Integration.Network;
-using PawsAndLoot.Logging;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Integration.Network;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     /// <summary>
     /// Drives the lobby from the command line so the connection and the role
     /// split can be checked without a human watching two windows.
     ///
-    ///     PawsAndLoot.exe -netLobby host   -netPort 7979
-    ///     PawsAndLoot.exe -netLobby client -netAddress 127.0.0.1 -netPort 7979
+    ///     PawliceAndPurrglar.exe -netLobby host   -netPort 7979
+    ///     PawliceAndPurrglar.exe -netLobby client -netAddress 127.0.0.1 -netPort 7979
     ///
     /// Each process writes its own JSON, so comparing the two files proves both
     /// machines agreed on who is police. Inert without the flag, so a normal

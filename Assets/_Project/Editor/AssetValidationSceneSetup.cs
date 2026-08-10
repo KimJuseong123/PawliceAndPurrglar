@@ -1,13 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
-using PawsAndLoot.TechnicalValidation;
+using PawliceAndPurrglar.TechnicalValidation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Explicit validation-only scene. Primitive fallback prefabs can be

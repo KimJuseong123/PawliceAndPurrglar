@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     public sealed class ThiefLootWallet : MonoBehaviour
     {

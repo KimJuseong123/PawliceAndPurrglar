@@ -1,18 +1,18 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
+using PawliceAndPurrglar.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// Clicking a cell has to move the thing in it.
@@ -55,9 +55,9 @@ namespace PawsAndLoot.Tests.PlayMode
                 Object.DestroyImmediate(stray.gameObject);
             }
 
-            PawsAndLoot.Input.GameplayInputRouter
+            PawliceAndPurrglar.Input.GameplayInputRouter
                 .SetGameplayInputSuppressed(false);
-            PawsAndLoot.Input.GameplayInputRouter.SetToolUseSuppressed(false);
+            PawliceAndPurrglar.Input.GameplayInputRouter.SetToolUseSuppressed(false);
             LocalPlayerRoleSelector.ClearOverriddenRole();
         }
 

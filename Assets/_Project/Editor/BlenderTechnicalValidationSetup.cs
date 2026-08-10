@@ -1,8 +1,8 @@
 using System;
 using System.IO;
 using System.Linq;
-using PawsAndLoot.Core;
-using PawsAndLoot.TechnicalValidation;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.TechnicalValidation;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.Build.Reporting;
@@ -10,7 +10,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class BlenderTechnicalValidationSetup
     {
@@ -21,7 +21,7 @@ namespace PawsAndLoot.Editor
         public const string PrefabPath =
             "Assets/_Project/Prefabs/TechnicalValidation/TechRigPlayer.prefab";
         public const string WindowsBuildPath =
-            "Builds/TechnicalValidation/Windows/PawsAndLootBlenderTech.exe";
+            "Builds/TechnicalValidation/Windows/PawliceAndPurrglarBlenderTech.exe";
 
         [MenuItem("PawliceAndPurrglar/Technical Validation/Create TECH-002 Scene")]
         public static void CreateScene()

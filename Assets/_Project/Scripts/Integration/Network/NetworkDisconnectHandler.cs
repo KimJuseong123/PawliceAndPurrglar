@@ -1,11 +1,11 @@
-using PawsAndLoot.Audio;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Audio;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Logging;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// NET-009. Gets both machines out of a broken session instead of leaving

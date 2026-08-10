@@ -1,8 +1,8 @@
 using System;
-using PawsAndLoot.Companions;
+using PawliceAndPurrglar.Companions;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// Temporary movement animation for the animals.

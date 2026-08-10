@@ -1,19 +1,19 @@
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Config;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Arrest;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Map;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Arrest;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Map;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
+using PawliceAndPurrglar.UI;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class PlayerInteractionSceneTests
     {

@@ -1,9 +1,9 @@
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Interiors
+namespace PawliceAndPurrglar.Gameplay.Interiors
 {
     /// <summary>
     /// A small valuable lying in a house. Picked up with the same key as anything

@@ -1,11 +1,11 @@
 using System.Linq;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Loot;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Loot;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>Where every piece of loot actually stands, for a look at the map.</summary>
     internal static class LootCornerReport

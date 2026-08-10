@@ -1,7 +1,7 @@
 using NUnit.Framework;
-using PawsAndLoot.Companions;
+using PawliceAndPurrglar.Companions;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class CompanionStateMachineTests
     {

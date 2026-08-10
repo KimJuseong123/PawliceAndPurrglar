@@ -5440,7 +5440,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 93e191113a82a574bb04675ade753b70, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Match.MatchRuntimeState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Match.MatchRuntimeState
   matchConfig: {fileID: 11400000, guid: 9c9d6fd67cd99f04993f2eb962bb6883, type: 2}
   startCountdownAutomatically: 1
 --- !u!114 &349191840
@@ -5454,7 +5454,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fea46f6016d84f94aadd4042f132a424, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Sandbox.SandboxFreeRoam
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Sandbox.SandboxFreeRoam
   matchRuntime: {fileID: 349191839}
 --- !u!4 &349191841
 Transform:
@@ -6760,7 +6760,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fdbd52a6f57a1f44a830d621e5c7027f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.SandboxViewProbe
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.SandboxViewProbe
 --- !u!4 &430914065
 Transform:
   m_ObjectHideFlags: 0
@@ -8455,7 +8455,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 064ece4c48d279f4998b6c5b25ac3ade, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Camera.TopDownFollowCamera
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Camera.TopDownFollowCamera
   target: {fileID: 1951341915}
   offset: {x: 0, y: 22, z: -18}
   smoothTimeSeconds: 0.12
@@ -28109,7 +28109,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9b48285ef1deaa94a89d808eabdf0cf7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.AnimatorClipGuard
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.AnimatorClipGuard
   animator: {fileID: 1647530031}
 --- !u!1 &1647960505
 GameObject:
@@ -34844,7 +34844,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 77e625b543f17db45bbe4d35e5e33fda, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerKeyboardInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerKeyboardInput
   movementMotor: {fileID: 1951341917}
   isLocallyControlled: 1
 --- !u!114 &1951341917
@@ -34858,7 +34858,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c0f5052bccffe8419f58632db42723c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerMovementMotor
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerMovementMotor
   characterController: {fileID: 1951341919}
   playerConfig: {fileID: 11400000, guid: 8ae319106aeb2c3418b4304ce023628f, type: 2}
   matchStateSource: {fileID: 349191839}
@@ -34874,7 +34874,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30d3afc1922e8a345bf008ba1c59389d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CompanionLegAnimator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CompanionLegAnimator
   skeletonRoot: {fileID: 1647530029}
   swingDegrees: 24
   kneeBendDegrees: 34

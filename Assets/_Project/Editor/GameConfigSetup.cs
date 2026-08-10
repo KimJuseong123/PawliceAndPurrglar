@@ -1,8 +1,8 @@
-using PawsAndLoot.Config;
+using PawliceAndPurrglar.Config;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class GameConfigSetup
     {

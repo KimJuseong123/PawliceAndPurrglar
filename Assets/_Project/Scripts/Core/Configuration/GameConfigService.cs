@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Config
+namespace PawliceAndPurrglar.Config
 {
     public static class GameConfigService
     {

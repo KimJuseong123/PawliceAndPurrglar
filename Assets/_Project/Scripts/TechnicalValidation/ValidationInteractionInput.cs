@@ -1,9 +1,9 @@
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Input;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Input;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     /// <summary>
     /// Validation-only E interaction driver. Production currently exposes the

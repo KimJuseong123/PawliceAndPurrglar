@@ -1,14 +1,13 @@
 {
-  "name": "PawsAndLoot.Tests.EditMode",
-  "rootNamespace": "PawsAndLoot.Tests.EditMode",
+  "name": "PawliceAndPurrglar.Tests.PlayMode",
+  "rootNamespace": "PawliceAndPurrglar.Tests.PlayMode",
   "references": [
-    "PawsAndLoot.Runtime",
+    "PawliceAndPurrglar.Runtime",
     "Unity.Netcode.Runtime",
+    "Unity.Networking.Transport",
     "Unity.TextMeshPro"
   ],
-  "includePlatforms": [
-    "Editor"
-  ],
+  "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": false,

@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Gameplay.Arrest;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Gameplay.Sensing;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Gameplay.Arrest;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Sensing;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Audio
+namespace PawliceAndPurrglar.Audio
 {
     /// <summary>
     /// AUDIO-002. Subscribes to the rule layer and turns events into sounds.

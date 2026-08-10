@@ -1,8 +1,8 @@
 using System;
-using PawsAndLoot.Config;
+using PawliceAndPurrglar.Config;
 using UnityEngine;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// Converts classifier candidates into a pet-specific decision. This is a

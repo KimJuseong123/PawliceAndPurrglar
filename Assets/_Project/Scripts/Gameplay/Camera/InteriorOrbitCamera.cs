@@ -1,9 +1,9 @@
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace PawsAndLoot.Gameplay.Camera
+namespace PawliceAndPurrglar.Gameplay.Camera
 {
     /// <summary>
     /// A free look-around view, used only while the local player is indoors.
@@ -304,8 +304,8 @@ namespace PawsAndLoot.Gameplay.Camera
             // reads Escape as "close the panel", and the first click took the
             // pointer straight back — so the three ways out of it were shut in a
             // circle. It reads as "the item will not move".
-            if (PawsAndLoot.Input.GameplayInputRouter.GameplayInputSuppressed
-                || PawsAndLoot.Input.GameplayInputRouter.ToolUseSuppressed)
+            if (PawliceAndPurrglar.Input.GameplayInputRouter.GameplayInputSuppressed
+                || PawliceAndPurrglar.Input.GameplayInputRouter.ToolUseSuppressed)
             {
                 if (Cursor.lockState != CursorLockMode.None)
                 {

@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Logging
+namespace PawliceAndPurrglar.Logging
 {
     public enum GameLogCategory
     {

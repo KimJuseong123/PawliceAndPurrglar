@@ -1,8 +1,8 @@
-using PawsAndLoot.Audio;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Audio;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// The raccoon merchant hides in its bin, throws the lid open and pops up to

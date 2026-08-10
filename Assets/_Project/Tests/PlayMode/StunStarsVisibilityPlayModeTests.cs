@@ -1,15 +1,15 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Animation;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Animation;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// Stun a player in the real Game scene and check the stars are actually
@@ -97,9 +97,9 @@ namespace PawsAndLoot.Tests.PlayMode
             // Point the match camera at the thief the way the game does. Without
             // this the camera sits wherever the scene authored it and "outside
             // the frustum" would only mean the test never looked at the player.
-            PawsAndLoot.Gameplay.Camera.TopDownFollowCamera follow =
+            PawliceAndPurrglar.Gameplay.Camera.TopDownFollowCamera follow =
                 Object.FindFirstObjectByType<
-                    PawsAndLoot.Gameplay.Camera.TopDownFollowCamera>();
+                    PawliceAndPurrglar.Gameplay.Camera.TopDownFollowCamera>();
             Assert.That(follow, Is.Not.Null);
             follow.SetTarget(thief.transform, true);
             follow.SnapToTarget();

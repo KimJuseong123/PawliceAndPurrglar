@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     /// <summary>
     /// The one number every random draw in a match starts from.

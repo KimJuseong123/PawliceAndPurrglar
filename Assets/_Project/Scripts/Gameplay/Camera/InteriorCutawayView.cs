@@ -1,8 +1,8 @@
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Camera
+namespace PawliceAndPurrglar.Gameplay.Camera
 {
     /// <summary>
     /// Takes away the one side of the room the camera is looking through, indoors.

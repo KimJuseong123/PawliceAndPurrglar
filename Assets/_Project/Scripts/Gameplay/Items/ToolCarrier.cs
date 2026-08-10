@@ -1,10 +1,10 @@
 using System;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// Four prop slots per player, separate from the loot slot.

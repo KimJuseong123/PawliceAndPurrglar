@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Match
+namespace PawliceAndPurrglar.Match
 {
     public enum MatchEndReason
     {

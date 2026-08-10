@@ -262,7 +262,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0e1d433aa739e7408e268cd39781fd9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.VisualRootContract
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.VisualRootContract
   visualRoot: {fileID: 1836472279}
   gameplayCollider: {fileID: 521187439}
   visualAnimator: {fileID: 431728644}
@@ -300,7 +300,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17399517b069b724d84a331e00a46119, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.KeyboardCubeMover
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.KeyboardCubeMover
   movementSpeed: 4
 --- !u!1 &687095593
 GameObject:
@@ -534,7 +534,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fb55d06b949602b4084af29de5232c12, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.BlenderValidationReporter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.BlenderValidationReporter
   player: {fileID: 521187438}
   skinnedMesh: {fileID: 431728641}
 --- !u!4 &1690899764

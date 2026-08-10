@@ -1,11 +1,11 @@
-using PawsAndLoot.Audio;
-using PawsAndLoot.Integration.Voice;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Integration.Network;
+using PawliceAndPurrglar.Audio;
+using PawliceAndPurrglar.Integration.Voice;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Integration.Network;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// Displays capture and processing state without exposing internal model

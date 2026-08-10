@@ -1,9 +1,9 @@
 using NUnit.Framework;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Integration.Voice;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Integration.Voice;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class LocalAiCommandTests
     {

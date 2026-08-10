@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
-using PawsAndLoot.Animation;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Animation;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Builds the insides of the houses, away from the town.
@@ -237,7 +237,7 @@ namespace PawsAndLoot.Editor
         /// counts it as one of them.
         /// </summary>
         internal const int JailInteriorId =
-            PawsAndLoot.Gameplay.Interiors.HouseInterior.JailId;
+            PawliceAndPurrglar.Gameplay.Interiors.HouseInterior.JailId;
 
         /// <summary>
         /// Where a player is put down, as a fraction of the plan view.
@@ -1820,7 +1820,7 @@ namespace PawsAndLoot.Editor
             copy.name = $"Interior {number} {original.Definition.StableId}";
 
             var link = copy.GetComponent<
-                PawsAndLoot.Integration.Network.NetworkLootLink>();
+                PawliceAndPurrglar.Integration.Network.NetworkLootLink>();
             if (link != null)
             {
                 UnityEngine.Object.DestroyImmediate(link);
@@ -2438,7 +2438,7 @@ namespace PawsAndLoot.Editor
             // somewhere else.
             // Flat red. The rooms are dim, so the marker is given a colour
             // nothing else in a house uses rather than relying on brightness.
-            outward.AddComponent<PawsAndLoot.Animation.InteriorExitMarkerView>()
+            outward.AddComponent<PawliceAndPurrglar.Animation.InteriorExitMarkerView>()
                 .Configure(exitMarkerMaterial);
 
             // Walked into, not pressed.

@@ -1,12 +1,12 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Gameplay.Map;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Gameplay.Map;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     public sealed class CompanionCommandEffectPlayModeTests
     {

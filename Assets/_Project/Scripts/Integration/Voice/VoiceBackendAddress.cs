@@ -1,8 +1,8 @@
-using PawsAndLoot.Config;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     /// <summary>
     /// Where the voice API actually is for this build.

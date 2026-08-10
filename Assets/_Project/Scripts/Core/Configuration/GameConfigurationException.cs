@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Config
+namespace PawliceAndPurrglar.Config
 {
     public sealed class GameConfigurationException : InvalidOperationException
     {

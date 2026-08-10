@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// Something the interact key answers with a screen rather than an action.

@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 078e80ed8b848a34f94254d15c9ae49b, type: 3}
   m_Name: MatchConfig
-  m_EditorClassIdentifier: Assembly-CSharp::PawsAndLoot.Config.MatchConfig
+  m_EditorClassIdentifier: Assembly-CSharp::PawliceAndPurrglar.Config.MatchConfig
   matchDurationSeconds: 240
   targetSaleAmount: 1000
   readyCountdownSeconds: 3

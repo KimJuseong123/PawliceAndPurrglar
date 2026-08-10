@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea8bf08a591fe804491e15f64ac5cd02, type: 3}
   m_Name: jewel-ring
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootDefinition
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootDefinition
   stableId: jewel-ring
   displayName: "\uB2E4\uC774\uC544\uBAAC\uB4DC \uBC18\uC9C0"
   rarity: 2

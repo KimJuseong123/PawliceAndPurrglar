@@ -1,7 +1,7 @@
-using PawsAndLoot.Gameplay.Sensing;
+using PawliceAndPurrglar.Gameplay.Sensing;
 using UnityEngine;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// Makes an animal look at a bang.

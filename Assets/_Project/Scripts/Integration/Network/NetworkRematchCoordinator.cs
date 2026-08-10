@@ -1,10 +1,10 @@
-using PawsAndLoot.Core;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Logging;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// NET-008. Lets either player ask for a rematch and makes both start the
@@ -22,7 +22,7 @@ namespace PawsAndLoot.Integration.Network
     [DisallowMultipleComponent]
     public sealed class NetworkRematchCoordinator : MonoBehaviour
     {
-        public const string RematchMessageName = "PawsAndLoot.Rematch";
+        public const string RematchMessageName = "PawliceAndPurrglar.Rematch";
 
         private static NetworkRematchCoordinator _instance;
 

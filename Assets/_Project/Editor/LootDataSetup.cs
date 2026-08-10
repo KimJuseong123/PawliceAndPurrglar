@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Loot;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Loot;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class LootDataSetup
     {

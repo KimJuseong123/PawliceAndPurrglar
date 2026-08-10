@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// COMP-007. Small idle flourishes so a waiting animal looks alive.

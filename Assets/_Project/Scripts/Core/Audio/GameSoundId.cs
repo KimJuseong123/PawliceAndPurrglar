@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Audio
+namespace PawliceAndPurrglar.Audio
 {
     /// <summary>
     /// AUDIO-001. The complete sound vocabulary.

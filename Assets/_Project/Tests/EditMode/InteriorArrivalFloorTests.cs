@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Interiors;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Interiors;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// Every interior's entry point stands on that interior's floor.

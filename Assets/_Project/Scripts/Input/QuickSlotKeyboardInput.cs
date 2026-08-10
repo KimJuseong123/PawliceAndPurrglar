@@ -1,9 +1,9 @@
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Input
+namespace PawliceAndPurrglar.Input
 {
     /// <summary>
     /// Offline quick-slot input. In a network session the same key is read by

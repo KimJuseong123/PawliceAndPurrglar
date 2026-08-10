@@ -1,7 +1,7 @@
-using PawsAndLoot.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Items;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// Draws a placed prop, and flashes a sensor light when it trips.
@@ -43,8 +43,8 @@ namespace PawsAndLoot.Animation
         /// Who placed it. Only used to decide who may see a covert prop.
         /// </summary>
         [SerializeField]
-        private PawsAndLoot.Gameplay.Players.PlayerRole placedBy =
-            PawsAndLoot.Gameplay.Players.PlayerRole.Police;
+        private PawliceAndPurrglar.Gameplay.Players.PlayerRole placedBy =
+            PawliceAndPurrglar.Gameplay.Players.PlayerRole.Police;
 
         private Light _lamp;
         private float _flashUntil;
@@ -71,8 +71,8 @@ namespace PawsAndLoot.Animation
         public void Configure(
             ThrowableKind configuredKind,
             Material configuredMaterial,
-            PawsAndLoot.Gameplay.Players.PlayerRole configuredPlacedBy =
-                PawsAndLoot.Gameplay.Players.PlayerRole.Police)
+            PawliceAndPurrglar.Gameplay.Players.PlayerRole configuredPlacedBy =
+                PawliceAndPurrglar.Gameplay.Players.PlayerRole.Police)
         {
             kind = configuredKind;
             material = configuredMaterial;
@@ -88,17 +88,17 @@ namespace PawsAndLoot.Animation
         /// </summary>
         private bool ViewerOwnsThis()
         {
-            PawsAndLoot.Gameplay.Players.PlayerRole? assigned =
-                PawsAndLoot.Gameplay.Players.LocalPlayerRoleSelector
+            PawliceAndPurrglar.Gameplay.Players.PlayerRole? assigned =
+                PawliceAndPurrglar.Gameplay.Players.LocalPlayerRoleSelector
                     .OverriddenRole;
             if (assigned.HasValue)
             {
                 return assigned.Value == placedBy;
             }
 
-            PawsAndLoot.Gameplay.Players.LocalPlayerRoleSelector selector =
+            PawliceAndPurrglar.Gameplay.Players.LocalPlayerRoleSelector selector =
                 FindFirstObjectByType<
-                    PawsAndLoot.Gameplay.Players
+                    PawliceAndPurrglar.Gameplay.Players
                         .LocalPlayerRoleSelector>();
             return selector != null && selector.ActiveRole == placedBy;
         }

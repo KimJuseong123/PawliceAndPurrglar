@@ -1,10 +1,10 @@
 using NUnit.Framework;
-using PawsAndLoot.Integration.Network;
+using PawliceAndPurrglar.Integration.Network;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// Every named item message has to fit the buffer declared for it.

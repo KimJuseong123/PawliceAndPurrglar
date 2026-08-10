@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PawsAndLoot.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Items;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Turns each prop's FBX into a prefab a running match can load.

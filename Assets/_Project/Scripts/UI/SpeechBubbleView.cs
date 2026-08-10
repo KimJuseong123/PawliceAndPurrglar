@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// Small world-space transcript/interpretation bubble. It is deliberately

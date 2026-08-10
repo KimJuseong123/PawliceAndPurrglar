@@ -1,7 +1,7 @@
-using PawsAndLoot.Animation;
+using PawliceAndPurrglar.Animation;
 using UnityEngine;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     /// <summary>
     /// Deterministic local-only visual fallback used when an authored FBX is a

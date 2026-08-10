@@ -1,14 +1,14 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
+using PawliceAndPurrglar.UI;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     public sealed class RoleObjectivePlayModeTests
     {

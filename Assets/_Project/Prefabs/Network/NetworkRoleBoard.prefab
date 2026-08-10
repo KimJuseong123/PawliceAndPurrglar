@@ -70,5 +70,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f19ef7090b4c30845bce74b5f3ea26df, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkRoleBoard
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkRoleBoard
   ShowTopMostFoldoutHeaderGroup: 1

@@ -11,6 +11,6 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0deec536a237341438b19fdb10fc8d32, type: 3}
   m_Name: CompanionConfig
-  m_EditorClassIdentifier: Assembly-CSharp::PawsAndLoot.Config.CompanionConfig
+  m_EditorClassIdentifier: Assembly-CSharp::PawliceAndPurrglar.Config.CompanionConfig
   moveSpeed: 4.5
   commandCooldownSeconds: 2

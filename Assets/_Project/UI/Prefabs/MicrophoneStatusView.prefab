@@ -538,7 +538,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7298765e92ff4d23b17bff21cb53766d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.MicrophoneStatusView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.MicrophoneStatusView
   stateLabel: {fileID: 8487753438243169382}
   keyLabel: {fileID: 7018202382317540395}
   cooldownLabel: {fileID: 6995206437020273827}

@@ -1,14 +1,14 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Input;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Input;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     public sealed class CompanionAgentPlayModeTests
     {

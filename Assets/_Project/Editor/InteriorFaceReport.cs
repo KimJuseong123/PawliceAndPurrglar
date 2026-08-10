@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Interiors;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Interiors;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Lists what each of a room's four faces is made of, and what belongs to none.

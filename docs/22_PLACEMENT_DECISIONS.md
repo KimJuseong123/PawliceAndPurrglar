@@ -109,7 +109,7 @@ docs/17의 **1차 구현 목록만** 들어갔다. 전체가 아니다.
 실내:
 
 ```bash
-"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -projectPath "C:/Users/SSAFY/pawlice-and-purrglar" -executeMethod PawsAndLoot.Editor.InteriorPlanSheet.Capture -quit
+"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -projectPath "C:/Users/SSAFY/PawliceAndPurrglar" -executeMethod PawliceAndPurrglar.Editor.InteriorPlanSheet.Capture -quit
 ```
 
 `Logs/interior-plans.png`이 나온다. 세 개씩 한 줄, 알파벳 순.
@@ -117,7 +117,7 @@ docs/17의 **1차 구현 목록만** 들어갔다. 전체가 아니다.
 야외:
 
 ```bash
-"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -projectPath "C:/Users/SSAFY/pawlice-and-purrglar" -executeMethod PawsAndLoot.Editor.MapOverviewCapture.Capture -quit
+"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -projectPath "C:/Users/SSAFY/PawliceAndPurrglar" -executeMethod PawliceAndPurrglar.Editor.MapOverviewCapture.Capture -quit
 ```
 
 `Logs/map-overview.png`이 나온다. 실행 후 `git status -- ProjectSettings/`가 비어

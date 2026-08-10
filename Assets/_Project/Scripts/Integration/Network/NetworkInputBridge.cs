@@ -1,14 +1,14 @@
 using System.Collections.Generic;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Input;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Input;
+using PawliceAndPurrglar.Logging;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// NET-003 input half. Reads this machine's keys and sends them to the host
@@ -362,9 +362,9 @@ namespace PawsAndLoot.Integration.Network
 
             // THROW-007. The prop key joins the rest: a client that resolved its
             // own throw would decide it hit while the host decided it missed.
-            foreach (PawsAndLoot.Gameplay.Items.ToolUseInput input in
+            foreach (PawliceAndPurrglar.Gameplay.Items.ToolUseInput input in
                 Object.FindObjectsByType<
-                    PawsAndLoot.Gameplay.Items.ToolUseInput>(
+                    PawliceAndPurrglar.Gameplay.Items.ToolUseInput>(
                     FindObjectsSortMode.None))
             {
                 input.IsLocallyControlled = false;
@@ -513,7 +513,7 @@ namespace PawsAndLoot.Integration.Network
         private static Vector3 ReadAim(NetworkPlayerLink link)
         {
             Vector3? aim =
-                PawsAndLoot.Gameplay.Items.ToolUseInput.ReadAimDirection(
+                PawliceAndPurrglar.Gameplay.Items.ToolUseInput.ReadAimDirection(
                     link.transform.position);
             // Zero tells the host "no aim", and it falls back to the
             // character's facing rather than throwing at the ground.

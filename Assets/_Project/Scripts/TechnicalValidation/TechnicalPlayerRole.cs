@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     public enum TechnicalPlayerRole : byte
     {

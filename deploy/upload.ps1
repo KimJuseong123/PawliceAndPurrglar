@@ -5,7 +5,7 @@ Uploads the WebGL release build and the built voice server to the EC2 instance.
 .DESCRIPTION
 Run from the repository root on the development machine:
 
-    .\deploy\upload.ps1 -HostName ec2-user@pawlice.duckdns.org -KeyPath $HOME\Downloads\paws-and-loot-key.pem
+    .\deploy\upload.ps1 -HostName ec2-user@pawlice.duckdns.org -KeyPath $HOME\Downloads\PawliceAndPurrglar-key.pem
 
 Uploads to a staging folder and moves it into place in one step, so a half
 finished upload is never the thing a judge loads. The old build is kept as

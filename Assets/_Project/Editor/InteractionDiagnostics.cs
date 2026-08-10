@@ -1,12 +1,12 @@
-using PawsAndLoot.Config;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Reports why an interaction target is or is not reachable.

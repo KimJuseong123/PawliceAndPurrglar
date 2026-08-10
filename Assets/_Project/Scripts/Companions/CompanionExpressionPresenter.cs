@@ -1,7 +1,7 @@
-using PawsAndLoot.Animation;
+using PawliceAndPurrglar.Animation;
 using UnityEngine;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// Turns what the animal did into what it shows.

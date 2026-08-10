@@ -1,0 +1,11 @@
+# 한 사람이 여러 이름·주소로 남긴 커밋을 하나로 묶는다.
+#
+# 히스토리는 건드리지 않는다. `git shortlog`와 GitHub의 기여자 목록이 읽는
+# 표시용 매핑일 뿐이고, 커밋의 작성자 필드는 그대로다 — 실제로 한 작업을
+# 다른 사람 것으로 옮기지 않기 위해서다.
+#
+# 이것이 없으면 git 설정이 안 된 PC에서 남긴 커밋이 `DESKTOP-MS327CL\SSAFY`
+# 라는 별개의 기여자로 잡혀, 두 사람이 한 일이 세 사람이 한 일로 보인다.
+
+박성은 <psg000310@naver.com> <pppp000310@gmail.com>
+정영주 <felinedorcus@gmail.com> <felinedorcus@gmail.com>

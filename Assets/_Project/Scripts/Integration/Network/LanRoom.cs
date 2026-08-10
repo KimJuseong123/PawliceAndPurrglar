@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// One host advertising itself on the local network.

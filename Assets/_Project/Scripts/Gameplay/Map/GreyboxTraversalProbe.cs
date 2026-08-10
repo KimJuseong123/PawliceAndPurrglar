@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Map
+namespace PawliceAndPurrglar.Gameplay.Map
 {
     public sealed class GreyboxTraversalProbe : MonoBehaviour
     {

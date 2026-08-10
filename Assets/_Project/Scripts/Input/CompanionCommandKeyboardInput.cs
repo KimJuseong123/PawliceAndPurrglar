@@ -1,9 +1,9 @@
-using PawsAndLoot.Companions;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Gameplay.Players;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Input
+namespace PawliceAndPurrglar.Input
 {
     /// <summary>
     /// COMP-002 input half. Turns a command number into a

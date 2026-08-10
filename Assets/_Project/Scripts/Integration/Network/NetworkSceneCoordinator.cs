@@ -1,9 +1,9 @@
-using PawsAndLoot.Core;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Logging;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// Routes scene loads through NGO while a session is running.

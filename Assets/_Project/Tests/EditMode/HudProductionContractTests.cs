@@ -1,13 +1,13 @@
 using NUnit.Framework;
 using System.IO;
-using PawsAndLoot.Input;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Input;
+using PawliceAndPurrglar.UI;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class HudProductionContractTests
     {
@@ -16,7 +16,7 @@ namespace PawsAndLoot.Tests.EditMode
         private const string BootstrapScenePath =
             "Assets/_Project/Scenes/Bootstrap.unity";
         private const string RuntimeFontPath =
-            "Assets/Resources/PawsAndLootDefaultFont.asset";
+            "Assets/Resources/PawliceAndPurrglarDefaultFont.asset";
         private const string RuntimeFontSourcePath =
             "Assets/ThirdParty/DNF_BitBit_v2/TTF/DNFBitBitv2.ttf";
         private const string ThrowTrajectoryMaterialPath =

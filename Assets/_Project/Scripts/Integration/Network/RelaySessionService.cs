@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 #if PAWS_RELAY
@@ -11,7 +11,7 @@ using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 #endif
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// What a Relay call gave back: either an invite code, or a sentence

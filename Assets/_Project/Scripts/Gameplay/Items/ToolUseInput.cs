@@ -1,11 +1,11 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using PawsAndLoot.Input;
-using PawsAndLoot.Integration.Network;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Input;
+using PawliceAndPurrglar.Integration.Network;
+using PawliceAndPurrglar.Gameplay.Players;
 using Unity.Netcode;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// Reads the throw input for a locally controlled player, and where they
@@ -85,7 +85,7 @@ namespace PawsAndLoot.Gameplay.Items
         public static Vector3? ReadAimDirection(Vector3 fromPosition)
         {
             Mouse mouse = Mouse.current;
-            // Fully qualified: PawsAndLoot.Gameplay.Camera is a namespace, so a
+            // Fully qualified: PawliceAndPurrglar.Gameplay.Camera is a namespace, so a
             // bare Camera inside Gameplay resolves to it and not to the type.
             UnityEngine.Camera view = UnityEngine.Camera.main;
             if (view == null)

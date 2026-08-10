@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// What a transfer did, so the caller can say something useful about it.

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     public readonly struct PlayerInteractionContext
     {

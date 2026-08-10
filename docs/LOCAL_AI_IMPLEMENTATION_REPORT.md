@@ -76,7 +76,7 @@ states plus transcript, interpretation, decision, and error callbacks.
 - Build target: `StandaloneWindows64`
 - Development Build: false
 - Script Debugging: false
-- Build path: `Build/Windows/PawsAndLoot.exe`
+- Build path: `Build/Windows/PawliceAndPurrglar.exe`
 - Build result: `Succeeded`
 - BuildReport: `totalErrors=0`, `totalWarnings=266`,
   `totalSize=151,701,407` bytes

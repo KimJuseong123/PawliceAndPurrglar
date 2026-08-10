@@ -1,9 +1,9 @@
 using System;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Arrest
+namespace PawliceAndPurrglar.Gameplay.Arrest
 {
     public sealed class ArrestCompletionController : MonoBehaviour
     {

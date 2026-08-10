@@ -1,9 +1,9 @@
-using PawsAndLoot.Companions;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// UI-004 command button, UI-005 cooldown readout and UI-006 result text.

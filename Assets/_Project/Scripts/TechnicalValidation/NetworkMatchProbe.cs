@@ -4,17 +4,17 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Arrest;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Integration.Network;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Arrest;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Integration.Network;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     /// <summary>
     /// Verifies NET-003 to NET-010 in the match scene without a human watching
@@ -763,7 +763,7 @@ namespace PawsAndLoot.TechnicalValidation
                 // several frames after landing, so the feet are back down while the
                 // limbs are still splayed.
                 var poser = identity
-                    .GetComponent<PawsAndLoot.Animation.CompanionLegAnimator>();
+                    .GetComponent<PawliceAndPurrglar.Animation.CompanionLegAnimator>();
                 if (poser != null && poser.AirborneBlend > 0.05f)
                 {
                     continue;
@@ -841,9 +841,9 @@ namespace PawsAndLoot.TechnicalValidation
             }
 
             // THROW-011. The officer's purse, on both machines.
-            foreach (PawsAndLoot.Gameplay.Players.PoliceWallet purse in
+            foreach (PawliceAndPurrglar.Gameplay.Players.PoliceWallet purse in
                 FindObjectsByType<
-                    PawsAndLoot.Gameplay.Players.PoliceWallet>(
+                    PawliceAndPurrglar.Gameplay.Players.PoliceWallet>(
                     FindObjectsSortMode.None))
             {
                 _peakPoliceAmount = Mathf.Max(
@@ -868,9 +868,9 @@ namespace PawsAndLoot.TechnicalValidation
 
             // THROW-005. Recorded on both machines: the whole bug was that only
             // one of them ever knew.
-            foreach (PawsAndLoot.Gameplay.Items.ToolCarrier carrier in
+            foreach (PawliceAndPurrglar.Gameplay.Items.ToolCarrier carrier in
                 FindObjectsByType<
-                    PawsAndLoot.Gameplay.Items.ToolCarrier>(
+                    PawliceAndPurrglar.Gameplay.Items.ToolCarrier>(
                     FindObjectsSortMode.None))
             {
                 if (carrier.HasTool)
@@ -879,9 +879,9 @@ namespace PawsAndLoot.TechnicalValidation
                 }
             }
 
-            foreach (PawsAndLoot.Gameplay.Items.ThrowablePickup pickup in
+            foreach (PawliceAndPurrglar.Gameplay.Items.ThrowablePickup pickup in
                 FindObjectsByType<
-                    PawsAndLoot.Gameplay.Items.ThrowablePickup>(
+                    PawliceAndPurrglar.Gameplay.Items.ThrowablePickup>(
                     FindObjectsSortMode.None))
             {
                 if (pickup.IsTaken)
@@ -1213,23 +1213,23 @@ namespace PawsAndLoot.TechnicalValidation
                 return;
             }
 
-            PawsAndLoot.Gameplay.Players.PlayerRoleIdentity identity =
+            PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity identity =
                 police.GetComponent<
-                    PawsAndLoot.Gameplay.Players.PlayerRoleIdentity>();
-            PawsAndLoot.Gameplay.Items.ToolCarrier carrier =
+                    PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity>();
+            PawliceAndPurrglar.Gameplay.Items.ToolCarrier carrier =
                 police.GetComponent<
-                    PawsAndLoot.Gameplay.Items.ToolCarrier>();
+                    PawliceAndPurrglar.Gameplay.Items.ToolCarrier>();
             // Empty the hand first: the counter refuses a full one, which is
             // correct behaviour and would make this step measure nothing.
             carrier?.Clear();
 
-            foreach (PawsAndLoot.Gameplay.Items.PoliceSupplyCounter counter in
+            foreach (PawliceAndPurrglar.Gameplay.Items.PoliceSupplyCounter counter in
                 FindObjectsByType<
-                    PawsAndLoot.Gameplay.Items.PoliceSupplyCounter>(
+                    PawliceAndPurrglar.Gameplay.Items.PoliceSupplyCounter>(
                     FindObjectsSortMode.None))
             {
                 if (counter.TryInteract(
-                        new PawsAndLoot.Gameplay.Players
+                        new PawliceAndPurrglar.Gameplay.Players
                             .PlayerInteractionContext(identity)))
                 {
                     return;
@@ -1248,7 +1248,7 @@ namespace PawsAndLoot.TechnicalValidation
             }
 
             NetworkItemCoordinator.Place(
-                PawsAndLoot.Gameplay.Items.ThrowableKind.GlueTrap,
+                PawliceAndPurrglar.Gameplay.Items.ThrowableKind.GlueTrap,
                 PlayerRole.Police,
                 // A road intersection nobody is standing on at this point in the
                 // timeline, so it never fires and never disturbs the arrest.
@@ -1293,10 +1293,10 @@ namespace PawsAndLoot.TechnicalValidation
             // at the sale point mid-sale at this moment. Whether the scanner
             // finds a rock underfoot is covered by
             // RockPickupScenePlayModeTests against the real scene.
-            PawsAndLoot.Gameplay.Items.ThrowablePickup rock = null;
-            foreach (PawsAndLoot.Gameplay.Items.ThrowablePickup candidate in
+            PawliceAndPurrglar.Gameplay.Items.ThrowablePickup rock = null;
+            foreach (PawliceAndPurrglar.Gameplay.Items.ThrowablePickup candidate in
                 FindObjectsByType<
-                    PawsAndLoot.Gameplay.Items.ThrowablePickup>(
+                    PawliceAndPurrglar.Gameplay.Items.ThrowablePickup>(
                     FindObjectsSortMode.None))
             {
                 // A rock, named rather than inferred.
@@ -1312,7 +1312,7 @@ namespace PawsAndLoot.TechnicalValidation
                 // The step is called ArmThiefWithRock. It should ask for a rock.
                 if (!candidate.IsAvailable
                     || candidate.Kind
-                        != PawsAndLoot.Gameplay.Items.ThrowableKind.Rock)
+                        != PawliceAndPurrglar.Gameplay.Items.ThrowableKind.Rock)
                 {
                     continue;
                 }

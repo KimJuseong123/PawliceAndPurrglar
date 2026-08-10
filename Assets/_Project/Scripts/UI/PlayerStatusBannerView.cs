@@ -1,10 +1,10 @@
 using System;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Players;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// What is happening to the player at *this* screen, right now.
@@ -152,7 +152,7 @@ namespace PawsAndLoot.UI
             labelObject.transform.SetParent(transform, false);
             _label = labelObject.AddComponent<TextMeshProUGUI>();
             TMP_FontAsset font =
-                Resources.Load<TMP_FontAsset>("PawsAndLootDefaultFont");
+                Resources.Load<TMP_FontAsset>("PawliceAndPurrglarDefaultFont");
             if (font != null)
             {
                 _label.font = font;

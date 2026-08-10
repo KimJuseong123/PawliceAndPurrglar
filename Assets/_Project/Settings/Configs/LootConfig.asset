@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ca941082e49af1842be321a3c940344e, type: 3}
   m_Name: LootConfig
-  m_EditorClassIdentifier: Assembly-CSharp::PawsAndLoot.Config.LootConfig
+  m_EditorClassIdentifier: Assembly-CSharp::PawliceAndPurrglar.Config.LootConfig
   commonPrice: 40
   uncommonPrice: 70
   rarePrice: 100

@@ -5,7 +5,7 @@
 경찰은 강아지에게 추적과 경계를 명령하고, 도둑은 고양이에게 정찰과 교란을 명령해 4분 동안 보물을 지키거나 훔치는 1대1 음성 명령 비대칭 추격 게임.
 
 > 제목은 확정입니다 (2026-08-08). 한글 `멍경찰과 냥도둑`, 영문 `PawliceAndPurrglar`.
-> 저장소 폴더와 어셈블리 이름은 `pawlice-and-purrglar` / `PawsAndLoot`로 남아 있습니다 — 제목이
+> 저장소 폴더와 어셈블리 이름은 `PawliceAndPurrglar` / `PawliceAndPurrglar`로 남아 있습니다 — 제목이
 > 아니라 식별자라, 제출 직전에 어셈블리 참조와 클론 URL을 함께 움직일 이유가 없습니다.
 
 ## 발표용 30초 소개
@@ -202,7 +202,7 @@ Editor와 Development Build는 `Debug` 이상, 일반 제출 빌드는 `Warning`
 Blender 원본을 Unity 에셋과 분리하기 위해 제안 구조에 `ArtSource/`를 추가합니다.
 
 ```text
-PawsAndLoot/
+PawliceAndPurrglar/
 ├─ AGENTS.md
 ├─ README.md
 ├─ CHANGELOG.md
@@ -362,9 +362,9 @@ Assets/_Project/Art/Characters/Animations/
 테스트 코드는 런타임 코드와 분리되어 있습니다.
 
 ```text
-Assets/_Project/Scripts/PawsAndLoot.Runtime.asmdef
-Assets/_Project/Tests/EditMode/PawsAndLoot.Tests.EditMode.asmdef
-Assets/_Project/Tests/PlayMode/PawsAndLoot.Tests.PlayMode.asmdef
+Assets/_Project/Scripts/PawliceAndPurrglar.Runtime.asmdef
+Assets/_Project/Tests/EditMode/PawliceAndPurrglar.Tests.EditMode.asmdef
+Assets/_Project/Tests/PlayMode/PawliceAndPurrglar.Tests.PlayMode.asmdef
 ```
 
 Unity 에디터에서는 `Window > General > Test Runner`를 열고 `EditMode` 또는
@@ -374,7 +374,7 @@ PowerShell 배치 실행 예시:
 
 ```powershell
 $unity = "C:\Program Files\Unity\Hub\Editor\6000.5.4f1\Editor\Unity.exe"
-$project = "C:\Users\SSAFY\pawlice-and-purrglar"
+$project = "C:\Users\SSAFY\PawliceAndPurrglar"
 
 $editMode = Start-Process $unity -Wait -PassThru -ArgumentList @(
   "-batchmode", "-nographics",
@@ -410,7 +410,7 @@ Unity 메뉴 `PawliceAndPurrglar > Technical Validation > Build Windows TECH-001
 WASD 이동 큐브가 포함된 Windows x86_64 개발 빌드를 생성합니다.
 
 ```text
-Builds/TechnicalValidation/Windows/PawsAndLootTech.exe
+Builds/TechnicalValidation/Windows/PawliceAndPurrglarTech.exe
 ```
 
 실행 결과는 다음 로컬 경로에 JSON과 스크린샷으로 기록됩니다.
@@ -432,7 +432,7 @@ TECH-002 테스트 모델은 최종 캐릭터가 아니라 단위, 축, 리그, 
 ```powershell
 & "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" `
   --background `
-  --python "C:\Users\SSAFY\pawlice-and-purrglar\ArtSource\Blender\TechnicalValidation\create_tech_rig.py"
+  --python "C:\Users\SSAFY\PawliceAndPurrglar\ArtSource\Blender\TechnicalValidation\create_tech_rig.py"
 ```
 
 Unity 메뉴 `PawliceAndPurrglar > Technical Validation > Build Windows TECH-002`는
@@ -448,7 +448,7 @@ Unity 메뉴 `PawliceAndPurrglar > Technical Validation > Build Windows TECH-002
 ```text
 Assets/_Project/Scenes/BlenderTechnicalTest.unity
 Assets/_Project/Prefabs/TechnicalValidation/TechRigPlayer.prefab
-Builds/TechnicalValidation/Windows/PawsAndLootBlenderTech.exe
+Builds/TechnicalValidation/Windows/PawliceAndPurrglarBlenderTech.exe
 ```
 
 실행 결과는 같은 LocalLow 폴더의 `tech-002-result.json`과
@@ -461,7 +461,7 @@ TECH-003은 AI 대화나 동물 명령을 구현하지 않고 Windows 마이크 
 
 ```text
 Assets/_Project/Scenes/VoiceTechnicalTest.unity
-Builds/TechnicalValidation/Windows/PawsAndLootVoiceTech.exe
+Builds/TechnicalValidation/Windows/PawliceAndPurrglarVoiceTech.exe
 ```
 
 Unity 메뉴 `PawliceAndPurrglar > Technical Validation > Build Windows TECH-003`으로
@@ -492,14 +492,14 @@ NET-001은 Netcode for GameObjects `2.13.0`과 Unity Transport `6.5.0`으로
 
 ```text
 Assets/_Project/Scenes/NetworkTechnicalTest.unity
-Builds/TechnicalValidation/Windows/PawsAndLootNetworkTech.exe
+Builds/TechnicalValidation/Windows/PawliceAndPurrglarNetworkTech.exe
 ```
 
 Unity 메뉴 `PawliceAndPurrglar > Technical Validation > Build Windows NET-001`로
 빌드한 뒤 PowerShell에서 두 프로세스를 실행합니다.
 
 ```powershell
-$exe = "C:\Users\SSAFY\pawlice-and-purrglar\Builds\TechnicalValidation\Windows\PawsAndLootNetworkTech.exe"
+$exe = "C:\Users\SSAFY\PawliceAndPurrglar\Builds\TechnicalValidation\Windows\PawliceAndPurrglarNetworkTech.exe"
 $hostProcess = Start-Process $exe -PassThru -ArgumentList @(
   "-netMode", "host", "-netInstance", "host",
   "-netAddress", "127.0.0.1", "-netPort", "7979",
@@ -559,7 +559,7 @@ PawliceAndPurrglar > Technical Validation > Build Windows MAP-001
 Windows 개발 빌드:
 
 ```text
-Builds/TechnicalValidation/Windows/PawsAndLootMapGreybox.exe
+Builds/TechnicalValidation/Windows/PawliceAndPurrglarMapGreybox.exe
 ```
 
 `-mapAutoQuit` 인자로 실행하면 캐릭터 크기의 캡슐이 경찰 시작점에서 도둑
@@ -573,7 +573,7 @@ Builds/TechnicalValidation/Windows/PawsAndLootMapGreybox.exe
 도둑 이동을 확인할 때는 같은 실행 파일에 역할 인자를 전달합니다.
 
 ```powershell
-& ".\Builds\TechnicalValidation\Windows\PawsAndLootMapGreybox.exe" `
+& ".\Builds\TechnicalValidation\Windows\PawliceAndPurrglarMapGreybox.exe" `
   -playerRole Thief
 ```
 

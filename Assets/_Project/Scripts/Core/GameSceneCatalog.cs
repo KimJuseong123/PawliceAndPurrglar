@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace PawsAndLoot.Core
+namespace PawliceAndPurrglar.Core
 {
     public static class GameSceneCatalog
     {

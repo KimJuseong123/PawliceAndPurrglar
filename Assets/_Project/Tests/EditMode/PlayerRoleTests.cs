@@ -1,13 +1,13 @@
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Map;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Map;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class PlayerRoleTests
     {

@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Gives every label the project font, just before whatever holds it is
@@ -24,7 +24,7 @@ namespace PawsAndLoot.Editor
     internal static class ProjectFontSweep
     {
         public const string FontPath =
-            "Assets/Resources/PawsAndLootDefaultFont.asset";
+            "Assets/Resources/PawliceAndPurrglarDefaultFont.asset";
 
         public static void Apply(Scene scene)
         {

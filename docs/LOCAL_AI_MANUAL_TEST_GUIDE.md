@@ -3,7 +3,7 @@
 The following checks are intentionally left for the developer because this
 implementation task does not perform microphone or gameplay testing.
 
-1. Run `Build/Windows/PawsAndLoot.exe`.
+1. Run `Build/Windows/PawliceAndPurrglar.exe`.
 2. Wait for the Local AI status to reach `ready`.
 3. Start a police game.
 4. Hold `V` and speak a short Korean command.

@@ -1,6 +1,6 @@
 using UnityEditor;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public sealed class ItemIconSpriteImportPostprocessor : AssetPostprocessor
     {

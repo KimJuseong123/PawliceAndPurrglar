@@ -1,22 +1,22 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using PawsAndLoot.Audio;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Arrest;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Input;
-using PawsAndLoot.Integration.Voice;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Audio;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Arrest;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Input;
+using PawliceAndPurrglar.Integration.Voice;
+using PawliceAndPurrglar.Match;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// Shared police/thief HUD controller. Role-specific content is supplied
@@ -28,7 +28,7 @@ namespace PawsAndLoot.UI
         private const int QuickSlotCount = 4;
         private const int InventorySlotCount = 25;
         private const int CatBagSlotCount =
-            PawsAndLoot.Companions.CatInventoryInteractable.CatBagSlotCount;
+            PawliceAndPurrglar.Companions.CatInventoryInteractable.CatBagSlotCount;
 
         [SerializeField] private TMP_Text matchTimer;
         [SerializeField] private RoleStatusPanelView roleStatus;
@@ -57,7 +57,7 @@ namespace PawsAndLoot.UI
 
         private MatchRuntimeState matchRuntime;
         private ArrestCompletionController arrestCompletion;
-        private PawsAndLoot.Gameplay.Arrest.ThiefJailState jailState;
+        private PawliceAndPurrglar.Gameplay.Arrest.ThiefJailState jailState;
         private ThiefLootWallet thiefWallet;
         private PoliceWallet policeWallet;
         private ToolCarrier carrier;
@@ -565,7 +565,7 @@ namespace PawsAndLoot.UI
             arrestCompletion ??=
                 FindFirstObjectByType<ArrestCompletionController>();
             jailState ??= FindFirstObjectByType<
-                PawsAndLoot.Gameplay.Arrest.ThiefJailState>();
+                PawliceAndPurrglar.Gameplay.Arrest.ThiefJailState>();
             thiefWallet ??= FindFirstObjectByType<ThiefLootWallet>();
             if (lootConfig == null && GameConfigService.IsInitialized)
             {
@@ -2023,7 +2023,7 @@ namespace PawsAndLoot.UI
         /// old exchange screen came to show twenty-one permanently empty squares.
         /// </summary>
         private const int CatBagSlotCount =
-            PawsAndLoot.Companions.CatInventoryInteractable.CatBagSlotCount;
+            PawliceAndPurrglar.Companions.CatInventoryInteractable.CatBagSlotCount;
 
         private const int CatBagColumns = 2;
         private const float CatBagCellSize = 86f;
@@ -3235,7 +3235,7 @@ namespace PawsAndLoot.UI
             textObject.transform.SetParent(parent, false);
             TMP_Text text = textObject.GetComponent<TMP_Text>();
             TMP_FontAsset runtimeFont = Resources.Load<TMP_FontAsset>(
-                "PawsAndLootDefaultFont");
+                "PawliceAndPurrglarDefaultFont");
             if (runtimeFont != null)
             {
                 text.font = runtimeFont;

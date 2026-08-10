@@ -1,10 +1,10 @@
 using System;
 using System.Collections;
-using PawsAndLoot.Companions;
+using PawliceAndPurrglar.Companions;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     [Serializable]
     public sealed class VoiceCommandResponse

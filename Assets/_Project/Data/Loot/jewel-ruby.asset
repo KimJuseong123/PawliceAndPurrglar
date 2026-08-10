@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea8bf08a591fe804491e15f64ac5cd02, type: 3}
   m_Name: jewel-ruby
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootDefinition
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootDefinition
   stableId: jewel-ruby
   displayName: "\uB8E8\uBE44"
   rarity: 2

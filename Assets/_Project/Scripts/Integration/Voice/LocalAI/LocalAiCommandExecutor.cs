@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     [DisallowMultipleComponent]
     public sealed class LocalAiCommandExecutor : MonoBehaviour

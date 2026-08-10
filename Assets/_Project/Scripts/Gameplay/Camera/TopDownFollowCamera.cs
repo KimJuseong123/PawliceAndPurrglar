@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Camera
+namespace PawliceAndPurrglar.Gameplay.Camera
 {
     public sealed class TopDownFollowCamera : MonoBehaviour
     {

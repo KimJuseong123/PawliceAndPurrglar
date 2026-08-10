@@ -1,10 +1,10 @@
 using System;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Map
+namespace PawliceAndPurrglar.Gameplay.Map
 {
     /// <summary>
     /// MAP-003. Climbing a ladder up to a rooftop and back down.

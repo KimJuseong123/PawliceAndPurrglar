@@ -1,7 +1,7 @@
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     /// <summary>
     /// Always-playing match state used only by the isolated validation scene.

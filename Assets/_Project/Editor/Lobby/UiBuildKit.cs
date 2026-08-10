@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.UI;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// The pieces the lobby and the result screen are both built from.
@@ -19,7 +19,7 @@ namespace PawsAndLoot.Editor
     internal static class UiBuildKit
     {
         internal const string FontAssetPath =
-            "Assets/Resources/PawsAndLootDefaultFont.asset";
+            "Assets/Resources/PawliceAndPurrglarDefaultFont.asset";
 
         internal const string ChromeFolder =
             "Assets/_Project/UI/Lobby/Elements";

@@ -1,13 +1,13 @@
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Animation;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Animation;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// The night has to stay playable and the torch has to stay honest.
@@ -178,8 +178,8 @@ namespace PawsAndLoot.Tests.EditMode
             Scene scene = OpenGameScene();
             Physics.SyncTransforms();
 
-            foreach (PawsAndLoot.Gameplay.Items.ThrowablePickup pickup in
-                FindAll<PawsAndLoot.Gameplay.Items.ThrowablePickup>(scene))
+            foreach (PawliceAndPurrglar.Gameplay.Items.ThrowablePickup pickup in
+                FindAll<PawliceAndPurrglar.Gameplay.Items.ThrowablePickup>(scene))
             {
                 // Above the road surface and below waist height: the ground and
                 // the road tiles are not obstacles, a wall or a shop body is.

@@ -1,19 +1,19 @@
 using System;
 using System.IO;
-using PawsAndLoot.Core;
-using PawsAndLoot.TechnicalValidation;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.TechnicalValidation;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class VoiceTechnicalValidationSetup
     {
         public const string WindowsBuildPath =
-            "Builds/TechnicalValidation/Windows/PawsAndLootVoiceTech.exe";
+            "Builds/TechnicalValidation/Windows/PawliceAndPurrglarVoiceTech.exe";
 
         [MenuItem("PawliceAndPurrglar/Technical Validation/Create TECH-003 Scene")]
         public static void CreateScene()

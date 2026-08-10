@@ -1,11 +1,11 @@
 using System;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Arrest;
-using PawsAndLoot.Match;
-using PawsAndLoot.Gameplay.Loot;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Arrest;
+using PawliceAndPurrglar.Match;
+using PawliceAndPurrglar.Gameplay.Loot;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     public sealed class PlayerMovementMotor : MonoBehaviour
     {

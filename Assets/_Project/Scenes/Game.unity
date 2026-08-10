@@ -819,7 +819,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 10
   frontEntryPoint: {fileID: 1309093090}
   backEntryPoint: {fileID: 1853355593}
@@ -838,7 +838,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: -0.00019836426, y: -0.00000023841858, z: -0.00019073486}
   innerHalfExtents: {x: 8.922201, y: 9.345233}
   floorTop: 1.5252491
@@ -853,7 +853,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 717220851}
@@ -914,7 +914,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &23536730
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1176,7 +1176,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: c06261eef25bd464286215f0926410b1, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1518073893}
@@ -1207,7 +1207,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 26687123}
 --- !u!114 &26687126
@@ -1735,7 +1735,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1cc83c0c4db4ba54895d83dc2bec4efb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionAgent
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionAgent
   companionKind: 1
   owner: {fileID: 1237112775}
   companionConfig: {fileID: 11400000, guid: 70185034501b7584ca6d2e0288937482, type: 2}
@@ -1761,7 +1761,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79a2d4a87da32324eb2bb97fe5a45c66, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionLootCourier
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionLootCourier
   carryPoint: {fileID: 1203404126}
   ownerCarrier: {fileID: 1237112770}
   pickupRange: 1.3
@@ -1795,7 +1795,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7346dbd313716cd49b0949ab0f842555, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionCommandResolver
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionCommandResolver
   scentTrail: {fileID: 1237112750}
   distractionBoard: {fileID: 1744870006}
   policeTransform: {fileID: 1602717295}
@@ -1842,7 +1842,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 842a1d7213168654aa5ed0f6d53b846e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionIdleBehaviour
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionIdleBehaviour
   agent: {fileID: 33044527}
   visual: {fileID: 860278615}
   minimumIdleSeconds: 4
@@ -1859,7 +1859,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a6d8047ed10a8964e98f249dc6e45447, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionNoiseAttention
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionNoiseAttention
   board: {fileID: 0}
 --- !u!114 &33044534
 MonoBehaviour:
@@ -1872,7 +1872,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: efd553c6b5cb31e4e9ee9c7977f86932, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionLure
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionLure
 --- !u!114 &33044535
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1884,7 +1884,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a4d5c3a8b13e24e46822eedd80ce7f5e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionExpressionPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionExpressionPresenter
   agent: {fileID: 33044527}
   view: {fileID: 33044539}
 --- !u!114 &33044536
@@ -1898,7 +1898,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 843fac6c99d70c948ac283883a59e368, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CompanionProceduralAnimator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CompanionProceduralAnimator
   agent: {fileID: 33044527}
   visual: {fileID: 860278615}
   hopHeight: 0.065
@@ -1917,7 +1917,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30d3afc1922e8a345bf008ba1c59389d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CompanionLegAnimator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CompanionLegAnimator
   skeletonRoot: {fileID: 860278615}
   swingDegrees: 36
   kneeBendDegrees: 42
@@ -1944,7 +1944,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ceeafd2932ba426e977fa47d1ee54325, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CatInventoryInteractable
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CatInventoryInteractable
   agent: {fileID: 33044527}
   matchStateSource: {fileID: 2059096855}
   maximumStackSize: 9
@@ -1960,7 +1960,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea1f80508d90faa44bb1f9eeedff1a9d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CompanionExpressionView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CompanionExpressionView
   anchor: {fileID: 2032277094}
   displaySeconds: 1.6
   bobHeight: 0.08
@@ -2243,7 +2243,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4de7fa4fb7abbbc4aa2cdffc3d189681, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerHidingSpot
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot
   matchStateSource: {fileID: 2059096855}
   occupantAnchor: {fileID: 548955727}
   interactionRadius: 1.4
@@ -2587,7 +2587,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7daf4da8b912fdd4fb199955e61e6657, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootDisplayCase
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootDisplayCase
   contents: {fileID: 473849465}
   glass: {fileID: 0}
   matchStateSource: {fileID: 2059096855}
@@ -2731,7 +2731,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1ba251fdfae38fa4a82b4def59385ebf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.LocalPlayerRoleSelector
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.LocalPlayerRoleSelector
   defaultRole: 0
   bindings:
   - Identity: {fileID: 1602717332}
@@ -2820,7 +2820,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 1
   frontEntryPoint: {fileID: 315262553}
   backEntryPoint: {fileID: 1299688679}
@@ -2839,7 +2839,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: 0, y: 0, z: 0}
   innerHalfExtents: {x: 7.734542, y: 7.9152184}
   floorTop: 1.5166065
@@ -2854,7 +2854,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 940350472}
@@ -3035,7 +3035,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9fdbaa9d301884449e3d58861051ca9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkMatchMirror
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkMatchMirror
   ShowTopMostFoldoutHeaderGroup: 1
   matchRuntime: {fileID: 2059096855}
   evaluator: {fileID: 2059096858}
@@ -3614,7 +3614,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1cc83c0c4db4ba54895d83dc2bec4efb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionAgent
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionAgent
   companionKind: 0
   owner: {fileID: 1602717295}
   companionConfig: {fileID: 11400000, guid: 70185034501b7584ca6d2e0288937482, type: 2}
@@ -3640,7 +3640,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7346dbd313716cd49b0949ab0f842555, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionCommandResolver
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionCommandResolver
   scentTrail: {fileID: 1237112750}
   distractionBoard: {fileID: 1744870006}
   policeTransform: {fileID: 1602717295}
@@ -3687,7 +3687,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 842a1d7213168654aa5ed0f6d53b846e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionIdleBehaviour
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionIdleBehaviour
   agent: {fileID: 71400249}
   visual: {fileID: 277196409}
   minimumIdleSeconds: 4
@@ -3704,7 +3704,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a6d8047ed10a8964e98f249dc6e45447, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionNoiseAttention
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionNoiseAttention
   board: {fileID: 0}
 --- !u!114 &71400254
 MonoBehaviour:
@@ -3717,7 +3717,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: efd553c6b5cb31e4e9ee9c7977f86932, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionLure
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionLure
 --- !u!114 &71400255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3729,7 +3729,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a4d5c3a8b13e24e46822eedd80ce7f5e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionExpressionPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionExpressionPresenter
   agent: {fileID: 71400249}
   view: {fileID: 71400256}
 --- !u!114 &71400256
@@ -3743,7 +3743,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea1f80508d90faa44bb1f9eeedff1a9d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CompanionExpressionView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CompanionExpressionView
   anchor: {fileID: 551747169}
   displaySeconds: 1.6
   bobHeight: 0.08
@@ -3759,7 +3759,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 843fac6c99d70c948ac283883a59e368, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CompanionProceduralAnimator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CompanionProceduralAnimator
   agent: {fileID: 71400249}
   visual: {fileID: 277196409}
   hopHeight: 0.065
@@ -3778,7 +3778,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30d3afc1922e8a345bf008ba1c59389d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CompanionLegAnimator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CompanionLegAnimator
   skeletonRoot: {fileID: 277196409}
   swingDegrees: 36
   kneeBendDegrees: 42
@@ -4195,7 +4195,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a4f7e4686a7b194aa2ff8c9290187f1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionCommandDispatcher
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionCommandDispatcher
   matchStateSource: {fileID: 2059096855}
   agents:
   - {fileID: 71400249}
@@ -4211,7 +4211,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cb7aade00b7456e4bb0eb62821159447, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.CompanionMatchEndBridge
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.CompanionMatchEndBridge
   matchEndController: {fileID: 2059096857}
   dispatcher: {fileID: 85652722}
 --- !u!4 &85652724
@@ -4275,7 +4275,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &87197538
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4671,7 +4671,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4f9670bf4a426324aad894c31be7e190, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.ScentTrailView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.ScentTrailView
   trail: {fileID: 0}
   dog: {fileID: 0}
   viewer: {fileID: 1602717332}
@@ -5095,7 +5095,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &112587070
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5308,7 +5308,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f5ff7d281acd284d81010dbc2c52bcd, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.RaccoonBinGreeter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.RaccoonBinGreeter
   raccoonRoot: {fileID: 780157636}
   lidPivot: {fileID: 1686514366}
   waveUpperArm: {fileID: 672722739}
@@ -5704,7 +5704,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 145405186}
   leadsInside: 0
   side: 0
@@ -5722,7 +5722,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -6085,7 +6085,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 31c8e5a44137fff4eab5b28126eed94c, type: 2}
   initialState: 0
   presentationRoot: {fileID: 788483237}
@@ -6116,7 +6116,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 141504023}
 --- !u!114 &141504026
@@ -6395,7 +6395,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 3
   frontEntryPoint: {fileID: 13958640}
   backEntryPoint: {fileID: 1175779677}
@@ -6414,7 +6414,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: -0.00019454956, y: -0.00000023841858, z: -0.00019073486}
   innerHalfExtents: {x: 8.922201, y: 9.345233}
   floorTop: 1.5252491
@@ -6429,7 +6429,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 1827004250}
@@ -6557,7 +6557,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 753cf8203761bd54d8ca9acb66569896, type: 2}
   initialState: 0
   presentationRoot: {fileID: 89899130}
@@ -6588,7 +6588,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 155030937}
 --- !u!114 &155030940
@@ -6682,7 +6682,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f5ff7d281acd284d81010dbc2c52bcd, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.RaccoonBinGreeter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.RaccoonBinGreeter
   raccoonRoot: {fileID: 495142908}
   lidPivot: {fileID: 462332610}
   waveUpperArm: {fileID: 187536598}
@@ -7248,7 +7248,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 5
   frontEntryPoint: {fileID: 1015352373}
   backEntryPoint: {fileID: 1402188142}
@@ -7267,7 +7267,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: 0.0005187988, y: 0, z: -0.00090026855}
   innerHalfExtents: {x: 11.380498, y: 11.864944}
   floorTop: 1.5272316
@@ -7282,7 +7282,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 95365612}
@@ -7804,7 +7804,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c596bbdac1ed4240b5a7dbfc2e8df60, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.LadderTraversal
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.LadderTraversal
   area: {fileID: 173116511}
   bottomPoint: {fileID: 1495440606}
   topPoint: {fileID: 1188799512}
@@ -7926,7 +7926,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 13
   frontEntryPoint: {fileID: 1602181237}
   backEntryPoint: {fileID: 713383773}
@@ -7945,7 +7945,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: -0.0006637573, y: 0, z: -0.000045776367}
   innerHalfExtents: {x: 6.084132, y: 7.3027315}
   floorTop: 1.5297236
@@ -7960,7 +7960,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 1942051024}
@@ -8162,7 +8162,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 776ed84ed51488d43b7c6f380e61cf8c, type: 2}
   initialState: 0
   presentationRoot: {fileID: 919428603}
@@ -8193,7 +8193,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 179348229}
 --- !u!114 &179348232
@@ -8366,7 +8366,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1356f0bec8ddcc74698a0f4c6afd7bc8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.ThiefSpawnPoints
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.ThiefSpawnPoints
   points:
   - {fileID: 2010452243}
   - {fileID: 183173892}
@@ -8723,7 +8723,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad58c784ceabe42439f75ced0aa45465, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.HouseDoorLeaf
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.HouseDoorLeaf
   houseRoot: {fileID: 545768432}
   side: 0
   openDegrees: -95
@@ -9096,7 +9096,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4de7fa4fb7abbbc4aa2cdffc3d189681, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerHidingSpot
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot
   matchStateSource: {fileID: 2059096855}
   occupantAnchor: {fileID: 1755851998}
   interactionRadius: 1.4
@@ -9285,7 +9285,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e90f8e9ab4b936e418af5d089a64d454, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.FlashlightConeView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.FlashlightConeView
   owner: {fileID: 1602717332}
   matchStateSource: {fileID: 2059096855}
   wedgeMaterial: {fileID: 2100000, guid: 1e168e64ede1ebb4a97930b665201d99, type: 2}
@@ -9533,7 +9533,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 206d7cadf3a58e94b83687c2fb80ac3a, type: 2}
   initialState: 0
   presentationRoot: {fileID: 324585895}
@@ -9564,7 +9564,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 213992511}
 --- !u!114 &213992514
@@ -9764,7 +9764,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 9
   frontEntryPoint: {fileID: 1727058381}
   backEntryPoint: {fileID: 292885015}
@@ -9783,7 +9783,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: -0.00019836426, y: -0.00000023841858, z: -0.00019073486}
   innerHalfExtents: {x: 8.922201, y: 9.345233}
   floorTop: 1.5252491
@@ -9798,7 +9798,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 744865394}
@@ -10097,7 +10097,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 98bbfed0b5bf19a4987e1b66260d3f42, type: 2}
   initialState: 0
   presentationRoot: {fileID: 776307702}
@@ -10112,7 +10112,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 229178846}
 --- !u!114 &229178848
@@ -10819,7 +10819,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: d268eff9674467d49b223d87ec040814, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1669263938}
@@ -10850,7 +10850,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 252256070}
 --- !u!114 &252256073
@@ -11073,7 +11073,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 064ece4c48d279f4998b6c5b25ac3ade, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Camera.TopDownFollowCamera
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Camera.TopDownFollowCamera
   target: {fileID: 1602717295}
   offset: {x: 0, y: 12.36, z: -10.82}
   smoothTimeSeconds: 0.12
@@ -11104,7 +11104,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 71fb5ba53d1cf3c4f8fdab7ed81b5576, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Camera.InteriorCutawayView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Camera.InteriorCutawayView
   switchMargin: 0.12
   roleSelector: {fileID: 0}
 --- !u!114 &256355311
@@ -11118,7 +11118,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c495494b1e125f84cbb4c724567d5b83, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Camera.InteriorOrbitCamera
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Camera.InteriorOrbitCamera
   townCamera: {fileID: 256355308}
   roleSelector: {fileID: 0}
   distance: 6.5
@@ -11178,7 +11178,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19cb97adf441a3d4e9343c4b03a721e5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.BlackMarketDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.BlackMarketDraw
   matchStateSource: {fileID: 2059096855}
   markets:
   - {fileID: 1161062857}
@@ -11788,7 +11788,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f5ff7d281acd284d81010dbc2c52bcd, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.RaccoonBinGreeter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.RaccoonBinGreeter
   raccoonRoot: {fileID: 1022538359}
   lidPivot: {fileID: 712715851}
   waveUpperArm: {fileID: 533665176}
@@ -12174,7 +12174,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 461d5378e91052748b8349dddcee7dbd, type: 2}
   initialState: 0
   presentationRoot: {fileID: 903028415}
@@ -12205,7 +12205,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 300111377}
 --- !u!114 &300111380
@@ -12517,7 +12517,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b76b222180d94ec4bbc256e0c52fe936, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.DisplayCaseKeyPickup
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.DisplayCaseKeyPickup
   presentationRoot: {fileID: 589303238}
   matchStateSource: {fileID: 2059096855}
 --- !u!135 &304327440
@@ -12783,7 +12783,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 31c8e5a44137fff4eab5b28126eed94c, type: 2}
   initialState: 0
   presentationRoot: {fileID: 72419174}
@@ -12814,7 +12814,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 309911651}
 --- !u!114 &309911654
@@ -13140,7 +13140,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 776ed84ed51488d43b7c6f380e61cf8c, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1540245495}
@@ -13171,7 +13171,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 319885283}
 --- !u!114 &319885286
@@ -14526,7 +14526,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 1544713369}
   leadsInside: 0
   side: 0
@@ -14544,7 +14544,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -14831,7 +14831,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &358698752
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -15196,7 +15196,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d32eb569beb4533439b9e29765565671, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSaleZone
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSaleZone
   saleArea: {fileID: 363715564}
   lootConfig: {fileID: 11400000, guid: ff72290f28da38c4a9156d3c5d85a851, type: 2}
   matchStateSource: {fileID: 2059096855}
@@ -15358,7 +15358,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -17141,7 +17141,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 3e580efd0d3a98341aab11a12c12f212, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1970061822}
@@ -17172,7 +17172,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 384389708}
 --- !u!114 &384389711
@@ -17772,7 +17772,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 776ed84ed51488d43b7c6f380e61cf8c, type: 2}
   initialState: 0
   presentationRoot: {fileID: 550666444}
@@ -17803,7 +17803,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 395658348}
 --- !u!114 &395658351
@@ -18180,7 +18180,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 1048a7e8628e05a449d3c68ffea9687f, type: 2}
   initialState: 0
   presentationRoot: {fileID: 674851825}
@@ -18211,7 +18211,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 402396776}
 --- !u!114 &402396779
@@ -18854,7 +18854,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9a4c2e7f1b6d8a0c3f5e7b9d2a1c4e6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Voice.CompanionVoiceCommandBridge
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Voice.CompanionVoiceCommandBridge
   dispatcher: {fileID: 85652722}
   backendSocket: {fileID: 427914867}
   targetRegistry: {fileID: 427914868}
@@ -18870,7 +18870,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3c8f1a6e5d4b2c7a9e0f1d3b5a6c8e2f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Voice.VoiceBackendSocketClient
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Voice.VoiceBackendSocketClient
   backendBaseUrl: 
   sessionId: 
   hostCapabilityToken: 
@@ -18885,7 +18885,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d7a9c4e2f6b8a0c3e5d7f9b1a2c4e6d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Voice.CompanionTargetRegistry
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Voice.CompanionTargetRegistry
 --- !u!1001 &432406268
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19003,7 +19003,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c750d3d0e3664934cbdd7649e17e827c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkItemCoordinator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkItemCoordinator
   matchStateSource: {fileID: 2059096855}
 --- !u!1 &437154020
 GameObject:
@@ -20043,7 +20043,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 094d89cfeba82234faae8fca9ca18564, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.DistractionAlertPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.DistractionAlertPresenter
   board: {fileID: 1744870006}
   roleSelector: {fileID: 54175170}
   worldCamera: {fileID: 256355307}
@@ -20443,7 +20443,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 39542d0806c61ad48b0906cad9f15fe4, type: 2}
   initialState: 0
   presentationRoot: {fileID: 518405243}
@@ -20458,7 +20458,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 473849465}
 --- !u!114 &473849467
@@ -20883,7 +20883,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 31c8e5a44137fff4eab5b28126eed94c, type: 2}
   initialState: 0
   presentationRoot: {fileID: 140449407}
@@ -20914,7 +20914,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 480711119}
 --- !u!114 &480711122
@@ -20995,7 +20995,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 54d9ccf9d8233cf4aa808d35814018cf, type: 2}
   initialState: 0
   presentationRoot: {fileID: 173160851}
@@ -21026,7 +21026,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 482583663}
 --- !u!114 &482583666
@@ -21820,7 +21820,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f5ff7d281acd284d81010dbc2c52bcd, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.RaccoonBinGreeter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.RaccoonBinGreeter
   raccoonRoot: {fileID: 1036150554}
   lidPivot: {fileID: 1280362521}
   waveUpperArm: {fileID: 1698723385}
@@ -22000,7 +22000,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43b0348dcf5e2d84aaee534c97eb76b1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ThrowablePickup
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ThrowablePickup
   kind: 0
   roleRestricted: 0
   restrictedTo: 1
@@ -22346,7 +22346,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 527366710}
   leadsInside: 1
   side: 0
@@ -22811,7 +22811,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: db6f38e26ef07d1489c37ae596e708b4, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1031133136}
@@ -22842,7 +22842,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 516150795}
 --- !u!114 &516150798
@@ -23113,7 +23113,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c596bbdac1ed4240b5a7dbfc2e8df60, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.LadderTraversal
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.LadderTraversal
   area: {fileID: 520281229}
   bottomPoint: {fileID: 1220628027}
   topPoint: {fileID: 305500128}
@@ -23434,7 +23434,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 89d0cff47259c0f4e94f9182e423ce25, type: 2}
   initialState: 0
   presentationRoot: {fileID: 530129351}
@@ -23465,7 +23465,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 527091642}
 --- !u!114 &527091645
@@ -23575,7 +23575,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 2
   frontEntryPoint: {fileID: 1514905650}
   backEntryPoint: {fileID: 1222579960}
@@ -23594,7 +23594,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: 0, y: 0, z: 0}
   innerHalfExtents: {x: 7.734542, y: 7.9152184}
   floorTop: 1.5166065
@@ -23609,7 +23609,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 1001753040}
@@ -23684,7 +23684,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 14
   frontEntryPoint: {fileID: 992561483}
   backEntryPoint: {fileID: 1159186053}
@@ -23703,7 +23703,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: -0.00019836426, y: -0.00000023841858, z: -0.00018310547}
   innerHalfExtents: {x: 8.922201, y: 9.345233}
   floorTop: 1.5252491
@@ -23718,7 +23718,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 1259696463}
@@ -26437,7 +26437,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 15
   frontEntryPoint: {fileID: 1731949706}
   backEntryPoint: {fileID: 1730160646}
@@ -26456,7 +26456,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: 0, y: 0, z: 0}
   innerHalfExtents: {x: 7.734542, y: 7.9152184}
   floorTop: 1.5166065
@@ -26471,7 +26471,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 1010955709}
@@ -27435,7 +27435,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c596bbdac1ed4240b5a7dbfc2e8df60, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.LadderTraversal
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.LadderTraversal
   area: {fileID: 585615130}
   bottomPoint: {fileID: 1877895748}
   topPoint: {fileID: 1955496922}
@@ -27793,7 +27793,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad58c784ceabe42439f75ced0aa45465, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.HouseDoorLeaf
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.HouseDoorLeaf
   houseRoot: {fileID: 1005841203}
   side: 0
   openDegrees: -95
@@ -28250,7 +28250,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43b0348dcf5e2d84aaee534c97eb76b1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ThrowablePickup
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ThrowablePickup
   kind: 0
   roleRestricted: 0
   restrictedTo: 1
@@ -28984,7 +28984,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &624900807
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -29745,7 +29745,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: d93e6a1f69df5cb48b64b20d1ef79830, type: 2}
   initialState: 0
   presentationRoot: {fileID: 57743587}
@@ -29776,7 +29776,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 631860225}
 --- !u!114 &631860228
@@ -29936,7 +29936,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 77bd86835702ccb44a1fb77e167c425b, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1793256767}
@@ -29967,7 +29967,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 633727602}
 --- !u!114 &633727605
@@ -30048,7 +30048,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: d268eff9674467d49b223d87ec040814, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1598841215}
@@ -30079,7 +30079,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 633827088}
 --- !u!114 &633827091
@@ -30264,7 +30264,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 528491995}
   leadsInside: 0
   side: 0
@@ -30282,7 +30282,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -30846,7 +30846,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 77bd86835702ccb44a1fb77e167c425b, type: 2}
   initialState: 0
   presentationRoot: {fileID: 765362257}
@@ -30877,7 +30877,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 646996829}
 --- !u!114 &646996832
@@ -31003,7 +31003,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 884197172}
   leadsInside: 0
   side: 0
@@ -31021,7 +31021,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -31400,7 +31400,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 31c8e5a44137fff4eab5b28126eed94c, type: 2}
   initialState: 0
   presentationRoot: {fileID: 501573548}
@@ -31431,7 +31431,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 660136114}
 --- !u!114 &660136117
@@ -31672,7 +31672,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f69e22b5449f3ae4fa7d16891d3d3ddf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootHidingSpot
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootHidingSpot
   area: {fileID: 667179197}
   storedRoot: {fileID: 1694125008}
   matchStateSource: {fileID: 2059096855}
@@ -31687,7 +31687,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4de7fa4fb7abbbc4aa2cdffc3d189681, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerHidingSpot
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot
   matchStateSource: {fileID: 2059096855}
   occupantAnchor: {fileID: 580642915}
   interactionRadius: 1.4
@@ -32211,7 +32211,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 77bd86835702ccb44a1fb77e167c425b, type: 2}
   initialState: 0
   presentationRoot: {fileID: 944604176}
@@ -32242,7 +32242,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 675756783}
 --- !u!114 &675756786
@@ -32427,7 +32427,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43b0348dcf5e2d84aaee534c97eb76b1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ThrowablePickup
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ThrowablePickup
   kind: 0
   roleRestricted: 0
   restrictedTo: 1
@@ -32500,7 +32500,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 1435423610}
   leadsInside: 0
   side: 0
@@ -32518,7 +32518,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -32775,7 +32775,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -32819,7 +32819,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 3e580efd0d3a98341aab11a12c12f212, type: 2}
   initialState: 0
   presentationRoot: {fileID: 2101781310}
@@ -32850,7 +32850,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 690852492}
 --- !u!114 &690852495
@@ -36293,7 +36293,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &718975505
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -36741,7 +36741,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 217343589}
   leadsInside: 0
   side: 0
@@ -36759,7 +36759,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -36831,7 +36831,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &734064034
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -36956,7 +36956,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c596bbdac1ed4240b5a7dbfc2e8df60, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.LadderTraversal
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.LadderTraversal
   area: {fileID: 735752035}
   bottomPoint: {fileID: 360241935}
   topPoint: {fileID: 1007971912}
@@ -37937,7 +37937,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &759171172
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -38175,7 +38175,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9b48285ef1deaa94a89d808eabdf0cf7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.AnimatorClipGuard
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.AnimatorClipGuard
   animator: {fileID: 761414136}
 --- !u!1 &762517647
 GameObject:
@@ -38298,7 +38298,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: ffe9ab1cef733bd4da4ce09316311e76, type: 2}
   initialState: 0
   presentationRoot: {fileID: 831004335}
@@ -38329,7 +38329,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 763987947}
 --- !u!114 &763987950
@@ -38422,7 +38422,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bac60bdb2a6f5fd43a0147eb0c308056, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ThrowFlightTracker
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ThrowFlightTracker
 --- !u!1 &765362256
 GameObject:
   m_ObjectHideFlags: 0
@@ -39674,7 +39674,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 560350989}
   leadsInside: 0
   side: 0
@@ -39692,7 +39692,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -39749,7 +39749,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: d93e6a1f69df5cb48b64b20d1ef79830, type: 2}
   initialState: 0
   presentationRoot: {fileID: 47989054}
@@ -39780,7 +39780,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 794270007}
 --- !u!114 &794270010
@@ -40234,7 +40234,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &805207866
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -40693,7 +40693,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4690c95e0baaf94a8bc60cd4d8e6166, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxTraversalProbe
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxTraversalProbe
   map: {fileID: 1447916169}
   characterController: {fileID: 824692182}
   routeId: PoliceToThief_MainLoop
@@ -40997,7 +40997,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &829709470
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -41303,7 +41303,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -42391,7 +42391,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4de7fa4fb7abbbc4aa2cdffc3d189681, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerHidingSpot
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot
   matchStateSource: {fileID: 2059096855}
   occupantAnchor: {fileID: 452562661}
   interactionRadius: 1.4
@@ -42554,7 +42554,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: c06261eef25bd464286215f0926410b1, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1542033358}
@@ -42585,7 +42585,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 869121052}
 --- !u!114 &869121055
@@ -42989,7 +42989,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &880011942
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -43218,7 +43218,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 4
   frontEntryPoint: {fileID: 731863083}
   backEntryPoint: {fileID: 1489560008}
@@ -43237,7 +43237,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: -0.00019836426, y: -0.00000023841858, z: -0.00019073486}
   innerHalfExtents: {x: 8.922201, y: 9.345233}
   floorTop: 1.5252491
@@ -43252,7 +43252,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 473565741}
@@ -43401,7 +43401,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f5ff7d281acd284d81010dbc2c52bcd, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.RaccoonBinGreeter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.RaccoonBinGreeter
   raccoonRoot: {fileID: 1248134801}
   lidPivot: {fileID: 1154705541}
   waveUpperArm: {fileID: 555449826}
@@ -43445,7 +43445,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 461d5378e91052748b8349dddcee7dbd, type: 2}
   initialState: 0
   presentationRoot: {fileID: 437154021}
@@ -43476,7 +43476,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 885442978}
 --- !u!114 &885442981
@@ -43906,7 +43906,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &892670319
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -44106,7 +44106,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 3e580efd0d3a98341aab11a12c12f212, type: 2}
   initialState: 0
   presentationRoot: {fileID: 139102026}
@@ -44137,7 +44137,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 893467704}
 --- !u!114 &893467707
@@ -44339,7 +44339,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: f2b92c88373b8b54cb4a5d7cd785ec04, type: 2}
   initialState: 0
   presentationRoot: {fileID: 550882788}
@@ -44370,7 +44370,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 896546542}
 --- !u!114 &896546545
@@ -44984,7 +44984,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c596bbdac1ed4240b5a7dbfc2e8df60, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.LadderTraversal
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.LadderTraversal
   area: {fileID: 905642753}
   bottomPoint: {fileID: 2005480108}
   topPoint: {fileID: 1241257789}
@@ -45148,7 +45148,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bc0921312e978794898be47ad7c5987a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Audio.GameSoundObserver
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Audio.GameSoundObserver
   dispatcher: {fileID: 85652722}
   thiefCarrier: {fileID: 1237112770}
   thiefWallet: {fileID: 1237112745}
@@ -45167,7 +45167,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a1af6a378479a845a18006eba2bd709, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Audio.GameSoundService
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Audio.GameSoundService
   bank: {fileID: 11400000, guid: 1465b06bfc7443b4bb6384bae2d4c3fb, type: 2}
   oneShotSource: {fileID: 908822824}
   musicSource: {fileID: 908822823}
@@ -45878,7 +45878,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c596bbdac1ed4240b5a7dbfc2e8df60, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.LadderTraversal
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.LadderTraversal
   area: {fileID: 923438436}
   bottomPoint: {fileID: 1894659930}
   topPoint: {fileID: 641074134}
@@ -46032,7 +46032,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 173359839}
   leadsInside: 1
   side: 0
@@ -46590,7 +46590,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &934571308
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -46700,7 +46700,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 753cf8203761bd54d8ca9acb66569896, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1780175150}
@@ -46731,7 +46731,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 935652316}
 --- !u!114 &935652319
@@ -47059,7 +47059,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43b0348dcf5e2d84aaee534c97eb76b1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ThrowablePickup
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ThrowablePickup
   kind: 0
   roleRestricted: 0
   restrictedTo: 1
@@ -48953,7 +48953,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &946536690
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -49150,7 +49150,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad58c784ceabe42439f75ced0aa45465, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.HouseDoorLeaf
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.HouseDoorLeaf
   houseRoot: {fileID: 2068597927}
   side: 0
   openDegrees: -95
@@ -49202,7 +49202,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 1048a7e8628e05a449d3c68ffea9687f, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1680345350}
@@ -49233,7 +49233,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 953592568}
 --- !u!114 &953592571
@@ -49841,7 +49841,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 511b37d3e1093764fa38f297103824d6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.ScoutMarkerPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.ScoutMarkerPresenter
   resolver: {fileID: 0}
   roleSelector: {fileID: 54175170}
   worldCamera: {fileID: 256355307}
@@ -49860,7 +49860,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 823f04d7fc621174e8c99a4c3f678eac, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InteriorEscapePresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InteriorEscapePresenter
   roleSelector: {fileID: 54175170}
 --- !u!114 &965884535
 MonoBehaviour:
@@ -50091,7 +50091,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 1544713369}
   leadsInside: 1
   side: 0
@@ -51241,7 +51241,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 0986793845afff04b8547d688a30ddf3, type: 2}
   initialState: 0
   presentationRoot: {fileID: 2091281159}
@@ -51272,7 +51272,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1001892988}
 --- !u!114 &1001892991
@@ -52993,7 +52993,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7daf4da8b912fdd4fb199955e61e6657, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootDisplayCase
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootDisplayCase
   contents: {fileID: 229178846}
   glass: {fileID: 0}
   matchStateSource: {fileID: 2059096855}
@@ -55955,7 +55955,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 1048a7e8628e05a449d3c68ffea9687f, type: 2}
   initialState: 0
   presentationRoot: {fileID: 354384674}
@@ -55986,7 +55986,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1009421536}
 --- !u!114 &1009421539
@@ -56234,7 +56234,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c596bbdac1ed4240b5a7dbfc2e8df60, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.LadderTraversal
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.LadderTraversal
   area: {fileID: 1017991353}
   bottomPoint: {fileID: 1043146552}
   topPoint: {fileID: 1589677535}
@@ -59205,7 +59205,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c596bbdac1ed4240b5a7dbfc2e8df60, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.LadderTraversal
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.LadderTraversal
   area: {fileID: 1036152453}
   bottomPoint: {fileID: 1008194215}
   topPoint: {fileID: 707347614}
@@ -60758,7 +60758,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 900
   frontEntryPoint: {fileID: 1356074170}
   backEntryPoint: {fileID: 1356074170}
@@ -60879,7 +60879,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 31c8e5a44137fff4eab5b28126eed94c, type: 2}
   initialState: 0
   presentationRoot: {fileID: 706208499}
@@ -60910,7 +60910,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1094048045}
 --- !u!114 &1094048048
@@ -61008,7 +61008,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &1096278330
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -62045,7 +62045,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9048ab3d9784d7e42a20a73831729b96, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.NoisePingView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.NoisePingView
   board: {fileID: 1149064945}
   ringMaterial: {fileID: 2100000, guid: 3fc2dac2538010540acc305fffae9bf6, type: 2}
 --- !u!114 &1149064945
@@ -62059,7 +62059,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7f571afc5828a724fa9ef9ca76a8112b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Sensing.NoiseBoard
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Sensing.NoiseBoard
 --- !u!1 &1151456824
 GameObject:
   m_ObjectHideFlags: 0
@@ -62761,7 +62761,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 217343589}
   leadsInside: 1
   side: 0
@@ -62838,7 +62838,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: feb312f06cf58784ab437291e8b09358, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.FirstPlayGuidePresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.FirstPlayGuidePresenter
   roleSelector: {fileID: 54175170}
   matchRuntime: {fileID: 2059096855}
   thiefCarrier: {fileID: 1237112770}
@@ -62979,7 +62979,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 8
   frontEntryPoint: {fileID: 2090869031}
   backEntryPoint: {fileID: 1653271425}
@@ -62998,7 +62998,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: 0, y: 0, z: 0}
   innerHalfExtents: {x: 7.734542, y: 7.9152184}
   floorTop: 1.5166065
@@ -63013,7 +63013,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 1044299667}
@@ -63503,7 +63503,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 168074330}
   leadsInside: 1
   side: 0
@@ -64043,7 +64043,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: d45ef71cf9184124dba67a7d88918bf0, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1941318271}
@@ -64074,7 +64074,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1195748796}
 --- !u!114 &1195748799
@@ -64457,7 +64457,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fabd84be0c07ec846b830db3da702023, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.NetworkMatchProbe
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.NetworkMatchProbe
   sampleSeconds: 14
 --- !u!1 &1200129627
 GameObject:
@@ -65517,7 +65517,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4de7fa4fb7abbbc4aa2cdffc3d189681, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerHidingSpot
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot
   matchStateSource: {fileID: 2059096855}
   occupantAnchor: {fileID: 1538209862}
   interactionRadius: 1.4
@@ -65604,7 +65604,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d22ce11f598c1704a81868f4a601da14, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.ThiefLootWallet
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.ThiefLootWallet
   identity: {fileID: 1237112780}
   matchConfig: {fileID: 11400000, guid: 9c9d6fd67cd99f04993f2eb962bb6883, type: 2}
 --- !u!114 &1237112746
@@ -65618,7 +65618,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad6c606b575edf040b0d753d2841a4c6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkPlayerLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkPlayerLink
   ShowTopMostFoldoutHeaderGroup: 1
   identity: {fileID: 1237112780}
   motor: {fileID: 1237112772}
@@ -65655,7 +65655,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6dd1f67e74474d9429f372c80dc01d4a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CharacterOutcomeAnimator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CharacterOutcomeAnimator
   animator: {fileID: 761414136}
   identity: {fileID: 1237112780}
   matchEndController: {fileID: 2059096857}
@@ -65671,7 +65671,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b3e2d1f8a7c4b6e9d0f1a2c3e4b5d6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Voice.VoiceCommandInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Voice.VoiceCommandInput
   config: {fileID: 11400000, guid: 6afb0216b724018448374e5b0232194d, type: 2}
   gameSessionId: 
   petId: cat
@@ -65690,7 +65690,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3b32c90201b0632459a85cf40226fcd4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Input.CompanionCommandKeyboardInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Input.CompanionCommandKeyboardInput
   dispatcher: {fileID: 85652722}
   issuer: {fileID: 1237112780}
   commandTargetSource: {fileID: 1237112775}
@@ -65707,7 +65707,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5dbba685170afe543a8057896d71edda, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.ThiefScentTrail
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.ThiefScentTrail
   sampleIntervalSeconds: 0.5
   pointLifetimeSeconds: 12
   minimumSampleDistance: 0.75
@@ -65723,7 +65723,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8bcb47a0d47ce0240bf6cc5f64acf60f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.ThiefStartSpawn
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.ThiefStartSpawn
   matchStateSource: {fileID: 2059096855}
   spawnPoints: {fileID: 181789154}
   interiorState: {fileID: 1237112764}
@@ -65738,7 +65738,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8682800cdcef3c64296b7ac2cbf89870, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Arrest.ThiefJailState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Arrest.ThiefJailState
 --- !u!114 &1237112753
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65776,7 +65776,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b47399190cfd5bb44826113cd7854a10, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.DisplayCaseKeyHolder
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.DisplayCaseKeyHolder
   identity: {fileID: 1237112780}
   hasKey: 0
 --- !u!114 &1237112755
@@ -65790,7 +65790,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd136ded1df14ab409a75281b6b9a21e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.NightVisionFill
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.NightVisionFill
   viewer: {fileID: 1237112780}
   matchStateSource: {fileID: 2059096855}
   fill: {fileID: 1539960081}
@@ -65805,7 +65805,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b00938df31087fd4e950269c5e283604, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.SlipSpinView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.SlipSpinView
   stun: {fileID: 1237112766}
   visual: {fileID: 375632169}
   turnDegrees: 360
@@ -65822,7 +65822,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d45a19b05e69b69469baabbbdae6cda0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.StunStarsView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.StunStarsView
   stun: {fileID: 1237112766}
   starMaterial: {fileID: 2100000, guid: 49af6679f9d4c5249ad7399e3464069e, type: 2}
   starCount: 4
@@ -65841,7 +65841,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b0d1c7a5e4ce28148a76679a463a89ed, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.ThrowPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.ThrowPresenter
   source: {fileID: 1237112760}
   skeletonRoot: {fileID: 1237112775}
   propMaterial: {fileID: 2100000, guid: 8d9bd85075db7d4439378db0a43dbf24, type: 2}
@@ -65863,7 +65863,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e72667563f9632e4cb2b747c18ded9cf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ToolUseInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ToolUseInput
   action: {fileID: 1237112760}
   chargeController: {fileID: 0}
   trajectoryPreview: {fileID: 0}
@@ -65882,7 +65882,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc3ebee390178ab46bb0821b7ba6855e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ToolUseAction
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ToolUseAction
   identity: {fileID: 1237112780}
   carrier: {fileID: 1237112762}
   obstacleLayers:
@@ -65899,7 +65899,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2054d6ef09173b94aa11483cabd9aa08, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Input.QuickSlotKeyboardInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Input.QuickSlotKeyboardInput
   carrier: {fileID: 1237112762}
   isLocallyControlled: 0
 --- !u!114 &1237112762
@@ -65913,7 +65913,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d3b691b9268c9cf4984be8e969d4df73, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ToolCarrier
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ToolCarrier
   identity: {fileID: 1237112780}
   matchStateSource: {fileID: 2059096855}
   grantDefaultLoadoutOnGameplayStart: 1
@@ -65929,7 +65929,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa36e9a91e3f5fc479ab16a345ca8854, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorEscapeHatch
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorEscapeHatch
   interiorState: {fileID: 1237112764}
 --- !u!114 &1237112764
 MonoBehaviour:
@@ -65942,7 +65942,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: adb3caf1c825a544da484bf57295727d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.PlayerInteriorState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState
   currentInteriorId: -1
 --- !u!114 &1237112765
 MonoBehaviour:
@@ -65955,7 +65955,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ffbde22deae319f47bac6944e8f9410e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.BlindedState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.BlindedState
 --- !u!114 &1237112766
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65967,7 +65967,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e7da3757f9a4dd4dbc2621169f292a5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.StunState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.StunState
   minimumGapSeconds: 1.2
 --- !u!114 &1237112767
 MonoBehaviour:
@@ -65980,7 +65980,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79160f91bcc3fff4ca5d959990e8d768, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.ThiefHidingState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.ThiefHidingState
   visualRoot: {fileID: 1237112774}
 --- !u!114 &1237112768
 MonoBehaviour:
@@ -65993,7 +65993,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 05dd00c2429c45947b88f3cd9cec8feb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootPickupProgress
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootPickupProgress
   carrier: {fileID: 1237112770}
   movementMotor: {fileID: 1237112772}
 --- !u!114 &1237112769
@@ -66007,7 +66007,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 74faf01924fbf9544b97cd2edf6d91b9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.LootCarryMovementPenalty
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.LootCarryMovementPenalty
   carrier: {fileID: 1237112770}
   movementMotor: {fileID: 1237112772}
 --- !u!114 &1237112770
@@ -66021,7 +66021,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e02257d21d702b48b763eabee40e4ea, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootCarrier
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootCarrier
   identity: {fileID: 1237112780}
   matchStateSource: {fileID: 2059096855}
   carryPoint: {fileID: 166202994}
@@ -66037,7 +66037,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30d3afc1922e8a345bf008ba1c59389d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CompanionLegAnimator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CompanionLegAnimator
   skeletonRoot: {fileID: 761414138}
   swingDegrees: 24
   kneeBendDegrees: 34
@@ -66064,7 +66064,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c0f5052bccffe8419f58632db42723c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerMovementMotor
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerMovementMotor
   characterController: {fileID: 1237112773}
   playerConfig: {fileID: 11400000, guid: 8ae319106aeb2c3418b4304ce023628f, type: 2}
   matchStateSource: {fileID: 2059096855}
@@ -66105,7 +66105,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e45a0b2d6903294084849c7fec1a359, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerVisualRoot
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerVisualRoot
   visualRoot: {fileID: 375632169}
   currentVisual: {fileID: 761414137}
 --- !u!4 &1237112775
@@ -66137,7 +66137,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7812e7fef22aba943924b221c88794cb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootDropInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootDropInput
   carrier: {fileID: 1237112770}
   isLocallyControlled: 0
 --- !u!114 &1237112777
@@ -66151,7 +66151,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad29d66f1023b264489133b70623d0d4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerInteractionInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerInteractionInput
   scanner: {fileID: 1237112778}
   identity: {fileID: 1237112780}
 --- !u!114 &1237112778
@@ -66165,7 +66165,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 55fbdec648c421d4fb1a87ff1ea39d1b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerInteractionScanner
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerInteractionScanner
   identity: {fileID: 1237112780}
   playerConfig: {fileID: 11400000, guid: 8ae319106aeb2c3418b4304ce023628f, type: 2}
   matchStateSource: {fileID: 2059096855}
@@ -66180,7 +66180,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 77e625b543f17db45bbe4d35e5e33fda, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerKeyboardInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerKeyboardInput
   movementMotor: {fileID: 1237112772}
   isLocallyControlled: 0
 --- !u!114 &1237112780
@@ -66194,7 +66194,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fcb6036415c43cb4bb6ef4f523e92531, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerRoleIdentity
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity
   role: 1
 --- !u!1 &1240369832
 GameObject:
@@ -66675,7 +66675,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 168074330}
   leadsInside: 0
   side: 0
@@ -66693,7 +66693,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -67042,7 +67042,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: c06261eef25bd464286215f0926410b1, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1869222419}
@@ -67073,7 +67073,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1260915592}
 --- !u!114 &1260915595
@@ -67154,7 +67154,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: c06261eef25bd464286215f0926410b1, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1870096656}
@@ -67185,7 +67185,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1261647302}
 --- !u!114 &1261647305
@@ -67356,7 +67356,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: d268eff9674467d49b223d87ec040814, type: 2}
   initialState: 0
   presentationRoot: {fileID: 272362098}
@@ -67387,7 +67387,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1262004232}
 --- !u!114 &1262004235
@@ -68010,7 +68010,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f69e22b5449f3ae4fa7d16891d3d3ddf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootHidingSpot
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootHidingSpot
   area: {fileID: 1282182279}
   storedRoot: {fileID: 774748684}
   matchStateSource: {fileID: 2059096855}
@@ -68025,7 +68025,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4de7fa4fb7abbbc4aa2cdffc3d189681, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerHidingSpot
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot
   matchStateSource: {fileID: 2059096855}
   occupantAnchor: {fileID: 1168138479}
   interactionRadius: 1.4
@@ -68806,7 +68806,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9b48285ef1deaa94a89d808eabdf0cf7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.AnimatorClipGuard
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.AnimatorClipGuard
   animator: {fileID: 1298697281}
 --- !u!1 &1299309990
 GameObject:
@@ -69570,8 +69570,8 @@ MonoScript:
   m_Type: 0
   m_ExecutionOrder: 0
   m_ClassName: GreyboxObstacle
-  m_Namespace: PawsAndLoot.Gameplay.Map
-  m_AssemblyName: PawsAndLoot.Runtime
+  m_Namespace: PawliceAndPurrglar.Gameplay.Map
+  m_AssemblyName: PawliceAndPurrglar.Runtime
 --- !u!1 &1314993895
 GameObject:
   m_ObjectHideFlags: 0
@@ -69733,7 +69733,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43b0348dcf5e2d84aaee534c97eb76b1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ThrowablePickup
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ThrowablePickup
   kind: 0
   roleRestricted: 0
   restrictedTo: 1
@@ -69889,7 +69889,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &1322184627
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -70094,7 +70094,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d32eb569beb4533439b9e29765565671, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSaleZone
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSaleZone
   saleArea: {fileID: 1325976742}
   lootConfig: {fileID: 11400000, guid: ff72290f28da38c4a9156d3c5d85a851, type: 2}
   matchStateSource: {fileID: 2059096855}
@@ -70535,7 +70535,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 884197172}
   leadsInside: 1
   side: 0
@@ -70684,7 +70684,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 8698661e0e1731549822ebce943bdbb3, type: 2}
   initialState: 0
   presentationRoot: {fileID: 984107122}
@@ -70715,7 +70715,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1349124843}
 --- !u!114 &1349124846
@@ -71327,7 +71327,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 30a3453827b875f459684c99152a789e, type: 2}
   initialState: 0
   presentationRoot: {fileID: 642083439}
@@ -71358,7 +71358,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1363794427}
 --- !u!114 &1363794430
@@ -71485,7 +71485,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &1365488015
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -71627,7 +71627,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: ffe9ab1cef733bd4da4ce09316311e76, type: 2}
   initialState: 0
   presentationRoot: {fileID: 480593247}
@@ -71658,7 +71658,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1369872833}
 --- !u!114 &1369872836
@@ -73947,7 +73947,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &1392905408
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -74139,7 +74139,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 77bd86835702ccb44a1fb77e167c425b, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1314292989}
@@ -74170,7 +74170,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1400766617}
 --- !u!114 &1400766620
@@ -74505,7 +74505,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4f6a2f5c31951c34685a687347d58209, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ScenePerformanceProbe
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ScenePerformanceProbe
   measureSeconds: 8
   warmupSeconds: 2
 --- !u!1 &1412344648
@@ -75369,7 +75369,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 7
   frontEntryPoint: {fileID: 778225234}
   backEntryPoint: {fileID: 1375584508}
@@ -75388,7 +75388,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: 0, y: -0.00000023841858, z: 0}
   innerHalfExtents: {x: 6.8066053, y: 6.882638}
   floorTop: 1.5243949
@@ -75403,7 +75403,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 823495151}
@@ -75462,7 +75462,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 55925030}
   leadsInside: 1
   side: 0
@@ -75867,7 +75867,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &1446676806
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -75974,7 +75974,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 294cac1c4ee07244b8a5e34b00c5e381, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxMapDefinition
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxMapDefinition
   mapWidthMeters: 80
   mapDepthMeters: 72
   environmentContentCleared: 0
@@ -76589,7 +76589,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5a14df6e8716c5843b61c4bb63bdf930, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootAlarm
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootAlarm
   noiseBoard: {fileID: 0}
 --- !u!1 &1472784032
 GameObject:
@@ -76712,7 +76712,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: d268eff9674467d49b223d87ec040814, type: 2}
   initialState: 0
   presentationRoot: {fileID: 2006946637}
@@ -76743,7 +76743,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1477388481}
 --- !u!114 &1477388484
@@ -77678,7 +77678,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -77735,7 +77735,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 21843206}
   leadsInside: 1
   side: 0
@@ -78356,7 +78356,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad58c784ceabe42439f75ced0aa45465, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.HouseDoorLeaf
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.HouseDoorLeaf
   houseRoot: {fileID: 370160097}
   side: 0
   openDegrees: -95
@@ -79297,7 +79297,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 173359839}
   leadsInside: 0
   side: 0
@@ -79315,7 +79315,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -79602,7 +79602,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 753cf8203761bd54d8ca9acb66569896, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1311519334}
@@ -79633,7 +79633,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1538869537}
 --- !u!114 &1538869540
@@ -80028,7 +80028,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f2e754dbe59fe64e808a3476bdc1a6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseInterior
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseInterior
   interiorId: 12
   frontEntryPoint: {fileID: 393848520}
   backEntryPoint: {fileID: 1108650833}
@@ -80047,7 +80047,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: deab6f12a2155e347960aef752c0c414, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorShellScreen
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorShellScreen
   innerCentreOffset: {x: 0.0005264282, y: 0, z: -0.00090026855}
   innerHalfExtents: {x: 11.380498, y: 11.864944}
   floorTop: 1.5272316
@@ -80062,7 +80062,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef82c767f4438054badb18633d0f7126, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSpotDraw
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSpotDraw
   matchStateSource: {fileID: 2059096855}
   spots:
   - {fileID: 2072091923}
@@ -81053,7 +81053,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 3e580efd0d3a98341aab11a12c12f212, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1180940956}
@@ -81084,7 +81084,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1573621210}
 --- !u!114 &1573621213
@@ -81213,7 +81213,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -81890,7 +81890,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 528491995}
   leadsInside: 1
   side: 0
@@ -81949,7 +81949,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: d268eff9674467d49b223d87ec040814, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1220162325}
@@ -81980,7 +81980,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1597972781}
 --- !u!114 &1597972784
@@ -82286,7 +82286,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16aeb56cd5104f7c827928c9b54247fa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Arrest.ArrestProgressController
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Arrest.ArrestProgressController
   rangeSensor: {fileID: 1602717297}
   arrestConfig: {fileID: 11400000, guid: d8fe1d468de78ee4ea9a1c4de75c5de5, type: 2}
   matchStateSource: {fileID: 2059096855}
@@ -82301,7 +82301,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 55016e48366643dea082bbb34f490827, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Arrest.ArrestRangeSensor
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Arrest.ArrestRangeSensor
   police: {fileID: 1602717332}
   thief: {fileID: 1237112780}
   arrestConfig: {fileID: 11400000, guid: d8fe1d468de78ee4ea9a1c4de75c5de5, type: 2}
@@ -82319,7 +82319,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e91a9e81f3af443581322e33509996be, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Arrest.ArrestCompletionController
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Arrest.ArrestCompletionController
   progressController: {fileID: 1602717296}
   matchRuntime: {fileID: 2059096855}
   requiredCatchCount: 3
@@ -82334,7 +82334,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad6c606b575edf040b0d753d2841a4c6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkPlayerLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkPlayerLink
   ShowTopMostFoldoutHeaderGroup: 1
   identity: {fileID: 1602717332}
   motor: {fileID: 1602717311}
@@ -82371,7 +82371,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: adb3caf1c825a544da484bf57295727d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.PlayerInteriorState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.PlayerInteriorState
   currentInteriorId: -1
 --- !u!114 &1602717301
 MonoBehaviour:
@@ -82384,7 +82384,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30d3afc1922e8a345bf008ba1c59389d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CompanionLegAnimator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CompanionLegAnimator
   skeletonRoot: {fileID: 1298697283}
   swingDegrees: 24
   kneeBendDegrees: 34
@@ -82411,7 +82411,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b29e418a48965c743a49ffae1ac20590, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PoliceWallet
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PoliceWallet
   startingAmount: 120
 --- !u!114 &1602717303
 MonoBehaviour:
@@ -82424,7 +82424,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d3b691b9268c9cf4984be8e969d4df73, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ToolCarrier
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ToolCarrier
   identity: {fileID: 1602717332}
   matchStateSource: {fileID: 2059096855}
   grantDefaultLoadoutOnGameplayStart: 1
@@ -82440,7 +82440,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b0d1c7a5e4ce28148a76679a463a89ed, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.ThrowPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.ThrowPresenter
   source: {fileID: 1602717307}
   skeletonRoot: {fileID: 1602717295}
   propMaterial: {fileID: 2100000, guid: 8d9bd85075db7d4439378db0a43dbf24, type: 2}
@@ -82462,7 +82462,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e7da3757f9a4dd4dbc2621169f292a5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.StunState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.StunState
   minimumGapSeconds: 1.2
 --- !u!114 &1602717306
 MonoBehaviour:
@@ -82475,7 +82475,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e72667563f9632e4cb2b747c18ded9cf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ToolUseInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ToolUseInput
   action: {fileID: 1602717307}
   chargeController: {fileID: 0}
   trajectoryPreview: {fileID: 0}
@@ -82494,7 +82494,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc3ebee390178ab46bb0821b7ba6855e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ToolUseAction
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ToolUseAction
   identity: {fileID: 1602717332}
   carrier: {fileID: 1602717303}
   obstacleLayers:
@@ -82511,7 +82511,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3b32c90201b0632459a85cf40226fcd4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Input.CompanionCommandKeyboardInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Input.CompanionCommandKeyboardInput
   dispatcher: {fileID: 85652722}
   issuer: {fileID: 1602717332}
   commandTargetSource: {fileID: 1602717295}
@@ -82528,7 +82528,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e02257d21d702b48b763eabee40e4ea, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootCarrier
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootCarrier
   identity: {fileID: 1602717332}
   matchStateSource: {fileID: 2059096855}
   carryPoint: {fileID: 757949548}
@@ -82569,7 +82569,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c0f5052bccffe8419f58632db42723c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerMovementMotor
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerMovementMotor
   characterController: {fileID: 1602717310}
   playerConfig: {fileID: 11400000, guid: 8ae319106aeb2c3418b4304ce023628f, type: 2}
   matchStateSource: {fileID: 2059096855}
@@ -82585,7 +82585,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6dd1f67e74474d9429f372c80dc01d4a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.CharacterOutcomeAnimator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.CharacterOutcomeAnimator
   animator: {fileID: 1298697281}
   identity: {fileID: 1602717332}
   matchEndController: {fileID: 2059096857}
@@ -82601,7 +82601,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b3e2d1f8a7c4b6e9d0f1a2c3e4b5d6f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Voice.VoiceCommandInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Voice.VoiceCommandInput
   config: {fileID: 11400000, guid: 6afb0216b724018448374e5b0232194d, type: 2}
   gameSessionId: 
   petId: dog
@@ -82620,7 +82620,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eef0177683eecbb458d52636da3cac55, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Arrest.ArrestJailCoordinator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Arrest.ArrestJailCoordinator
   arrestCompletion: {fileID: 1602717298}
   jail: {fileID: 1237112752}
   cellPoint: {fileID: 1356074170}
@@ -82665,7 +82665,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e42aa3439ee6c52429f28784f867968e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.FlashlightVisibility
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.FlashlightVisibility
   viewer: {fileID: 1602717332}
   matchStateSource: {fileID: 2059096855}
   halfAngleDegrees: 30
@@ -82682,7 +82682,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cd7d96566fbeae8419cc1d421f82787f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PoliceFlashlight
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PoliceFlashlight
   beam: {fileID: 1790502245}
   matchStateSource: {fileID: 2059096855}
   pitchDegrees: 22
@@ -82697,7 +82697,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd136ded1df14ab409a75281b6b9a21e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.NightVisionFill
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.NightVisionFill
   viewer: {fileID: 1602717332}
   matchStateSource: {fileID: 2059096855}
   fill: {fileID: 388589832}
@@ -82712,7 +82712,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b00938df31087fd4e950269c5e283604, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.SlipSpinView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.SlipSpinView
   stun: {fileID: 1602717305}
   visual: {fileID: 1916401336}
   turnDegrees: 360
@@ -82729,7 +82729,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d45a19b05e69b69469baabbbdae6cda0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.StunStarsView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.StunStarsView
   stun: {fileID: 1602717305}
   starMaterial: {fileID: 2100000, guid: 49af6679f9d4c5249ad7399e3464069e, type: 2}
   starCount: 4
@@ -82748,7 +82748,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2054d6ef09173b94aa11483cabd9aa08, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Input.QuickSlotKeyboardInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Input.QuickSlotKeyboardInput
   carrier: {fileID: 1602717303}
   isLocallyControlled: 1
 --- !u!114 &1602717322
@@ -82762,7 +82762,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa36e9a91e3f5fc479ab16a345ca8854, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.InteriorEscapeHatch
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.InteriorEscapeHatch
   interiorState: {fileID: 1602717300}
 --- !u!114 &1602717323
 MonoBehaviour:
@@ -82775,7 +82775,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ffbde22deae319f47bac6944e8f9410e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.BlindedState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.BlindedState
 --- !u!114 &1602717324
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -82787,7 +82787,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79160f91bcc3fff4ca5d959990e8d768, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.ThiefHidingState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.ThiefHidingState
   visualRoot: {fileID: 1602717327}
 --- !u!114 &1602717325
 MonoBehaviour:
@@ -82800,7 +82800,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 05dd00c2429c45947b88f3cd9cec8feb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootPickupProgress
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootPickupProgress
   carrier: {fileID: 1602717309}
   movementMotor: {fileID: 1602717311}
 --- !u!114 &1602717326
@@ -82814,7 +82814,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 74faf01924fbf9544b97cd2edf6d91b9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.LootCarryMovementPenalty
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.LootCarryMovementPenalty
   carrier: {fileID: 1602717309}
   movementMotor: {fileID: 1602717311}
 --- !u!114 &1602717327
@@ -82828,7 +82828,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e45a0b2d6903294084849c7fec1a359, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerVisualRoot
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerVisualRoot
   visualRoot: {fileID: 1916401336}
   currentVisual: {fileID: 1298697282}
 --- !u!114 &1602717328
@@ -82842,7 +82842,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7812e7fef22aba943924b221c88794cb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootDropInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootDropInput
   carrier: {fileID: 1602717309}
   isLocallyControlled: 1
 --- !u!114 &1602717329
@@ -82856,7 +82856,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad29d66f1023b264489133b70623d0d4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerInteractionInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerInteractionInput
   scanner: {fileID: 1602717330}
   identity: {fileID: 1602717332}
 --- !u!114 &1602717330
@@ -82870,7 +82870,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 55fbdec648c421d4fb1a87ff1ea39d1b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerInteractionScanner
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerInteractionScanner
   identity: {fileID: 1602717332}
   playerConfig: {fileID: 11400000, guid: 8ae319106aeb2c3418b4304ce023628f, type: 2}
   matchStateSource: {fileID: 2059096855}
@@ -82885,7 +82885,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 77e625b543f17db45bbe4d35e5e33fda, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerKeyboardInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerKeyboardInput
   movementMotor: {fileID: 1602717311}
   isLocallyControlled: 1
 --- !u!114 &1602717332
@@ -82899,7 +82899,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fcb6036415c43cb4bb6ef4f523e92531, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerRoleIdentity
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity
   role: 0
 --- !u!1 &1603356871
 GameObject:
@@ -83692,7 +83692,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 0986793845afff04b8547d688a30ddf3, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1368253688}
@@ -83723,7 +83723,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1637806894}
 --- !u!114 &1637806897
@@ -83817,7 +83817,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 1170523876}
   leadsInside: 1
   side: 0
@@ -86074,7 +86074,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &1696117481
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -86538,7 +86538,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 753cf8203761bd54d8ca9acb66569896, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1066335340}
@@ -86569,7 +86569,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1701890544}
 --- !u!114 &1701890547
@@ -87938,7 +87938,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -88327,7 +88327,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30629e935f9b9e24983deac45fffe638, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Companions.DistractionBoard
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Companions.DistractionBoard
   durationSeconds: 4
 --- !u!4 &1744870007
 Transform:
@@ -89119,7 +89119,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6c8976f03058a7478fc8f0397669ea9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkInputBridge
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkInputBridge
   networkManager: {fileID: 0}
   links:
   - {fileID: 1602717299}
@@ -89761,7 +89761,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 54d9ccf9d8233cf4aa808d35814018cf, type: 2}
   initialState: 0
   presentationRoot: {fileID: 180675399}
@@ -89792,7 +89792,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1785831051}
 --- !u!114 &1785831054
@@ -91447,7 +91447,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: e7f3b79cf7aa7944bafd622cc800dd1a, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1858810387}
@@ -91478,7 +91478,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1828830936}
 --- !u!114 &1828830939
@@ -92044,7 +92044,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: ca82ad00a34c22844916c1cf05e0f8ff, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1823413065}
@@ -92075,7 +92075,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1842227816}
 --- !u!114 &1842227819
@@ -92374,7 +92374,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -92757,7 +92757,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &1855038550
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -95136,7 +95136,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d32eb569beb4533439b9e29765565671, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSaleZone
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSaleZone
   saleArea: {fileID: 1937075201}
   lootConfig: {fileID: 11400000, guid: ff72290f28da38c4a9156d3c5d85a851, type: 2}
   matchStateSource: {fileID: 2059096855}
@@ -95391,7 +95391,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 753cf8203761bd54d8ca9acb66569896, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1331604262}
@@ -95422,7 +95422,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1940223010}
 --- !u!114 &1940223013
@@ -96085,7 +96085,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 776ed84ed51488d43b7c6f380e61cf8c, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1733133547}
@@ -96116,7 +96116,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 1958593240}
 --- !u!114 &1958593243
@@ -97315,7 +97315,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d32eb569beb4533439b9e29765565671, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSaleZone
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSaleZone
   saleArea: {fileID: 2006479357}
   lootConfig: {fileID: 11400000, guid: ff72290f28da38c4a9156d3c5d85a851, type: 2}
   matchStateSource: {fileID: 2059096855}
@@ -97493,7 +97493,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: da602433a932cc6439b17249e2b7028d, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1965256259}
@@ -97524,7 +97524,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 2007644807}
 --- !u!114 &2007644810
@@ -97750,7 +97750,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a2e5c9d1f4b6a8e0c3d5f7b9a1e2d4c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.VoiceCommandHudPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.VoiceCommandHudPresenter
   input: {fileID: 0}
   stateLabel: {fileID: 1029176865}
   transcriptLabel: {fileID: 1160256506}
@@ -97767,7 +97767,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27bdbcc0b423c7041a8616ca305f5a7c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CompanionCommandHudPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CompanionCommandHudPresenter
   dispatcher: {fileID: 85652722}
   roleSelector: {fileID: 54175170}
   commandLabel: {fileID: 31889682}
@@ -98001,7 +98001,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: e9bad45df9c3f7446bb554556cc1ec17, type: 2}
   initialState: 0
   presentationRoot: {fileID: 397747537}
@@ -98032,7 +98032,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 2014275797}
 --- !u!114 &2014275800
@@ -98868,7 +98868,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: da602433a932cc6439b17249e2b7028d, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1314993896}
@@ -98899,7 +98899,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 2027427265}
 --- !u!114 &2027427268
@@ -99299,7 +99299,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 21843206}
   leadsInside: 0
   side: 0
@@ -99317,7 +99317,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -99371,7 +99371,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad58c784ceabe42439f75ced0aa45465, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.HouseDoorLeaf
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.HouseDoorLeaf
   houseRoot: {fileID: 943467763}
   side: 0
   openDegrees: -95
@@ -99710,7 +99710,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 93e191113a82a574bb04675ade753b70, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Match.MatchRuntimeState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Match.MatchRuntimeState
   matchConfig: {fileID: 11400000, guid: 9c9d6fd67cd99f04993f2eb962bb6883, type: 2}
   startCountdownAutomatically: 1
 --- !u!114 &2059096856
@@ -99724,7 +99724,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1a372a92a9fe41c9874a29718e504696, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Match.MatchResultFlowController
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Match.MatchResultFlowController
   matchRuntime: {fileID: 2059096855}
   matchEndController: {fileID: 2059096857}
 --- !u!114 &2059096857
@@ -99738,7 +99738,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4231d3917e1f4d07b378b67f483a6b53, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Match.MatchEndController
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Match.MatchEndController
   matchRuntime: {fileID: 2059096855}
   resultEvaluator: {fileID: 2059096858}
   roleSelector: {fileID: 54175170}
@@ -99754,7 +99754,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab04c546ade249ea81bc0d7b983c66f2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Match.MatchResultEvaluator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Match.MatchResultEvaluator
   matchRuntime: {fileID: 2059096855}
   thiefWallet: {fileID: 1237112745}
   arrestCompletion: {fileID: 1602717298}
@@ -99817,7 +99817,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d32eb569beb4533439b9e29765565671, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootSaleZone
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootSaleZone
   saleArea: {fileID: 2064010463}
   lootConfig: {fileID: 11400000, guid: ff72290f28da38c4a9156d3c5d85a851, type: 2}
   matchStateSource: {fileID: 2059096855}
@@ -101970,7 +101970,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f3f2e982b9f543619300171b4bf6e70e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.PoliceHudPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.PoliceHudPresenter
   roleSelector: {fileID: 54175170}
   matchRuntime: {fileID: 2059096855}
   thiefWallet: {fileID: 1237112745}
@@ -101993,7 +101993,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1dacec90dd5640f0992eb51442c24f2f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.ArrestHudPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.ArrestHudPresenter
   roleSelector: {fileID: 54175170}
   progressController: {fileID: 1602717296}
   completionController: {fileID: 1602717298}
@@ -102012,7 +102012,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: db4e9dcb14f55b843bc7114d999d8a86, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.ThiefHudPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.ThiefHudPresenter
   roleSelector: {fileID: 54175170}
   wallet: {fileID: 1237112745}
   carrier: {fileID: 1237112770}
@@ -102036,7 +102036,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 244b8e1f72fc9444ebf9d196a07f9b61, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.RoleObjectivePresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.RoleObjectivePresenter
   matchRuntime: {fileID: 2059096855}
   roleSelector: {fileID: 54175170}
   objectivePanel: {fileID: 1333218010}
@@ -102053,7 +102053,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a0ee76272e0ba248b0afcb3b33683fd, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CommonHudPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CommonHudPresenter
   matchRuntime: {fileID: 2059096855}
   roleSelector: {fileID: 54175170}
   timerLabel: {fileID: 999535113}
@@ -102071,7 +102071,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d49d106c20e0c6649b6a2b5fcab97d99, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorRadarPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorRadarPresenter
   root: {fileID: 228989766}
   roleSelector: {fileID: 54175170}
   metresPerBar: 5
@@ -102086,7 +102086,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f936f09c07a9e704a85f91d6364a1d63, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorAlertPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorAlertPresenter
   label: {fileID: 836867051}
   roleSelector: {fileID: 54175170}
 --- !u!114 &2077622612
@@ -102100,7 +102100,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 40cb1563137c0e549bb5c9550ca37173, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.ToolHudPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.ToolHudPresenter
   carrier: {fileID: 0}
   stun: {fileID: 0}
   policeWallet: {fileID: 0}
@@ -102150,7 +102150,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 55925030}
   leadsInside: 0
   side: 0
@@ -102168,7 +102168,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -102662,7 +102662,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 527366710}
   leadsInside: 0
   side: 0
@@ -102680,7 +102680,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -103674,7 +103674,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 41fd6648d0f749b4eb00e511e466b7ad, type: 2}
   initialState: 0
   presentationRoot: {fileID: 1575069748}
@@ -103705,7 +103705,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 2105690873}
 --- !u!114 &2105690876
@@ -103880,7 +103880,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b463a36b44cf0cb4baea51cfef7f5b9b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkSceneFingerprint
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkSceneFingerprint
   networkManager: {fileID: 0}
 --- !u!1 &2110349787
 GameObject:
@@ -103913,7 +103913,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 1048a7e8628e05a449d3c68ffea9687f, type: 2}
   initialState: 0
   presentationRoot: {fileID: 2021002282}
@@ -103944,7 +103944,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 2110349788}
 --- !u!114 &2110349791
@@ -104495,7 +104495,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 145405186}
   leadsInside: 1
   side: 0
@@ -104667,7 +104667,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: ca82ad00a34c22844916c1cf05e0f8ff, type: 2}
   initialState: 0
   presentationRoot: {fileID: 834841295}
@@ -104698,7 +104698,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 2129861036}
 --- !u!114 &2129861039
@@ -104904,7 +104904,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 1314805776}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Map.GreyboxObstacle
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Map.GreyboxObstacle
 --- !u!23 &2137413333
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -105081,7 +105081,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 1170523876}
   leadsInside: 0
   side: 0
@@ -105099,7 +105099,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1729d5a11bbcaf6458d5dd31a3ab5f6a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Animation.InteriorExitMarkerView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Animation.InteriorExitMarkerView
   radius: 1.15
   thickness: 0.28
   lift: 0.04
@@ -105246,7 +105246,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c1ecd9ae5527140acfad6176e77f2a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Loot.LootItem
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Loot.LootItem
   definition: {fileID: 11400000, guid: 77bd86835702ccb44a1fb77e167c425b, type: 2}
   initialState: 0
   presentationRoot: {fileID: 931881474}
@@ -105277,7 +105277,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3ccfb4f6ce7d24d896fd41c61eb8b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLootLink
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLootLink
   ShowTopMostFoldoutHeaderGroup: 1
   loot: {fileID: 2142158144}
 --- !u!114 &2142158147
@@ -105371,7 +105371,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 560350989}
   leadsInside: 1
   side: 0
@@ -105443,7 +105443,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e558f3d770de3041a9efea2a2d62845, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Interiors.HouseDoorway
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Interiors.HouseDoorway
   interior: {fileID: 1435423610}
   leadsInside: 1
   side: 0

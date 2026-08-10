@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// The six characters one player reads out and the other types in.

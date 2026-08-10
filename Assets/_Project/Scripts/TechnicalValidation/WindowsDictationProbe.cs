@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Windows.Speech;
 #endif
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     public sealed class WindowsDictationProbe : MonoBehaviour
     {

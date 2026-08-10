@@ -1,7 +1,7 @@
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Interiors
+namespace PawliceAndPurrglar.Gameplay.Interiors
 {
     /// <summary>
     /// Puts a character down somewhere, correctly.

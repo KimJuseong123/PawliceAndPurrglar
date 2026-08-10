@@ -1,14 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using PawsAndLoot.Animation;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Animation;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.UI;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// Three item effects that worked and said nothing.
@@ -405,8 +405,8 @@ namespace PawsAndLoot.Tests.PlayMode
             Assert.That(overlay.Showing, Is.Null);
 
             motor.ApplyBoost(
-                PawsAndLoot.Gameplay.Loot.LootAlarm.PoliceBoostMultiplier,
-                PawsAndLoot.Gameplay.Loot.LootAlarm.PoliceBoostSeconds);
+                PawliceAndPurrglar.Gameplay.Loot.LootAlarm.PoliceBoostMultiplier,
+                PawliceAndPurrglar.Gameplay.Loot.LootAlarm.PoliceBoostSeconds);
             overlay.Refresh(1f);
 
             Assert.That(
@@ -436,7 +436,7 @@ namespace PawsAndLoot.Tests.PlayMode
             controller.height = 2f;
             controller.radius = 0.45f;
 
-            var config = ScriptableObject.CreateInstance<PawsAndLoot.Config.PlayerConfig>();
+            var config = ScriptableObject.CreateInstance<PawliceAndPurrglar.Config.PlayerConfig>();
             _configs.Add(config);
 
             PlayerMovementMotor motor =
@@ -448,10 +448,10 @@ namespace PawsAndLoot.Tests.PlayMode
 
         private readonly List<ScriptableObject> _configs = new();
 
-        private sealed class AlwaysPlaying : PawsAndLoot.Match.IMatchStateReader
+        private sealed class AlwaysPlaying : PawliceAndPurrglar.Match.IMatchStateReader
         {
-            public PawsAndLoot.Match.MatchState CurrentState =>
-                PawsAndLoot.Match.MatchState.Playing;
+            public PawliceAndPurrglar.Match.MatchState CurrentState =>
+                PawliceAndPurrglar.Match.MatchState.Playing;
 
             public bool IsGameplayActive => true;
         }

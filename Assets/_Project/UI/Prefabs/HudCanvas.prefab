@@ -546,7 +546,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.08, g: 0.12, b: 0.15, a: 0.72}
   m_RaycastTarget: 1
@@ -663,7 +663,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44d2b0c0a13240eb8c2e5ccbe4da75b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.QuickSlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.QuickSlotView
   keyLabel: {fileID: 8531937564829789273}
   quantityLabel: {fileID: 7038109661779509084}
   iconGlyph: {fileID: 4855378458899278344}
@@ -812,7 +812,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d49d106c20e0c6649b6a2b5fcab97d99, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorRadarPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorRadarPresenter
   root: {fileID: 3361957957877225323}
   roleSelector: {fileID: 0}
   metresPerBar: 5
@@ -827,7 +827,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a8260236f1444cd9722a805f5e2cf1a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.RoleAwareHudController
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.RoleAwareHudController
   matchTimer: {fileID: 1246836897658212003}
   roleStatus: {fileID: 7126918688120470215}
   quickSlots:
@@ -1119,7 +1119,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -1180,7 +1180,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 4763605603892649038}
   itemNameLabel: {fileID: 462747582868344599}
   quantityLabel: {fileID: 6344993157075418854}
@@ -1202,7 +1202,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 1
 --- !u!1 &174825054099302976
@@ -1654,7 +1654,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -1715,7 +1715,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 7810344260982222975}
   itemNameLabel: {fileID: 7455722562472973614}
   quantityLabel: {fileID: 2142412505342106618}
@@ -1737,7 +1737,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 8
 --- !u!1 &276032434418298808
@@ -2936,7 +2936,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -3033,7 +3033,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3cc6ec0afdb0437d823c219f6b7dd39c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.RoleStatusPanelView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.RoleStatusPanelView
   roleLabel: {fileID: 2488258196257513516}
   objectiveLabel: {fileID: 1360541572154186766}
   statusLabel: {fileID: 8132698268882056972}
@@ -3420,7 +3420,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 10f506b54e695e94590d28302944d06b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.PoliceCatchProgressView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.PoliceCatchProgressView
   titleLabel: {fileID: 3800140703669009046}
   counterLabel: {fileID: 8394642953498843401}
   slotBackplates:
@@ -3659,7 +3659,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -3914,7 +3914,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -3975,7 +3975,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 6877511653740119301}
   itemNameLabel: {fileID: 4531174842735037785}
   quantityLabel: {fileID: 5714104917115463086}
@@ -4572,7 +4572,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -5400,7 +5400,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 0.25, b: 0.2, a: 1}
   m_RaycastTarget: 0
@@ -5936,7 +5936,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -5997,7 +5997,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 5852387297184209330}
   itemNameLabel: {fileID: 551803623874391772}
   quantityLabel: {fileID: 608842653560365240}
@@ -6019,7 +6019,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 14
 --- !u!1 &1134406509742940325
@@ -6485,7 +6485,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -6546,7 +6546,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 1653460213537283369}
   itemNameLabel: {fileID: 5769096271311978908}
   quantityLabel: {fileID: 2130414857722133583}
@@ -6568,7 +6568,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 7
 --- !u!1 &1208544384123186095
@@ -6658,7 +6658,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -6764,7 +6764,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -6825,7 +6825,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 3324141544567513836}
   itemNameLabel: {fileID: 173873389703603807}
   quantityLabel: {fileID: 3168040486543098385}
@@ -6847,7 +6847,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 10
 --- !u!1 &1234521787661374214
@@ -7512,7 +7512,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -8028,7 +8028,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -8089,7 +8089,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 6848455896474379331}
   itemNameLabel: {fileID: 5700162282028794889}
   quantityLabel: {fileID: 630715175464003899}
@@ -8188,7 +8188,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -8781,7 +8781,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -8971,7 +8971,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.2, g: 0.95, b: 1, a: 1}
   m_RaycastTarget: 0
@@ -9505,7 +9505,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -9566,7 +9566,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 3432552867655501876}
   itemNameLabel: {fileID: 311953311347796165}
   quantityLabel: {fileID: 1597136885804077399}
@@ -9588,7 +9588,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 5
 --- !u!1 &1830762710397868632
@@ -9966,7 +9966,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -10545,7 +10545,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -10819,7 +10819,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -11193,7 +11193,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -11286,7 +11286,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -11380,7 +11380,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -11473,7 +11473,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -12065,7 +12065,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -12158,7 +12158,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -12220,7 +12220,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.05, g: 0.08, b: 0.1, a: 0.85}
   m_RaycastTarget: 0
@@ -12454,7 +12454,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -12516,7 +12516,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.05, g: 0.08, b: 0.1, a: 0.85}
   m_RaycastTarget: 0
@@ -13249,7 +13249,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -13310,7 +13310,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 2250464407403779239}
   itemNameLabel: {fileID: 4395785340138403758}
   quantityLabel: {fileID: 2948813487939702236}
@@ -13332,7 +13332,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 13
 --- !u!1 &2608011154240259731
@@ -14408,7 +14408,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -14514,7 +14514,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -14575,7 +14575,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 4457888626759481875}
   itemNameLabel: {fileID: 6958272670470145105}
   quantityLabel: {fileID: 1314490477991734858}
@@ -14597,7 +14597,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 1
   index: 1
 --- !u!1 &2796152116459661606
@@ -15354,7 +15354,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.75, g: 0.9, b: 1, a: 0.92}
   m_RaycastTarget: 0
@@ -15726,7 +15726,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -15820,7 +15820,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -16001,7 +16001,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -16062,7 +16062,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 9058871281136821344}
   itemNameLabel: {fileID: 957851193092300794}
   quantityLabel: {fileID: 5144216227601612655}
@@ -16084,7 +16084,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 11
 --- !u!1 &3030340464980905323
@@ -16280,7 +16280,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.05, g: 0.08, b: 0.1, a: 0.85}
   m_RaycastTarget: 0
@@ -16633,7 +16633,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -17023,7 +17023,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4235a47b213f16a48b7ae09966c60aa6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.VoiceCommandFeedView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.VoiceCommandFeedView
   inputLabel: {fileID: 2070366264761214202}
   commandLabel: {fileID: 231299935955129178}
   canvasGroup: {fileID: 1037903859557488197}
@@ -17496,7 +17496,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -18096,7 +18096,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -18327,7 +18327,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -18844,7 +18844,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -19149,7 +19149,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -19454,7 +19454,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -20033,7 +20033,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -20806,7 +20806,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.75, g: 0.9, b: 1, a: 0.92}
   m_RaycastTarget: 0
@@ -20904,7 +20904,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -21408,7 +21408,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -21716,7 +21716,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.02, g: 0.05, b: 0.08, a: 0.92}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -21733,7 +21733,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 70d0c0082e7928d4c86bff2f01eaced2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CurrencyBadgeView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CurrencyBadgeView
   placement: 0
   amountLabel: {fileID: 8098469835302278797}
   coinIcon: {fileID: 7181748369281027860}
@@ -22248,7 +22248,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -22309,7 +22309,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 3857197452477196145}
   itemNameLabel: {fileID: 929263455493845431}
   quantityLabel: {fileID: 2505270395240634237}
@@ -22331,7 +22331,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 6
 --- !u!1 &4153686931261136532
@@ -22390,7 +22390,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 04bfbb23312b4c99b98357703e393ea4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.RadialProgressGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.RadialProgressGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.24, g: 0.95, b: 0.62, a: 0.94}
   m_RaycastTarget: 0
@@ -22626,7 +22626,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -24412,7 +24412,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -24473,7 +24473,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 1182005509366958140}
   itemNameLabel: {fileID: 2736821884826226123}
   quantityLabel: {fileID: 516573155249668708}
@@ -24495,7 +24495,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 17
 --- !u!1 &4442542577838267512
@@ -24885,7 +24885,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -24946,7 +24946,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 7198807976557589611}
   itemNameLabel: {fileID: 6503467904862371899}
   quantityLabel: {fileID: 3071072701548957625}
@@ -24968,7 +24968,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 16
 --- !u!1 &4649950369467739253
@@ -25273,7 +25273,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -25366,7 +25366,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -25460,7 +25460,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -26862,7 +26862,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -27143,7 +27143,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7298765e92ff4d23b17bff21cb53766d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.MicrophoneStatusView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.MicrophoneStatusView
   stateLabel: {fileID: 4924250390301228305}
   keyLabel: {fileID: 1638990253360690837}
   cooldownLabel: {fileID: 8147373202301296280}
@@ -27523,7 +27523,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -27584,7 +27584,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 9044153383945847056}
   itemNameLabel: {fileID: 9019564631101822370}
   quantityLabel: {fileID: 7959554800087711987}
@@ -27606,7 +27606,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 3
 --- !u!1 &4987530593131060120
@@ -27833,7 +27833,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -28338,7 +28338,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -28855,7 +28855,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -28916,7 +28916,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 2933431692732370530}
   itemNameLabel: {fileID: 4051900668495175549}
   quantityLabel: {fileID: 229713628200154294}
@@ -28938,7 +28938,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 9
 --- !u!1 &5240734253136872445
@@ -29106,7 +29106,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.02, g: 0.05, b: 0.08, a: 0.92}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -29123,7 +29123,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 70d0c0082e7928d4c86bff2f01eaced2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CurrencyBadgeView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CurrencyBadgeView
   placement: 1
   amountLabel: {fileID: 513296337869690890}
   coinIcon: {fileID: 1563898035399820379}
@@ -30336,7 +30336,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -30429,7 +30429,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -30523,7 +30523,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -30795,7 +30795,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -30901,7 +30901,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -30962,7 +30962,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 192872343616433011}
   itemNameLabel: {fileID: 5876968282456395134}
   quantityLabel: {fileID: 668763933592084967}
@@ -30984,7 +30984,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 1
   index: 3
 --- !u!1 &5536136734683575245
@@ -31591,7 +31591,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.75, g: 0.9, b: 1, a: 0.92}
   m_RaycastTarget: 0
@@ -32044,7 +32044,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44d2b0c0a13240eb8c2e5ccbe4da75b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.QuickSlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.QuickSlotView
   keyLabel: {fileID: 42666926109475}
   quantityLabel: {fileID: 1850227521267645}
   iconGlyph: {fileID: 5308122111667707}
@@ -32227,7 +32227,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -32288,7 +32288,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 1536843356787203438}
   itemNameLabel: {fileID: 6314206582888682636}
   quantityLabel: {fileID: 1414965603384726000}
@@ -32310,7 +32310,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 0
 --- !u!1 &5777721506740090319
@@ -32487,7 +32487,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -32548,7 +32548,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 7529366711550585721}
   itemNameLabel: {fileID: 6291353341107214736}
   quantityLabel: {fileID: 2969613602851917352}
@@ -32995,7 +32995,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -33226,7 +33226,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -33323,7 +33323,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 0
   fill: {r: 0.043, g: 0.075, b: 0.114, a: 0.94}
   border: {r: 0.16, g: 0.6, b: 0.75, a: 0.85}
@@ -33535,7 +33535,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.75, g: 0.9, b: 1, a: 0.92}
   m_RaycastTarget: 0
@@ -33645,7 +33645,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -33706,7 +33706,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 4313450332069374608}
   itemNameLabel: {fileID: 1052158781703474073}
   quantityLabel: {fileID: 4508979840118199977}
@@ -33728,7 +33728,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 20
 --- !u!1 &6102507415848943595
@@ -33787,7 +33787,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -33993,7 +33993,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.2, g: 0.85, b: 1, a: 0.16}
   m_RaycastTarget: 0
@@ -34590,7 +34590,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -34846,7 +34846,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -34907,7 +34907,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 3941243894954187501}
   itemNameLabel: {fileID: 4675937483769092181}
   quantityLabel: {fileID: 641810459503351132}
@@ -34929,7 +34929,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 19
 --- !u!1 &6378527614387399153
@@ -35253,7 +35253,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.25, g: 0.85, b: 1, a: 0.8}
   m_RaycastTarget: 0
@@ -35501,7 +35501,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -36094,7 +36094,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -36537,7 +36537,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -36768,7 +36768,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -36862,7 +36862,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -37488,7 +37488,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -38522,7 +38522,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -39190,7 +39190,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44d2b0c0a13240eb8c2e5ccbe4da75b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.QuickSlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.QuickSlotView
   keyLabel: {fileID: 9186152209704237059}
   quantityLabel: {fileID: 8471195443921178044}
   iconGlyph: {fileID: 1579781463845617168}
@@ -39373,7 +39373,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -39434,7 +39434,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 94927304102946999}
   itemNameLabel: {fileID: 1067163079586459679}
   quantityLabel: {fileID: 2901265624531489367}
@@ -39456,7 +39456,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 4
 --- !u!1 &7139080076497506961
@@ -39896,7 +39896,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -40002,7 +40002,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -40063,7 +40063,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 3295751455675306672}
   itemNameLabel: {fileID: 7882042604860041053}
   quantityLabel: {fileID: 7428397623061711422}
@@ -40085,7 +40085,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 1
   index: 2
 --- !u!1 &7217658320202415615
@@ -40175,7 +40175,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -40617,7 +40617,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -40847,7 +40847,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -41320,7 +41320,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.2, g: 0.28, b: 0.34, a: 0.9}
   m_RaycastTarget: 0
@@ -41505,7 +41505,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -41566,7 +41566,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 776820634954021915}
   itemNameLabel: {fileID: 1249641055066153748}
   quantityLabel: {fileID: 1216870709713560826}
@@ -41588,7 +41588,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 15
 --- !u!1 &7429698024243114489
@@ -42314,7 +42314,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -42375,7 +42375,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 5188450936301241064}
   itemNameLabel: {fileID: 5089947714290207335}
   quantityLabel: {fileID: 4685849921654099537}
@@ -42397,7 +42397,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 2
 --- !u!1 &7550606223512507615
@@ -42488,7 +42488,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -42899,7 +42899,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.2, g: 0.28, b: 0.34, a: 0.9}
   m_RaycastTarget: 0
@@ -43134,7 +43134,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -43819,7 +43819,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0
@@ -44395,7 +44395,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -44570,7 +44570,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44d2b0c0a13240eb8c2e5ccbe4da75b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.QuickSlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.QuickSlotView
   keyLabel: {fileID: 3448328716408049993}
   quantityLabel: {fileID: 7490336164252512313}
   iconGlyph: {fileID: 5074288394610257427}
@@ -44878,7 +44878,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 3
   fill: {r: 0.13, g: 0.72, b: 0.38, a: 1}
   border: {r: 0, g: 0, b: 0, a: 0}
@@ -45616,7 +45616,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -45677,7 +45677,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 3672424174841521491}
   itemNameLabel: {fileID: 564863849401079007}
   quantityLabel: {fileID: 7092794718046368420}
@@ -45881,7 +45881,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.75, g: 0.9, b: 1, a: 0.92}
   m_RaycastTarget: 0
@@ -46477,7 +46477,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -46538,7 +46538,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 8917299671260786978}
   itemNameLabel: {fileID: 3499621141866173813}
   quantityLabel: {fileID: 5163704127343503794}
@@ -46560,7 +46560,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 12
 --- !u!1 &8539695544982979160
@@ -46787,7 +46787,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -46884,7 +46884,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9fc09edd197d403f91ddbc049327ec83, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.ContextInteractionPromptView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.ContextInteractionPromptView
   keyLabel: {fileID: 2788400032301158100}
   actionLabel: {fileID: 6522152297350052754}
   holdProgress: {fileID: 5043957068330211929}
@@ -47368,7 +47368,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -47429,7 +47429,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 6806053961990033128}
   itemNameLabel: {fileID: 17613827404755739}
   quantityLabel: {fileID: 5141164754849726880}
@@ -47451,7 +47451,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 1
   index: 0
 --- !u!1 &8622170554671940983
@@ -48566,7 +48566,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -49843,7 +49843,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 4
   fill: {r: 0, g: 0, b: 0, a: 0}
   border: {r: 0.25, g: 0.85, b: 1, a: 1}
@@ -50425,7 +50425,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 0
   fill: {r: 0.043, g: 0.075, b: 0.114, a: 0.94}
   border: {r: 0.16, g: 0.6, b: 0.75, a: 0.85}
@@ -50606,7 +50606,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d62269b022e78743a8e7a91488b9ccb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.HudPanelSkin
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.HudPanelSkin
   shape: 2
   fill: {r: 0.031, g: 0.063, b: 0.098, a: 0.92}
   border: {r: 0.14, g: 0.38, b: 0.5, a: 0.6}
@@ -50667,7 +50667,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 17b7492e714f46588bedaf8845ae7028, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotView
   keyLabel: {fileID: 2506272122758687102}
   itemNameLabel: {fileID: 2558509678461050286}
   quantityLabel: {fileID: 8290410086412069931}
@@ -50689,7 +50689,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d4494ab266189549afea229bf1dd19d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.InventorySlotDragHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.InventorySlotDragHandler
   group: 0
   index: 18
 --- !u!1 &9154357882106050711
@@ -50823,7 +50823,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62eeb84d442773f4997baea4f1a9549b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.CircleGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.CircleGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.2, g: 0.28, b: 0.34, a: 0.9}
   m_RaycastTarget: 0
@@ -50924,7 +50924,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30dad70cfd6bc544ebd3984bd75a3faf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.MinimapHudController
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.MinimapHudController
   minimapCamera: {fileID: 0}
   mapImage: {fileID: 3354024712766404721}
   playerMarker: {fileID: 7009844968516558850}
@@ -50987,7 +50987,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fb9720d033ea8a4c8ecb0bd1bc23856, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SensorArcGraphic
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SensorArcGraphic
   m_Material: {fileID: 0}
   m_Color: {r: 0.95, g: 0.16, b: 0.16, a: 1}
   m_RaycastTarget: 0

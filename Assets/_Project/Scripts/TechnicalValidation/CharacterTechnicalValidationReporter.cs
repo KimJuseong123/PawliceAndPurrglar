@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     [DefaultExecutionOrder(110)]
     public sealed class CharacterTechnicalValidationReporter : MonoBehaviour

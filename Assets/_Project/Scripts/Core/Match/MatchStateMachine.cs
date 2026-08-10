@@ -1,7 +1,7 @@
 using System;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 
-namespace PawsAndLoot.Match
+namespace PawliceAndPurrglar.Match
 {
     public sealed class MatchStateMachine : IMatchStateReader
     {

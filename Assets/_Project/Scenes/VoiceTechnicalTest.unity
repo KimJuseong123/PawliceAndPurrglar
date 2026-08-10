@@ -147,7 +147,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 56c8bafe5a73d7f4a995b51d91791bbe, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.WindowsDictationProbe
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.WindowsDictationProbe
 --- !u!4 &1429005486
 Transform:
   m_ObjectHideFlags: 0

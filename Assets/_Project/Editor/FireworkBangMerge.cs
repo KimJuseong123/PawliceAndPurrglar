@@ -3,7 +3,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Joins the two firework recordings into the one clip the game plays.
@@ -25,7 +25,7 @@ namespace PawsAndLoot.Editor
     ///
     /// Batch mode:
     /// <code>
-    /// -executeMethod PawsAndLoot.Editor.FireworkBangMerge.Merge
+    /// -executeMethod PawliceAndPurrglar.Editor.FireworkBangMerge.Merge
     /// </code>
     /// </summary>
     internal static class FireworkBangMerge

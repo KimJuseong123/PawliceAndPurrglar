@@ -1,14 +1,14 @@
 using System;
 using System.Threading.Tasks;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Config;
-using PawsAndLoot.Core;
-using PawsAndLoot.Integration.Voice;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Integration.Voice;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// Hosts or joins a two-player session, by invite code or by address.
@@ -286,7 +286,7 @@ namespace PawsAndLoot.Integration.Network
             // Fully qualified: inside this class the bare name is the property
             // holding this session's code, not the type that validates one.
             string problem =
-                PawsAndLoot.Integration.Network.InviteCode.DescribeProblem(
+                PawliceAndPurrglar.Integration.Network.InviteCode.DescribeProblem(
                     rawInviteCode);
             if (problem != null)
             {

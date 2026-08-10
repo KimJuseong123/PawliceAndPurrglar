@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// Whether the thief is inside a bin or a crate, and out of sight.

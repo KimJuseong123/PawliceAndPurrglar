@@ -1,8 +1,8 @@
 using System;
-using PawsAndLoot.Config;
+using PawliceAndPurrglar.Config;
 using UnityEngine;
 
-namespace PawsAndLoot.Logging
+namespace PawliceAndPurrglar.Logging
 {
     [CreateAssetMenu(menuName = "PawliceAndPurrglar/Logging/Game Log Config", fileName = "GameLogConfig")]
     public sealed class GameLogConfig : GameConfigAsset

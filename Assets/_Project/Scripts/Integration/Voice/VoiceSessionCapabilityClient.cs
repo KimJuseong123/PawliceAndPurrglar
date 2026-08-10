@@ -1,13 +1,13 @@
 using System;
 using System.Collections;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Integration.Network;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Integration.Network;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     [Serializable]
     internal sealed class VoiceSessionRegistrationRequest

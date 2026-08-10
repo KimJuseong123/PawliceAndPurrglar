@@ -1,9 +1,9 @@
 using TMPro;
-using PawsAndLoot.Input;
+using PawliceAndPurrglar.Input;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     public sealed class MicrophoneStatusView : MonoBehaviour
     {

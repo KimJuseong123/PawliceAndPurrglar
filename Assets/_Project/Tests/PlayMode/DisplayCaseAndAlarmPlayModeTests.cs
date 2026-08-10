@@ -1,14 +1,14 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Gameplay.Sensing;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Sensing;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// The glass case and the alarm it protects.
@@ -320,9 +320,9 @@ namespace PawsAndLoot.Tests.PlayMode
             var street = new Vector3(24f, 0f, -12f);
             exit.position = street;
 
-            PawsAndLoot.Gameplay.Interiors.HouseInterior room =
+            PawliceAndPurrglar.Gameplay.Interiors.HouseInterior room =
                 roomObject.AddComponent<
-                    PawsAndLoot.Gameplay.Interiors.HouseInterior>();
+                    PawliceAndPurrglar.Gameplay.Interiors.HouseInterior>();
             room.Configure(7, entry, entry, exit, exit, new Vector2(7f, 7f), 0f);
             yield return null;
 

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using PawsAndLoot.Animation;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Animation;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Resolves the temporary art used by the greybox Game scene.

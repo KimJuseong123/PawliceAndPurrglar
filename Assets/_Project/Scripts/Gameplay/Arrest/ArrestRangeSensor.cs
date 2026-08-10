@@ -1,9 +1,9 @@
 using System;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Arrest
+namespace PawliceAndPurrglar.Gameplay.Arrest
 {
     public sealed class ArrestRangeSensor : MonoBehaviour
     {

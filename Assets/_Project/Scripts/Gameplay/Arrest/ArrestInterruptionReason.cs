@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Gameplay.Arrest
+namespace PawliceAndPurrglar.Gameplay.Arrest
 {
     public enum ArrestInterruptionReason
     {

@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Items;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// Every prop that has art must be loadable, the right size, and standing on

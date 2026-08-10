@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// COMP-005. Decides whether a request may reach the animal AI.

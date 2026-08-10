@@ -1,10 +1,10 @@
 using System;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Gameplay.Sensing;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Sensing;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     /// <summary>
     /// What happens when somebody lifts the flagship piece.

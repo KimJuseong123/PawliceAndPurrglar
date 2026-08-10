@@ -4,7 +4,7 @@ using System.Globalization;
 using System.IO;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     public static class VoiceCaptureSettings
     {

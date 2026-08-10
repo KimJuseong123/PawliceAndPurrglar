@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// The one place the torch cone's shape is written down.

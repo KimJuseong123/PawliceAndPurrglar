@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Puts an authored model under something, at a size somebody asked for.

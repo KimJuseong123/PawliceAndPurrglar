@@ -1,7 +1,7 @@
 using NUnit.Framework;
-using PawsAndLoot.TechnicalValidation;
+using PawliceAndPurrglar.TechnicalValidation;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class TechnicalRoleAssignmentTests
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     /// <summary>
     /// COMP-001. Pure state machine shared by every companion.

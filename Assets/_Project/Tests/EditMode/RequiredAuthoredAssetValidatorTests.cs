@@ -3,7 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class RequiredAuthoredAssetValidatorTests
     {

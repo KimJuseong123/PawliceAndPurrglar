@@ -1,8 +1,8 @@
 using System;
-using PawsAndLoot.Gameplay.Map;
+using PawliceAndPurrglar.Gameplay.Map;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     public static class PlayerRoleSpawnResolver
     {

@@ -1,15 +1,15 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     /// <summary>
     /// Walking into a house and out again, in the real scene.
@@ -434,7 +434,7 @@ namespace PawsAndLoot.Tests.PlayMode
             PlayerRoleIdentity police =
                 players.First(p => p.Role == PlayerRole.Police);
             var wallet =
-                thief.GetComponent<PawsAndLoot.Gameplay.Loot.ThiefLootWallet>();
+                thief.GetComponent<PawliceAndPurrglar.Gameplay.Loot.ThiefLootWallet>();
 
             InteriorValuablePickup piece = pickups[0];
             int before = wallet.SoldAmount;
@@ -448,7 +448,7 @@ namespace PawsAndLoot.Tests.PlayMode
             // an officer who could pocket valuables would be playing the thief's
             // game with the thief's rewards.
             Assert.That(
-                PawsAndLoot.Gameplay.Players.PlayerRolePermissions.CanInteract(
+                PawliceAndPurrglar.Gameplay.Players.PlayerRolePermissions.CanInteract(
                     PlayerRole.Police,
                     piece.InteractionType),
                 Is.False,

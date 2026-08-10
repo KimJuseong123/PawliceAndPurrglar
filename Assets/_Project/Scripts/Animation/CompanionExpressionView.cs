@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using PawsAndLoot.Companions;
+using PawliceAndPurrglar.Companions;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// Shows one icon above the animal's head and turns it to face the camera.

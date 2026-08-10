@@ -1,7 +1,7 @@
 using NUnit.Framework;
-using PawsAndLoot.Core;
+using PawliceAndPurrglar.Core;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class GameSceneCatalogTests
     {

@@ -41,7 +41,7 @@
 - `AGENTS.md` 존재
 - `README.md` 존재
 - 프로젝트 문서 패키지 작성
-- `C:\Users\SSAFY\pawlice-and-purrglar`를 로컬 Git 저장소 루트로 초기화
+- `C:\Users\SSAFY\PawliceAndPurrglar`를 로컬 Git 저장소 루트로 초기화
 - 기본 브랜치 `main`과 로컬 Git LFS 설정
 - 프로젝트 전용 Unity 자산 경로 생성:
 
@@ -97,16 +97,16 @@ Assets/_Project/Settings/Logging/DefaultGameLogConfig.asset
 - 런타임과 테스트 Assembly Definition:
 
 ```text
-Assets/_Project/Scripts/PawsAndLoot.Runtime.asmdef
-Assets/_Project/Tests/EditMode/PawsAndLoot.Tests.EditMode.asmdef
-Assets/_Project/Tests/PlayMode/PawsAndLoot.Tests.PlayMode.asmdef
+Assets/_Project/Scripts/PawliceAndPurrglar.Runtime.asmdef
+Assets/_Project/Tests/EditMode/PawliceAndPurrglar.Tests.EditMode.asmdef
+Assets/_Project/Tests/PlayMode/PawliceAndPurrglar.Tests.PlayMode.asmdef
 ```
 
 - Windows TECH-001 검증 씬과 빌드:
 
 ```text
 Assets/_Project/Scenes/TechnicalTest.unity
-Builds/TechnicalValidation/Windows/PawsAndLootTech.exe
+Builds/TechnicalValidation/Windows/PawliceAndPurrglarTech.exe
 ```
 
 - 실제 WindowsPlayer에서 1280×720, Input System, W 키 이동 약 8m 확인
@@ -127,7 +127,7 @@ Assets/_Project/Art/TechnicalValidation/TechRig.fbx
 
 ```text
 Assets/_Project/Scenes/VoiceTechnicalTest.unity
-Builds/TechnicalValidation/Windows/PawsAndLootVoiceTech.exe
+Builds/TechnicalValidation/Windows/PawliceAndPurrglarVoiceTech.exe
 ```
 
 - 실제 WindowsPlayer에서 마이크 1개와 키보드 대체 입력 응답 확인
@@ -138,7 +138,7 @@ Builds/TechnicalValidation/Windows/PawsAndLootVoiceTech.exe
 
 ```text
 Assets/_Project/Scenes/NetworkTechnicalTest.unity
-Builds/TechnicalValidation/Windows/PawsAndLootNetworkTech.exe
+Builds/TechnicalValidation/Windows/PawliceAndPurrglarNetworkTech.exe
 ```
 
 - NGO `2.13.0`, Unity Transport `6.5.0`으로 `127.0.0.1` Host·Client 접속
@@ -690,7 +690,7 @@ VSync 상한에 붙어 있다. `ART-012` 머티리얼 통합과 정적 배칭을
   볼륨(`VOICE_AUDIO_SILENT`)과 서버 부재를 분리했다.
 - 실측: 한국어 TTS 5초 WAV → 게이트웨이 → `강아지 냄새 추적해` → `intent: TRACK`,
   2.5초 (첫 요청은 CPU 재적재 포함 4.2초). 새 Windows 빌드가
-  `Local AI stack found above the build folder at 'C:\Users\SSAFY\pawlice-and-purrglar'`를
+  `Local AI stack found above the build folder at 'C:\Users\SSAFY\PawliceAndPurrglar'`를
   찍고 ollama와 게이트웨이를 실제로 띄웠다
 - 남은 위험: `cublas64_12.dll`이 없어 STT가 CPU 2.5초다 (`VOICE-009`).
   사람 발화 확인 미실시 (`VOICE-010`). WebGL은 여전히 별도 백엔드
@@ -1183,7 +1183,7 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 | 2026-08-09 | 소음 보고 수를 세는 테스트의 격리 | `DisplayCaseAndAlarm`에 `[SetUp]`을 넣어 씬에 남은 `LootAlarm`·`NoiseBoard`를 지운다. 앞 테스트가 중간에 실패하면 `DestroyImmediate`가 실행되지 않고, 남은 경보가 `FindFirstObjectByType`에 잡혀 **개수 단정이 옆 테스트의 상태를 세게 된다** |
 | 2026-08-09 | 호수 공원 표면 실측 (`WalkabilityProbe.ReportLakeGarden`) | 포장면 **0.24~0.25m** (`stepOffset` 0.35 아래 — 올라간다), 화단·바위 0.43~0.98m (막힌다). 광장과 같은 값 |
 | 2026-08-09 | `Rebuild MAP-001` + `Validate MAP-001` (커밋 직전) | `error CS` 0, 검증기 실패 0. `Counter Marker` 0개, `Prototype Plaza Point` 0개, `Lake Garden` 1개 |
-| 2026-08-09 | Windows 플레이테스트 빌드 + 2클라 실행 | `build succeeded` 3 씬, `PawsAndLoot.Runtime.dll` 갱신 확인(실행 파일 날짜가 아니라 `Managed/` 날짜로 본다), `ProjectSettings/` 깨끗(빌드 도장 원복됨). 창 모드 1280×720 2개 기동 |
+| 2026-08-09 | Windows 플레이테스트 빌드 + 2클라 실행 | `build succeeded` 3 씬, `PawliceAndPurrglar.Runtime.dll` 갱신 확인(실행 파일 날짜가 아니라 `Managed/` 날짜로 본다), `ProjectSettings/` 깨끗(빌드 도장 원복됨). 창 모드 1280×720 2개 기동 |
 | 2026-08-09 | Edit Mode·Play Mode (효과음 C-4~C-11 배선 이후). **트리에 있던 무관한 미커밋 변경(보물 가격 조정)을 따로 치우고 실측했다** | Edit Mode **300/300**, Play Mode 216개 중 **214 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 새 테스트 3건(`SoundVocabularyPlayModeTests`)이 XML에 이름으로 있는 것을 확인했다 |
 | 2026-08-09 | Edit Mode·Play Mode (보물 가격 1/5 조정 이후) | Edit Mode **300/300**, Play Mode 213개 중 **211 통과** + 1 실패 + 1 스킵 — 기준선과 동일하고 실패 1건은 `CompanionExpression`(`MODEL-002` 클립 부재). `error CS` 0. 값을 바꾼 테스트 4개 클래스(`LootSale` 3, `ThiefHud` 2, `PoliceHud` 2, `PlayerInteractionScene`)가 XML에서 `Passed`임을 이름으로 확인 |
 | 2026-08-09 | 커밋 직전 재실행 (다른 세션의 미커밋 씬 재생성이 트리에 섞인 상태) | Edit Mode 300개 중 **299 통과**, Play Mode 216개 중 **212 통과** + 3 실패 + 1 스킵. `error CS` 0. **실패 3건 모두 이 변경의 것이 아니고, 셋 다 커밋 범위 밖 파일에서 나온다** — `PlazaInteractionMarker`와 `TheSceneSellsPoliceProps`는 작업 트리의 `Game.unity`에서 `Prototype Plaza Point`와 `PoliceSupplyCounter` 3개가 사라져서고(`HEAD`의 씬에는 있다), `DisplayCaseAndAlarm`은 미커밋 `LootDisplayCase.cs`·`LootAlarm.cs`가 스매시 소음을 2번 보고해서다(그 테스트에는 가격 참조가 0건). `CompanionExpression`은 기준선 |
@@ -1206,7 +1206,7 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 | 2026-08-07 | 씬 재생성 + Edit Mode·Play Mode (판매 원판 제거 이후) | `Validate MAP-001` 통과(예외 없음). 씬 YAML에서 `SaleZoneMarker` **5개 → 0개**, `Black Market Sale` **5개 유지** — 그림만 빠지고 트리거는 남았다. Edit Mode **294/294**, Play Mode 208개 중 **206 통과** + 1 실패 + 1 스킵 (기준선과 동일). `ProjectSettings/` 깨끗, 씬 3.68MB → 3.67MB |
 | 2026-08-06 | Edit Mode·Play Mode (승·패 효과음 절단 수정 이후) | Edit Mode **294/294**, Play Mode 208개 중 **206 통과** + 1 실패 + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 2건(`MatchEndSoundsPlayFromAnObjectTheSceneLoadCannotDestroy`, `TheMatchEndStingFollowsTheViewerNotTheWinner`) 이름을 XML에서 확인. 절단은 **귀가 아니라 구조로** 단정한다 — 배치 모드에는 오디오 장치가 없어서 `isPlaying`은 어느 쪽이든 false다 |
 | 2026-08-06 | Edit Mode·Play Mode (Windows 음성 경로 복구 이후) | Edit Mode **294/294**, Play Mode 206개 중 **204 통과** + 1 실패 + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 3건(`AFailedCommandDoesNotSpendTheCooldown`, `ARoleThisMachineDoesNotPlayCannotOpenTheMicrophone`, `EachVoiceFailureExplainsWhatToDoAboutIt`) 이름을 XML에서 확인. 컴파일 `error CS` 0개 |
-| 2026-08-06 | Windows 빌드 실행 (`-mapAutoQuit`) | `Local AI stack found above the build folder at 'C:\Users\SSAFY\pawlice-and-purrglar'`. 빌드가 ollama와 게이트웨이를 실제로 띄웠고 `/health` 200. **이전 실행은 같은 자리에서 `GATEWAY_NOT_READY`였다** |
+| 2026-08-06 | Windows 빌드 실행 (`-mapAutoQuit`) | `Local AI stack found above the build folder at 'C:\Users\SSAFY\PawliceAndPurrglar'`. 빌드가 ollama와 게이트웨이를 실제로 띄웠고 `/health` 200. **이전 실행은 같은 자리에서 `GATEWAY_NOT_READY`였다** |
 | 2026-08-06 | 게이트웨이 직접 호출 (한국어 TTS 5초 WAV) | `강아지 냄새 추적해` → `intent: TRACK`, STT 2.5초. `--device cuda`로 띄우면 첫 요청에서 `GPU_RUNTIME_FALLBACK:Library cublas64_12.dll is not found`로 CPU로 넘어가고 4.2초, 이후 2.5초 |
 | 2026-08-06 | Edit Mode·Play Mode (그레이박스 표식 제거 이후) | Edit Mode **291/291**, Play Mode 206개 중 **204 통과** + 1 스킵 (실패 1건은 기준선과 동일). 씬의 `TextMesh` **0개** — 장소 이름이 하나도 남지 않았다 |
 | 2026-08-06 | Edit Mode·Play Mode (실내 커서 해제·거리 보물 제거 이후) | Edit Mode **291/291**, Play Mode 206개 중 **204 통과** + 1 스킵 (실패 1건은 기준선과 동일한 `CompanionExpression`). 신규 `CatBagExchangePlayModeTests`가 칸의 `onClick`을 직접 눌러 양방향 이동을 단정한다 |
@@ -1566,8 +1566,8 @@ testing remain required before submission.
   accepts the gateway as degraded but usable for fallback voice commands.
 - Verification: LocalAI command tests 6/6 passed, HUD contract EditMode tests
   4/4 passed, QuickSlot EditMode tests 11/11 passed, the Windows playtest build
-  succeeded at `Builds/Playtest/Windows/PawsAndLoot.exe`, and the LocalAI
-  bundled Windows build succeeded at `Build/Windows/PawsAndLoot.exe`.
+  succeeded at `Builds/Playtest/Windows/PawliceAndPurrglar.exe`, and the LocalAI
+  bundled Windows build succeeded at `Build/Windows/PawliceAndPurrglar.exe`.
 
 ## 로컬 AI 음성 스택 설치 (2026-08-04)
 

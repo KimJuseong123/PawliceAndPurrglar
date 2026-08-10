@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Config
+namespace PawliceAndPurrglar.Config
 {
     [CreateAssetMenu(menuName = "PawliceAndPurrglar/Config/Match", fileName = "MatchConfig")]
     public sealed class MatchConfig : GameConfigAsset

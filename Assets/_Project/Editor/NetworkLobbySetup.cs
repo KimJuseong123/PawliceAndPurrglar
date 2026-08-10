@@ -1,6 +1,6 @@
-using PawsAndLoot.Core;
-using PawsAndLoot.Integration.Network;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Integration.Network;
+using PawliceAndPurrglar.UI;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
@@ -8,7 +8,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Builds the direct-IP lobby into the Bootstrap scene.
@@ -110,12 +110,12 @@ namespace PawsAndLoot.Editor
             // happens on the result screen and the restart lands in the match
             // scene; no single scene sees both ends.
             manager.gameObject.AddComponent<
-                PawsAndLoot.TechnicalValidation.NetworkRematchProbe>();
+                PawliceAndPurrglar.TechnicalValidation.NetworkRematchProbe>();
 
             // Command-line driven verification, inert without -netLobby.
             var probeObject = new GameObject("Network Lobby Probe");
             probeObject.AddComponent<
-                PawsAndLoot.TechnicalValidation.NetworkLobbyProbe>();
+                PawliceAndPurrglar.TechnicalValidation.NetworkLobbyProbe>();
 
             InstallInterface(session, directory);
             DeactivateLegacyInterface();

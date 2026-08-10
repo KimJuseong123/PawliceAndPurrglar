@@ -1,10 +1,10 @@
 using System;
-using PawsAndLoot.Gameplay.Arrest;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Gameplay.Arrest;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Match
+namespace PawliceAndPurrglar.Match
 {
     public sealed class MatchEndController : MonoBehaviour
     {

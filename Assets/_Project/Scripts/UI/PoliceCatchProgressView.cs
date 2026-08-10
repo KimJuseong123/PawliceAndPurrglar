@@ -1,9 +1,9 @@
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Players;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     [DisallowMultipleComponent]
     public sealed class PoliceCatchProgressView : MonoBehaviour

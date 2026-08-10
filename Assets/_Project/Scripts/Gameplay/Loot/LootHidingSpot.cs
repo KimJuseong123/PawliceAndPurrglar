@@ -1,8 +1,8 @@
 using System;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     /// <summary>
     /// LOOT-005. A designated place where carried loot may be hidden.
@@ -13,7 +13,7 @@ namespace PawsAndLoot.Gameplay.Loot
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LootHidingSpot : MonoBehaviour, IPlayerInteractable,
-        PawsAndLoot.Gameplay.Players.IRoleAwareInteractable
+        PawliceAndPurrglar.Gameplay.Players.IRoleAwareInteractable
     {
         [SerializeField]
         private Collider area;
@@ -59,9 +59,9 @@ namespace PawsAndLoot.Gameplay.Loot
         /// officer's business with a container is the raccoon's market, which is
         /// a different component.
         /// </summary>
-        public bool IsAvailableFor(PawsAndLoot.Gameplay.Players.PlayerRole role)
+        public bool IsAvailableFor(PawliceAndPurrglar.Gameplay.Players.PlayerRole role)
         {
-            return role == PawsAndLoot.Gameplay.Players.PlayerRole.Thief;
+            return role == PawliceAndPurrglar.Gameplay.Players.PlayerRole.Thief;
         }
 
         public bool IsAvailable =>
@@ -156,7 +156,7 @@ namespace PawsAndLoot.Gameplay.Loot
         /// <summary>
         /// Puts the thief in the box, when there is nothing to stash.
         ///
-        /// Delegated to the same <see cref="PawsAndLoot.Gameplay.Players.PlayerHidingSpot"/>
+        /// Delegated to the same <see cref="PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot"/>
         /// the bins use, sitting on this object. Reimplementing it would be a
         /// second place for "hidden" to mean something slightly different, and
         /// the officer's counter-press has to reach both.
@@ -164,7 +164,7 @@ namespace PawsAndLoot.Gameplay.Loot
         private bool TryClimbIn(PlayerInteractionContext context)
         {
             var berth =
-                GetComponent<PawsAndLoot.Gameplay.Players.PlayerHidingSpot>();
+                GetComponent<PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot>();
             return berth != null && berth.TryInteract(context);
         }
 
@@ -176,7 +176,7 @@ namespace PawsAndLoot.Gameplay.Loot
             get
             {
                 var berth =
-                    GetComponent<PawsAndLoot.Gameplay.Players.PlayerHidingSpot>();
+                    GetComponent<PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot>();
                 return berth != null && berth.IsOccupied;
             }
         }

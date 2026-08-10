@@ -1,8 +1,8 @@
-using PawsAndLoot.Gameplay.Map;
+using PawliceAndPurrglar.Gameplay.Map;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Reports the road model's authored size and what the town asks of it.

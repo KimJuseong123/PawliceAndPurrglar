@@ -1,7 +1,7 @@
 using UnityEngine;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 
-namespace PawsAndLoot.Config
+namespace PawliceAndPurrglar.Config
 {
     [DefaultExecutionOrder(-10000)]
     public sealed class GameConfigBootstrap : MonoBehaviour

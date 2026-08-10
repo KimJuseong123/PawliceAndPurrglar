@@ -1,6 +1,6 @@
-using PawsAndLoot.Companions;
+using PawliceAndPurrglar.Companions;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     public readonly struct DogBehaviorDecision
     {

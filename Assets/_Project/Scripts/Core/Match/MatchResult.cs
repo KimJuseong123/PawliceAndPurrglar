@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Match
+namespace PawliceAndPurrglar.Match
 {
     [Serializable]
     public readonly struct MatchResult

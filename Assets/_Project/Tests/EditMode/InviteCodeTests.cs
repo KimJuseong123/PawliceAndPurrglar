@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using PawsAndLoot.Integration.Network;
-using PawsAndLoot.Integration.Voice;
+using PawliceAndPurrglar.Integration.Network;
+using PawliceAndPurrglar.Integration.Voice;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// The code makes a trip this game does not control: it is read out loud,

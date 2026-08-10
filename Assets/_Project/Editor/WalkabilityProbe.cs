@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Says why a player cannot get onto something.

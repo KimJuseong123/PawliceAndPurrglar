@@ -1163,7 +1163,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 4826624055726379395}
   fill: {fileID: 7919329945921780903}
   contents:
@@ -1202,7 +1202,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8220f5c5cbf37d24ba66c469302982c2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SceneNavigationButton
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SceneNavigationButton
   targetScene: 0
 --- !u!1 &2765537324068449981
 GameObject:
@@ -2427,7 +2427,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 1612689511359948706}
   fill: {fileID: 7574977186351011319}
   contents:
@@ -2466,7 +2466,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a4d6002f3e363ba47871cb0053360001, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.ApplicationQuitButton
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.ApplicationQuitButton
 --- !u!1 &5865203286472715572
 GameObject:
   m_ObjectHideFlags: 0
@@ -2641,7 +2641,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1039245a7e4b0d048b8e0cdbdc9388b2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.LobbyButtonMotion
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.LobbyButtonMotion
   target: {fileID: 459234951448543877}
   fill: {fileID: 653562762126317687}
   contents:
@@ -2680,7 +2680,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8220f5c5cbf37d24ba66c469302982c2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SceneNavigationButton
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SceneNavigationButton
   targetScene: 1
 --- !u!1 &6153876653664261134
 GameObject:
@@ -3494,7 +3494,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d2695826dc7473c86a54fe83902633e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.ResultScreenPresenter
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.ResultScreenPresenter
   titleImage: {fileID: 451652911003206128}
   wonTitleSprite: {fileID: 21300000, guid: 6d661d62489abc345ae46202e7c7aa94, type: 3}
   lostTitleSprite: {fileID: 21300000, guid: 3c7323cb7f7e9574e95d35661e9aadb4, type: 3}

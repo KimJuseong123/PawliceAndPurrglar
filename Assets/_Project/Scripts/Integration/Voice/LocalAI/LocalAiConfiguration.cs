@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     [Serializable]
     public sealed class LocalAiGatewaySettings

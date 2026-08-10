@@ -1,16 +1,16 @@
 using System.Collections.Generic;
-using PawsAndLoot.Audio;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Gameplay.Sensing;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Audio;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Sensing;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Match;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// THROW-005/007. Keeps the world's props in step across both machines:
@@ -39,11 +39,11 @@ namespace PawsAndLoot.Integration.Network
     [DisallowMultipleComponent]
     public sealed class NetworkItemCoordinator : MonoBehaviour
     {
-        public const string PlaceMessageName = "PawsAndLoot.TrapPlaced";
-        public const string ClearMessageName = "PawsAndLoot.TrapCleared";
-        public const string PickupMessageName = "PawsAndLoot.PickupTaken";
-        public const string RevealMessageName = "PawsAndLoot.ThiefRevealed";
-        public const string NoiseMessageName = "PawsAndLoot.NoiseHeard";
+        public const string PlaceMessageName = "PawliceAndPurrglar.TrapPlaced";
+        public const string ClearMessageName = "PawliceAndPurrglar.TrapCleared";
+        public const string PickupMessageName = "PawliceAndPurrglar.PickupTaken";
+        public const string RevealMessageName = "PawliceAndPurrglar.ThiefRevealed";
+        public const string NoiseMessageName = "PawliceAndPurrglar.NoiseHeard";
 
         /// <summary>
         /// Payload sizes, asked of the serialiser rather than counted.
@@ -210,7 +210,7 @@ namespace PawsAndLoot.Integration.Network
             // went unnoticed only because nothing placeable was obtainable yet —
             // the first banana anybody put down would have been invisible, and a
             // trap you cannot see is not a trap.
-            trapObject.AddComponent<PawsAndLoot.Animation.PlacedTrapView>()
+            trapObject.AddComponent<PawliceAndPurrglar.Animation.PlacedTrapView>()
                 .Configure(kind, ResolveTrapMaterial(kind), placedBy);
             _traps[id] = trap;
 
@@ -454,7 +454,7 @@ namespace PawsAndLoot.Integration.Network
             // its own failures.
             if (held && trap.PlacedBy == PlayerRole.Police)
             {
-                PawsAndLoot.Gameplay.Loot.LootConfiscationRule.Apply(
+                PawliceAndPurrglar.Gameplay.Loot.LootConfiscationRule.Apply(
                     victim,
                     FindPolice());
             }
@@ -669,7 +669,7 @@ namespace PawsAndLoot.Integration.Network
                 && trap != null)
             {
                 trap.GetComponent<
-                    PawsAndLoot.Animation.PlacedTrapView>()?.Flash();
+                    PawliceAndPurrglar.Animation.PlacedTrapView>()?.Flash();
             }
         }
 

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PawsAndLoot.Config;
-using PawsAndLoot.Core;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Match;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Match;
+using PawliceAndPurrglar.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -14,7 +14,7 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class BasicSceneSetup
     {

@@ -233,7 +233,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19040f93a6b4ffa4a81fb17d89a2e79c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ValidationInteractionTarget
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ValidationInteractionTarget
   kind: 3
   holdDurationSeconds: 1.25
 --- !u!23 &360888715
@@ -569,7 +569,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19040f93a6b4ffa4a81fb17d89a2e79c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ValidationInteractionTarget
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ValidationInteractionTarget
   kind: 1
   holdDurationSeconds: 1.25
 --- !u!23 &758184361
@@ -696,7 +696,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19040f93a6b4ffa4a81fb17d89a2e79c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ValidationInteractionTarget
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ValidationInteractionTarget
   kind: 0
   holdDurationSeconds: 1.25
 --- !u!23 &827444528
@@ -828,7 +828,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e511a9a9954a1634a9116ed928c63815, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ValidationPlayerMover
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ValidationPlayerMover
   moveSpeed: 4
   characterController: {fileID: 0}
   viewCamera: {fileID: 0}
@@ -843,7 +843,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dac24194bb3284949b89e34958d2c59b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ValidationInteractionInput
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ValidationInteractionInput
   scanner: {fileID: 0}
   identity: {fileID: 0}
 --- !u!114 &832529535
@@ -857,7 +857,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 38ea3ac5b32daac4a95526a957d99afb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ThrowInteractionValidationController
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ThrowInteractionValidationController
   carrier: {fileID: 0}
   chargeController: {fileID: 0}
   trajectoryPreview: {fileID: 0}
@@ -877,7 +877,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 55fbdec648c421d4fb1a87ff1ea39d1b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerInteractionScanner
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerInteractionScanner
   identity: {fileID: 0}
   playerConfig: {fileID: 0}
   matchStateSource: {fileID: 0}
@@ -892,7 +892,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d3b691b9268c9cf4984be8e969d4df73, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Items.ToolCarrier
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Items.ToolCarrier
   identity: {fileID: 0}
   matchStateSource: {fileID: 0}
 --- !u!114 &832529538
@@ -906,7 +906,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fcb6036415c43cb4bb6ef4f523e92531, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Gameplay.Players.PlayerRoleIdentity
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity
   role: 0
 --- !u!143 &832529539
 CharacterController:
@@ -1227,7 +1227,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19040f93a6b4ffa4a81fb17d89a2e79c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ValidationInteractionTarget
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ValidationInteractionTarget
   kind: 4
   holdDurationSeconds: 1.25
 --- !u!23 &1247466725
@@ -1354,7 +1354,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e48d102a2f1237f41b32e0a222033e0a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ThrowInteractionValidationHud
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ThrowInteractionValidationHud
 --- !u!114 &1660959713
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1467,7 +1467,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9a91eff825103c7429525ab7e795b02d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ThrowInteractionValidationBootstrap
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ThrowInteractionValidationBootstrap
   playerConfig: {fileID: 11400000, guid: 8ae319106aeb2c3418b4304ce023628f, type: 2}
   player: {fileID: 832529532}
 --- !u!114 &1815409533
@@ -1481,7 +1481,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2e342d1663b34fe4797ef08c4761206f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ValidationMatchState
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ValidationMatchState
 --- !u!4 &1815409534
 Transform:
   m_ObjectHideFlags: 0
@@ -1528,7 +1528,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 19040f93a6b4ffa4a81fb17d89a2e79c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.ValidationInteractionTarget
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.ValidationInteractionTarget
   kind: 2
   holdDurationSeconds: 1.25
 --- !u!23 &2000598567

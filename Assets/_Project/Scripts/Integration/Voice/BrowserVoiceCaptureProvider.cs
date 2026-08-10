@@ -3,7 +3,7 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     /// <summary>
     /// Browser recording, behind the same seam as the native one.
@@ -97,7 +97,7 @@ namespace PawsAndLoot.Integration.Voice
         private bool TryStartRecorder(float maximumSeconds)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            PawsAndLoot_VoiceMediaRecorder_Start(
+            PawliceAndPurrglar_VoiceMediaRecorder_Start(
                 hostObjectName,
                 callbackMethodName,
                 maximumSeconds);
@@ -225,19 +225,19 @@ namespace PawsAndLoot.Integration.Voice
 
             stopRequested = true;
 #if UNITY_WEBGL && !UNITY_EDITOR
-            PawsAndLoot_VoiceMediaRecorder_Stop();
+            PawliceAndPurrglar_VoiceMediaRecorder_Stop();
 #endif
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
-        private static extern void PawsAndLoot_VoiceMediaRecorder_Start(
+        private static extern void PawliceAndPurrglar_VoiceMediaRecorder_Start(
             string gameObjectName,
             string callbackMethod,
             float maximumSeconds);
 
         [DllImport("__Internal")]
-        private static extern void PawsAndLoot_VoiceMediaRecorder_Stop();
+        private static extern void PawliceAndPurrglar_VoiceMediaRecorder_Stop();
 #endif
 
         [Serializable]

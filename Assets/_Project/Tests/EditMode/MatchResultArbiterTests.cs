@@ -1,7 +1,7 @@
 using NUnit.Framework;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Match;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class MatchResultArbiterTests
     {

@@ -149,8 +149,8 @@
 - 작업 목적: 런타임 코드와 테스트 코드를 분리하고 반복 가능한 자동 테스트 기반 생성
 - 관련 작업 ID: BASE-006
 - 입력 프롬프트 요약: 테스트용 Assembly Definition, 간단한 실행 테스트와 README 실행 방법 작성
-- AI 생성 결과: `PawsAndLoot.Runtime`, Edit Mode·Play Mode 테스트 어셈블리와 기본 테스트
-- 실제 반영 파일: `Assets/_Project/Scripts/PawsAndLoot.Runtime.asmdef`, `Assets/_Project/Tests/`, README와 관련 문서
+- AI 생성 결과: `PawliceAndPurrglar.Runtime`, Edit Mode·Play Mode 테스트 어셈블리와 기본 테스트
+- 실제 반영 파일: `Assets/_Project/Scripts/PawliceAndPurrglar.Runtime.asmdef`, `Assets/_Project/Tests/`, README와 관련 문서
 - 사람이 수정하거나 결정한 내용: Edit Mode는 Editor 전용, Play Mode는 TestAssemblies로 일반 빌드에서 제외
 - 검증 방법: Unity Test Runner 배치 실행, Edit Mode 5/5와 Play Mode 1/1 통과 확인
 - 최종 상태: 반영

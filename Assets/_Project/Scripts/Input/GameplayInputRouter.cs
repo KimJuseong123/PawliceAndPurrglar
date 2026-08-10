@@ -1,9 +1,9 @@
 using System;
-using PawsAndLoot.Integration.Voice;
+using PawliceAndPurrglar.Integration.Voice;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace PawsAndLoot.Input
+namespace PawliceAndPurrglar.Input
 {
     /// <summary>
     /// Single keyboard edge router for the production gameplay mapping.

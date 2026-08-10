@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Cuts the result screen's artwork out of the authored mockups.

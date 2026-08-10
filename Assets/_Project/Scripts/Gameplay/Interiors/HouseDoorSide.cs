@@ -1,4 +1,4 @@
-namespace PawsAndLoot.Gameplay.Interiors
+namespace PawliceAndPurrglar.Gameplay.Interiors
 {
     /// <summary>
     /// Which of a house's two doors a doorway is.

@@ -220,7 +220,7 @@ PawliceAndPurrglar > Build > Build WebGL Release
 배치로도 된다:
 
 ```bash
-"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -quit -projectPath "C:/Users/SSAFY/paws-and-loot" -executeMethod PawsAndLoot.Editor.PlaytestBuild.BuildWebGlRelease -logFile Logs/webgl-release.log
+"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -quit -projectPath "C:/Users/SSAFY/PawliceAndPurrglar" -executeMethod PawliceAndPurrglar.Editor.PlaytestBuild.BuildWebGlRelease -logFile Logs/webgl-release.log
 ```
 
 빌드 설정 중 배포에 걸리는 것 둘:
@@ -240,7 +240,7 @@ PawliceAndPurrglar > Build > Build WebGL Release
 개발 PC에서, 저장소 루트에서:
 
 ```powershell
-.\deploy\upload.ps1 -HostName ec2-user@pawlice.duckdns.org -KeyPath $HOME\Downloads\paws-and-loot-key.pem
+.\deploy\upload.ps1 -HostName ec2-user@pawlice.duckdns.org -KeyPath $HOME\Downloads\PawliceAndPurrglar-key.pem
 ```
 
 스테이징 폴더에 올린 뒤 한 번에 자리를 바꾼다. 절반만 올라간 빌드를 심사위원이
@@ -284,8 +284,8 @@ Windows 빌드 두 개로 도는 기존 시나리오는 그대로다. 초대코�
 호스트가 요청하기 전에는 존재하지 않으므로 런처가 양쪽에 미리 넘겨줄 수 없다.
 
 ```bash
-"Builds/Playtest/Windows/PawsAndLoot.exe" -netLobby host   -netJoinMode ui -netScenario full -netMatchSeconds 60
-"Builds/Playtest/Windows/PawsAndLoot.exe" -netLobby client -netJoinMode ui -netScenario full -netMatchSeconds 60
+"Builds/Playtest/Windows/PawliceAndPurrglar.exe" -netLobby host   -netJoinMode ui -netScenario full -netMatchSeconds 60
+"Builds/Playtest/Windows/PawliceAndPurrglar.exe" -netLobby client -netJoinMode ui -netScenario full -netMatchSeconds 60
 ```
 
 `-netJoinMode api`는 여전히 **직접 IP**를 쓴다. 인터넷도 Unity 계정도 없이

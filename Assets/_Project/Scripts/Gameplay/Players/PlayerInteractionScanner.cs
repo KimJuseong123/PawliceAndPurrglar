@@ -1,8 +1,8 @@
-using PawsAndLoot.Config;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     public sealed class PlayerInteractionScanner : MonoBehaviour
     {
@@ -109,8 +109,8 @@ namespace PawsAndLoot.Gameplay.Players
                 // Said out loud rather than truncated in silence. If this ever
                 // fires, something within arm's reach is invisible to the
                 // player and no other symptom will tell them why.
-                PawsAndLoot.Logging.GameLogger.Warning(
-                    PawsAndLoot.Logging.GameLogCategory.Player,
+                PawliceAndPurrglar.Logging.GameLogger.Warning(
+                    PawliceAndPurrglar.Logging.GameLogCategory.Player,
                     $"Interaction scan filled its {MaxNearbyColliders} slot "
                     + "buffer, so something nearby was not considered.",
                     this);

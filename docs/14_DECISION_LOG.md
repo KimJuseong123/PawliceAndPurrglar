@@ -74,7 +74,7 @@
 - 고려한 선택지: (1) 씬 간 유지되는 `NetworkObject`를 하나 만든다,
   (2) `CustomMessagingManager`의 명명 메시지를 쓴다
 - 결정: (2). `NetworkRematchCoordinator`가 `NetworkManager` 오브젝트에 붙어
-  `"PawsAndLoot.Rematch"` 메시지를 등록하고, 클라이언트의 요청을 받은 호스트만
+  `"PawliceAndPurrglar.Rematch"` 메시지를 등록하고, 클라이언트의 요청을 받은 호스트만
   씬을 로드한다.
 - 이유: `ISSUE-016`에서 씬 간 `NetworkObject` 유지를 시도했다가 NGO의 씬
   관리와 충돌해 클라이언트에서 오브젝트가 사라졌다. 명명 메시지는

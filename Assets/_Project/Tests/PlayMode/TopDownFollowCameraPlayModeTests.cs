@@ -1,10 +1,10 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Camera;
+using PawliceAndPurrglar.Gameplay.Camera;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     public sealed class TopDownFollowCameraPlayModeTests
     {

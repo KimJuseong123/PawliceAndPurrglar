@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using NUnit.Framework;
-using PawsAndLoot.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Items;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// Moving items between two containers.

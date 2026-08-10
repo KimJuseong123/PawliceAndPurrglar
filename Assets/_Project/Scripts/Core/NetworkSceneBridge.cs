@@ -1,6 +1,6 @@
 using System;
 
-namespace PawsAndLoot.Core
+namespace PawliceAndPurrglar.Core
 {
     /// <summary>
     /// Lets <see cref="GameSceneLoader"/> hand a scene load to the network

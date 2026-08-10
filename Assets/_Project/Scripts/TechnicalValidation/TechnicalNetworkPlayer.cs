@@ -1,7 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.TechnicalValidation
+namespace PawliceAndPurrglar.TechnicalValidation
 {
     [RequireComponent(typeof(NetworkObject))]
     public sealed class TechnicalNetworkPlayer : NetworkBehaviour

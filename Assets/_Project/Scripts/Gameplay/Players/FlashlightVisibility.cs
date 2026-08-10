@@ -1,7 +1,7 @@
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     /// <summary>
     /// Hides the thief from the police unless the torch is on them.
@@ -237,8 +237,8 @@ namespace PawsAndLoot.Gameplay.Players
         /// </summary>
         private static Transform FindCompanionOf(PlayerRoleIdentity target)
         {
-            foreach (PawsAndLoot.Companions.CompanionAgent animal in
-                FindObjectsByType<PawsAndLoot.Companions.CompanionAgent>(
+            foreach (PawliceAndPurrglar.Companions.CompanionAgent animal in
+                FindObjectsByType<PawliceAndPurrglar.Companions.CompanionAgent>(
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None))
             {
@@ -259,7 +259,7 @@ namespace PawsAndLoot.Gameplay.Players
         /// the thief's, which is a rule of the game rather than of the scene.
         /// </summary>
         private static bool BelongsTo(
-            PawsAndLoot.Companions.CompanionAgent animal,
+            PawliceAndPurrglar.Companions.CompanionAgent animal,
             PlayerRoleIdentity target)
         {
             PlayerRoleIdentity owner =
@@ -270,7 +270,7 @@ namespace PawsAndLoot.Gameplay.Players
             }
 
             return animal.CompanionKind
-                == PawsAndLoot.Companions.CompanionKind.Cat
+                == PawliceAndPurrglar.Companions.CompanionKind.Cat
                 ? target.Role == PlayerRole.Thief
                 : target.Role == PlayerRole.Police;
         }
@@ -323,9 +323,9 @@ namespace PawsAndLoot.Gameplay.Players
         /// </summary>
         private static bool IsStunStar(Renderer renderer)
         {
-            PawsAndLoot.Animation.StunStarsView stars =
+            PawliceAndPurrglar.Animation.StunStarsView stars =
                 renderer.GetComponentInParent<
-                    PawsAndLoot.Animation.StunStarsView>();
+                    PawliceAndPurrglar.Animation.StunStarsView>();
             return stars != null
                 && stars.RingRoot != null
                 && renderer.transform.IsChildOf(stars.RingRoot);

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// The front door swinging open.
@@ -81,8 +81,8 @@ namespace PawsAndLoot.Animation
         /// outward opens the other into the building.
         /// </summary>
         [SerializeField]
-        private PawsAndLoot.Gameplay.Interiors.HouseDoorSide side =
-            PawsAndLoot.Gameplay.Interiors.HouseDoorSide.Front;
+        private PawliceAndPurrglar.Gameplay.Interiors.HouseDoorSide side =
+            PawliceAndPurrglar.Gameplay.Interiors.HouseDoorSide.Front;
 
         /// <summary>
         /// Signed, because which way is "outward" depends on the wall the door is
@@ -154,7 +154,7 @@ namespace PawsAndLoot.Animation
         }
 
         private string[] Parts =>
-            side == PawsAndLoot.Gameplay.Interiors.HouseDoorSide.Back
+            side == PawliceAndPurrglar.Gameplay.Interiors.HouseDoorSide.Back
                 ? BackPartNames
                 : FrontPartNames;
 
@@ -166,8 +166,8 @@ namespace PawsAndLoot.Animation
         public void Configure(
             Transform configuredHouseRoot,
             float configuredOpenDegrees,
-            PawsAndLoot.Gameplay.Interiors.HouseDoorSide configuredSide =
-                PawsAndLoot.Gameplay.Interiors.HouseDoorSide.Front)
+            PawliceAndPurrglar.Gameplay.Interiors.HouseDoorSide configuredSide =
+                PawliceAndPurrglar.Gameplay.Interiors.HouseDoorSide.Front)
         {
             houseRoot = configuredHouseRoot;
             openDegrees = configuredOpenDegrees;

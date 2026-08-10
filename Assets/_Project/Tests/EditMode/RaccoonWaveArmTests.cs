@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// Which arm waves, and which way it lifts, cannot be reasoned about from

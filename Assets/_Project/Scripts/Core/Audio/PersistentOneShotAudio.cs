@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Audio
+namespace PawliceAndPurrglar.Audio
 {
     /// <summary>
     /// One AudioSource that survives a scene load, for the sounds that are raised

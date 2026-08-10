@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Map;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Map;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -14,7 +14,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Generates the isolated MAP-002 layout from the current Game runtime
@@ -27,7 +27,7 @@ namespace PawsAndLoot.Editor
             "Assets/_Project/Scenes/GameMap02.unity";
         public const string WindowsBuildPath =
             "Builds/TechnicalValidation/Windows/"
-            + "PawsAndLootMap02Greybox.exe";
+            + "PawliceAndPurrglarMap02Greybox.exe";
 
         private const string RoadModelPath =
             "Assets/_Project/Art/Environment/env_road_section.fbx";
@@ -870,9 +870,9 @@ namespace PawsAndLoot.Editor
                 }
             }
 
-            PawsAndLoot.Gameplay.Camera.TopDownFollowCamera followCamera =
+            PawliceAndPurrglar.Gameplay.Camera.TopDownFollowCamera followCamera =
                 FindInScene<
-                    PawsAndLoot.Gameplay.Camera.TopDownFollowCamera>(scene);
+                    PawliceAndPurrglar.Gameplay.Camera.TopDownFollowCamera>(scene);
             if (followCamera != null
                 && followCamera.Target == police.transform)
             {

@@ -24,9 +24,9 @@ Claude Code 전용 작업 지침서다.
 | 항목 | 값 |
 |---|---|
 | 엔진 | Unity `6000.5.4f1` (URP `17.5.0`) |
-| 저장소 루트 | `C:\Users\SSAFY\pawlice-and-purrglar` (Unity 프로젝트 루트와 동일) |
-| 에디터 스크립트 네임스페이스 | `PawsAndLoot.Editor`. `-executeMethod`에 이 이름을 쓴다 |
-| 런타임 어셈블리 | `PawsAndLoot.Runtime` (루트 네임스페이스 `PawsAndLoot`) |
+| 저장소 루트 | `C:\Users\SSAFY\PawliceAndPurrglar` (Unity 프로젝트 루트와 동일) |
+| 에디터 스크립트 네임스페이스 | `PawliceAndPurrglar.Editor`. `-executeMethod`에 이 이름을 쓴다 |
+| 런타임 어셈블리 | `PawliceAndPurrglar.Runtime` (루트 네임스페이스 `PawliceAndPurrglar`) |
 | 현재 코드 위치 | `Assets/_Project/` |
 | 외부 유료 에셋 | **없다.** 2026-08-08에 TopDownEngine 잔재와 `Assets/CatCops/` 레거시를 전부 제거했다. `Assets/ThirdParty/`는 비어 있다 |
 | 빌드 씬 | `Bootstrap`, `Game`, `Result` 3개만 등록됨 |
@@ -34,11 +34,11 @@ Claude Code 전용 작업 지침서다.
 제목은 **멍경찰과 냥도둑 / PawliceAndPurrglar**로 확정이다 (2026-08-08).
 표시되는 곳은 전부 바꿨다 — 제품명, 에디터 메뉴 루트, 문서.
 
-**바꾸지 않은 것은 식별자다**: 네임스페이스 `PawsAndLoot.*`, 어셈블리
-`PawsAndLoot.Runtime`, 저장소 폴더 `pawlice-and-purrglar`, 빌드 산출물
-`PawsAndLoot.exe`. 제목이 아니라 이름이고, 제출 직전에 어셈블리 참조와 클론
+**바꾸지 않은 것은 식별자다**: 네임스페이스 `PawliceAndPurrglar.*`, 어셈블리
+`PawliceAndPurrglar.Runtime`, 저장소 폴더 `PawliceAndPurrglar`, 빌드 산출물
+`PawliceAndPurrglar.exe`. 제목이 아니라 이름이고, 제출 직전에 어셈블리 참조와 클론
 URL을 함께 움직일 이유가 없다. `-executeMethod`에는 여전히
-`PawsAndLoot.Editor.*`를 쓴다.
+`PawliceAndPurrglar.Editor.*`를 쓴다.
 
 ## 3. 가장 중요한 함정: 씬 내용은 에디터 스크립트가 만든다
 
@@ -89,7 +89,7 @@ URL을 함께 움직일 이유가 없다. `-executeMethod`에는 여전히
 > 플랫폼 분기를 넣거나 옮겼으면 **그 자리에서 WebGL 빌드를 한 번 돌린다.**
 >
 > ```bash
-> "C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -quit -projectPath "C:/Users/SSAFY/paws-and-loot" -executeMethod PawsAndLoot.Editor.PlaytestBuild.BuildWebGlRelease -logFile Logs/webgl-release.log
+> "C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -quit -projectPath "C:/Users/SSAFY/PawliceAndPurrglar" -executeMethod PawliceAndPurrglar.Editor.PlaytestBuild.BuildWebGlRelease -logFile Logs/webgl-release.log
 > ```
 
 > **브라우저는 서버가 될 수 없다. Relay일 때만 예외다.** `UnityTransport.cs`가 그
@@ -526,7 +526,7 @@ URL을 함께 움직일 이유가 없다. `-executeMethod`에는 여전히
 > 신선한 클론은 같은 파일 수를 받는다.
 
 > **배치 빌드는 성공해도 `.exe` 날짜가 안 바뀐다.** Mono 빌드라 게임 코드는
-> `PawsAndLoot_Data/Managed/*.dll`에 있고 플레이어 실행 파일은 바뀔 이유가 없다.
+> `PawliceAndPurrglar_Data/Managed/*.dll`에 있고 플레이어 실행 파일은 바뀔 이유가 없다.
 > 일주일 전 날짜의 exe를 보고 "빌드가 안 됐다"고 판단하면 틀린다 — `Managed/`의
 > 날짜와 로그의 `build succeeded`를 본다.
 
@@ -640,7 +640,7 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 ### 테스트 (배치 모드)
 
 ```bash
-"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -projectPath "C:/Users/SSAFY/pawlice-and-purrglar" -runTests -testPlatform EditMode -testResults "C:/Users/SSAFY/pawlice-and-purrglar/Logs/TestResults/editmode.xml" -logFile "C:/Users/SSAFY/pawlice-and-purrglar/Logs/editmode-tests.log"
+"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Unity.exe" -batchmode -nographics -projectPath "C:/Users/SSAFY/PawliceAndPurrglar" -runTests -testPlatform EditMode -testResults "C:/Users/SSAFY/PawliceAndPurrglar/Logs/TestResults/editmode.xml" -logFile "C:/Users/SSAFY/PawliceAndPurrglar/Logs/editmode-tests.log"
 ```
 
 `-testPlatform PlayMode`로 바꿔 Play Mode도 실행한다. 확인 사항:
@@ -678,8 +678,8 @@ Create / Validate / Build Windows  NET-001   Host·Client 접속
 빌드를 두 번 띄우고 결과 JSON을 비교한다. 호스트를 1초 먼저 띄운다.
 
 ```bash
-"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby host   -netScenario full -netMatchSeconds 60
-"Builds/Playtest/Windows/PawsAndLoot.exe" -batchmode -nographics -netLobby client -netScenario full -netMatchSeconds 60
+"Builds/Playtest/Windows/PawliceAndPurrglar.exe" -batchmode -nographics -netLobby host   -netScenario full -netMatchSeconds 60
+"Builds/Playtest/Windows/PawliceAndPurrglar.exe" -batchmode -nographics -netLobby client -netScenario full -netMatchSeconds 60
 ```
 
 `-netScenario` 3종:

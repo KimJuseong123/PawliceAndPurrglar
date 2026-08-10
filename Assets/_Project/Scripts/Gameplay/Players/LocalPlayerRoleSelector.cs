@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using PawsAndLoot.Gameplay.Camera;
+using PawliceAndPurrglar.Gameplay.Camera;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     public sealed class LocalPlayerRoleSelector : MonoBehaviour
     {

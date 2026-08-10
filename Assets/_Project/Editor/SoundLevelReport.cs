@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using PawsAndLoot.Audio;
+using PawliceAndPurrglar.Audio;
 using UnityEditor;
 using UnityEngine;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// How loud each clip in the bank actually is.
@@ -23,7 +23,7 @@ namespace PawsAndLoot.Editor
     ///
     /// Batch mode:
     /// <code>
-    /// -executeMethod PawsAndLoot.Editor.SoundLevelReport.Report
+    /// -executeMethod PawliceAndPurrglar.Editor.SoundLevelReport.Report
     /// </code>
     /// </summary>
     internal static class SoundLevelReport

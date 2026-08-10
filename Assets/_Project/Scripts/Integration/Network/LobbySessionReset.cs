@@ -1,11 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
-using PawsAndLoot.Core;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Logging;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Network
+namespace PawliceAndPurrglar.Integration.Network
 {
     /// <summary>
     /// Makes the lobby's own NetworkManager the only one, every time Bootstrap

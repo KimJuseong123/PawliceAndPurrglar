@@ -1,9 +1,9 @@
 using System;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     [Flags]
     public enum ThrowableEffectTarget
@@ -133,7 +133,7 @@ namespace PawsAndLoot.Gameplay.Items
                         ThrowableCatalog.GetStunCause(kind)) == true
                     && kind == ThrowableKind.Rock)
                 {
-                    PawsAndLoot.Gameplay.Loot.LootConfiscationRule.Apply(
+                    PawliceAndPurrglar.Gameplay.Loot.LootConfiscationRule.Apply(
                         victim,
                         thrower);
                 }

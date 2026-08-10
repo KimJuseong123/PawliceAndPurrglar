@@ -2,11 +2,11 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
-using PawsAndLoot.Audio;
+using PawliceAndPurrglar.Audio;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     public enum LocalAiRuntimeState
     {

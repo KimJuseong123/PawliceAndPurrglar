@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace PawsAndLoot.Audio
+namespace PawliceAndPurrglar.Audio
 {
     /// <summary>
     /// AUDIO-002. One-way sink for sound requests.

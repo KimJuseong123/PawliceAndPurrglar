@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using PawsAndLoot.Integration.Network;
+using PawliceAndPurrglar.Integration.Network;
 using UnityEngine;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// How a client moves anything the host owns.

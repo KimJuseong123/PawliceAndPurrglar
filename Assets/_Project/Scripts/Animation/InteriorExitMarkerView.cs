@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PawsAndLoot.Animation
+namespace PawliceAndPurrglar.Animation
 {
     /// <summary>
     /// Marks the way out of a room, on the floor.

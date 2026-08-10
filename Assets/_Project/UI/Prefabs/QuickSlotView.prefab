@@ -478,7 +478,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44d2b0c0a13240eb8c2e5ccbe4da75b7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.QuickSlotView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.QuickSlotView
   keyLabel: {fileID: 1172077897882995003}
   quantityLabel: {fileID: 377765825420529159}
   iconGlyph: {fileID: 6753486613923051740}

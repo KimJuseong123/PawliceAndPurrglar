@@ -510,7 +510,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3949b154060094045993ae7b38f21d9d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Config.GameConfigBootstrap
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Config.GameConfigBootstrap
   configSet: {fileID: 11400000, guid: 042b4ef41f482ce4a96f187f4d8bea83, type: 2}
 --- !u!114 &637855039
 MonoBehaviour:
@@ -523,7 +523,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2340804867759a540896c8a7fd5ab8cb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Logging.GameLogBootstrap
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Logging.GameLogBootstrap
   config: {fileID: 11400000, guid: cc9eb7d0da5112b4a939473918775a17, type: 2}
 --- !u!4 &637855040
 Transform:
@@ -777,7 +777,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8220f5c5cbf37d24ba66c469302982c2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.SceneNavigationButton
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.SceneNavigationButton
   targetScene: 1
 --- !u!114 &1148076322
 MonoBehaviour:
@@ -1146,7 +1146,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fac6515eabd0a5b41a30d7fe4db867ce, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.LanRoomDirectory
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.LanRoomDirectory
   session: {fileID: 1346570883}
   roomLabel: 
 --- !u!114 &1346570883
@@ -1160,7 +1160,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a2475119686096459b1139a527b16be, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkSessionController
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkSessionController
   networkManager: {fileID: 1346570884}
   roleBoardPrefab: {fileID: 1880563890194215216, guid: 8e3aba7ca443c824cb0178047cf22123, type: 3}
 --- !u!114 &1346570884
@@ -1247,7 +1247,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dad100b755da15d42956d713688ba9b0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.NetworkRematchProbe
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.NetworkRematchProbe
 --- !u!114 &1346570887
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1259,7 +1259,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 99f448c3535b29a41bee773e6a15aec9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.LobbySessionReset
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.LobbySessionReset
   session: {fileID: 1346570883}
 --- !u!114 &1346570888
 MonoBehaviour:
@@ -1272,7 +1272,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b877f7c939becba4b855f9c5571953b3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkLatencyReport
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkLatencyReport
   networkManager: {fileID: 0}
 --- !u!114 &1346570889
 MonoBehaviour:
@@ -1285,7 +1285,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16a55140e12ffcd4c8dccaa01b2d6014, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkDisconnectHandler
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkDisconnectHandler
   networkManager: {fileID: 1346570884}
   session: {fileID: 1346570883}
   returnToLobby: 1
@@ -1300,7 +1300,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c88aac6f3001f394fbb2972c28df1da4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkMatchResultMessenger
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkMatchResultMessenger
   evaluator: {fileID: 0}
 --- !u!114 &1346570891
 MonoBehaviour:
@@ -1313,7 +1313,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d71086a197281f4082db4ad18fe512b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkRematchCoordinator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkRematchCoordinator
   networkManager: {fileID: 1346570884}
 --- !u!114 &1346570892
 MonoBehaviour:
@@ -1326,7 +1326,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c332cc3506ded294ba00e9d1bf62045a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.NetworkSceneCoordinator
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.NetworkSceneCoordinator
   networkManager: {fileID: 1346570884}
 --- !u!114 &1346570893
 MonoBehaviour:
@@ -1339,7 +1339,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a0a468c817aee46458eb23c1b11b6f34, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.Integration.Network.DedicatedServerLauncher
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.Integration.Network.DedicatedServerLauncher
   session: {fileID: 0}
 --- !u!4 &1346570894
 Transform:
@@ -1384,7 +1384,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6e8057edcb35ce74cbbf2dfb0b5033b4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.TechnicalValidation.NetworkLobbyProbe
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.TechnicalValidation.NetworkLobbyProbe
   session: {fileID: 0}
   timeoutSeconds: 20
   settleSeconds: 3

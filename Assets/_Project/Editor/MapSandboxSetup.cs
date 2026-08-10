@@ -1,17 +1,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Camera;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Match;
-using PawsAndLoot.Sandbox;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Camera;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Match;
+using PawliceAndPurrglar.Sandbox;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// A throwaway town to walk around in, built to the real map's numbers.
@@ -2945,7 +2945,7 @@ namespace PawsAndLoot.Editor
                 if (animator != null)
                 {
                     animator.gameObject.AddComponent<
-                        PawsAndLoot.Animation.AnimatorClipGuard>();
+                        PawliceAndPurrglar.Animation.AnimatorClipGuard>();
                 }
             }
 
@@ -2965,10 +2965,10 @@ namespace PawsAndLoot.Editor
             if (model != null)
             {
                 var stride = player.AddComponent<
-                    PawsAndLoot.Animation.CompanionLegAnimator>();
+                    PawliceAndPurrglar.Animation.CompanionLegAnimator>();
                 stride.Configure(
                     model.transform,
-                    PawsAndLoot.Animation.CompanionLegAnimator.GaitMode.Biped,
+                    PawliceAndPurrglar.Animation.CompanionLegAnimator.GaitMode.Biped,
                     model.GetComponent<Animator>());
                 if (stride.LegCount == 0)
                 {
@@ -2982,7 +2982,7 @@ namespace PawsAndLoot.Editor
                 player.AddComponent<PlayerMovementMotor>();
             motor.Configure(controller, playerConfig, match, null);
             player.AddComponent<PlayerKeyboardInput>().Configure(motor, true);
-            player.GetComponent<PawsAndLoot.Animation.CompanionLegAnimator>()
+            player.GetComponent<PawliceAndPurrglar.Animation.CompanionLegAnimator>()
                 ?.ConfigureAirborneSource(motor);
 
             var cameraObject = new GameObject("Sandbox Camera");

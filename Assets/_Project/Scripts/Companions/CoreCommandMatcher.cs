@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace PawsAndLoot.Companions
+namespace PawliceAndPurrglar.Companions
 {
     public enum VoiceUnderstanding
     {

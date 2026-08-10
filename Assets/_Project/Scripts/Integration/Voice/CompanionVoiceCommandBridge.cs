@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Config;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Integration.Network;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Integration.Network;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.Integration.Voice
+namespace PawliceAndPurrglar.Integration.Voice
 {
     [Serializable]
     internal sealed class VoiceWorldContextWire

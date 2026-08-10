@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using PawsAndLoot.Input;
+using PawliceAndPurrglar.Input;
 
-namespace PawsAndLoot.Gameplay.Players
+namespace PawliceAndPurrglar.Gameplay.Players
 {
     public sealed class PlayerInteractionInput : MonoBehaviour
     {

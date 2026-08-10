@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Items
+namespace PawliceAndPurrglar.Gameplay.Items
 {
     /// <summary>
     /// Rocks that are still in the air, and who they end up hitting.
@@ -150,7 +150,7 @@ namespace PawsAndLoot.Gameplay.Items
             float blindSeconds =
                 ThrowableCatalog.GetBlindSeconds(flight.Kind);
             bool blinded = blindSeconds > 0f
-                && victim.GetComponent<PawsAndLoot.Gameplay.Players.BlindedState>()
+                && victim.GetComponent<PawliceAndPurrglar.Gameplay.Players.BlindedState>()
                     ?.TryApply(blindSeconds) == true;
             landed = landed || blinded;
 
@@ -159,13 +159,13 @@ namespace PawsAndLoot.Gameplay.Items
             // better than the rock, and the rock is what the officer has.
             if (stun?.IsStunned == true && blindSeconds <= 0f)
             {
-                PawsAndLoot.Gameplay.Loot.LootConfiscationRule.Apply(
+                PawliceAndPurrglar.Gameplay.Loot.LootConfiscationRule.Apply(
                     victim,
                     flight.Thrower);
             }
 
-            PawsAndLoot.Logging.GameLogger.Info(
-                PawsAndLoot.Logging.GameLogCategory.Player,
+            PawliceAndPurrglar.Logging.GameLogger.Info(
+                PawliceAndPurrglar.Logging.GameLogCategory.Player,
                 $"{flight.Kind} from {flight.Thrower?.Role} hit "
                 + $"{victim.Role} after "
                 + $"{flight.Travelled:0.0}m.",

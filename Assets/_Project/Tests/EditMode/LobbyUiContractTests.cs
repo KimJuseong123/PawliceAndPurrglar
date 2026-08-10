@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.UI;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -12,7 +12,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Tests.EditMode
+namespace PawliceAndPurrglar.Tests.EditMode
 {
     /// <summary>
     /// Guards the properties the previous lobby lost silently.
@@ -29,7 +29,7 @@ namespace PawsAndLoot.Tests.EditMode
             "Assets/_Project/UI/Prefabs/LobbyCanvas.prefab";
 
         private const string FontPath =
-            "Assets/Resources/PawsAndLootDefaultFont.asset";
+            "Assets/Resources/PawliceAndPurrglarDefaultFont.asset";
 
         private const string BootstrapPath =
             "Assets/_Project/Scenes/Bootstrap.unity";

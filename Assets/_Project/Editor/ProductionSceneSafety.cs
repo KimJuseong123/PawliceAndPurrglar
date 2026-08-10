@@ -5,7 +5,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Prevents the production Game scene from being replaced silently or
@@ -17,7 +17,7 @@ namespace PawsAndLoot.Editor
         private const string GameScenePath =
             "Assets/_Project/Scenes/Game.unity";
         private const string BackupRoot =
-            "Library/PawsAndLoot/SceneBackups";
+            "Library/PawliceAndPurrglar/SceneBackups";
 
         static ProductionSceneSafety()
         {

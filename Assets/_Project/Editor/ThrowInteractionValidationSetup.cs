@@ -1,5 +1,5 @@
-using PawsAndLoot.Config;
-using PawsAndLoot.TechnicalValidation;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.TechnicalValidation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -8,7 +8,7 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     /// <summary>
     /// Creates only the isolated throw/interaction validation scene. It never
@@ -88,9 +88,9 @@ namespace PawsAndLoot.Editor
             controller.radius = 0.45f;
             controller.center = Vector3.zero;
 
-            player.AddComponent<PawsAndLoot.Gameplay.Players.PlayerRoleIdentity>();
-            player.AddComponent<PawsAndLoot.Gameplay.Items.ToolCarrier>();
-            player.AddComponent<PawsAndLoot.Gameplay.Players.PlayerInteractionScanner>();
+            player.AddComponent<PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity>();
+            player.AddComponent<PawliceAndPurrglar.Gameplay.Items.ToolCarrier>();
+            player.AddComponent<PawliceAndPurrglar.Gameplay.Players.PlayerInteractionScanner>();
             player.AddComponent<ThrowInteractionValidationController>();
             player.AddComponent<ValidationInteractionInput>();
             player.AddComponent<ValidationPlayerMover>();

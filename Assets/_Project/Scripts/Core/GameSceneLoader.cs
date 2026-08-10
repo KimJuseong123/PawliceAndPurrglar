@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 
-namespace PawsAndLoot.Core
+namespace PawliceAndPurrglar.Core
 {
     public static class GameSceneLoader
     {

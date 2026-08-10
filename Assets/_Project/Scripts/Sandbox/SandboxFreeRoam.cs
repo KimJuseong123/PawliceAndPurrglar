@@ -1,7 +1,7 @@
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Sandbox
+namespace PawliceAndPurrglar.Sandbox
 {
     /// <summary>
     /// Puts the map-test scene into a state you can walk around in.

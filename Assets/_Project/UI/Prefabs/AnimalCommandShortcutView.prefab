@@ -188,7 +188,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0b3748b8cd5e47f4a6f2d11e2f9bd6e5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: PawsAndLoot.Runtime::PawsAndLoot.UI.AnimalCommandShortcutView
+  m_EditorClassIdentifier: PawliceAndPurrglar.Runtime::PawliceAndPurrglar.UI.AnimalCommandShortcutView
   modifierLabel: {fileID: 8945022765025806882}
   keyLabel: {fileID: 4178434264392605878}
   commandLabel: {fileID: 2316082096050565048}

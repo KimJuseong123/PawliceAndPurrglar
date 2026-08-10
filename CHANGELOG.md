@@ -443,7 +443,7 @@
 - **영문 제목을 `PawliceAndPurrglar`로 확정했다.** 한글 제목 `멍경찰과 냥도둑`은
   그대로다. 바꾼 것은 **사람이 제목으로 읽는 곳 전부**다:
   - `productName`·`companyName` — 창 제목과 브라우저 탭에 나오는 이름.
-    저장 경로가 `%LOCALLOW%\PawsAndLoot\PawsAndLoot\`에서 `%LOCALLOW%\PawliceAndPurrglar\PawliceAndPurrglar\`로 **실제로 옮겨간 것을
+    저장 경로가 `%LOCALLOW%\PawliceAndPurrglar\PawliceAndPurrglar\`에서 `%LOCALLOW%\PawliceAndPurrglar\PawliceAndPurrglar\`로 **실제로 옮겨간 것을
     빌드해서 확인했다** (`net-lobby-host-result.json`이 새 경로에 떨어진다).
     `CLAUDE.md`·README의 프로브 경로를 전부 갱신했다. **기존 결과 JSON은 고아가 된다**
   - 에디터 메뉴 루트 `Paws & Loot/...` → `PawliceAndPurrglar/...` (81파일, 121곳).
@@ -453,11 +453,11 @@
   - **공백을 뺐다.** 처음엔 `Pawlice and Purrglar`로 넣었는데 저장 경로에 공백이
     들어가 명령줄마다 따옴표가 필요했다. 붙여쓰기가 경로·패키지명·네임스페이스와
     같은 모양이 된다
-  - 저장소 슬러그 `paws-and-loot` → `pawlice-and-purrglar` (문서 경로, npm 패키지명)
-- **바꾸지 않은 것은 코드 식별자다**: 네임스페이스 `PawsAndLoot.*`, 어셈블리
-  `PawsAndLoot.Runtime`, 빌드 산출물 `PawsAndLoot.exe`.
+  - 저장소 슬러그 `PawliceAndPurrglar` → `PawliceAndPurrglar` (문서 경로, npm 패키지명)
+- **바꾸지 않은 것은 코드 식별자다**: 네임스페이스 `PawliceAndPurrglar.*`, 어셈블리
+  `PawliceAndPurrglar.Runtime`, 빌드 산출물 `PawliceAndPurrglar.exe`.
   - 이유는 규모가 아니라 **씬이 그것을 직렬화하고 있어서**다. `Game.unity`·
-    `Bootstrap.unity`·`HudCanvas.prefab`에 `PawsAndLoot.Runtime`이 **730번**,
+    `Bootstrap.unity`·`HudCanvas.prefab`에 `PawliceAndPurrglar.Runtime`이 **730번**,
     컴포넌트마다 정규화된 타입 이름이 `m_EditorClassIdentifier`로 박혀 있다.
     어셈블리 이름을 바꾸면 그 문자열이 전부 낡고, 참조가 조용히 끊겨도 테스트가
     잡아 준다는 보장이 없다 — 이 저장소가 반복해서 당한 종류의 실패다
@@ -1622,7 +1622,7 @@
 - 대부분의 최종 모델링을 그레이박스 프로토타입 이후로 이동
 - Unity 생성 파일과 테스트 결과를 제외하도록 `.gitignore` 보강
 - 사용하지 않는 2D 편집, Collaborate, Rider, Visual Scripting, Multiplayer Center 패키지 제거
-- 남아 있던 `DefaultCompany`와 이전 실험 제품명을 `PawsAndLoot`으로 수정
+- 남아 있던 `DefaultCompany`와 이전 실험 제품명을 `PawliceAndPurrglar`으로 수정
 - Unity `6000.5`와 맞지 않는 NGO `2.7.0` 대신 컴파일과 실행 검증을 통과한 `2.13.0` 채택
 - 네트워크 기술 검증 역할을 Host 경찰, 첫 Client 도둑으로 고정하고 추가 접속을 거절
 - `Game` 씬을 MAP-001 회색 상자 마을로 교체하고 너구리 거래장터 앵커를 사용

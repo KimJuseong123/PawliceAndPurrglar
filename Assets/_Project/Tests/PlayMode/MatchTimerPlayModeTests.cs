@@ -1,11 +1,11 @@
 using System.Collections;
 using NUnit.Framework;
-using PawsAndLoot.Config;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace PawsAndLoot.Tests.PlayMode
+namespace PawliceAndPurrglar.Tests.PlayMode
 {
     public sealed class MatchTimerPlayModeTests
     {

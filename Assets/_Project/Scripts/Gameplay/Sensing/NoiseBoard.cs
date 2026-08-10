@@ -1,8 +1,8 @@
 using System;
-using PawsAndLoot.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Players;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Sensing
+namespace PawliceAndPurrglar.Gameplay.Sensing
 {
     /// <summary>
     /// Where loud things get written down.

@@ -1,8 +1,8 @@
-using PawsAndLoot.Core;
+using PawliceAndPurrglar.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Button))]

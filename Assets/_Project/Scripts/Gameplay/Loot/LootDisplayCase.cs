@@ -1,11 +1,11 @@
 using System;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Gameplay.Sensing;
-using PawsAndLoot.Logging;
-using PawsAndLoot.Match;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Gameplay.Sensing;
+using PawliceAndPurrglar.Logging;
+using PawliceAndPurrglar.Match;
 using UnityEngine;
 
-namespace PawsAndLoot.Gameplay.Loot
+namespace PawliceAndPurrglar.Gameplay.Loot
 {
     /// <summary>
     /// A glass case with something in it.
@@ -295,12 +295,12 @@ namespace PawsAndLoot.Gameplay.Loot
         /// The character of a role, for the alarm to name whoever set it off.
         /// Null is fine — the alarm falls back to revealing the thief.
         /// </summary>
-        private static PawsAndLoot.Gameplay.Players.PlayerRoleIdentity
+        private static PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity
             ResolveIdentity(PlayerRole role)
         {
-            foreach (PawsAndLoot.Gameplay.Players.PlayerRoleIdentity candidate in
+            foreach (PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity candidate in
                 FindObjectsByType<
-                    PawsAndLoot.Gameplay.Players.PlayerRoleIdentity>(
+                    PawliceAndPurrglar.Gameplay.Players.PlayerRoleIdentity>(
                     FindObjectsSortMode.None))
             {
                 if (candidate.Role == role)

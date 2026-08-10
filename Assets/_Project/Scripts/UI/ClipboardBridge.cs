@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
-using PawsAndLoot.Logging;
+using PawliceAndPurrglar.Logging;
 using UnityEngine;
 
-namespace PawsAndLoot.UI
+namespace PawliceAndPurrglar.UI
 {
     /// <summary>
     /// Puts a string on the player's clipboard.
@@ -18,7 +18,7 @@ namespace PawsAndLoot.UI
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
-        private static extern int PawsAndLootCopyText(string text);
+        private static extern int PawliceAndPurrglarCopyText(string text);
 #endif
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace PawsAndLoot.UI
             }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-            return PawsAndLootCopyText(text) != 0;
+            return PawliceAndPurrglarCopyText(text) != 0;
 #else
             try
             {

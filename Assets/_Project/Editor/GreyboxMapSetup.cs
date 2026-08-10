@@ -1,21 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PawsAndLoot.Animation;
-using PawsAndLoot.Audio;
-using PawsAndLoot.Companions;
-using PawsAndLoot.Config;
-using PawsAndLoot.Core;
-using PawsAndLoot.Gameplay.Arrest;
-using PawsAndLoot.Gameplay.Interiors;
-using PawsAndLoot.Gameplay.Items;
-using PawsAndLoot.Gameplay.Loot;
-using PawsAndLoot.Gameplay.Map;
-using PawsAndLoot.Gameplay.Players;
-using PawsAndLoot.Input;
-using PawsAndLoot.Integration.Network;
-using PawsAndLoot.Match;
-using PawsAndLoot.UI;
+using PawliceAndPurrglar.Animation;
+using PawliceAndPurrglar.Audio;
+using PawliceAndPurrglar.Companions;
+using PawliceAndPurrglar.Config;
+using PawliceAndPurrglar.Core;
+using PawliceAndPurrglar.Gameplay.Arrest;
+using PawliceAndPurrglar.Gameplay.Interiors;
+using PawliceAndPurrglar.Gameplay.Items;
+using PawliceAndPurrglar.Gameplay.Loot;
+using PawliceAndPurrglar.Gameplay.Map;
+using PawliceAndPurrglar.Gameplay.Players;
+using PawliceAndPurrglar.Input;
+using PawliceAndPurrglar.Integration.Network;
+using PawliceAndPurrglar.Match;
+using PawliceAndPurrglar.UI;
 using Unity.Netcode;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -26,12 +26,12 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace PawsAndLoot.Editor
+namespace PawliceAndPurrglar.Editor
 {
     public static class GreyboxMapSetup
     {
         public const string WindowsBuildPath =
-            "Builds/TechnicalValidation/Windows/PawsAndLootMapGreybox.exe";
+            "Builds/TechnicalValidation/Windows/PawliceAndPurrglarMapGreybox.exe";
 
         private const string MaterialRoot =
             "Assets/_Project/Materials/Greybox";
@@ -316,7 +316,7 @@ namespace PawsAndLoot.Editor
                     PoliceBlue,
                     ThiefRed,
                     MarketGold);
-            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints thiefSpawns =
+            PawliceAndPurrglar.Gameplay.Players.ThiefSpawnPoints thiefSpawns =
                 CreateThiefSpawnPoints(locationsRoot, ThiefRed);
             List<GreyboxRouteReference> routes =
                 CreateRoutes(routesRoot, locations);
@@ -394,7 +394,7 @@ namespace PawsAndLoot.Editor
             ConfigureMatchResultEvaluator(
                 controlBindings,
                 matchRuntime);
-            PawsAndLoot.Gameplay.Camera.TopDownFollowCamera followCamera =
+            PawliceAndPurrglar.Gameplay.Camera.TopDownFollowCamera followCamera =
                 ConfigurePlayerFollowCamera(
                     roleMarkers[PlayerRole.Police].transform);
             LocalPlayerRoleSelector roleSelector = CreateLocalRoleSelector(
@@ -459,7 +459,7 @@ namespace PawsAndLoot.Editor
             var perfObject = new GameObject("Scene Performance Probe");
             perfObject.transform.SetParent(villageRoot.transform);
             perfObject.AddComponent<
-                PawsAndLoot.TechnicalValidation.ScenePerformanceProbe>();
+                PawliceAndPurrglar.TechnicalValidation.ScenePerformanceProbe>();
 
             // Every building the town put up, paired with what kind it is.
             // The kind is what picks the room: a jeweller gets cases and a
@@ -727,7 +727,7 @@ namespace PawsAndLoot.Editor
             fill.shadows = LightShadows.None;
 
             player.AddComponent<
-                    PawsAndLoot.Gameplay.Players.NightVisionFill>()
+                    PawliceAndPurrglar.Gameplay.Players.NightVisionFill>()
                 .Configure(identity, matchRuntime, fill);
         }
 
@@ -754,11 +754,11 @@ namespace PawsAndLoot.Editor
             beam.type = LightType.Spot;
             // Range and angle from the same constants the visibility rule reads,
             // so the lit floor is an honest picture of what the officer can see.
-            beam.range = PawsAndLoot.Gameplay.Players
+            beam.range = PawliceAndPurrglar.Gameplay.Players
                 .FlashlightCone.RangeMeters;
-            beam.spotAngle = PawsAndLoot.Gameplay.Players
+            beam.spotAngle = PawliceAndPurrglar.Gameplay.Players
                 .FlashlightCone.SpotAngleDegrees;
-            beam.innerSpotAngle = PawsAndLoot.Gameplay.Players
+            beam.innerSpotAngle = PawliceAndPurrglar.Gameplay.Players
                 .FlashlightCone.SpotAngleDegrees * 0.5f;
             beam.intensity = 7f;
             beam.color = new Color(1f, 0.96f, 0.82f);
@@ -767,7 +767,7 @@ namespace PawsAndLoot.Editor
             beam.shadows = LightShadows.None;
 
             police.AddComponent<
-                    PawsAndLoot.Gameplay.Players.PoliceFlashlight>()
+                    PawliceAndPurrglar.Gameplay.Players.PoliceFlashlight>()
                 .Configure(beam, matchRuntime);
 
             // The wedge on the ground, shown to both players. The thief needs it
@@ -779,7 +779,7 @@ namespace PawsAndLoot.Editor
             var coneObject = new GameObject("Flashlight Cone View");
             coneObject.transform.SetParent(police.transform, false);
             coneObject.AddComponent<
-                    PawsAndLoot.Animation.FlashlightConeView>()
+                    PawliceAndPurrglar.Animation.FlashlightConeView>()
                 .Configure(
                     identity,
                     matchRuntime,
@@ -1233,7 +1233,7 @@ namespace PawsAndLoot.Editor
             Transform root = CreateChild("Companions", parent);
             root.localPosition = Vector3.zero;
             CompanionConfig config = LoadCompanionConfig();
-            PawsAndLoot.Config.PetCognitionConfig cognitionConfig =
+            PawliceAndPurrglar.Config.PetCognitionConfig cognitionConfig =
                 LoadPetCognitionConfig();
 
             // DOG-003 and CAT-004 shared services. The trail lives on the
@@ -1353,17 +1353,17 @@ namespace PawsAndLoot.Editor
                 //
                 // Created before the body animator because the body takes its
                 // rhythm from the legs.
-                PawsAndLoot.Animation.CompanionLegAnimator legs =
+                PawliceAndPurrglar.Animation.CompanionLegAnimator legs =
                     agentObject.AddComponent<
-                        PawsAndLoot.Animation.CompanionLegAnimator>();
+                        PawliceAndPurrglar.Animation.CompanionLegAnimator>();
                 legs.Configure(visualRoot);
 
                 // Quadrupeds have no clips, so movement is faked on the visual
                 // child only, never on the collider root. The body rise follows
                 // the legs' footfalls rather than a timer of its own.
-                PawsAndLoot.Animation.CompanionProceduralAnimator hop =
+                PawliceAndPurrglar.Animation.CompanionProceduralAnimator hop =
                     agentObject.AddComponent<
-                        PawsAndLoot.Animation.
+                        PawliceAndPurrglar.Animation.
                             CompanionProceduralAnimator>();
                 hop.Configure(agent, visualRoot, legs);
 
@@ -1408,11 +1408,11 @@ namespace PawsAndLoot.Editor
             // session capability and backend URL are injected when the network
             // session is established; no secret is serialized into the scene.
             var targetRegistry = root.gameObject.AddComponent<
-                PawsAndLoot.Integration.Voice.CompanionTargetRegistry>();
+                PawliceAndPurrglar.Integration.Voice.CompanionTargetRegistry>();
             var backendSocket = root.gameObject.AddComponent<
-                PawsAndLoot.Integration.Voice.VoiceBackendSocketClient>();
+                PawliceAndPurrglar.Integration.Voice.VoiceBackendSocketClient>();
             var voiceBridge = root.gameObject.AddComponent<
-                PawsAndLoot.Integration.Voice.CompanionVoiceCommandBridge>();
+                PawliceAndPurrglar.Integration.Voice.CompanionVoiceCommandBridge>();
             voiceBridge.Configure(
                 dispatcher,
                 backendSocket,
@@ -1438,7 +1438,7 @@ namespace PawsAndLoot.Editor
                     && binding.KeyboardInput.IsLocallyControlled);
 
                 var voiceInput = binding.Identity.gameObject.AddComponent<
-                    PawsAndLoot.Integration.Voice.VoiceCommandInput>();
+                    PawliceAndPurrglar.Integration.Voice.VoiceCommandInput>();
                 voiceInput.Configure(
                     LoadVoiceConfig(),
                     string.Empty,
@@ -1460,9 +1460,9 @@ namespace PawsAndLoot.Editor
                     .GetComponentInChildren<Animator>(true);
                 if (playerAnimator != null)
                 {
-                    PawsAndLoot.Animation.CharacterOutcomeAnimator outcome =
+                    PawliceAndPurrglar.Animation.CharacterOutcomeAnimator outcome =
                         binding.Identity.gameObject.AddComponent<
-                            PawsAndLoot.Animation.
+                            PawliceAndPurrglar.Animation.
                                 CharacterOutcomeAnimator>();
                     outcome.Configure(
                         playerAnimator,
@@ -1572,21 +1572,21 @@ namespace PawsAndLoot.Editor
                     player.GetComponent<LootCarrier>(),
                     player.GetComponent<LootDropInput>(),
                     player.GetComponent<
-                        PawsAndLoot.Input.CompanionCommandKeyboardInput>(),
+                        PawliceAndPurrglar.Input.CompanionCommandKeyboardInput>(),
                     player.GetComponent<ThiefLootWallet>(),
                     player.GetComponent<ArrestProgressController>(),
                     player.GetComponent<
-                        PawsAndLoot.Gameplay.Items.ToolUseAction>(),
+                        PawliceAndPurrglar.Gameplay.Items.ToolUseAction>(),
                     player.GetComponent<
-                        PawsAndLoot.Gameplay.Items.ToolUseInput>(),
+                        PawliceAndPurrglar.Gameplay.Items.ToolUseInput>(),
                     player.GetComponent<StunState>(),
                     player.GetComponent<
-                        PawsAndLoot.Animation.ThrowPresenter>(),
+                        PawliceAndPurrglar.Animation.ThrowPresenter>(),
                     player.GetComponent<
-                        PawsAndLoot.Gameplay.Items.ToolCarrier>(),
+                        PawliceAndPurrglar.Gameplay.Items.ToolCarrier>(),
                     player.GetComponent<PoliceWallet>(),
                     player.GetComponent<
-                        PawsAndLoot.Animation.CompanionLegAnimator>(),
+                        PawliceAndPurrglar.Animation.CompanionLegAnimator>(),
                     player.GetComponent<PlayerInteriorState>(),
                     FindCompanionFace(binding.Identity));
                 links.Add(link);
@@ -1615,7 +1615,7 @@ namespace PawsAndLoot.Editor
             var matchProbe = new GameObject("Network Match Probe");
             matchProbe.transform.SetParent(parent);
             matchProbe.AddComponent<
-                PawsAndLoot.TechnicalValidation.NetworkMatchProbe>();
+                PawliceAndPurrglar.TechnicalValidation.NetworkMatchProbe>();
 
             // Says out loud when the two machines are running different
             // builds. Regenerating this scene renumbers every in-scene
@@ -1643,11 +1643,11 @@ namespace PawsAndLoot.Editor
             // about whoever happened to be near it.
             var noiseObject = new GameObject("Noise Board");
             noiseObject.transform.SetParent(parent);
-            PawsAndLoot.Gameplay.Sensing.NoiseBoard noiseBoard =
+            PawliceAndPurrglar.Gameplay.Sensing.NoiseBoard noiseBoard =
                 noiseObject.AddComponent<
-                    PawsAndLoot.Gameplay.Sensing.NoiseBoard>();
+                    PawliceAndPurrglar.Gameplay.Sensing.NoiseBoard>();
             noiseObject
-                .AddComponent<PawsAndLoot.Animation.NoisePingView>()
+                .AddComponent<PawliceAndPurrglar.Animation.NoisePingView>()
                 .Configure(
                     noiseBoard,
                     LoadOrCreateMaterial(
@@ -2201,7 +2201,7 @@ namespace PawsAndLoot.Editor
 
             var drawObject = new GameObject("Black Market Draw");
             drawObject.transform.SetParent(root);
-            drawObject.AddComponent<PawsAndLoot.Gameplay.Loot.BlackMarketDraw>()
+            drawObject.AddComponent<PawliceAndPurrglar.Gameplay.Loot.BlackMarketDraw>()
                 .Configure(matchRuntime, holders);
 
             Debug.Log(
@@ -2753,7 +2753,7 @@ namespace PawsAndLoot.Editor
         /// <summary>
         /// Builds the five corners and the draw between them.
         /// </summary>
-        private static PawsAndLoot.Gameplay.Players.ThiefSpawnPoints
+        private static PawliceAndPurrglar.Gameplay.Players.ThiefSpawnPoints
             CreateThiefSpawnPoints(Transform parent, Color thiefColor)
         {
             var holder = new GameObject("Thief Spawn Points");
@@ -2768,9 +2768,9 @@ namespace PawsAndLoot.Editor
                 anchors.Add(anchor.transform);
             }
 
-            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints draw =
+            PawliceAndPurrglar.Gameplay.Players.ThiefSpawnPoints draw =
                 holder.AddComponent<
-                    PawsAndLoot.Gameplay.Players.ThiefSpawnPoints>();
+                    PawliceAndPurrglar.Gameplay.Players.ThiefSpawnPoints>();
             draw.Configure(anchors);
             Debug.Log(
                 $"[MAP-001] {anchors.Count} thief spawn corners placed.");
@@ -3122,9 +3122,9 @@ namespace PawsAndLoot.Editor
             if (characterAnimator != null
                 && characterAnimator.runtimeAnimatorController != null)
             {
-                PawsAndLoot.Animation.PlayerLocomotionAnimator locomotion =
+                PawliceAndPurrglar.Animation.PlayerLocomotionAnimator locomotion =
                     player.AddComponent<
-                        PawsAndLoot.Animation.PlayerLocomotionAnimator>();
+                        PawliceAndPurrglar.Animation.PlayerLocomotionAnimator>();
                 locomotion.Configure(
                     motor,
                     characterAnimator,
@@ -3139,12 +3139,12 @@ namespace PawsAndLoot.Editor
             // Contralateral biped gait, not the animals' four-beat lateral walk.
             if (characterAnimator != null)
             {
-                PawsAndLoot.Animation.CompanionLegAnimator stride =
+                PawliceAndPurrglar.Animation.CompanionLegAnimator stride =
                     player.AddComponent<
-                        PawsAndLoot.Animation.CompanionLegAnimator>();
+                        PawliceAndPurrglar.Animation.CompanionLegAnimator>();
                 stride.Configure(
                     characterAnimator.transform,
-                    PawsAndLoot.Animation.CompanionLegAnimator
+                    PawliceAndPurrglar.Animation.CompanionLegAnimator
                         .GaitMode.Biped,
                     characterAnimator);
 
@@ -3228,12 +3228,12 @@ namespace PawsAndLoot.Editor
 
             // THROW-001/002/003. A prop slot separate from the loot slot, so
             // picking up a rock never costs the thief their jewels.
-            player.AddComponent<PawsAndLoot.Gameplay.Players.StunState>();
+            player.AddComponent<PawliceAndPurrglar.Gameplay.Players.StunState>();
 
             // What the octopus lands on. Separate from the stun because the two
             // stack and mean different things — held still and able to see, or
             // running blind, or both.
-            player.AddComponent<PawsAndLoot.Gameplay.Players.BlindedState>();
+            player.AddComponent<PawliceAndPurrglar.Gameplay.Players.BlindedState>();
 
             // MAP-008. Which house this player is inside, if any. Read by the
             // doorway, the indoor camera and the dog's report.
@@ -3245,25 +3245,25 @@ namespace PawsAndLoot.Editor
             // who is simply cornered.
             player.AddComponent<InteriorEscapeHatch>()
                 .Configure(interiorState);
-            PawsAndLoot.Gameplay.Items.ToolCarrier toolCarrier =
-                player.AddComponent<PawsAndLoot.Gameplay.Items.ToolCarrier>();
+            PawliceAndPurrglar.Gameplay.Items.ToolCarrier toolCarrier =
+                player.AddComponent<PawliceAndPurrglar.Gameplay.Items.ToolCarrier>();
             toolCarrier.Configure(identity, matchRuntime);
             toolCarrier.ConfigureDefaultLoadout(true);
-            PawsAndLoot.Input.QuickSlotKeyboardInput quickSlotInput =
-                player.AddComponent<PawsAndLoot.Input.QuickSlotKeyboardInput>();
+            PawliceAndPurrglar.Input.QuickSlotKeyboardInput quickSlotInput =
+                player.AddComponent<PawliceAndPurrglar.Input.QuickSlotKeyboardInput>();
             quickSlotInput.Configure(toolCarrier, locallyControlled);
-            PawsAndLoot.Gameplay.Items.ToolUseAction toolUse =
-                player.AddComponent<PawsAndLoot.Gameplay.Items.ToolUseAction>();
+            PawliceAndPurrglar.Gameplay.Items.ToolUseAction toolUse =
+                player.AddComponent<PawliceAndPurrglar.Gameplay.Items.ToolUseAction>();
             toolUse.Configure(identity, toolCarrier, Physics.AllLayers);
-            PawsAndLoot.Gameplay.Items.ToolUseInput toolInput =
-                player.AddComponent<PawsAndLoot.Gameplay.Items.ToolUseInput>();
+            PawliceAndPurrglar.Gameplay.Items.ToolUseInput toolInput =
+                player.AddComponent<PawliceAndPurrglar.Gameplay.Items.ToolUseInput>();
             toolInput.Configure(toolUse, locallyControlled);
 
             // THROW-008. The swing and the flying rock. Subscribes to the throw
             // itself, so it plays wherever the throw was resolved; the other
             // machine is told by the network link.
-            PawsAndLoot.Animation.ThrowPresenter throwPresenter =
-                player.AddComponent<PawsAndLoot.Animation.ThrowPresenter>();
+            PawliceAndPurrglar.Animation.ThrowPresenter throwPresenter =
+                player.AddComponent<PawliceAndPurrglar.Animation.ThrowPresenter>();
             throwPresenter.Configure(
                 toolUse,
                 player.transform,
@@ -3273,10 +3273,10 @@ namespace PawsAndLoot.Editor
 
             // Stars over a stunned head. Both screens: landing a hit is most of
             // the reward for throwing, and the thrower has to be able to see it.
-            player.AddComponent<PawsAndLoot.Animation.StunStarsView>()
+            player.AddComponent<PawliceAndPurrglar.Animation.StunStarsView>()
                 .Configure(
                     player.GetComponent<
-                        PawsAndLoot.Gameplay.Players.StunState>(),
+                        PawliceAndPurrglar.Gameplay.Players.StunState>(),
                     // Flat, saturated yellow at full alpha. Unlit, so it stays
                     // this bright at night — a stun read as "the game froze"
                     // when it was subtle, and the fix for that is a colour
@@ -3296,10 +3296,10 @@ namespace PawsAndLoot.Editor
             // A banana spins instead. Same second of control, same guard, a
             // different accident on the screen — the stars above now stay out of
             // the way when the cause is a slip.
-            player.AddComponent<PawsAndLoot.Animation.SlipSpinView>()
+            player.AddComponent<PawliceAndPurrglar.Animation.SlipSpinView>()
                 .Configure(
                     player.GetComponent<
-                        PawsAndLoot.Gameplay.Players.StunState>(),
+                        PawliceAndPurrglar.Gameplay.Players.StunState>(),
                     player.transform.Find("VisualRoot"));
 
             // Per-screen night adaptation. The thief's is brighter — they are the
@@ -3316,7 +3316,7 @@ namespace PawsAndLoot.Editor
                 // the officer's screen and purely visual — the host still
                 // simulates an invisible thief exactly the same way.
                 player.AddComponent<
-                        PawsAndLoot.Gameplay.Players.FlashlightVisibility>()
+                        PawliceAndPurrglar.Gameplay.Players.FlashlightVisibility>()
                     .Configure(identity, matchRuntime);
 
                 // DOG-003's trail, finally drawn. Shown only while the dog is
@@ -3327,7 +3327,7 @@ namespace PawsAndLoot.Editor
                     player.transform,
                     false);
                 trailViewObject
-                    .AddComponent<PawsAndLoot.Animation.ScentTrailView>()
+                    .AddComponent<PawliceAndPurrglar.Animation.ScentTrailView>()
                     .Configure(
                         null,
                         null,
@@ -3368,7 +3368,7 @@ namespace PawsAndLoot.Editor
                 lootDropInput);
         }
 
-        private static PawsAndLoot.Gameplay.Camera.TopDownFollowCamera
+        private static PawliceAndPurrglar.Gameplay.Camera.TopDownFollowCamera
             ConfigurePlayerFollowCamera(Transform initialTarget)
         {
             if (Camera.main == null)
@@ -3378,7 +3378,7 @@ namespace PawsAndLoot.Editor
             }
 
             var followCamera = Camera.main.gameObject.AddComponent<
-                PawsAndLoot.Gameplay.Camera.TopDownFollowCamera>();
+                PawliceAndPurrglar.Gameplay.Camera.TopDownFollowCamera>();
             followCamera.Configure(
                 initialTarget,
                 FixedCameraOffset,
@@ -3395,7 +3395,7 @@ namespace PawsAndLoot.Editor
             // would put two of them between the camera and the player.
             Camera.main.gameObject
                 .AddComponent<
-                    PawsAndLoot.Gameplay.Camera.InteriorOrbitCamera>()
+                    PawliceAndPurrglar.Gameplay.Camera.InteriorOrbitCamera>()
                 .Configure(
                     followCamera,
                     UnityEngine.Object
@@ -3408,7 +3408,7 @@ namespace PawsAndLoot.Editor
             // missing.
             Camera.main.gameObject
                 .AddComponent<
-                    PawsAndLoot.Gameplay.Camera.InteriorCutawayView>()
+                    PawliceAndPurrglar.Gameplay.Camera.InteriorCutawayView>()
                 .Configure(
                     UnityEngine.Object
                         .FindFirstObjectByType<
@@ -3438,7 +3438,7 @@ namespace PawsAndLoot.Editor
         /// components and picking the first one would give the thief the dog's
         /// face.
         /// </summary>
-        private static PawsAndLoot.Animation.CompanionExpressionView
+        private static PawliceAndPurrglar.Animation.CompanionExpressionView
             FindCompanionFace(PlayerRoleIdentity owner)
         {
             foreach (CompanionAgent agent in
@@ -3449,7 +3449,7 @@ namespace PawsAndLoot.Editor
                 if (agent.Owner == owner.transform)
                 {
                     return agent.GetComponent<
-                        PawsAndLoot.Animation.CompanionExpressionView>();
+                        PawliceAndPurrglar.Animation.CompanionExpressionView>();
                 }
             }
 
@@ -3601,7 +3601,7 @@ namespace PawsAndLoot.Editor
             IReadOnlyList<PlayerRoleControlBinding> bindings,
             MatchRuntimeState matchRuntime,
             GreyboxMapDefinition map,
-            PawsAndLoot.Gameplay.Players.ThiefSpawnPoints thiefSpawns)
+            PawliceAndPurrglar.Gameplay.Players.ThiefSpawnPoints thiefSpawns)
         {
             PlayerRoleIdentity police = null;
             PlayerRoleIdentity thief = null;
@@ -3686,7 +3686,7 @@ namespace PawsAndLoot.Editor
             // for: the officer knew where the opening ten seconds would be
             // spent even without knowing where the next thirty would.
             thief.gameObject
-                .AddComponent<PawsAndLoot.Gameplay.Players.ThiefStartSpawn>()
+                .AddComponent<PawliceAndPurrglar.Gameplay.Players.ThiefStartSpawn>()
                 .Configure(
                     matchRuntime,
                     thiefSpawns,
@@ -3732,7 +3732,7 @@ namespace PawsAndLoot.Editor
         private static LocalPlayerRoleSelector CreateLocalRoleSelector(
             Transform parent,
             IEnumerable<PlayerRoleControlBinding> bindings,
-            PawsAndLoot.Gameplay.Camera.TopDownFollowCamera followCamera)
+            PawliceAndPurrglar.Gameplay.Camera.TopDownFollowCamera followCamera)
         {
             var selectorObject = new GameObject("Local Player Role Selector");
             selectorObject.transform.SetParent(parent);
@@ -3971,7 +3971,7 @@ namespace PawsAndLoot.Editor
                     TrashBinHeight * 0.77f);
 
                 holder.gameObject
-                    .AddComponent<PawsAndLoot.Gameplay.Players.PlayerHidingSpot>()
+                    .AddComponent<PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot>()
                     .Configure(matchRuntime, anchor);
                 made++;
             }
@@ -4045,7 +4045,7 @@ namespace PawsAndLoot.Editor
             // outcome the player cannot predict.
             Transform berth = CreateChild("Occupant", target.transform);
             berth.localPosition = new Vector3(0f, -0.55f, 0f);
-            target.AddComponent<PawsAndLoot.Gameplay.Players.PlayerHidingSpot>()
+            target.AddComponent<PawliceAndPurrglar.Gameplay.Players.PlayerHidingSpot>()
                 .Configure(matchRuntime, berth);
 
             LootHidingSpot spot = target.AddComponent<LootHidingSpot>();
@@ -5770,14 +5770,14 @@ namespace PawsAndLoot.Editor
             return config;
         }
 
-        private static PawsAndLoot.Config.PetCognitionConfig
+        private static PawliceAndPurrglar.Config.PetCognitionConfig
             LoadPetCognitionConfig()
         {
             const string path =
                 "Assets/_Project/Settings/Configs/PetCognitionConfig.asset";
-            PawsAndLoot.Config.PetCognitionConfig config =
+            PawliceAndPurrglar.Config.PetCognitionConfig config =
                 AssetDatabase.LoadAssetAtPath<
-                    PawsAndLoot.Config.PetCognitionConfig>(path);
+                    PawliceAndPurrglar.Config.PetCognitionConfig>(path);
             if (config == null)
             {
                 throw new InvalidOperationException(
@@ -5788,13 +5788,13 @@ namespace PawsAndLoot.Editor
             return config;
         }
 
-        private static PawsAndLoot.Config.VoiceConfig LoadVoiceConfig()
+        private static PawliceAndPurrglar.Config.VoiceConfig LoadVoiceConfig()
         {
             const string path =
                 "Assets/_Project/Settings/Configs/VoiceConfig.asset";
-            PawsAndLoot.Config.VoiceConfig config =
+            PawliceAndPurrglar.Config.VoiceConfig config =
                 AssetDatabase.LoadAssetAtPath<
-                    PawsAndLoot.Config.VoiceConfig>(path);
+                    PawliceAndPurrglar.Config.VoiceConfig>(path);
             if (config == null)
             {
                 throw new InvalidOperationException(
