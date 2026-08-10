@@ -62,6 +62,7 @@ D. 음성 서버 .env
 E. WebGL 릴리스 빌드          PawliceAndPurrglar > Build > Build WebGL Release
 F. 업로드                     deploy/upload.ps1
 G. 2인 실측
+H. GitHub Pages               같은 산출물을 두 번째 주소로
 ```
 
 ---
@@ -275,6 +276,42 @@ curl    https://pawlice.duckdns.org/health    # {"status":"ok"}
 - [ ] 결과 화면의 승자가 양쪽에서 같다
 - [ ] 마이크 권한 팝업이 뜬다 (https가 제대로 걸렸다는 증거)
 - [ ] 재경기가 양쪽을 로비로 되돌린다
+
+### H. GitHub Pages — 같은 빌드를 두 번째 주소에서도 연다
+
+제출 요강이 "링크 클릭만으로 브라우저에서 바로 플레이"를 요구하고, 링크가 하나면
+그 하나가 죽었을 때 제출물이 통째로 죽는다. Pages는 우리가 관리하지 않으므로
+EC2가 멈춰도 게임은 열린다 — 그때 안 되는 것은 음성뿐이다.
+
+**올리는 것은 EC2와 완전히 같은 산출물이다.** 빌드를 두 번 하지 않는다.
+
+```bash
+cd C:/Users/SSAFY/paws-github && git checkout --orphan gh-pages && git rm -rq --cached . && cp -r Builds/Release/WebGL/. . && rm -rf PawliceAndPurrglar_BurstDebugInformation_DoNotShip && touch .nojekyll && git add -A && git commit -q -m "chore: WebGL 릴리스 배포" && git push -q -u origin gh-pages && git checkout main
+```
+
+그 다음 저장소 **Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`**.
+주소는 `https://<계정>.github.io/PawliceAndPurrglar/` 가 된다.
+
+세 가지가 이 배포를 조용히 죽인다.
+
+1. **`.nojekyll`이 없으면** Pages가 Jekyll을 돌리고 `_`로 시작하는 파일을 버린다.
+   빈 화면이 뜨고 404 하나만 남는다.
+2. **압축 해제 폴백이 꺼져 있으면** 흰 화면이다. Pages는 `Content-Encoding` 헤더를
+   넣을 수 없어서 gzip으로 구운 `.unityweb`을 브라우저가 못 푼다.
+   `webGLDecompressionFallback: 1`이 켜져 있어야 하고, 지금 켜져 있다.
+3. **음성 백엔드 주소가 페이지 오리진이면** `V`만 조용히 실패한다. Pages에는 API가
+   없다. `VoiceConfig.backendBaseUrl`이 EC2를 가리켜야 하고, EC2의
+   `VOICE_ALLOWED_ORIGINS`에 Pages 오리진이 들어 있어야 한다 — 둘 중 하나만
+   빠져도 증상은 똑같이 "마이크가 안 된다"로 보인다.
+
+확인:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://<계정>.github.io/PawliceAndPurrglar/
+```
+
+그리고 브라우저에서 **실제로 `V`를 눌러 본다.** 200이 뜨는 것과 음성이 되는 것은
+다른 사실이고, 위 3번은 200을 그대로 통과한다.
 
 ## 3. 두 프로세스 회귀 (개발 PC)
 
