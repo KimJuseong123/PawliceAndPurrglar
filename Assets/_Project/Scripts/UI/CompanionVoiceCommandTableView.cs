@@ -104,7 +104,22 @@ namespace PawliceAndPurrglar.UI
             }
         }
 
+        /// <summary>
+        /// Registered rather than installed here.
+        ///
+        /// This callback fires once per run of the game, after the **first**
+        /// scene loads — and in a build that is `Bootstrap`, the lobby, where
+        /// there is no animal and so the guard below refused. It never ran again,
+        /// so **the table did not exist in a single built match.** It works in
+        /// the editor because pressing Play with `Game` open fires the callback
+        /// after that scene loaded, which is also why every test passed.
+        /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Hook()
+        {
+            MatchSceneInstaller.Register(Install);
+        }
+
         private static void Install()
         {
             // Only where there is a match. Bootstrap and Result have no animal

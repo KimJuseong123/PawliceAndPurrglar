@@ -44,7 +44,18 @@ namespace PawliceAndPurrglar.UI
         private CanvasGroup _group;
         private float _peakAlpha;
 
+        /// <summary>
+        /// Registered per match scene, not installed once at startup. The
+        /// callback fires after the **first** scene loads, so anything built
+        /// here belonged to the lobby and was destroyed by the load that opened
+        /// the match — see <see cref="MatchSceneInstaller"/>.
+        /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Hook()
+        {
+            MatchSceneInstaller.Register(Install);
+        }
+
         private static void Install()
         {
             if (FindFirstObjectByType<InkBlindOverlayView>() != null)

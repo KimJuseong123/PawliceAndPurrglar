@@ -123,19 +123,59 @@ namespace PawliceAndPurrglar.UI
         /// together — and it would fail by reporting the wrong room's shelves,
         /// which is worse than reporting none.
         /// </summary>
-        private static LootSpotDraw FindDrawForInterior(int interiorId)
+        private LootSpotDraw FindDrawForInterior(int interiorId)
         {
+            // Held between frames, and this is not a micro-optimisation.
+            //
+            // The sweep below walks every object in the scene, and the scene
+            // holds the whole town plus nineteen rooms. It used to run **every
+            // frame the player was indoors** — the one place in the game where
+            // frame time is already spent on a room being looked at closely —
+            // which is exactly the "it gets slow when I go into the supermarket"
+            // report, and exactly what CLAUDE.md says not to do.
+            //
+            // Keyed by the room's id so walking out of one shop and into another
+            // still re-resolves, and re-swept when the held reference has gone
+            // (a Unity null check, so a room destroyed with its scene reads as
+            // gone rather than as a live reference to nothing).
+            bool sameRoom = _cachedDrawInteriorId == interiorId;
+            if (sameRoom && (_cachedDraw != null || _cachedDrawAbsent))
+            {
+                return _cachedDraw;
+            }
+
+            _cachedDrawInteriorId = interiorId;
+            _cachedDraw = null;
             foreach (HouseInterior room in
                 FindObjectsByType<HouseInterior>(FindObjectsSortMode.None))
             {
                 if (room.InteriorId == interiorId)
                 {
-                    return room.GetComponent<LootSpotDraw>();
+                    _cachedDraw = room.GetComponent<LootSpotDraw>();
+                    break;
                 }
             }
 
-            return null;
+            _cachedDrawAbsent = _cachedDraw == null;
+            return _cachedDraw;
         }
+
+        private LootSpotDraw _cachedDraw;
+
+        /// <summary>
+        /// Which room <see cref="_cachedDraw"/> belongs to.
+        /// </summary>
+        private int _cachedDrawInteriorId = int.MinValue;
+
+        /// <summary>
+        /// Whether that room was swept and genuinely has no draw.
+        ///
+        /// Needed because "no draw" is an answer worth remembering: without it a
+        /// room with unmarked shelves — the jail, or any room the loot pass has
+        /// not reached — would fail the cache check on every frame and sweep the
+        /// scene again, which is the cost this exists to remove.
+        /// </summary>
+        private bool _cachedDrawAbsent;
 
         private void Update()
         {

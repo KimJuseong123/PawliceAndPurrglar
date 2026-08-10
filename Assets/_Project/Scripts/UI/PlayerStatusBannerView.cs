@@ -109,7 +109,18 @@ namespace PawliceAndPurrglar.UI
 
         public string LabelText => _label != null ? _label.text : string.Empty;
 
+        /// <summary>
+        /// Registered per match scene, not installed once at startup. The
+        /// callback fires after the **first** scene loads, so anything built
+        /// here belonged to the lobby and was destroyed by the load that opened
+        /// the match — see <see cref="MatchSceneInstaller"/>.
+        /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Hook()
+        {
+            MatchSceneInstaller.Register(Install);
+        }
+
         private static void Install()
         {
             if (FindFirstObjectByType<PlayerStatusBannerView>() != null)

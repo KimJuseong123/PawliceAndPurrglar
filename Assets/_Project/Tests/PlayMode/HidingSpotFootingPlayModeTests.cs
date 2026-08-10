@@ -52,6 +52,34 @@ namespace PawliceAndPurrglar.Tests.PlayMode
         }
 
         /// <summary>
+        /// Leaves an empty scene behind rather than the town.
+        ///
+        /// A fixture that stops with the map loaded hands the next one a scene
+        /// full of buildings, and the next one along may create a bare player at
+        /// the origin and assert that it can walk. See
+        /// <see cref="MatchSceneInstallerPlayModeTests"/>, where exactly that
+        /// happened.
+        /// </summary>
+        [UnityTearDown]
+        public IEnumerator TearDownScene()
+        {
+            Scene loaded = SceneManager.GetActiveScene();
+            if (!loaded.name.Equals(
+                    GameSceneCatalog.GetName(GameSceneId.Game),
+                    System.StringComparison.OrdinalIgnoreCase))
+            {
+                yield break;
+            }
+
+            Scene empty = SceneManager.CreateScene(
+                $"HidingFootingCleanup{_cleanups++}");
+            SceneManager.SetActiveScene(empty);
+            yield return SceneManager.UnloadSceneAsync(loaded);
+        }
+
+        private static int _cleanups;
+
+        /// <summary>
         /// Every spot, and the frame of the press counts.
         ///
         /// The same-frame sample is the one that fails on the old code: entering

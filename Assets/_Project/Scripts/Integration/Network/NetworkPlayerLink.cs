@@ -419,6 +419,27 @@ namespace PawliceAndPurrglar.Integration.Network
         [SerializeField, Range(0.02f, 0.4f)]
         private float followSmoothSeconds = 0.09f;
 
+        /// <summary>
+        /// The same time constant for the character **this** machine is
+        /// steering, and it is deliberately much shorter.
+        ///
+        /// The two cases are not the same problem. For the opponent and the
+        /// animals, smoothing is all upside: nobody is comparing their motion
+        /// against a key they just pressed, so absorbing a late packet is free.
+        /// For your own body it is added to the input lag you already pay — a
+        /// guest's key travels to the host, the host simulates, the position
+        /// comes back — and then 90 ms of easing was laid on top of the round
+        /// trip. Three quarters of that is now gone, and the round trip itself is
+        /// untouched because it is the authority model rather than a number.
+        ///
+        /// Still smoothing, not snapping. At a 60 Hz tick, 30 ms is about two
+        /// ticks, which is enough to swallow a single late packet — and snapping
+        /// exactly to the last received position is how a character judders on
+        /// every frame that has no packet.
+        /// </summary>
+        [SerializeField, Range(0.01f, 0.2f)]
+        private float ownerFollowSmoothSeconds = 0.03f;
+
         private Vector3 _followVelocity;
 
         private Vector2 _submittedMove;
@@ -449,6 +470,25 @@ namespace PawliceAndPurrglar.Integration.Network
 
         public PlayerRole Role =>
             identity != null ? identity.Role : PlayerRole.Police;
+
+        /// <summary>
+        /// Whether the person at this keyboard is steering this character.
+        ///
+        /// Asked of the role rather than of NGO ownership on purpose: the host
+        /// owns both player objects — it simulates both — so <c>IsOwner</c> is
+        /// true for the opponent as well and would be the wrong question. The
+        /// role a machine controls is the same fact the input bridge uses to
+        /// decide whose keys it is sending.
+        ///
+        /// Cheap enough for a per-frame call: the selector is held in a static
+        /// after the first lookup.
+        /// </summary>
+        private bool IsSteeredHere()
+        {
+            return LocalPlayerRoleSelector.TryResolveLocalRole(
+                    out PlayerRole local)
+                && local == Role;
+        }
         public Vector3 ReplicatedPosition => _position.Value;
         public float ReplicatedNormalizedSpeed => _normalizedSpeed.Value;
         public bool IsRemoteDriven => _remoteDriven;
@@ -1536,7 +1576,7 @@ namespace PawliceAndPurrglar.Integration.Network
                 _position.Value,
                 ref _followVelocity,
                 snapDistance,
-                followSmoothSeconds,
+                IsSteeredHere() ? ownerFollowSmoothSeconds : followSmoothSeconds,
                 catchUpSpeed,
                 deltaTime);
             transform.rotation = Quaternion.Slerp(

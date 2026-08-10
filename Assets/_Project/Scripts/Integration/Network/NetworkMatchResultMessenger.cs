@@ -173,6 +173,24 @@ namespace PawliceAndPurrglar.Integration.Network
                 + $"{result.Reason}.",
                 this);
 
+            // Written straight into the store the result screen reads, before
+            // anything in the match scene is asked to do anything.
+            //
+            // The chain that used to be the only path here — evaluator raises,
+            // flow controller stores — is three links long and **every link
+            // lives in the match scene the host's own scene load is unloading**.
+            // `ResolveEvaluator()` returning null, or the flow controller's
+            // `CurrentState != Ending` guard refusing because the state mirror
+            // had not caught up yet, both end the same way: the client rides the
+            // host's scene change to the result screen with an empty store and
+            // gets the "no result" fallback. Which of those happened depended on
+            // packet order, so the screen was right often enough to look like a
+            // different bug.
+            //
+            // This is the same lesson as the purse below it, which was carried
+            // the last few feet for exactly the same reason.
+            MatchResultSession.AdoptAuthoritative(result);
+
             ResolveEvaluator()?.AdoptDecidedResult(result);
             AdoptPurse(result.SoldAmount);
         }

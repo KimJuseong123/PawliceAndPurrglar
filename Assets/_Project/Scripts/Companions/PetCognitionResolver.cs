@@ -36,11 +36,28 @@ namespace PawliceAndPurrglar.Companions
             float attention = Mathf.Clamp01(context.attention);
             float distraction = Mathf.Clamp01(context.distraction);
             float familiarity = Mathf.Clamp01(context.commandFamiliarity);
-            float score = Mathf.Clamp01(
+
+            // What the animal *understood*. Obedience is deliberately not in
+            // here, and taking it out is a bug fix rather than a tuning change.
+            //
+            // It used to multiply into this number as well as decide the roll
+            // below, so willingness was charged twice — and for the cat that
+            // made the correct branch **arithmetically unreachable**. With the
+            // shipped configuration the best possible score was
+            // 1.0 x 1.0 x 0.85 x 0.52 x 0.95 = 0.42 against a threshold of 0.78,
+            // so a perfectly heard "훔쳐" could not be obeyed on any roll, on any
+            // frame, for any player. It fell through to the roll and was ignored
+            // about three times in five; the rest of the time it arrived as
+            // "misunderstood" or as the *second* candidate. That is the whole of
+            // "말은 알아듣는데 아무것도 안 한다".
+            //
+            // Hearing and willingness are different questions and are now asked
+            // separately: this decides whether the animal understood, and
+            // obedience decides whether it can be bothered.
+            float comprehension = Mathf.Clamp01(
                 first.confidence
                 * familiarity
                 * attention
-                * obedience
                 * (1f - distraction));
 
             System.Random random = new(randomSeed);
@@ -55,21 +72,13 @@ namespace PawliceAndPurrglar.Companions
                     "ABSOLUTE_COMMAND");
             }
 
-            float correctThreshold = ResolveCorrectThreshold(context.petKind);
-            if (score >= correctThreshold)
-            {
-                return CreateDecision(
-                    PetCommandResultType.Correct,
-                    first,
-                    context,
-                    randomSeed,
-                    context.petKind == CompanionKind.Dog
-                        ? PetReactionType.Overexcited
-                        : PetReactionType.Listen,
-                    "HIGH_CONFIDENCE");
-            }
-
-            if (context.petKind == CompanionKind.Cat && random.NextDouble() > score)
+            // The cat's own decision, taken before comprehension is scored: a cat
+            // that cannot be bothered does not need to have understood you. This
+            // is the only place obedience is spent, so the configured 0.52 now
+            // means what it reads as — about half of what you say gets done —
+            // instead of meaning "never, plus a coin flip about how it fails".
+            if (context.petKind == CompanionKind.Cat
+                && random.NextDouble() > obedience)
             {
                 PetReactionType reaction = distraction > 0.25f
                     ? PetReactionType.DistractedByNoise
@@ -85,8 +94,22 @@ namespace PawliceAndPurrglar.Companions
                     distraction > 0.25f ? "DISTRACTED" : "CAT_IGNORED");
             }
 
+            float correctThreshold = ResolveCorrectThreshold(context.petKind);
+            if (comprehension >= correctThreshold)
+            {
+                return CreateDecision(
+                    PetCommandResultType.Correct,
+                    first,
+                    context,
+                    randomSeed,
+                    context.petKind == CompanionKind.Dog
+                        ? PetReactionType.Overexcited
+                        : PetReactionType.Listen,
+                    "HIGH_CONFIDENCE");
+            }
+
             if (candidates.Length > 1
-                && score >= ResolveConfusedThreshold())
+                && comprehension >= ResolveConfusedThreshold())
             {
                 VoiceIntentCandidate alternative = candidates[1];
                 return CreateDecision(
