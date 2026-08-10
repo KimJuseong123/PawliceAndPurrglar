@@ -41,10 +41,19 @@ namespace PawliceAndPurrglar.Gameplay.Players
         public bool IsOccupied => Occupant != null && Occupant.IsHiding;
 
         /// <summary>
-        /// Where the hidden character is parked. Sunk into the bin rather than
-        /// balanced on top of it: the renderers are switched off anyway, but the
-        /// capsule is not, and an officer bumping into an invisible body standing
-        /// on a dustbin is worse than no hiding at all.
+        /// Where the hidden character is parked — a point on the floor for their
+        /// **feet**, not a position for their transform.
+        ///
+        /// It matters which, and it is written down here because getting it wrong
+        /// is silent: a character's transform is the middle of their capsule, so
+        /// treating this as a transform position drops the soles a metre through
+        /// the ground. <see cref="ThiefHidingState"/> did exactly that, and the
+        /// controller quietly undid it on most frames.
+        ///
+        /// Sunk below the bin's own origin rather than balanced on the lid. The
+        /// drop is a request, not a guarantee — the state clamps it to the ground
+        /// the thief stepped in from, because two of these berths are authored
+        /// under the pavement.
         /// </summary>
         public Vector3 OccupantPosition =>
             occupantAnchor != null
