@@ -4,6 +4,89 @@
 
 완료된 항목을 삭제하지 않고 해결 상태와 관련 작업을 기록한다.
 
+## ISSUE-082 — 서버가 고양이의 말을 개 어휘표에서 찾고 있었다 (해결, 2026-08-10)
+
+도둑으로 "경찰을 물어"라고 말하면 화면에 `CAT HEARD: NO COMMAND`가 떴다. 받아쓰기는
+정확했다 — 화면의 `YOU SAID`에 문장이 그대로 찍혀 있었다.
+
+서버는 `petType`으로 어휘표를 고르고(`ExactCommandMatcher.suggest`), 그 값은
+`VoiceWorldContext`에서 온다. Unity가 그걸 보내는 함수가 이것이다.
+
+```csharp
+public void RegisterVoiceContext(string commandId, string contextJson)
+{
+#if UNITY_WEBGL && !UNITY_EDITOR
+    ...
+#endif
+}
+```
+
+**WebGL이 아니면 본문이 통째로 비어 있다.** 소켓 클라이언트가 `.jslib` 플러그인이라
+그렇다. 그래서 Windows 빌드와 에디터는 컨텍스트를 **한 번도 등록한 적이 없고**, 서버는
+`voice-command-service.ts`의 폴백으로 떨어진다 — 거기에 `petType: "DOG"`가 박혀 있었다.
+
+즉 고양이 플레이어의 모든 문장이 **개 어휘표**에서 조회됐다. 개 목록에 `물어`는 없고
+(개는 무는 명령을 의도적으로 거부한다), 그래서 후보가 0개 → `UNKNOWN` → `NO COMMAND`.
+덤으로 받아쓰기 프롬프트까지 `transcriptionPromptFor("DOG")`의 개 예문
+(`"짖어, 냄새 추적해, 경계해…"`)이 들어가서, 고양이 명령이 개 명령 쪽으로 끌려갈
+여지도 함께 있었다.
+
+**조용히 실패한다.** 예외도 경고도 없고, 서버는 200을 돌려주고, 화면은 정직하게
+`NO COMMAND`라고 말한다 — 그 말이 "안 들렸다"로 읽히기 때문에 원인이 마이크나 발음처럼
+보인다. 그리고 **개로 플레이하면 완전히 정상이다.** 폴백이 우연히 맞기 때문이다.
+
+`petId`("dog"/"cat")는 요청의 multipart 본문에 **처음부터 실려 있었다.** 폴백이 그걸
+읽게 했다. 컨텍스트가 등록된 경우(WebGL)의 동작은 그대로다.
+
+`transcript-override.test.ts`에 회귀 2건을 넣었다. 컨텍스트를 등록하지 않은 채 —
+Windows·에디터가 늘 있는 그 상태로 — `"숨어"`가 `HIDE`로, `"냄새 맡아"`가
+`CHASE_TARGET`으로 가는지 본다. `숨어`를 고른 이유는 개 목록에 비슷한 어간이 없어서
+개로 조회하면 절대 통과할 수 없기 때문이다.
+
+**남은 것**: 서버 변경이므로 `pawlice.duckdns.org`에 다시 올려야 적용된다. 그리고
+컨텍스트가 여전히 WebGL에서만 등록되므로, Windows·에디터에서는 `visibleTargets`가 늘
+비어 있다 — 대상을 지목해야 하는 `Search`·`Guard`·`Distract`는 음성으로 여전히 닿지
+않는다 (`ISSUE-081`과 같은 뿌리).
+
+## ISSUE-081 — 자기가 알아서 목적지를 찾는 명령이 목적지를 요구하고 있었다 (해결, 2026-08-10)
+
+"냄새 맡아"를 개에게 말하면 실패 신호음만 나고 화면에는 아무 설명도 없었다.
+
+`CompanionCommandCatalog.RequiresTarget`이 `Track`·`Scout`·`Hide`를 `true`로 두고
+있었는데, **이 셋의 리졸버는 요청의 대상을 아예 읽지 않는다.**
+
+| 명령 | 리졸버가 하는 일 |
+|---|---|
+| `Track` | `ThiefScentTrail`의 최신 냄새 점, 또는 도둑이 들어간 집의 문 |
+| `Scout` | 주변에서 가장 가까운 보물·경찰을 훑는다 |
+| `Hide` | 가장 가까운 빈 은닉처를 찾는다 |
+
+그래서 검증기가 **리졸버가 쓰지도 않을 대상이 없다는 이유로** 세 명령을 먼저 잘랐다.
+
+이것이 음성에서만 터진 이유는, **어떤 음성 경로도 대상을 줄 수 없기** 때문이다.
+결정적 매처는 `targetId: null`을 하드코딩하고(`resolveWithMatcher`), 모델은
+`visibleTargets`에 이미 있는 것만 지목할 수 있다. 결국 **도둑이 보여야만 "냄새를
+맡아"가 허용됐다** — 안 보이는 도둑을 찾는 것이 그 명령의 존재 이유인데.
+
+숫자키로는 대상이 붙어 오므로 정상 동작한다. 그래서 음성만 죽은 것으로 보이지 않고
+"음성 인식이 안 된다"로 읽힌다. 게다가 실패는 `TargetMissing`인데 **화면에 사유가 안
+뜬다** — `RoleAwareHudController.HandleCommandRejected`가 `InputSource == Keyboard`일
+때만 문구를 띄우고, `CommandFailed`와 `VoiceRecognizeFail`은 **같은 클립**
+(`sfx_command_fail`)이라 마이크 실패와 귀로 구분되지 않는다.
+
+셋을 `false`로 바꿨다. 대상을 실제로 읽는 `Search`·`Guard`·`Distract`는 그대로 둔다 —
+그쪽은 목적지가 없으면 정말로 의미가 없다.
+
+냄새가 식었을 때는 리졸버가 `TrailMissing`을 낸다. 쿨타임을 쓰고 개가 주인에게
+돌아오는 **게임 결과**이지 검증 거부가 아니다.
+
+`VoiceCommandReachabilityTests`에 양쪽 계약을 다 걸었다 — 스스로 목적지를 찾는 셋은
+대상을 요구하면 실패하고, 말로 지목한 곳에 걸어가는 셋은 요구하지 않으면 실패한다.
+
+**남은 것**: `Search`·`Guard`·`Distract`는 음성으로 여전히 닿지 않는다. 대상이
+필요한 것이 맞으므로 고칠 곳은 이쪽이 아니라 **컨텍스트를 서버에 보내는 경로**다
+(`ISSUE-082`).
+
 ## ISSUE-075 — 접속한 쪽의 음성 명령이 한 줄도 남기지 않고 사라졌다 (해결, 2026-08-10)
 
 접속한 쪽(호스트가 아닌 쪽)에서 `V`로 말하면 화면은 **"음성 명령 처리 중"에서 영원히

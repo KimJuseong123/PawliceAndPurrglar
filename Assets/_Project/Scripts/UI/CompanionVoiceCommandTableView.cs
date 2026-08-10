@@ -207,8 +207,25 @@ namespace PawliceAndPurrglar.UI
             CompanionCommandId[] commands =
                 CompanionCommandCatalog.GetCommandsFor(role);
 
-            // Four own commands, a gap, then the five either animal obeys.
-            const int OwnCommandCount = 4;
+            // This animal's own commands, a gap, then the five either animal
+            // obeys.
+            //
+            // Asked of the catalog rather than counted as four. The two animals
+            // had four each until CAT-010 gave the cat "물기", and a constant
+            // would have drawn the cat's divider one row early — filing a
+            // cat-only order under "either animal obeys these", which is the
+            // exact confusion this table exists to prevent.
+            int ownCommandCount = 0;
+            foreach (CompanionCommandId candidate in commands)
+            {
+                if (CompanionCommandCatalog.IsSharedByBothAnimals(candidate))
+                {
+                    break;
+                }
+
+                ownCommandCount++;
+            }
+
             float height = HeaderHeight
                 + commands.Length * RowHeight
                 + DividerHeight;
@@ -251,7 +268,7 @@ namespace PawliceAndPurrglar.UI
             float y = -HeaderHeight;
             for (int index = 0; index < commands.Length; index++)
             {
-                if (index == OwnCommandCount)
+                if (index == ownCommandCount)
                 {
                     // The five below the line work for either animal, which is
                     // worth showing: they are also the only ones that resolve
@@ -259,7 +276,7 @@ namespace PawliceAndPurrglar.UI
                     y -= DividerHeight;
                 }
 
-                AddRow(commands[index], y, index >= OwnCommandCount);
+                AddRow(commands[index], y, index >= ownCommandCount);
                 y -= RowHeight;
             }
         }

@@ -97,6 +97,18 @@ const gameplayVocabulary: {
     intent: "HIDE",
     pets: ["CAT"],
     stems: ["숨", "은신", "숨어", "hide"]
+  },
+  {
+    // CAT-010. Cat only. The dog has no bite — an officer who says it gets
+    // nothing, which `CompanionCommandCatalog.FromIntent` enforces.
+    //
+    // "물어" is deliberately absent from FETCH_OBJECT's list above, which has
+    // "물어와". They are one jamo apart and the near-match pass takes the
+    // cheaper edit, so "경찰을 물어" reaches BITE and "이거 물어와" reaches the
+    // fetch — but only because the fetch stem keeps its 와.
+    intent: "BITE",
+    pets: ["CAT"],
+    stems: ["물어", "깨물", "물기", "공격", "bite", "attack"]
   }
 ];
 
@@ -405,7 +417,7 @@ export class ExactCommandMatcher {
     const animal = petType === "DOG" ? "강아지" : "고양이";
     const examples = petType === "DOG"
       ? ["짖어", "냄새 추적해", "경계해", "따라와", "기다려", "멈춰"]
-      : ["숨어", "훔쳐와", "할퀴어", "따라와", "기다려", "멈춰"];
+      : ["숨어", "훔쳐와", "할퀴어", "경찰을 물어", "따라와", "멈춰"];
     return `${animal}에게 짧게 명령하는 상황이다. 예: ${examples.join(". ")}.`;
   }
 

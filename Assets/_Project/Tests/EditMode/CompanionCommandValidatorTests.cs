@@ -7,9 +7,16 @@ namespace PawliceAndPurrglar.Tests.EditMode
 {
     public sealed class CompanionCommandValidatorTests
     {
+        /// <summary>
+        /// A dog command that genuinely walks to the place it was told about.
+        ///
+        /// `Track` used to be the default and is no longer a targeted command —
+        /// its resolver reads the scent trail and ignores the request's target,
+        /// so the target rules below would silently stop being exercised.
+        /// </summary>
         private static CompanionCommandRequest DogRequest(
             CompanionCommandId commandId =
-                CompanionCommandId.Track,
+                CompanionCommandId.Search,
             Vector3? target = null)
         {
             return new CompanionCommandRequest(
@@ -162,11 +169,20 @@ namespace PawliceAndPurrglar.Tests.EditMode
                 Is.EqualTo(CompanionCommandRejection.UnknownCommand));
         }
 
+        /// <summary>
+        /// `Search`, not `Track`.
+        ///
+        /// Track used to stand here, and it was the wrong example: its resolver
+        /// reads the scent trail and never looks at the request's target, so
+        /// demanding one only made the command unreachable by voice — no voice
+        /// path can supply a target. Search genuinely walks to the place it was
+        /// told about, so it is the honest case for this rule.
+        /// </summary>
         [Test]
         public void RejectsATargetedCommandWithoutADestination()
         {
             var request = new CompanionCommandRequest(
-                CompanionCommandId.Track,
+                CompanionCommandId.Search,
                 PlayerRole.Police,
                 CompanionKind.Dog,
                 CompanionCommandInputSource.Keyboard,

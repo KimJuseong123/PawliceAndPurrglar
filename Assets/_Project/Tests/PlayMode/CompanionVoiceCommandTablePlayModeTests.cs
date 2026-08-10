@@ -81,16 +81,28 @@ namespace PawliceAndPurrglar.Tests.PlayMode
 
             view.Refresh();
             int thiefRows = view.RowCount;
-            Assert.That(thiefRows, Is.EqualTo(9));
+            Assert.That(
+                thiefRows,
+                Is.EqualTo(
+                    CompanionCommandCatalog
+                        .GetCommandsFor(PlayerRole.Thief).Length));
 
             // A rematch can hand this machine the other side.
             LocalPlayerRoleSelector.OverrideRole(PlayerRole.Police);
             view.Refresh();
 
+            // Against this role's own command count, not against the previous
+            // one. The two used to match at nine each, and comparing them was a
+            // fine way to catch appending — until CAT-010 gave the cat a fifth
+            // command of its own, at which point equal counts became the bug.
+            // Appending is still caught: the police table would come out at
+            // nineteen.
             Assert.That(view.ShowingRole, Is.EqualTo(PlayerRole.Police));
             Assert.That(
                 view.RowCount,
-                Is.EqualTo(thiefRows),
+                Is.EqualTo(
+                    CompanionCommandCatalog
+                        .GetCommandsFor(PlayerRole.Police).Length),
                 "The rows have to be replaced, not appended to. Both tables at "
                 + "once is the failure that reads as the table simply being "
                 + "wrong.");
@@ -115,7 +127,17 @@ namespace PawliceAndPurrglar.Tests.PlayMode
             {
                 CompanionCommandId[] commands =
                     CompanionCommandCatalog.GetCommandsFor(role);
-                Assert.That(commands, Has.Length.EqualTo(9));
+                // The five shared commands plus this animal's own. Not a
+                // literal nine — the animals stopped having the same number of
+                // their own when the cat gained "물기".
+                Assert.That(
+                    commands.Count(
+                        CompanionCommandCatalog.IsSharedByBothAnimals),
+                    Is.EqualTo(5));
+                Assert.That(
+                    commands.Count(command =>
+                        !CompanionCommandCatalog.IsSharedByBothAnimals(command)),
+                    Is.EqualTo(role == PlayerRole.Thief ? 5 : 4));
                 Assert.That(
                     commands.Distinct().Count(),
                     Is.EqualTo(commands.Length),

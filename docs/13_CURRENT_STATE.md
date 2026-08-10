@@ -1150,6 +1150,10 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-10 | 고양이 물기 (`CAT-010`) + 음성 두 건 수정 후 | Edit Mode **360/360**, Play Mode 238개 중 **236 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 6건이 XML에 이름으로 있고 전부 `Passed` — Edit Mode 3건(`TheCatsBiteIsWiredAtEveryLink`·`TheDogHasNoBite`·`EachAnimalsOwnCommandsComeBeforeTheSharedOnes`), Play Mode 3건(`Biting*`). `server/` `tsc` 0, `vitest` **18/18** |
+| 2026-08-10 | `CAT-010`을 **손으로 말해서 확인하지는 않았다** | 고양이가 달려가 무는 것과 1.2초 기절은 Play Mode 3건이 잰다. 실제 2인 세션에서 마이크로 "물어"라고 해 본 것은 아니다. 그리고 **서버 어휘 추가는 재배포해야 적용된다** |
+| 2026-08-10 | 음성 명령 두 건 수정 (`ISSUE-081`, `ISSUE-082`) 후 | Edit Mode **357/357**, Play Mode 235개 중 **233 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 Edit Mode 2건(`CommandsThatFindTheirOwnTargetDoNotDemandOne`, `CommandsThatWalkToASpokenPlaceStillDemandOne`)이 XML에 이름으로 있고 둘 다 `Passed`. `server/`는 `tsc --noEmit` 0, `vitest` **16/16**(신규 2건 포함) |
+| 2026-08-10 | 위 두 건을 **실제로 말해서 확인하지는 않았다** | 정적 추적과 테스트만이다. `ISSUE-082`은 **서버 변경이라 재배포해야 적용된다** — 지금 `pawlice.duckdns.org`에 떠 있는 서버는 여전히 고양이를 개로 본다 |
 | 2026-08-10 | 아이템 Hover 툴팁 (`UI-023`) 추가 후 | Edit Mode **355/355**, Play Mode 235개 중 **233 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 21건이 XML에 이름으로 있고 전부 `Passed` — Edit Mode 13건(`ItemTooltipTests` 11 + HUD 프리팹 계약 2), Play Mode 8건(`ItemTooltipPlayModeTests`) |
 | 2026-08-10 | HUD 프리팹 재생성 (`Create Role-Aware HUD Prefabs`) | 툴팁이 두 프리팹에 들어간 것을 확인. **재생성이 필수다** — 게임의 HUD는 `Resources/HudCanvas.prefab`을 인스턴스화하므로, 코드만 고치면 툴팁이 없는 낡은 프리팹이 계속 뜬다. 씬은 재생성하지 않았다(`GlobalObjectIdHash` 무변경). URP 전역 설정이 배치 실행에 더러워진 것은 되돌렸다 |
 | 2026-08-10 | 툴팁을 **손으로 호버해 보지는 않았다** | 위치·clamp·가독성·레이캐스트는 Play Mode 8건이 잰다. 실제 마우스로 25칸을 훑어 본 것은 아니다 |
