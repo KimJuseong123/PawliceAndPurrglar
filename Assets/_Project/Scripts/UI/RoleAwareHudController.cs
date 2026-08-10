@@ -935,7 +935,21 @@ namespace PawliceAndPurrglar.UI
                     string.Empty,
                     0,
                     null,
-                    isNew));
+                    isNew,
+                    hasItem
+                        ? ThrowableCatalog.GetDisplayName(kind)
+                        : hasLoot
+                            ? definition.DisplayName
+                            : string.Empty,
+
+                    // Only the four prop cells carry a second line. Treasure does
+                    // nothing while it is in the bag — it is worth gold at the
+                    // market and that number belongs in the ledger, where the
+                    // player is deciding about money rather than about which key
+                    // to press.
+                    hasItem
+                        ? ThrowableCatalog.GetEffectSummary(kind)
+                        : string.Empty));
             }
         }
 

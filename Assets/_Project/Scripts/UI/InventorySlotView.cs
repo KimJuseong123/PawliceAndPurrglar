@@ -1,10 +1,13 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace PawliceAndPurrglar.UI
 {
-    public sealed class InventorySlotView : MonoBehaviour
+    public sealed class InventorySlotView : MonoBehaviour,
+        IPointerEnterHandler,
+        IPointerExitHandler
     {
         [SerializeField] private TMP_Text keyLabel;
         [SerializeField] private TMP_Text itemNameLabel;
@@ -36,6 +39,16 @@ namespace PawliceAndPurrglar.UI
         /// broken rather than as unfinished art.
         /// </summary>
         public bool HasContent { get; private set; }
+
+        /// <summary>
+        /// What the hover window says about this cell, as of the last bind.
+        /// </summary>
+        public string TooltipTitle { get; private set; } = string.Empty;
+
+        public string TooltipBody { get; private set; } = string.Empty;
+
+        private InventoryTooltipView _tooltip;
+        private bool _pointerInside;
 
         public void SetCellIndex(int index)
         {
@@ -69,6 +82,8 @@ namespace PawliceAndPurrglar.UI
         public void Bind(InventorySlotViewModel model)
         {
             HasContent = !model.Disabled;
+            TooltipTitle = model.TooltipTitle;
+            TooltipBody = model.TooltipBody;
             if (keyLabel != null) keyLabel.text = model.KeyLabel;
             if (itemNameLabel != null)
             {
@@ -117,6 +132,83 @@ namespace PawliceAndPurrglar.UI
             if (newBadge != null && newBadge.activeSelf != model.IsNew)
             {
                 newBadge.SetActive(model.IsNew);
+            }
+
+            // The cursor may already be sitting on this cell. The bag rebinds
+            // every frame the player has it open, so a cell that emptied while
+            // being hovered — dragged away, sold, handed to the cat — would
+            // otherwise keep describing what used to be in it.
+            if (_pointerInside)
+            {
+                ShowTooltip();
+            }
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            _pointerInside = true;
+            ShowTooltip();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            _pointerInside = false;
+            HideTooltip();
+        }
+
+        /// <summary>
+        /// Closes the window when this cell goes away with the cursor still on
+        /// it.
+        ///
+        /// <c>OnPointerExit</c> does not arrive in that case — the bag is closed
+        /// with a key, and the panel is deactivated from under the pointer — so
+        /// without this the window is left hanging over the game with the bag
+        /// gone from behind it.
+        /// </summary>
+        private void OnDisable()
+        {
+            _pointerInside = false;
+            HideTooltip();
+        }
+
+        private void ShowTooltip()
+        {
+            if (string.IsNullOrWhiteSpace(TooltipTitle))
+            {
+                HideTooltip();
+                return;
+            }
+
+            if (_tooltip == null)
+            {
+                _tooltip = InventoryTooltipView.FindOrCreate(transform);
+            }
+
+            if (_tooltip != null)
+            {
+                _tooltip.Show(
+                    TooltipTitle,
+                    TooltipBody,
+                    transform as RectTransform);
+            }
+        }
+
+        /// <summary>
+        /// Closes the window if it is still there.
+        ///
+        /// Written with an explicit <c>!=</c> rather than <c>?.</c> because the
+        /// two do not agree about a destroyed object: Unity overloads the
+        /// operator to answer null once the object is gone, and the null-
+        /// conditional does not use the overload. This runs during scene
+        /// teardown, where the window may already have been destroyed while this
+        /// cell is still being switched off, and <c>?.</c> would go straight into
+        /// a <c>MissingReferenceException</c> there.
+        /// </summary>
+        private void HideTooltip()
+        {
+            if (_tooltip != null)
+            {
+                _tooltip.Hide();
             }
         }
     }

@@ -504,6 +504,60 @@ namespace PawliceAndPurrglar.Gameplay.Items
         }
 
         /// <summary>
+        /// One line telling the player what this prop does to whoever it
+        /// catches, for the bag tooltip.
+        ///
+        /// Composed from the constants above rather than written out, so a
+        /// balance change moves the sentence with it. A hand-typed "3초 붙잡음"
+        /// beside a <c>GlueHoldSeconds</c> that has become 2 is worse than no
+        /// text at all: the player plans around the number they were shown.
+        ///
+        /// Every kind answers. A prop with no line would show a name and an
+        /// empty space, which reads as the tooltip having failed rather than as
+        /// the prop being plain.
+        /// </summary>
+        public static string GetEffectSummary(ThrowableKind kind)
+        {
+            return kind switch
+            {
+                ThrowableKind.Banana =>
+                    $"바닥에 놓는다. 밟은 사람이 {Number(BananaSlipSeconds)}초 미끄러진다.",
+                ThrowableKind.GlueTrap =>
+                    $"바닥에 놓는다. 밟은 사람을 {Number(GlueHoldSeconds)}초 붙잡는다.",
+                ThrowableKind.SensorLight =>
+                    $"바닥에 놓는다. {Number(GetTriggerRadius(kind))}m 안으로 지나가면"
+                    + $" {Number(RevealSeconds)}초 동안 도둑이 드러난다."
+                    + " 붙잡지는 않는다.",
+                ThrowableKind.TunaCan =>
+                    $"바닥에 놓는다. 고양이가 와서 {Number(LureSeconds)}초 머문다.",
+                ThrowableKind.DogTreat =>
+                    $"바닥에 놓는다. 개가 와서 {Number(LureSeconds)}초 머문다.",
+                ThrowableKind.RubberChicken =>
+                    $"바닥에 놓는다. {Number(GetTriggerRadius(kind))}m 안으로 누가 지나가면"
+                    + $" {Number(NoiseRadiusMeters)}m까지 들리는 소리가 난다."
+                    + " 놓은 사람에게도 똑같이 울린다.",
+                ThrowableKind.Firework =>
+                    $"바닥에 놓는다. {Number(FireworkFuseSeconds)}초 뒤 저절로 터져"
+                    + $" {Number(NoiseRadiusMeters)}m까지 들린다.",
+                ThrowableKind.FrozenOctopus =>
+                    $"던진다. 맞은 사람은 {Number(BlindSeconds)}초 동안 앞을 못 본다."
+                    + " 속도는 그대로다.",
+                _ =>
+                    $"던진다. 맞은 사람이 {Number(RockStunSeconds)}초 기절한다."
+            };
+        }
+
+        /// <summary>
+        /// A number the player reads: 1.2 stays 1.2, 3.0 becomes 3.
+        /// </summary>
+        private static string Number(float value)
+        {
+            return value.ToString(
+                "0.#",
+                System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
         /// Model stem under <c>Assets/_Project/Art/Props</c>, or null for a prop
         /// whose art has not been made.
         ///

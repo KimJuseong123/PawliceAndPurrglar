@@ -157,7 +157,9 @@ namespace PawliceAndPurrglar.UI
             string itemName = "",
             int price = 0,
             Sprite priceIcon = null,
-            bool isNew = false)
+            bool isNew = false,
+            string tooltipTitle = "",
+            string tooltipBody = "")
         {
             KeyLabel = keyLabel;
             Icon = icon;
@@ -169,6 +171,8 @@ namespace PawliceAndPurrglar.UI
             Price = Mathf.Max(0, price);
             PriceIcon = priceIcon;
             IsNew = isNew;
+            TooltipTitle = tooltipTitle ?? string.Empty;
+            TooltipBody = tooltipBody ?? string.Empty;
         }
 
         public string KeyLabel { get; }
@@ -185,6 +189,24 @@ namespace PawliceAndPurrglar.UI
         /// Whether to flag this cell as the newest thing in the bag.
         /// </summary>
         public bool IsNew { get; }
+
+        /// <summary>
+        /// What the hover window calls this, or empty for a cell that should not
+        /// open one.
+        ///
+        /// Separate from <see cref="ItemName"/> on purpose. That one is the label
+        /// drawn *inside* the cell, and the bag deliberately leaves it blank — a
+        /// 70px square holding an icon, a count and a name says none of the
+        /// three. Reusing it to feed the tooltip would put the name back in the
+        /// cell as a side effect of asking for it in the window.
+        /// </summary>
+        public string TooltipTitle { get; }
+
+        /// <summary>
+        /// The line under the name: what the item does. Empty for treasure,
+        /// which does nothing until it is sold.
+        /// </summary>
+        public string TooltipBody { get; }
 
         public bool HasPrice => Price > 0;
     }
