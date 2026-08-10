@@ -145,7 +145,45 @@
       canvas.height = Math.floor(canvas.clientHeight * ratio);
     }
 
-    window.addEventListener("resize", resize);
+    // Whether there is a running engine to tell about a resize.
+    var unityReady = false;
+
+    // Unity registers its own `window.resize` handler while the engine starts,
+    // and that handler calls straight into wasm:
+    //
+    //     window.addEventListener("resize", JS_ScreenOrientation_eventHandler)
+    //     ... getWasmTableEntry(JS_ScreenOrientation_callback)(...)
+    //
+    // A resize that lands before the runtime is ready calls through a table
+    // entry that is not there yet, and the load dies with
+    // `RuntimeError: memory access out of bounds` — on the loading bar, at
+    // whatever percent it happened to reach. It reads as a corrupt build or a
+    // bad upload, and it only happens when something resized the window during
+    // those thirty seconds, so it does not reproduce on demand.
+    //
+    // This listener is registered before Unity's, so it runs first and can keep
+    // the event away until there is something to call. The canvas is still
+    // resized — that part is ours and is safe at any time.
+    function guardedResize(event) {
+      resize();
+      if (!unityReady && event && event.stopImmediatePropagation) {
+        event.stopImmediatePropagation();
+      }
+    }
+
+    window.addEventListener("resize", guardedResize);
+
+    // The same handler is also bound to orientation changes, which are not
+    // window events and so are not covered above. Rare on a desktop and normal
+    // on a phone rotating during load.
+    if (screen.orientation && screen.orientation.addEventListener) {
+      screen.orientation.addEventListener("change", function (event) {
+        if (!unityReady && event && event.stopImmediatePropagation) {
+          event.stopImmediatePropagation();
+        }
+      });
+    }
+
     resize();
 
     var script = document.createElement("script");
@@ -160,6 +198,8 @@
         fill.style.width = (100 * progress) + "%";
       }).then(function (instance) {
         window.unityInstance = instance;
+        // From here Unity's own resize handler has something to call.
+        unityReady = true;
         loading.classList.add("hidden");
         resize();
       }).catch(function (message) {
