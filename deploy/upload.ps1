@@ -44,13 +44,34 @@ if (-not (Test-Path $KeyPath)) {
     throw "No key at $KeyPath"
 }
 
+# Line endings are converted, and this is not a tidiness measure.
+#
+# A PowerShell here-string ends every line with CRLF. Sent to a POSIX shell, the
+# CR is not a line ending — it is the last character of the last word on the
+# line. `sudo mv ~/staging-web /srv/pawlice/web` therefore created a directory
+# literally named `web<CR>`, nginx kept serving the real `web` beside it, and the
+# deploy reported nothing worse than a failed `chmod` on the very last line.
+#
+# The result was a site that stayed on an old build while every upload said it
+# had succeeded, plus a `web<CR>` that `ls` prints as `web` — so the directory
+# listing showed the same name twice and looked like a filesystem fault.
+#
+# `bash -s` with the script on stdin, so quoting on the remote side is one
+# question instead of two.
 function Invoke-Remote([string] $Command) {
-    & ssh -i $KeyPath -o StrictHostKeyChecking=accept-new $HostName $Command
+    $unix = $Command -replace "`r`n", "`n"
+    $unix | & ssh -i $KeyPath -o StrictHostKeyChecking=accept-new $HostName "bash -s"
     if ($LASTEXITCODE -ne 0) { throw "Remote command failed: $Command" }
 }
 
+# Named explicitly rather than with `*`, which PowerShell does not expand for a
+# native command and Windows scp does not always expand either.
 function Send-Folder([string] $LocalPath, [string] $RemotePath) {
-    & scp -i $KeyPath -o StrictHostKeyChecking=accept-new -r -q "$LocalPath\*" "${HostName}:$RemotePath"
+    $items = Get-ChildItem -LiteralPath $LocalPath |
+        Where-Object { $_.Name -notlike "*_BurstDebugInformation_DoNotShip" } |
+        ForEach-Object { $_.FullName }
+    if (-not $items) { throw "Nothing to upload in $LocalPath" }
+    & scp -i $KeyPath -o StrictHostKeyChecking=accept-new -r -q @items "${HostName}:$RemotePath"
     if ($LASTEXITCODE -ne 0) { throw "Upload failed: $LocalPath -> $RemotePath" }
 }
 
@@ -58,11 +79,14 @@ Write-Host "== game build"
 Invoke-Remote "rm -rf ~/staging-web && mkdir -p ~/staging-web"
 Send-Folder $webBuild "~/staging-web"
 Invoke-Remote @"
+set -e
 sudo rm -rf /srv/pawlice/web.previous
 sudo mv /srv/pawlice/web /srv/pawlice/web.previous 2>/dev/null || true
 sudo mv ~/staging-web /srv/pawlice/web
 sudo chown -R pawlice:pawlice /srv/pawlice/web
 sudo chmod -R a+rX /srv/pawlice/web
+test -f /srv/pawlice/web/index.html
+test -d /srv/pawlice/web/Build
 "@
 
 if (-not $GameOnly) {
