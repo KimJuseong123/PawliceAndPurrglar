@@ -273,6 +273,25 @@ namespace PawliceAndPurrglar.Tests.EditMode
         }
 
         /// <summary>
+        /// The three Images that are meant to have no sprite. Everything else
+        /// without one has lost a reference.
+        /// </summary>
+        private static readonly string[] DeliberatelySpriteless =
+        {
+            // One flat colour across the canvas.
+            "BackgroundFill",
+
+            // The how-to modal's dimming sheet — a flat black at low alpha.
+            LobbyHowToOverlay.ScrimName,
+
+            // The how-to modal's close region. Fully transparent, because the X
+            // it covers is painted into the page art; the Image is here only to
+            // take the raycast. `LobbyHowToOverlayTests` is what checks it is
+            // over the drawn X.
+            LobbyHowToPanel.CloseButtonName
+        };
+
+        /// <summary>
         /// A missing sprite draws as a white box, which reads as a layout
         /// problem rather than a broken reference.
         /// </summary>
@@ -281,9 +300,8 @@ namespace PawliceAndPurrglar.Tests.EditMode
         {
             foreach (Image image in _prefab.GetComponentsInChildren<Image>(true))
             {
-                if (image.name == "BackgroundFill")
+                if (DeliberatelySpriteless.Contains(image.name))
                 {
-                    // One flat colour across the canvas, by design.
                     continue;
                 }
 

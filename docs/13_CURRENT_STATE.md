@@ -1150,6 +1150,8 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-10 | 게임방법을 버튼으로 여는 모달로 (`UI-024`) 이후, **`origin/main`(고양이 물기) 위에 리베이스해서 다시 실측** | Edit Mode **372/372**, Play Mode 241개 중 **239 통과** + 1 실패 + 1 스킵. `error CS` 0. 리베이스 전 내 트리에서는 367 / 238이었고, 상대 브랜치가 Edit Mode 5건·Play Mode 3건을 더 가져왔다 — 합쳐서 361+5+6 = 372, 232+3+6 = 241로 **수가 맞는다.** 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 12건(`LobbyHowToOverlayTests` 6 + `LobbyHowToPlayModeTests` 6)이 XML에 **이름으로 있는 것을 확인**. 넘기기·닫기의 배선은 Play Mode에만 있다 — `OnEnable` 배선이라 Edit Mode는 그 콜백을 주지 않고, 죽은 버튼과 산 버튼을 구분하지 못한다 |
+| 2026-08-10 | **`-nographics`로 찍은 UI 캡처는 빈 회색이다** | 로비·게임방법 캡처가 여덟 장 전부 균일한 회색(204,204,204)으로 나왔다. `error CS` 0, 예외 없음, 로그에는 `Captured ... -> Logs/...png`가 정상으로 찍힌다 — **성공처럼 보인다.** `camera.Render()`가 렌더 타깃에 아무것도 그리지 않는 것이고, `-nographics`를 빼면 정상이다. 평면도(`Capture Map Overview`)가 그래픽 모드로 도는 것과 같은 이유다 |
 | 2026-08-10 | 고양이 물기 (`CAT-010`) + `ISSUE-081`·`ISSUE-082` 수정 후 (`origin/main` 위에서 실측) | Edit Mode **366/366**, Play Mode 235개 중 **233 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 6건이 XML에 이름으로 있고 전부 `Passed` — Edit Mode 3건(`TheCatsBiteIsWiredAtEveryLink`·`TheDogHasNoBite`·`EachAnimalsOwnCommandsComeBeforeTheSharedOnes`) + `RequiresTarget` 계약 2건, Play Mode 3건(`Biting*`). `server/` `tsc --noEmit` 0, `vitest` **18/18** |
 | 2026-08-10 | `CAT-010`을 **손으로 말해서 확인하지는 않았다** | 고양이가 달려가 무는 것과 1.2초 기절은 Play Mode 3건이 잰다. 실제 2인 세션에서 마이크로 "물어"라고 해 본 것은 아니다. 그리고 **서버 어휘 추가는 재배포해야 적용된다** |
 | 2026-08-10 | 위 두 건을 **실제로 말해서 확인하지는 않았다** | 정적 추적과 테스트만이다. `ISSUE-082`은 **서버 변경이라 재배포해야 적용된다** — 지금 `pawlice.duckdns.org`에 떠 있는 서버는 여전히 고양이를 개로 본다 |

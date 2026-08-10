@@ -216,9 +216,15 @@ namespace PawliceAndPurrglar.Editor
             BuildBackground(safeArea);
             BuildHeader(safeArea);
             LobbyCharacterView characterView = BuildCharacterArea(safeArea);
-            BuildHowTo(safeArea);
             LobbyControls controls = BuildControlArea(safeArea);
             LobbyActions actions = BuildActionBar(safeArea);
+
+            // Last, so it is last in sibling order and therefore on top. A
+            // modal built earlier renders *under* the controls it is supposed
+            // to be covering: the invite row and the action bar drew straight
+            // through the panel, and the scrim dimmed everything except the
+            // buttons it was there to disarm.
+            BuildHowTo(safeArea);
             Node("DebugLayer", safeArea).gameObject.SetActive(false);
 
             var presenter = canvasObject.AddComponent<NetworkLobbyPresenter>();
@@ -290,6 +296,49 @@ namespace PawliceAndPurrglar.Editor
 
             CreatePaw(header, "LeftPawDecoration", -287f);
             CreatePaw(header, "RightPawDecoration", 287f);
+
+            CreateHowToButton(header);
+        }
+
+        private const float HowToButtonWidth = 200f;
+        private const float HowToButtonHeight = 62f;
+
+        /// <summary>
+        /// The button that opens the how-to overlay, beside the title.
+        ///
+        /// Captioned rather than an "i" in a circle. An icon needs to be
+        /// recognised before it can be pressed, and this is the one control on
+        /// the screen aimed at somebody who has not played before — the reader
+        /// who most needs it is the reader least likely to guess.
+        ///
+        /// Beside the logo rather than down with the action bar because that row
+        /// is about starting a match; this is about understanding one. It sits
+        /// in the empty band above the characters, which is why it can be there
+        /// at all without pushing anything else around.
+        /// </summary>
+        private static void CreateHowToButton(RectTransform header)
+        {
+            Button open = Plate(
+                "HowToButton",
+                header,
+                PanelCream,
+                Ink,
+                "게임 방법",
+                28f,
+                4.5f,
+                null,
+                HowToButtonHeight);
+            Anchor(
+                (RectTransform)open.transform,
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(
+                    LogoWidth * 0.5f + 32f + HowToButtonWidth * 0.5f,
+                    -(LogoTop + 138f)),
+                new Vector2(HowToButtonWidth, HowToButtonHeight));
+
+            open.gameObject.AddComponent<LobbyHowToLauncher>();
         }
 
         /// <summary>
@@ -298,64 +347,77 @@ namespace PawliceAndPurrglar.Editor
         public const string HowToFolder = "Assets/_Project/UI/Lobby/HowTo";
 
         /// <summary>
-        /// Tallest the panel may be. It sits inside the character band, so this
-        /// is what stops it from reaching the invite code row below.
+        /// The measured close-button rect that ships with the pages.
         /// </summary>
-        private const float HowToMaxHeight = 404f;
+        public const string HotspotAssetName = "howto_hotspots.json";
+
+        private const float HowToArrowSize = 74f;
 
         /// <summary>
-        /// Widest the panel may be. The two team groups are anchored to the
-        /// outer edges; this keeps the panel clear of the characters instead of
-        /// growing into them when a page happens to be a wide image.
+        /// How far outside the drawn plate the close button still takes a
+        /// click. The plate is 72 art-pixels across, which is a comfortable
+        /// target already; this is for the hand that lands on its edge.
         /// </summary>
-        private const float HowToMaxWidth = 812f;
-
-        private const float HowToArrowSize = 62f;
+        private const float CloseHitScale = 1.2f;
 
         /// <summary>
-        /// The paged "how do I play" panel.
+        /// The lobby behind a modal, dimmed.
         ///
-        /// Its rect comes from the pages' own aspect ratio rather than a figure
-        /// chosen here. `Preserve Aspect` centres the image inside whatever rect
-        /// it is given, so a rect that does not match the art either floats it
-        /// in empty space or — worse — makes the art shrink to fit the narrower
-        /// axis, which is how a character in this same lobby ended up smaller
-        /// every time its pose changed. The widest page decides, so no page
-        /// shrinks relative to another.
+        /// Not a taste value: the page art was authored as screenshots of this
+        /// modal, and its surround is the lobby's own F2E5DA under black at
+        /// exactly this alpha. Change one and the pages stop matching what they
+        /// sit on — `Tools/normalize_howto_pages.py` warns when they drift.
+        /// </summary>
+        private static readonly Color Scrim = new(0f, 0f, 0f, 0.558f);
+
+        /// <summary>
+        /// The paged "how do I play" modal: a dimmed sheet, the pages, arrows
+        /// either side, and a close button.
         ///
-        /// The arrows and the page counter are real controls outside the image,
-        /// not regions pinned on top of it. A finished screenshot with invisible
-        /// buttons at fixed pixel offsets is exactly what this lobby used to be,
-        /// and it came apart at every aspect ratio but the mockup's own
-        /// (`ISSUE-046`).
+        /// It is built switched off. Until 2026-08-10 this panel was simply part
+        /// of the lobby, sitting between the two teams whether anybody wanted it
+        /// or not; now the "게임 방법" button in the header brings it up.
+        ///
+        /// The panel's rect is the page canvas at its authored size. All four
+        /// pages are on one canvas of identical dimensions, so `Preserve Aspect`
+        /// has nothing to correct and no page shrinks relative to another — the
+        /// same rule that stopped a character in this lobby getting smaller
+        /// every time its pose changed. At the 1920 reference that is also
+        /// pixel-for-pixel, which is as sharp as the Korean text gets.
         /// </summary>
         private static void BuildHowTo(RectTransform parent)
         {
             Sprite[] pages = LoadHowToPages();
+            HowToHotspots hotspots = LoadHotspots(pages[0]);
+            var size = new Vector2(hotspots.canvasWidth, hotspots.canvasHeight);
 
-            float aspect = 1.9f;
-            foreach (Sprite page in pages)
-            {
-                aspect = Mathf.Max(
-                    aspect,
-                    page.rect.width / Mathf.Max(1f, page.rect.height));
-            }
+            RectTransform overlay = Node(
+                LobbyHowToLauncher.OverlayName,
+                parent);
+            Stretch(overlay);
+            overlay.gameObject.AddComponent<LobbyHowToOverlay>();
 
-            float height = Mathf.Min(
-                HowToMaxHeight,
-                HowToMaxWidth / aspect);
-            float width = height * aspect;
+            // Takes raycasts. It is not decoration: without it a click that
+            // misses the panel by a few pixels presses whatever lobby control
+            // is underneath, and those host rooms and start matches.
+            Image scrim = NewGraphic<Image>(
+                LobbyHowToOverlay.ScrimName,
+                overlay);
+            Stretch((RectTransform)scrim.transform);
+            scrim.color = Scrim;
+            scrim.raycastTarget = true;
 
-            RectTransform panel = Node("HowToPanel", parent);
-            LobbyHowToPanel presenter;
+            RectTransform panel = Node(
+                LobbyHowToOverlay.PanelNodeName,
+                overlay);
             Anchor(
                 panel,
-                new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -(CharacterTop + 4f)),
-                new Vector2(width, height));
-            presenter = panel.gameObject.AddComponent<LobbyHowToPanel>();
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                Vector2.zero,
+                size);
+            var presenter = panel.gameObject.AddComponent<LobbyHowToPanel>();
 
             RectTransform pageRoot = Node(
                 LobbyHowToPanel.PagesNodeName,
@@ -374,11 +436,14 @@ namespace PawliceAndPurrglar.Editor
             CreateHowToArrow(
                 panel,
                 LobbyHowToPanel.PreviousButtonName,
-                -1f);
+                -1f,
+                size);
             CreateHowToArrow(
                 panel,
                 LobbyHowToPanel.NextButtonName,
-                1f);
+                1f,
+                size);
+            CreateHowToClose(panel, hotspots, size);
 
             // 카운터와 점은 코드로 만들지 않는다.
             //
@@ -391,24 +456,89 @@ namespace PawliceAndPurrglar.Editor
             // 만들기만 하면 붙는다.
 
             // 저장되는 프리팹이 1페이지 상태로 열리게 한다. 이걸 부르지 않으면
-            // 세 페이지가 전부 켜진 채 저장돼, 마지막 페이지가 앞의 것들을 덮은
+            // 페이지가 전부 켜진 채 저장돼, 마지막 페이지가 앞의 것들을 덮은
             // 그림이 프리팹의 기본 모습이 된다 — 레이아웃 캡처가 정확히 그렇게
             // 렌더했다.
             presenter.Rebind();
+
+            // 마지막에 끈다. 위의 Rebind가 켜져 있는 계층에서 돌아야 한다.
+            overlay.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// The close button, on top of the X painted into every page.
+        ///
+        /// An invisible control over artwork is what broke this lobby once, so
+        /// the difference is worth stating. That lobby pinned captionless
+        /// buttons at pixel offsets over a mockup stretched across the screen:
+        /// the picture letterboxed at other aspect ratios and the buttons did
+        /// not, so they ended up somewhere else entirely (`ISSUE-046`).
+        ///
+        /// Here the rect is the page canvas exactly, the offsets are fractions
+        /// of that canvas, and nothing stretches — so the region is over the
+        /// drawn X at every resolution by construction. And the fractions are
+        /// not eyeballed: `Tools/normalize_howto_pages.py` finds the X on each
+        /// page, refuses to write the file if the four disagree, and this reads
+        /// what it measured.
+        /// </summary>
+        private static void CreateHowToClose(
+            RectTransform panel,
+            HowToHotspots hotspots,
+            Vector2 size)
+        {
+            RectTransform close = Node(
+                LobbyHowToPanel.CloseButtonName,
+                panel);
+            Anchor(
+                close,
+                new Vector2(0f, 1f),
+                new Vector2(0f, 1f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(
+                    hotspots.closeCenterX * size.x,
+                    -hotspots.closeCenterY * size.y),
+                new Vector2(
+                    hotspots.closeWidth * size.x * CloseHitScale,
+                    hotspots.closeHeight * size.y * CloseHitScale));
+
+            // Fully transparent, because the X is already drawn underneath. An
+            // Image is still needed — it is the thing that takes the raycast,
+            // and alpha does not affect that.
+            //
+            // No hover tint. Unity's state colours multiply the graphic's own,
+            // and anything times zero is zero, so a tint would mean shipping a
+            // visibly coloured square and relying on the runtime to clear it on
+            // the first frame. This panel has already shipped one control that
+            // existed and drew nothing (`ISSUE-050`); a control that draws
+            // something and should not is the same bargain the other way round.
+            var hit = close.gameObject.AddComponent<Image>();
+            hit.color = new Color(1f, 1f, 1f, 0f);
+            hit.raycastTarget = true;
+
+            var button = close.gameObject.AddComponent<Button>();
+            button.targetGraphic = hit;
+            button.transition = Selectable.Transition.None;
         }
 
         /// <summary>
         /// One arrow, just outside the panel edge.
         ///
         /// Outside rather than overlapping, so it never covers the artwork it is
-        /// paging through, and centred vertically on the image rather than on
-        /// the whole panel — the counter and dots sit below the image and would
-        /// drag the arrows down with them.
+        /// paging through.
+        ///
+        /// Placed from the **top** of the canvas rather than centred on it. The
+        /// pages are top-aligned on a canvas as tall as the tallest of them, so
+        /// a shorter page leaves empty space at the bottom and centring puts the
+        /// arrows below the middle of the panel that is actually drawn — 31px
+        /// low on the shortest page, which is enough to read as a mistake.
         /// </summary>
+        private const float HowToArrowFromTop = 0.46f;
+
         private static void CreateHowToArrow(
             RectTransform panel,
             string name,
-            float direction)
+            float direction,
+            Vector2 size)
         {
             Button arrow = Plate(
                 name,
@@ -416,17 +546,19 @@ namespace PawliceAndPurrglar.Editor
                 PanelCream,
                 Ink,
                 direction < 0f ? "‹" : "›",
-                40f,
+                44f,
                 4.5f,
                 null,
                 HowToArrowSize);
             float edge = direction < 0f ? 0f : 1f;
             Anchor(
                 (RectTransform)arrow.transform,
-                new Vector2(edge, 0.5f),
-                new Vector2(edge, 0.5f),
+                new Vector2(edge, 1f),
+                new Vector2(edge, 1f),
                 new Vector2(0.5f, 0.5f),
-                new Vector2(direction * (HowToArrowSize * 0.62f), 0f),
+                new Vector2(
+                    direction * (HowToArrowSize * 0.62f),
+                    -HowToArrowFromTop * size.y),
                 new Vector2(HowToArrowSize, HowToArrowSize));
         }
 
@@ -465,6 +597,66 @@ namespace PawliceAndPurrglar.Editor
             }
 
             return found.ToArray();
+        }
+
+        /// <summary>
+        /// Where the close button is painted on the pages, as fractions of the
+        /// page canvas.
+        ///
+        /// Serialized by <c>JsonUtility</c>, so the names are the JSON keys and
+        /// the fields have to be public. Written by
+        /// <c>Tools/normalize_howto_pages.py</c>.
+        /// </summary>
+        [Serializable]
+        private struct HowToHotspots
+        {
+            public int canvasWidth;
+            public int canvasHeight;
+            public float closeCenterX;
+            public float closeCenterY;
+            public float closeWidth;
+            public float closeHeight;
+        }
+
+        /// <summary>
+        /// The measured hotspots, checked against the art they were measured
+        /// from.
+        ///
+        /// The check is the reason this is not just a deserialise. A hotspot
+        /// file left over from a previous page set would place the close button
+        /// somewhere plausible and wrong, and nothing downstream would notice —
+        /// the panel would open, page, and simply not close. Refused loudly
+        /// instead, the same way a missing page is.
+        /// </summary>
+        private static HowToHotspots LoadHotspots(Sprite page)
+        {
+            string path = $"{HowToFolder}/{HotspotAssetName}";
+            var asset = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
+            if (asset == null)
+            {
+                throw new FileNotFoundException(
+                    "The how-to close button's measured position is missing. "
+                    + "Run 'python Tools/normalize_howto_pages.py' and then "
+                    + "'PawliceAndPurrglar/UI/Import Lobby How-To Art'.",
+                    path);
+            }
+
+            HowToHotspots hotspots = JsonUtility.FromJson<HowToHotspots>(
+                asset.text);
+
+            if (hotspots.canvasWidth != Mathf.RoundToInt(page.rect.width)
+                || hotspots.canvasHeight != Mathf.RoundToInt(page.rect.height))
+            {
+                throw new InvalidDataException(
+                    $"'{path}' was measured on a "
+                    + $"{hotspots.canvasWidth}x{hotspots.canvasHeight} page but "
+                    + $"the imported pages are {page.rect.width}x"
+                    + $"{page.rect.height}. Re-run "
+                    + "Tools/normalize_howto_pages.py and re-import; the close "
+                    + "button would otherwise land beside the X, not on it.");
+            }
+
+            return hotspots;
         }
 
         private static void CreatePaw(RectTransform parent, string name, float x)

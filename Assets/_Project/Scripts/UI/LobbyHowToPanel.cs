@@ -35,6 +35,13 @@ namespace PawliceAndPurrglar.UI
         public const string PageLabelName = "PageLabel";
         public const string DotsNodeName = "PageDots";
 
+        /// <summary>
+        /// The close button. It lives under the panel because that is where it
+        /// is drawn, but it is <see cref="LobbyHowToOverlay"/> that listens to
+        /// it — closing is the overlay's business, not the pages'.
+        /// </summary>
+        public const string CloseButtonName = "CloseButton";
+
         private readonly List<GameObject> pages = new();
         private readonly List<Image> dots = new();
 

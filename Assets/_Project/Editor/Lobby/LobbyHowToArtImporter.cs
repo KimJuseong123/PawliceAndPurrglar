@@ -26,6 +26,15 @@ namespace PawliceAndPurrglar.Editor
 
         private const string TargetFolder = LobbyCanvasBuilder.HowToFolder;
 
+        /// <summary>
+        /// Where the normalizer writes the measured close-button rect. Copied in
+        /// alongside the pages because the two are one artefact: a page set and
+        /// the place the close button is painted on it. Importing pages without
+        /// it would leave the builder placing a hit region from the previous
+        /// set's measurements.
+        /// </summary>
+        private const string HotspotFileName = "hotspots.json";
+
         [MenuItem("PawliceAndPurrglar/UI/Import Lobby How-To Art", priority = 46)]
         public static void Import()
         {
@@ -108,6 +117,23 @@ namespace PawliceAndPurrglar.Editor
                 Debug.Log(
                     $"[UI] How-to page {index + 1} <- "
                     + Path.GetFileName(files[index]));
+            }
+
+            string hotspots = Path.Combine(source, HotspotFileName);
+            if (File.Exists(hotspots))
+            {
+                string target =
+                    $"{TargetFolder}/{LobbyCanvasBuilder.HotspotAssetName}";
+                File.Copy(hotspots, target, true);
+                AssetDatabase.ImportAsset(target, ImportAssetOptions.ForceUpdate);
+                Debug.Log($"[UI] How-to hotspots <- {HotspotFileName}");
+            }
+            else
+            {
+                Debug.LogError(
+                    $"[UI] '{SourceFolder}' has pages but no {HotspotFileName}, "
+                    + "so the close button's measured position is missing. Run "
+                    + "Tools/normalize_howto_pages.py, which writes both.");
             }
 
             AssetDatabase.SaveAssets();

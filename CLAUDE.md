@@ -161,6 +161,18 @@ URL을 함께 움직일 이유가 없다. `-executeMethod`에는 여전히
 > 올라가 캐릭터를 침범했다 (`ISSUE-048`). **가장 흔한 상태(비어 있음)로만 렌더해
 > 보면 통과한다.** 최악의 경우 크기로 검사하고, 자라는 것은 빈 공간으로 띄운다.
 
+> **UI 캡처를 `-nographics`로 돌리지 않는다.** 로비·게임방법 캡처 여덟 장이 전부
+> 균일한 회색(204,204,204)으로 나왔다. `error CS` 0, 예외 없음, 로그에는
+> `Captured ... -> Logs/....png`가 정상으로 찍힌다 — **성공처럼 보인다.**
+> `camera.Render()`가 렌더 타깃에 아무것도 그리지 않을 뿐이다. `-batchmode -quit`만
+> 쓰고 `-nographics`는 뺀다. 평면도가 그래픽 모드로 도는 것과 같은 이유이고,
+> 그러므로 실행 후 `git status -- ProjectSettings/`도 함께 본다.
+>
+> **덮으려는 것보다 먼저 지은 모달은 그 밑에 그려진다.** 오버레이를 캔버스 중간에
+> 만들었더니 형제 순서가 앞이라, 초대코드 줄과 하단 버튼이 패널을 뚫고 나오고
+> 딤 시트는 **무장해제하려던 버튼만 빼고** 전부 어둡게 만들었다. 모달은 마지막에
+> 짓는다.
+
 > **맵 배치를 바꿨으면 `Capture Map Overview`로 평면도를 본다.** 건물이 도로
 > 위에 얹혀 있거나 벽 밖으로 나가 있어도 테스트·검증기·플레이 카메라 중 어느
 > 것도 잡지 못한다. 실제로 주택 2채가 골목을 막고 경찰서가 벽을 3m 뚫고 나간
@@ -593,6 +605,10 @@ Extract Lobby Art From Mockup       목업에서 로고·캐릭터 4종 컷아�
 Generate Lobby Chrome Sprites       버튼·패널·입력칸·발광·아이콘을 코드로 그려 굽는다
 Rebuild Lobby Canvas Prefab         LobbyCanvas.prefab 재생성
 Capture Lobby Layout                로비를 4개 해상도로 렌더 → Logs/lobby-*.png
+Import Lobby How-To Art             normalized/ 페이지와 hotspots.json → UI/Lobby/HowTo/
+                                    먼저 python Tools/normalize_howto_pages.py
+Capture Lobby How-To Layout         게임방법 모달을 쪽마다 렌더 → Logs/howto{쪽}-*.png
+                                    모달은 로비에서 꺼져 있으므로 별도 캡처가 필요하다
 
 Import Lobby Pair Art               ArtSource/Lobby의 팀 페어 PNG 4장 → UI/Lobby/Sprites/
                                     알파 없으면 배경 키잉, 넷 다 불투명 경계로 잘라 크기 통일

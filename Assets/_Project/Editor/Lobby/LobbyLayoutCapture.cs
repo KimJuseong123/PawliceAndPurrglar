@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using PawliceAndPurrglar.UI;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -40,6 +42,26 @@ namespace PawliceAndPurrglar.Editor
                 "lobby");
         }
 
+        /// <summary>
+        /// The how-to modal, one shot per page.
+        ///
+        /// It needs its own capture because it is switched off in the lobby now,
+        /// so <see cref="CaptureLobby"/> renders a screen it is not on. And a
+        /// screen that only appears after a click is exactly the kind that goes
+        /// unlooked-at until somebody plays.
+        /// </summary>
+        [MenuItem("PawliceAndPurrglar/UI/Capture Lobby How-To Layout")]
+        public static void CaptureHowTo()
+        {
+            Capture(
+                "Assets/_Project/Scenes/Bootstrap.unity",
+                "LobbyCanvas",
+                "howto",
+                HowToResolutions,
+                OpenHowToPage,
+                HowToPageCount);
+        }
+
         [MenuItem("PawliceAndPurrglar/UI/Capture Result Layout")]
         public static void CaptureResult()
         {
@@ -49,10 +71,53 @@ namespace PawliceAndPurrglar.Editor
                 "result");
         }
 
+        /// <summary>
+        /// Widest and narrowest of the four. One shot per page at every
+        /// resolution would be sixteen pictures nobody reads; the modal is
+        /// centred and fixed-size, so 16:9 and 4:3 are where it either clears
+        /// the screen edges or does not.
+        /// </summary>
+        private static readonly Vector2Int[] HowToResolutions =
+        {
+            new(1920, 1080),
+            new(1440, 1080)
+        };
+
+        private const int HowToPageCount = 4;
+
+        /// <summary>
+        /// Puts the modal up on a given page, from the editor.
+        ///
+        /// <c>Rebind</c> rather than trusting the activation: <c>OnEnable</c>
+        /// does not fire in edit mode without <c>[ExecuteAlways]</c>, so without
+        /// this the panel renders with every page stacked on top of each other
+        /// and the shot shows the last one — which reads as the paging being
+        /// broken.
+        /// </summary>
+        private static void OpenHowToPage(Canvas canvas, int page)
+        {
+            var overlay = canvas
+                .GetComponentInChildren<LobbyHowToOverlay>(true);
+            if (overlay == null)
+            {
+                throw new InvalidOperationException(
+                    "The lobby canvas has no how-to overlay on it. Run "
+                    + "'Rebuild Lobby (Art, Prefab, Scene)' first.");
+            }
+
+            overlay.gameObject.SetActive(true);
+            LobbyHowToPanel panel = overlay.Panel;
+            panel.Rebind();
+            panel.Show(page);
+        }
+
         private static void Capture(
             string scenePath,
             string canvasName,
-            string filePrefix)
+            string filePrefix,
+            Vector2Int[] resolutions = null,
+            Action<Canvas, int> prepare = null,
+            int variants = 1)
         {
             Scene scene = EditorSceneManager.OpenScene(
                 scenePath,
@@ -90,9 +155,20 @@ namespace PawliceAndPurrglar.Editor
             Directory.CreateDirectory(Path.GetFullPath(OutputFolder));
             try
             {
-                foreach (Vector2Int size in Resolutions)
+                foreach (Vector2Int size in resolutions ?? Resolutions)
                 {
-                    Shoot(canvas, scaler, camera, size, filePrefix);
+                    for (int variant = 0; variant < variants; variant++)
+                    {
+                        prepare?.Invoke(canvas, variant);
+                        Shoot(
+                            canvas,
+                            scaler,
+                            camera,
+                            size,
+                            variants > 1
+                                ? $"{filePrefix}{variant + 1}"
+                                : filePrefix);
+                    }
                 }
             }
             finally

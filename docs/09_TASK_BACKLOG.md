@@ -386,6 +386,7 @@ HUD 표시가 동작하고 테스트로 고정돼 있다.
 | UI-021 | P0 | DONE | **라쿤 암시장 거래창** (`MerchantTradePresenter`). 소지품 그리드 · 판매 목록 · TOTAL · SELL/SELL ALL/CANCEL |
 | UI-022 | P1 | DONE | **경찰의 암시장 구매 창.** 같은 창을 방향만 반대로 쓴다 — 왼쪽 퀵슬롯 4칸, 오른쪽 너구리의 물건과 줄별 `BUY`. 가격·판정은 `PoliceSupplyCounter` 재사용 |
 | UI-023 | P1 | DONE | **가방 칸 이름 툴팁** (`InventoryTooltipView`). 마우스를 올린 칸의 이름을 옆에 띄우고, 1~4번 사용 아이템은 효과도 한 줄로 적는다. 문장은 `ThrowableCatalog.GetEffectSummary`가 상수로 조립하므로 밸런스를 바꾸면 문구도 함께 움직인다 |
+| UI-024 | P1 | DONE | **게임방법을 로비에 상시 띄우지 않고 버튼으로 연다.** 제목 옆 `게임 방법` 버튼이 4쪽짜리 모달을 띄우고, 화살표로 넘기고 X나 `Esc`로 닫는다. 딤 시트가 뒤의 로비 조작을 가린다 (`LobbyHowToOverlay`, `LobbyHowToLauncher`). 페이지 그림 안에 그려진 X 자리는 `Tools/normalize_howto_pages.py`가 **재서** `hotspots.json`에 적고 빌더가 그 비율로 클릭 영역을 올린다 |
 | LOOT-009 | P0 | DONE | Loot Table·시드 추첨·수색 컨테이너·이동 로직 (1단계) |
 | LOOT-010 | P0 | TODO | **컨테이너를 실내에 배치.** 평면도로 가구 위치를 재야 한다 — 지금은 씬에 컨테이너가 0개 |
 | LOOT-011 | P1 | DONE | **표시한 자리가 있는 실내 열세 곳이 전부 물건을 낸다.** 방마다 자기 오브젝트를 갖고(첫 방은 원본, 나머지는 복제) `자리 − 3`을 겹치지 않는 종류로 따로 뽑는다. 경찰에게는 남은 개수를 화면에 적는다 (`InteriorLootTallyPresenter`) |
