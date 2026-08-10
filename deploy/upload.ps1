@@ -56,11 +56,13 @@ if (-not (Test-Path $KeyPath)) {
 # had succeeded, plus a `web<CR>` that `ls` prints as `web` — so the directory
 # listing showed the same name twice and looked like a filesystem fault.
 #
-# `bash -s` with the script on stdin, so quoting on the remote side is one
-# question instead of two.
+# Passed as an argument rather than on stdin. Piping into `bash -s` looks
+# tidier and fails on Windows PowerShell: the pipe is encoded UTF-8 **with a
+# BOM**, so the remote shell reads the first command as `﻿rm` and answers
+# `rm: command not found`.
 function Invoke-Remote([string] $Command) {
     $unix = $Command -replace "`r`n", "`n"
-    $unix | & ssh -i $KeyPath -o StrictHostKeyChecking=accept-new $HostName "bash -s"
+    & ssh -i $KeyPath -o StrictHostKeyChecking=accept-new $HostName $unix
     if ($LASTEXITCODE -ne 0) { throw "Remote command failed: $Command" }
 }
 
