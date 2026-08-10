@@ -1150,6 +1150,7 @@ TECH-003은 공모전 제출 MVP의 차단 요소로 유지한다. 단계 A의 �
 
 | 날짜 | 범위 | 결과 |
 |---|---|---|
+| 2026-08-10 | **배포 실측** (`500de82` 빌드 — 게임방법 패널 + 가방 툴팁) | `Content-Length`가 로컬 산출물과 **바이트까지 일치**: `data.unityweb` 48,656,360 / `wasm.unityweb` 16,261,976 / `loader.js` 48,105, `Last-Modified` 11:15 UTC. 페이지 200, `/health` 200, `http` → 301 `https`. **도장을 서빙되는 바이트에서 실측했다** — `Range: bytes=0-262143`으로 앞부분만 받아 gzip을 풀고 비압축 오프셋 4289에서 `1.0+500de82`를 찾았다(`-dirty` 없음). 음성 서버는 건드리지 않았다 (`-GameOnly`). 이 줄 이후의 문서 커밋은 도장을 바꾸지 않으므로, **배포본의 도장은 계속 `500de82`다** |
 | 2026-08-10 | 가방 칸 이름·효과 툴팁 (`UI-023`) 이후 | Edit Mode **358/358**, Play Mode 228개 중 **226 통과** + 1 실패 + 1 스킵. `error CS` 0. 실패 1건은 기준선과 같은 `CompanionExpression`(`MODEL-002` 클립 부재). 신규 11건(`InventoryTooltipTests` 10 + `InventoryTooltipPlayModeTests` 1)이 XML에 이름으로 있는 것을 확인. **가방을 닫을 때 창이 닫히는지는 Play Mode에만 있다** — `OnDisable`에 걸려 있고 Edit Mode는 테스트가 만든 오브젝트에 그 콜백을 주지 않아서, 같은 단정이 Edit Mode에서는 틀린 이유로 통과했다 |
 | 2026-08-10 | **`CLAUDE.md`의 저장소 루트가 존재하지 않는 경로였다** | 적혀 있던 `C:\Users\SSAFY\PawliceAndPurrglar`는 `Test-Path` False다. 실제 작업 트리는 `C:\Users\SSAFY\paws-github`이고, 배치 실행 명령 두 개가 그 경로를 `-projectPath`로 쓰고 있었다. 고쳤다. `docs/21`·`docs/22`에는 아직 남아 있다 |
 | 2026-08-10 | **배포 실측** (`8c36daf` 빌드) | `web/Build/`의 네 파일이 교체됨(서버 00:28 UTC). 페이지 200, `loader.js` 200, `data.unityweb` `Content-Length 47891270`(로컬 산출물과 바이트까지 일치), `/health` 200. **도장을 실측했다** — `WebGL.data.unityweb`를 gzip 해제해 `+8c36daf`를 바이트로 찾았다. 시각 비교만으로 넘기지 않는다 |
