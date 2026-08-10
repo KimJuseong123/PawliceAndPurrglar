@@ -29,9 +29,37 @@ namespace PawliceAndPurrglar.Editor
         [MenuItem("PawliceAndPurrglar/UI/Import Lobby How-To Art", priority = 46)]
         public static void Import()
         {
-            string source = Path.Combine(
-                Directory.GetParent(Application.dataPath)!.FullName,
-                SourceFolder);
+            string root = Directory.GetParent(Application.dataPath)!.FullName;
+            string source = Path.Combine(root, SourceFolder);
+
+            // The normalized copies win when they exist.
+            //
+            // The authored crops do not share a canvas — different sizes,
+            // different aspect ratios, an opaque background a shade off the
+            // lobby's own, and slivers of the arrow buttons and the title logo
+            // along the edges. `preserveAspect` centres inside its rect, so
+            // three different aspects means the panel changes size as the
+            // player pages through it. `Tools/normalize_howto_pages.py` puts
+            // them on one canvas; this prefers its output so a re-import cannot
+            // silently fall back to the raw crops.
+            string normalized = Path.Combine(source, "normalized");
+            if (Directory.Exists(normalized)
+                && Directory.GetFiles(normalized, "*.png").Length > 0)
+            {
+                source = normalized;
+                Debug.Log(
+                    "[UI] Using the normalized how-to pages. Re-run "
+                    + "Tools/normalize_howto_pages.py after changing the "
+                    + "authored crops.");
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "[UI] No normalized how-to pages found, so the authored "
+                    + "crops are being imported as they are. If they do not "
+                    + "share one canvas the panel will change size between "
+                    + "pages. Run Tools/normalize_howto_pages.py.");
+            }
 
             if (!Directory.Exists(source))
             {
