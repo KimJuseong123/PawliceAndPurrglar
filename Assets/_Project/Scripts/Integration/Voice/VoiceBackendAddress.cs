@@ -7,11 +7,21 @@ namespace PawliceAndPurrglar.Integration.Voice
     /// <summary>
     /// Where the voice API actually is for this build.
     ///
-    /// The configured URL is right for a desktop playtest and wrong for every
-    /// deployed browser: a page served over https cannot call
-    /// <c>http://localhost:3000</c>, and would not want to — the API is on the
-    /// same machine that served the page, so the page's own origin is the
-    /// answer and is the only answer that survives the server being renamed.
+    /// Two deployments serve the same build and only one of them also serves
+    /// the API. On the EC2 host the page and the API share an origin; on GitHub
+    /// Pages there is no API at that origin at all, and a page-origin guess
+    /// sends every command to <c>https://user.github.io/api/game/…</c> — a 404
+    /// that reads as "voice is broken" rather than "voice is somewhere else".
+    ///
+    /// So a configured absolute address wins when there is one. It is the
+    /// deployer saying where the API is, which is knowledge this code cannot
+    /// derive. The page origin remains the answer when nobody said — that is
+    /// still right for a single-host deployment and survives a rename.
+    ///
+    /// <c>localhost</c> is deliberately not honoured from a browser: it is the
+    /// desktop-playtest default that ships in the asset, and a page on https
+    /// cannot call it. Treating it as "nothing was configured" is what keeps
+    /// one config asset usable on both platforms.
     ///
     /// Resolved here rather than in <see cref="VoiceConfig"/> because a config
     /// asset is data. What is stored is what a person typed; which of several
@@ -30,13 +40,26 @@ namespace PawliceAndPurrglar.Integration.Voice
                 : string.Empty;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
+            string deployed = OriginOf(configured);
+            if (!string.IsNullOrEmpty(deployed) && !IsLoopback(deployed))
+            {
+                GameLogger.InfoOnce(
+                    GameLogCategory.Voice,
+                    "voice-backend-configured",
+                    $"Voice backend taken from configuration: {deployed}. The "
+                    + "page's own origin is not used, so this build works from "
+                    + "a host that only serves the page.");
+                return Trim(configured);
+            }
+
             string origin = OriginOf(Application.absoluteURL);
             if (!string.IsNullOrEmpty(origin))
             {
                 GameLogger.InfoOnce(
                     GameLogCategory.Voice,
                     "voice-backend-origin",
-                    $"Voice backend resolved to this page's origin: {origin}");
+                    $"Voice backend resolved to this page's origin: {origin}. "
+                    + "Nothing deployable was configured.");
                 return origin;
             }
 
@@ -48,6 +71,26 @@ namespace PawliceAndPurrglar.Integration.Voice
                 + "will be blocked.");
 #endif
             return Trim(configured);
+        }
+
+        /// <summary>
+        /// Whether an origin points back at the machine running the browser.
+        ///
+        /// Only ever true for a developer's own playtest, and never useful from
+        /// a deployed page — the player's machine is not running the API.
+        /// </summary>
+        public static bool IsLoopback(string origin)
+        {
+            if (string.IsNullOrWhiteSpace(origin))
+            {
+                return false;
+            }
+
+            string lowered = origin.ToLowerInvariant();
+            return lowered.Contains("://localhost")
+                || lowered.Contains("://127.0.0.1")
+                || lowered.Contains("://[::1]")
+                || lowered.Contains("://0.0.0.0");
         }
 
         /// <summary>

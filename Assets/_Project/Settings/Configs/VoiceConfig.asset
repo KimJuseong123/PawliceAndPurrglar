@@ -16,6 +16,6 @@ MonoBehaviour:
   keyboardFallbackEnabled: 1
   maximumUtteranceSeconds: 5
   postCommandCooldownSeconds: 30
-  backendBaseUrl: http://localhost:3000
+  backendBaseUrl: https://pawlice.duckdns.org
   requestTimeoutSeconds: 15
   maximumFileSizeMegabytes: 5
