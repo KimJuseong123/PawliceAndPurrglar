@@ -5,7 +5,7 @@ Uploads the WebGL release build and the built voice server to the EC2 instance.
 .DESCRIPTION
 Run from the repository root on the development machine:
 
-    .\deploy\upload.ps1 -Host ubuntu@1.2.3.4 -KeyPath $HOME\.ssh\pawlice.pem
+    .\deploy\upload.ps1 -HostName ec2-user@pawlice.duckdns.org -KeyPath $HOME\Downloads\paws-and-loot-key.pem
 
 Uploads to a staging folder and moves it into place in one step, so a half
 finished upload is never the thing a judge loads. The old build is kept as
@@ -15,7 +15,10 @@ Uses scp, which ships with Windows 10 and later. No extra tooling.
 #>
 [CmdletBinding()]
 param(
-    # user@host of the instance, e.g. ubuntu@1.2.3.4
+    # user@host of the instance. This one is Amazon Linux, so the login is
+    # `ec2-user`. `ubuntu` — which every AWS tutorial and this file's own
+    # example used to say — is refused with `Permission denied (publickey)`,
+    # which reads as a wrong key rather than a wrong user.
     [Parameter(Mandatory = $true)]
     [string] $HostName,
 

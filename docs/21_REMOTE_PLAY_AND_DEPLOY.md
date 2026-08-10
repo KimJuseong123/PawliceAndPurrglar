@@ -240,7 +240,7 @@ PawliceAndPurrglar > Build > Build WebGL Release
 개발 PC에서, 저장소 루트에서:
 
 ```powershell
-.\deploy\upload.ps1 -HostName ubuntu@<EC2 퍼블릭 IP> -KeyPath $HOME\.ssh\pawlice.pem
+.\deploy\upload.ps1 -HostName ec2-user@pawlice.duckdns.org -KeyPath $HOME\Downloads\paws-and-loot-key.pem
 ```
 
 스테이징 폴더에 올린 뒤 한 번에 자리를 바꾼다. 절반만 올라간 빌드를 심사위원이
